@@ -1,0 +1,387 @@
+// hooks/useDashboard.js
+import { useMemo } from 'react';
+import { useApi } from './useApi';
+import { dashboardService } from '../services/dashboardService';
+
+export function useDashboard() {
+  const {
+    data: dashboard,
+    loading,
+    error,
+    refetch,
+  } = useApi(() => dashboardService.getDashboardData());
+
+  // Raw profile data
+  const profile = useMemo(() => {
+    return dashboard?.data?.profile || null;
+  }, [dashboard]);
+
+  // Individual profile fields
+  const avatarLastUpdated = profile?.avatarLastUpdated || null;
+  const avatarUrl = profile?.avatarUrl || null;
+  const email = profile?.email || '';
+  const firstname = profile?.firstname || '';
+  const id = profile?.id || '';
+  const is2FAEnabled = profile?.is2FAEnabled || false;
+  const lastname = profile?.lastname || '';
+  const phonenumber = profile?.phonenumber || '';
+  const username = profile?.username || '';
+
+  // Raw KYC data
+  const kyc = useMemo(() => {
+    return dashboard?.data?.kyc || null;
+  }, [dashboard]);
+
+  // Individual KYC fields
+  const completionPercentage = kyc?.completionPercentage || 0;
+  const kycLevel = kyc?.level || 0;
+  const kycLimits = kyc?.limits || {};
+  const kycStatus = kyc?.status || '';
+  const dailyLimit = kycLimits?.daily || 0;
+  const monthlyLimit = kycLimits?.monthly || 0;
+  const limitsDescription = kycLimits?.description || '';
+
+  // Raw security data
+  const security = useMemo(() => {
+    return dashboard?.data?.security || null;
+  }, [dashboard]);
+
+  // Individual security fields
+  const failedLoginAttempts = security?.failedLoginAttempts || 0;
+  const securityIs2FAEnabled = security?.is2FAEnabled || false;
+  const lastFailedLogin = security?.lastFailedLogin || null;
+
+  // Raw market data
+  const market = useMemo(() => {
+    return dashboard?.data?.market || null;
+  }, [dashboard]);
+
+  // Individual market fields
+  const ngnzExchangeRate = market?.ngnzExchangeRate || null;
+  const pricesLastUpdated = market?.pricesLastUpdated || null;
+  const prices = market?.prices || {};
+  const priceChanges12h = market?.priceChanges12h || {};
+
+  // Individual price fields
+  const btcPrice = prices?.BTC || 0;
+  const ethPrice = prices?.ETH || 0;
+  const solPrice = prices?.SOL || 0;
+  const usdcPrice = prices?.USDC || 0;
+  const usdtPrice = prices?.USDT || 0;
+  const avaxPrice = prices?.AVAX || 0;
+  const bnbPrice = prices?.BNB || 0;
+  const maticPrice = prices?.MATIC || 0;
+  const dogePrice = prices?.DOGE || 0;
+
+  // Individual price change fields
+  const btcPriceChange = priceChanges12h?.BTC || {};
+  const ethPriceChange = priceChanges12h?.ETH || {};
+  const solPriceChange = priceChanges12h?.SOL || {};
+  const avaxPriceChange = priceChanges12h?.AVAX || {};
+  const bnbPriceChange = priceChanges12h?.BNB || {};
+  const maticPriceChange = priceChanges12h?.MATIC || {};
+
+  // BTC price change details
+  const btcDataAvailable = btcPriceChange?.dataAvailable || false;
+  const btcNewPrice = btcPriceChange?.newPrice || 0;
+  const btcOldPrice = btcPriceChange?.oldPrice || 0;
+  const btcPercentageChange = btcPriceChange?.percentageChange || 0;
+  const btcPriceChangeAmount = btcPriceChange?.priceChange || 0;
+  const btcTimeframe = btcPriceChange?.timeframe || '';
+
+  // ETH price change details
+  const ethDataAvailable = ethPriceChange?.dataAvailable || false;
+  const ethNewPrice = ethPriceChange?.newPrice || 0;
+  const ethOldPrice = ethPriceChange?.oldPrice || 0;
+  const ethPercentageChange = ethPriceChange?.percentageChange || 0;
+  const ethPriceChangeAmount = ethPriceChange?.priceChange || 0;
+  const ethTimeframe = ethPriceChange?.timeframe || '';
+
+  // SOL price change details
+  const solDataAvailable = solPriceChange?.dataAvailable || false;
+  const solNewPrice = solPriceChange?.newPrice || 0;
+  const solOldPrice = solPriceChange?.oldPrice || 0;
+  const solPercentageChange = solPriceChange?.percentageChange || 0;
+  const solPriceChangeAmount = solPriceChange?.priceChange || 0;
+  const solTimeframe = solPriceChange?.timeframe || '';
+
+  // AVAX price change details
+  const avaxDataAvailable = avaxPriceChange?.dataAvailable || false;
+  const avaxNewPrice = avaxPriceChange?.newPrice || 0;
+  const avaxOldPrice = avaxPriceChange?.oldPrice || 0;
+  const avaxPercentageChange = avaxPriceChange?.percentageChange || 0;
+  const avaxPriceChangeAmount = avaxPriceChange?.priceChange || 0;
+  const avaxTimeframe = avaxPriceChange?.timeframe || '';
+
+  // BNB price change details
+  const bnbDataAvailable = bnbPriceChange?.dataAvailable || false;
+  const bnbNewPrice = bnbPriceChange?.newPrice || 0;
+  const bnbOldPrice = bnbPriceChange?.oldPrice || 0;
+  const bnbPercentageChange = bnbPriceChange?.percentageChange || 0;
+  const bnbPriceChangeAmount = bnbPriceChange?.priceChange || 0;
+  const bnbTimeframe = bnbPriceChange?.timeframe || '';
+
+  // MATIC price change details
+  const maticDataAvailable = maticPriceChange?.dataAvailable || false;
+  const maticNewPrice = maticPriceChange?.newPrice || 0;
+  const maticOldPrice = maticPriceChange?.oldPrice || 0;
+  const maticPercentageChange = maticPriceChange?.percentageChange || 0;
+  const maticPriceChangeAmount = maticPriceChange?.priceChange || 0;
+  const maticTimeframe = maticPriceChange?.timeframe || '';
+
+  // Raw portfolio data
+  const portfolio = useMemo(() => {
+    return dashboard?.data?.portfolio || null;
+  }, [dashboard]);
+
+  const totalPortfolioBalance = portfolio?.totalPortfolioBalance || 0;
+  const balances = portfolio?.balances || {};
+
+  // Individual portfolio balances
+  const btcBalance = balances?.BTC || {};
+  const ethBalance = balances?.ETH || {};
+  const solBalance = balances?.SOL || {};
+  const usdcBalance = balances?.USDC || {};
+  const usdtBalance = balances?.USDT || {};
+  const avaxBalance = balances?.AVAX || {};
+  const bnbBalance = balances?.BNB || {};
+  const maticBalance = balances?.MATIC || {};
+  const ngnzBalance = balances?.NGNZ || {};
+
+  // Raw wallets data
+  const wallets = useMemo(() => {
+    return dashboard?.data?.wallets || null;
+  }, [dashboard]);
+
+  // Individual wallet data
+  const btcWallet = wallets?.BTC_BTC || {};
+  const ethWallet = wallets?.ETH_ETH || {};
+  const solWallet = wallets?.SOL_SOL || {};
+  const usdcBscWallet = wallets?.USDC_BSC || {};
+  const usdcEthWallet = wallets?.USDC_ETH || {};
+  const usdtBscWallet = wallets?.USDT_BSC || {};
+  const usdtEthWallet = wallets?.USDT_ETH || {};
+  const usdtTrxWallet = wallets?.USDT_TRX || {};
+  const ngnzWallet = wallets?.NGNZ || {};
+  const avaxBscWallet = wallets?.AVAX_BSC || {};
+  const bnbBscWallet = wallets?.BNB_BSC || {};
+  const bnbEthWallet = wallets?.BNB_ETH || {};
+  const dogeWallet = wallets?.DOGE_DOGE || {};
+  const maticEthWallet = wallets?.MATIC_ETH || {};
+
+  // Individual wallet addresses
+  const btcWalletAddress = btcWallet?.address || '';
+  const ethWalletAddress = ethWallet?.address || '';
+  const solWalletAddress = solWallet?.address || '';
+  const usdcBscWalletAddress = usdcBscWallet?.address || '';
+  const usdcEthWalletAddress = usdcEthWallet?.address || '';
+  const usdtBscWalletAddress = usdtBscWallet?.address || '';
+  const usdtEthWalletAddress = usdtEthWallet?.address || '';
+  const usdtTrxWalletAddress = usdtTrxWallet?.address || '';
+  const ngnzWalletAddress = ngnzWallet?.address || '';
+
+  // Individual wallet reference IDs
+  const btcWalletReferenceId = btcWallet?.walletReferenceId || '';
+  const ethWalletReferenceId = ethWallet?.walletReferenceId || '';
+  const solWalletReferenceId = solWallet?.walletReferenceId || '';
+  const usdcBscWalletReferenceId = usdcBscWallet?.walletReferenceId || '';
+  const usdcEthWalletReferenceId = usdcEthWallet?.walletReferenceId || '';
+  const usdtBscWalletReferenceId = usdtBscWallet?.walletReferenceId || '';
+  const usdtEthWalletReferenceId = usdtEthWallet?.walletReferenceId || '';
+  const usdtTrxWalletReferenceId = usdtTrxWallet?.walletReferenceId || '';
+  const ngnzWalletReferenceId = ngnzWallet?.walletReferenceId || '';
+
+  // Individual wallet networks
+  const btcWalletNetwork = btcWallet?.network || '';
+  const ethWalletNetwork = ethWallet?.network || '';
+  const solWalletNetwork = solWallet?.network || '';
+  const usdcBscWalletNetwork = usdcBscWallet?.network || '';
+  const usdcEthWalletNetwork = usdcEthWallet?.network || '';
+  const usdtBscWalletNetwork = usdtBscWallet?.network || '';
+  const usdtEthWalletNetwork = usdtEthWallet?.network || '';
+  const usdtTrxWalletNetwork = usdtTrxWallet?.network || '';
+  const ngnzWalletNetwork = ngnzWallet?.network || '';
+
+  // Refresh dashboard data
+  const refreshDashboard = async () => {
+    console.log('🔄 useDashboard: Refreshing dashboard data');
+    await refetch();
+  };
+
+  return {
+    // Raw objects
+    dashboard: dashboard?.data,
+    profile,
+    kyc,
+    security,
+    market,
+    portfolio,
+    wallets,
+    
+    // Profile fields
+    avatarLastUpdated,
+    avatarUrl,
+    email,
+    firstname,
+    id,
+    is2FAEnabled,
+    lastname,
+    phonenumber,
+    username,
+    
+    // KYC fields
+    completionPercentage,
+    kycLevel,
+    kycLimits,
+    kycStatus,
+    dailyLimit,
+    monthlyLimit,
+    limitsDescription,
+    
+    // Security fields
+    failedLoginAttempts,
+    securityIs2FAEnabled,
+    lastFailedLogin,
+    
+    // Market fields
+    ngnzExchangeRate,
+    pricesLastUpdated,
+    prices,
+    priceChanges12h,
+    
+    // Price fields
+    btcPrice,
+    ethPrice,
+    solPrice,
+    usdcPrice,
+    usdtPrice,
+    avaxPrice,
+    bnbPrice,
+    maticPrice,
+    dogePrice,
+    
+    // BTC price change fields
+    btcPriceChange,
+    btcDataAvailable,
+    btcNewPrice,
+    btcOldPrice,
+    btcPercentageChange,
+    btcPriceChangeAmount,
+    btcTimeframe,
+    
+    // ETH price change fields
+    ethPriceChange,
+    ethDataAvailable,
+    ethNewPrice,
+    ethOldPrice,
+    ethPercentageChange,
+    ethPriceChangeAmount,
+    ethTimeframe,
+    
+    // SOL price change fields
+    solPriceChange,
+    solDataAvailable,
+    solNewPrice,
+    solOldPrice,
+    solPercentageChange,
+    solPriceChangeAmount,
+    solTimeframe,
+    
+    // AVAX price change fields
+    avaxPriceChange,
+    avaxDataAvailable,
+    avaxNewPrice,
+    avaxOldPrice,
+    avaxPercentageChange,
+    avaxPriceChangeAmount,
+    avaxTimeframe,
+    
+    // BNB price change fields
+    bnbPriceChange,
+    bnbDataAvailable,
+    bnbNewPrice,
+    bnbOldPrice,
+    bnbPercentageChange,
+    bnbPriceChangeAmount,
+    bnbTimeframe,
+    
+    // MATIC price change fields
+    maticPriceChange,
+    maticDataAvailable,
+    maticNewPrice,
+    maticOldPrice,
+    maticPercentageChange,
+    maticPriceChangeAmount,
+    maticTimeframe,
+    
+    // Portfolio fields
+    totalPortfolioBalance,
+    balances,
+    
+    // Individual portfolio balances
+    btcBalance,
+    ethBalance,
+    solBalance,
+    usdcBalance,
+    usdtBalance,
+    avaxBalance,
+    bnbBalance,
+    maticBalance,
+    ngnzBalance,
+    
+    // Wallet objects
+    btcWallet,
+    ethWallet,
+    solWallet,
+    usdcBscWallet,
+    usdcEthWallet,
+    usdtBscWallet,
+    usdtEthWallet,
+    usdtTrxWallet,
+    ngnzWallet,
+    avaxBscWallet,
+    bnbBscWallet,
+    bnbEthWallet,
+    dogeWallet,
+    maticEthWallet,
+    
+    // Wallet addresses
+    btcWalletAddress,
+    ethWalletAddress,
+    solWalletAddress,
+    usdcBscWalletAddress,
+    usdcEthWalletAddress,
+    usdtBscWalletAddress,
+    usdtEthWalletAddress,
+    usdtTrxWalletAddress,
+    ngnzWalletAddress,
+    
+    // Wallet reference IDs
+    btcWalletReferenceId,
+    ethWalletReferenceId,
+    solWalletReferenceId,
+    usdcBscWalletReferenceId,
+    usdcEthWalletReferenceId,
+    usdtBscWalletReferenceId,
+    usdtEthWalletReferenceId,
+    usdtTrxWalletReferenceId,
+    ngnzWalletReferenceId,
+    
+    // Wallet networks
+    btcWalletNetwork,
+    ethWalletNetwork,
+    solWalletNetwork,
+    usdcBscWalletNetwork,
+    usdcEthWalletNetwork,
+    usdtBscWalletNetwork,
+    usdtEthWalletNetwork,
+    usdtTrxWalletNetwork,
+    ngnzWalletNetwork,
+    
+    // API state
+    loading,
+    error,
+    refreshDashboard,
+    refetch,
+  };
+}
