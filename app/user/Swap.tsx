@@ -264,23 +264,6 @@ export default function SwapScreen({
     }
   }, [btcPrice, btcBalance]);
 
-  // Refresh token balances periodically
-  useEffect(() => {
-    const refreshTokenBalances = () => {
-      if (selectedFromToken) {
-        const newBalance = getTokenBalance(selectedFromToken.symbol);
-        setSelectedFromToken(prev => prev ? { ...prev, balance: newBalance } : null);
-      }
-      if (selectedToToken) {
-        const newBalance = getTokenBalance(selectedToToken.symbol);
-        setSelectedToToken(prev => prev ? { ...prev, balance: newBalance } : null);
-      }
-    };
-
-    const interval = setInterval(refreshTokenBalances, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, [selectedFromToken?.symbol, selectedToToken?.symbol]);
-
   // Countdown timer logic
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
@@ -304,31 +287,35 @@ export default function SwapScreen({
 
   const formatUsdValue = (amount: string, token: TokenOption | null): string => {
     const numAmount = parseFloat(amount) || 0;
-    const price = token?.price || 0;
-    const usdValue = numAmount * price;
-    return token?.symbol === 'NGNZ' ? `₦${usdValue.toFixed(2)}` : `$${usdValue.toFixed(2)}`;
+    
+    if (!token || numAmount === 0) return '$0.00';
+    
+    if (token.symbol === 'NGNZ') {
+      // Convert NGNZ to USD using exchange rate
+      const ngnzRate = getNGNZRate() || ngnzExchangeRate || 0;
+      if (ngnzRate > 0) {
+        const usdValue = numAmount / ngnzRate; // NGNZ amount ÷ rate = USD
+        return `${usdValue.toFixed(2)}`;
+      }
+      return '$0.00';
+    } else {
+      // Regular crypto: amount × price = USD
+      const price = token?.price || 0;
+      const usdValue = numAmount * price;
+      return `${usdValue.toFixed(2)}`;
+    }
   };
 
   const getMaxBalance = (token: TokenOption | null): string => {
     if (!token) return '0';
-    // Use the balance from the token object instead of calling getTokenBalance again
-    const balance = token.balance || 0;
+    const balance = getTokenBalance(token.symbol);
     return `${balance.toFixed(8)} ${token.symbol}`;
   };
 
   const handleMax = () => {
     if (!selectedFromToken) return;
-    
-    // Get the most current balance using the appropriate hook
-    const currentBalance = getTokenBalance(selectedFromToken.symbol);
-    
-    // Also update the selected token's balance for consistency
-    setSelectedFromToken(prev => prev ? {
-      ...prev,
-      balance: currentBalance
-    } : null);
-    
-    setFromAmount(currentBalance.toString());
+    const maxBalance = getTokenBalance(selectedFromToken.symbol);
+    setFromAmount(maxBalance.toString());
   };
 
   const handleSwapTokens = () => {
@@ -563,17 +550,29 @@ export default function SwapScreen({
   // Determine button text based on current state
   const getButtonText = () => {
     if (quoteLoading) return 'Creating Quote...';
-    if (acceptLoading) return 'Executing Swap...';
+    if (acceptLoading) {
+      if (isNGNZOperation()) {
+        return isOnrampOperation() ? 'Processing Onramp...' : 'Processing Offramp...';
+      }
+      return 'Executing Swap...';
+    }
     
     const currentQuote = getCurrentQuote();
     if (currentQuote && isCountdownActive) {
+      if (isNGNZOperation()) {
+        return isOnrampOperation() ? 'Complete Onramp' : 'Complete Offramp';
+      }
       return 'Swap';
     }
     
     return 'Create Quote';
   };
 
-
+  // Get operation type for display
+  const getOperationType = () => {
+    if (!isNGNZOperation()) return 'Crypto Swap';
+    return isOnrampOperation() ? 'Onramp (NGNZ → Crypto)' : 'Offramp (Crypto → NGNZ)';
+  };
 
   return (
     <View style={styles.container}>
@@ -588,7 +587,14 @@ export default function SwapScreen({
             {renderTab('buy-sell', 'Buy/Sell')}
           </View>
 
-
+          {/* Operation Type Indicator */}
+          {(selectedFromToken && selectedToToken) && (
+            <View style={styles.operationTypeContainer}>
+              <Text style={styles.operationTypeText}>
+                {getOperationType()}
+              </Text>
+            </View>
+          )}
 
           {/* Error Display */}
           {quoteError && (
@@ -630,7 +636,7 @@ export default function SwapScreen({
                   )}
                 </TouchableOpacity>
                 <View style={styles.balanceInfo}>
-                  <Text style={styles.balanceText} numberOfLines={1}>
+                  <Text style={styles.balanceText}>
                     {getMaxBalance(selectedFromToken)}
                   </Text>
                   <TouchableOpacity onPress={handleMax}>
@@ -771,15 +777,14 @@ const styles = StyleSheet.create({
     padding: 2,
     marginTop: Layout.spacing.sm,
     marginBottom: Layout.spacing.sm,
-    marginHorizontal: Layout.spacing.md,
+    marginHorizontal: Layout.spacing.xl,
     alignSelf: 'center',
-    width: '50%',
-    minWidth: 120,
+    width: '30%',
   },
   tab: {
     flex: 1,
     paddingVertical: Layout.spacing.xs,
-    paddingHorizontal: Layout.spacing.xs,
+    paddingHorizontal: Layout.spacing.sm,
     borderRadius: Layout.borderRadius.md,
     alignItems: 'center',
   },
@@ -791,9 +796,8 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontFamily: Typography.medium,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    textAlign: 'center',
   },
   activeTabText: {
     color: Colors.surface,
@@ -801,7 +805,19 @@ const styles = StyleSheet.create({
   inactiveTabText: {
     color: Colors.text.secondary,
   },
-
+  operationTypeContainer: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: Layout.borderRadius.md,
+    padding: Layout.spacing.sm,
+    marginBottom: Layout.spacing.md,
+    alignItems: 'center',
+  },
+  operationTypeText: {
+    color: '#1976D2',
+    fontFamily: Typography.medium,
+    fontSize: 12,
+    fontWeight: '600',
+  },
   errorContainer: {
     backgroundColor: '#FFE8E8',
     borderRadius: Layout.borderRadius.md,
@@ -822,6 +838,18 @@ const styles = StyleSheet.create({
   },
   warningText: {
     color: '#FF9800',
+    fontFamily: Typography.regular,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  debugContainer: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: Layout.borderRadius.md,
+    padding: Layout.spacing.md,
+    marginTop: Layout.spacing.md,
+  },
+  debugText: {
+    color: '#1976D2',
     fontFamily: Typography.regular,
     fontSize: 12,
     textAlign: 'center',
@@ -850,21 +878,18 @@ const styles = StyleSheet.create({
   inputLeft: {
     flex: 1,
     justifyContent: 'center',
-    minWidth: 0,
   },
   inputRight: {
     alignItems: 'flex-end',
     justifyContent: 'center',
-    maxWidth: '50%',
   },
   amountInput: {
     fontFamily: Typography.medium,
-    fontSize: 24,
+    fontSize: 30,
     color: Colors.text.primary,
     fontWeight: '600',
     padding: 0,
     margin: 0,
-    flexShrink: 1,
   },
   usdValue: {
     fontFamily: Typography.regular,
@@ -887,8 +912,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.spacing.sm,
     paddingVertical: Layout.spacing.xs,
     marginBottom: Layout.spacing.sm,
-    maxWidth: '100%',
-    flexShrink: 1,
   },
   tokenIcon: {
     width: 18,
@@ -898,27 +921,23 @@ const styles = StyleSheet.create({
   },
   tokenText: {
     fontFamily: Typography.medium,
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.text.primary,
     fontWeight: '600',
-    flexShrink: 1,
   },
   balanceInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Layout.spacing.xs,
-    flexShrink: 1,
-    minWidth: 0,
   },
   balanceText: {
     fontFamily: Typography.regular,
-    fontSize: 10,
+    fontSize: 11,
     color: Colors.text.secondary,
-    flexShrink: 1,
   },
   maxText: {
     fontFamily: Typography.medium,
-    fontSize: 10,
+    fontSize: 11,
     color: Colors.primary,
     fontWeight: '600',
   },

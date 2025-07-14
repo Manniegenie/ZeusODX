@@ -11,7 +11,7 @@ export function useSwap() {
   const [acceptLoading, setAcceptLoading] = useState(false);
   const [acceptError, setAcceptError] = useState(null);
 
-  const [swapHistory, setSwapHistory] = useState([]);
+  const [swapHistory] = useState([]); // Removed unused setter
   
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -84,7 +84,7 @@ export function useSwap() {
         const token = await AsyncStorage.getItem('auth_token');
         setIsAuthenticated(!!token);
         setAuthChecked(true);
-      } catch (error) {
+      } catch (_error) {
         setIsAuthenticated(false);
         setAuthChecked(true);
       }
@@ -250,7 +250,21 @@ export function useSwap() {
       const toAmount = usdValue / toPrice;
       
       return toAmount;
-    } catch (error) {
+    } catch (_error) {
+      return 0;
+    }
+  };
+
+  /**
+   * Calculate USD value of an amount
+   */
+  const calculateUSDValue = (amount, tokenSymbol) => {
+    try {
+      if (!amount || amount <= 0) return 0;
+      
+      const price = getTokenPrice(tokenSymbol);
+      return amount * price;
+    } catch (_error) {
       return 0;
     }
   };
@@ -319,8 +333,20 @@ export function useSwap() {
     try {
       if (!amount || amount === 0) return '0';
       return parseFloat(amount).toFixed(decimals);
-    } catch (error) {
+    } catch (_error) {
       return '0';
+    }
+  };
+
+  /**
+   * Format USD amount for display
+   */
+  const formatUSDAmount = (amount, decimals = 2) => {
+    try {
+      if (!amount || amount === 0) return '0.00';
+      return parseFloat(amount).toFixed(decimals);
+    } catch (_error) {
+      return '0.00';
     }
   };
 
@@ -336,6 +362,13 @@ export function useSwap() {
    */
   const isSupportedCrypto = (tokenSymbol) => {
     return supportedCryptos.includes(tokenSymbol?.toUpperCase());
+  };
+
+  /**
+   * Get swap operation type (always crypto for this hook)
+   */
+  const getSwapType = () => {
+    return 'CRYPTO_TO_CRYPTO';
   };
 
   return {
@@ -363,13 +396,16 @@ export function useSwap() {
     
     // Utilities
     calculateSwapAmount,
+    calculateUSDValue,
     getTokenBalance,
     getTokenPrice,
     hasSufficientBalance,
     isSwapReady,
     formatSwapAmount,
+    formatUSDAmount,
     getSupportedCryptos,
     isSupportedCrypto,
     validateCryptoSwap,
+    getSwapType,
   };
 }
