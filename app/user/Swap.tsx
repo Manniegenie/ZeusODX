@@ -264,6 +264,23 @@ export default function SwapScreen({
     }
   }, [btcPrice, btcBalance]);
 
+  // Refresh token balances periodically
+  useEffect(() => {
+    const refreshTokenBalances = () => {
+      if (selectedFromToken) {
+        const newBalance = getTokenBalance(selectedFromToken.symbol);
+        setSelectedFromToken(prev => prev ? { ...prev, balance: newBalance } : null);
+      }
+      if (selectedToToken) {
+        const newBalance = getTokenBalance(selectedToToken.symbol);
+        setSelectedToToken(prev => prev ? { ...prev, balance: newBalance } : null);
+      }
+    };
+
+    const interval = setInterval(refreshTokenBalances, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, [selectedFromToken?.symbol, selectedToToken?.symbol]);
+
   // Countdown timer logic
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
@@ -294,14 +311,24 @@ export default function SwapScreen({
 
   const getMaxBalance = (token: TokenOption | null): string => {
     if (!token) return '0';
-    const balance = getTokenBalance(token.symbol);
+    // Use the balance from the token object instead of calling getTokenBalance again
+    const balance = token.balance || 0;
     return `${balance.toFixed(8)} ${token.symbol}`;
   };
 
   const handleMax = () => {
     if (!selectedFromToken) return;
-    const maxBalance = getTokenBalance(selectedFromToken.symbol);
-    setFromAmount(maxBalance.toString());
+    
+    // Get the most current balance using the appropriate hook
+    const currentBalance = getTokenBalance(selectedFromToken.symbol);
+    
+    // Also update the selected token's balance for consistency
+    setSelectedFromToken(prev => prev ? {
+      ...prev,
+      balance: currentBalance
+    } : null);
+    
+    setFromAmount(currentBalance.toString());
   };
 
   const handleSwapTokens = () => {
@@ -536,29 +563,17 @@ export default function SwapScreen({
   // Determine button text based on current state
   const getButtonText = () => {
     if (quoteLoading) return 'Creating Quote...';
-    if (acceptLoading) {
-      if (isNGNZOperation()) {
-        return isOnrampOperation() ? 'Processing Onramp...' : 'Processing Offramp...';
-      }
-      return 'Executing Swap...';
-    }
+    if (acceptLoading) return 'Executing Swap...';
     
     const currentQuote = getCurrentQuote();
     if (currentQuote && isCountdownActive) {
-      if (isNGNZOperation()) {
-        return isOnrampOperation() ? 'Complete Onramp' : 'Complete Offramp';
-      }
       return 'Swap';
     }
     
     return 'Create Quote';
   };
 
-  // Get operation type for display
-  const getOperationType = () => {
-    if (!isNGNZOperation()) return 'Crypto Swap';
-    return isOnrampOperation() ? 'Onramp (NGNZ → Crypto)' : 'Offramp (Crypto → NGNZ)';
-  };
+
 
   return (
     <View style={styles.container}>
@@ -573,14 +588,7 @@ export default function SwapScreen({
             {renderTab('buy-sell', 'Buy/Sell')}
           </View>
 
-          {/* Operation Type Indicator */}
-          {(selectedFromToken && selectedToToken) && (
-            <View style={styles.operationTypeContainer}>
-              <Text style={styles.operationTypeText}>
-                {getOperationType()}
-              </Text>
-            </View>
-          )}
+
 
           {/* Error Display */}
           {quoteError && (
@@ -622,7 +630,7 @@ export default function SwapScreen({
                   )}
                 </TouchableOpacity>
                 <View style={styles.balanceInfo}>
-                  <Text style={styles.balanceText}>
+                  <Text style={styles.balanceText} numberOfLines={1}>
                     {getMaxBalance(selectedFromToken)}
                   </Text>
                   <TouchableOpacity onPress={handleMax}>
@@ -763,14 +771,15 @@ const styles = StyleSheet.create({
     padding: 2,
     marginTop: Layout.spacing.sm,
     marginBottom: Layout.spacing.sm,
-    marginHorizontal: Layout.spacing.xl,
+    marginHorizontal: Layout.spacing.md,
     alignSelf: 'center',
-    width: '30%',
+    width: '50%',
+    minWidth: 120,
   },
   tab: {
     flex: 1,
     paddingVertical: Layout.spacing.xs,
-    paddingHorizontal: Layout.spacing.sm,
+    paddingHorizontal: Layout.spacing.xs,
     borderRadius: Layout.borderRadius.md,
     alignItems: 'center',
   },
@@ -782,8 +791,9 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontFamily: Typography.medium,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
+    textAlign: 'center',
   },
   activeTabText: {
     color: Colors.surface,
@@ -791,19 +801,7 @@ const styles = StyleSheet.create({
   inactiveTabText: {
     color: Colors.text.secondary,
   },
-  operationTypeContainer: {
-    backgroundColor: '#E3F2FD',
-    borderRadius: Layout.borderRadius.md,
-    padding: Layout.spacing.sm,
-    marginBottom: Layout.spacing.md,
-    alignItems: 'center',
-  },
-  operationTypeText: {
-    color: '#1976D2',
-    fontFamily: Typography.medium,
-    fontSize: 12,
-    fontWeight: '600',
-  },
+
   errorContainer: {
     backgroundColor: '#FFE8E8',
     borderRadius: Layout.borderRadius.md,
@@ -824,18 +822,6 @@ const styles = StyleSheet.create({
   },
   warningText: {
     color: '#FF9800',
-    fontFamily: Typography.regular,
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  debugContainer: {
-    backgroundColor: '#E3F2FD',
-    borderRadius: Layout.borderRadius.md,
-    padding: Layout.spacing.md,
-    marginTop: Layout.spacing.md,
-  },
-  debugText: {
-    color: '#1976D2',
     fontFamily: Typography.regular,
     fontSize: 12,
     textAlign: 'center',
@@ -864,18 +850,21 @@ const styles = StyleSheet.create({
   inputLeft: {
     flex: 1,
     justifyContent: 'center',
+    minWidth: 0,
   },
   inputRight: {
     alignItems: 'flex-end',
     justifyContent: 'center',
+    maxWidth: '50%',
   },
   amountInput: {
     fontFamily: Typography.medium,
-    fontSize: 30,
+    fontSize: 24,
     color: Colors.text.primary,
     fontWeight: '600',
     padding: 0,
     margin: 0,
+    flexShrink: 1,
   },
   usdValue: {
     fontFamily: Typography.regular,
@@ -898,6 +887,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.spacing.sm,
     paddingVertical: Layout.spacing.xs,
     marginBottom: Layout.spacing.sm,
+    maxWidth: '100%',
+    flexShrink: 1,
   },
   tokenIcon: {
     width: 18,
@@ -907,23 +898,27 @@ const styles = StyleSheet.create({
   },
   tokenText: {
     fontFamily: Typography.medium,
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.text.primary,
     fontWeight: '600',
+    flexShrink: 1,
   },
   balanceInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Layout.spacing.xs,
+    flexShrink: 1,
+    minWidth: 0,
   },
   balanceText: {
     fontFamily: Typography.regular,
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.text.secondary,
+    flexShrink: 1,
   },
   maxText: {
     fontFamily: Typography.medium,
-    fontSize: 11,
+    fontSize: 10,
     color: Colors.primary,
     fontWeight: '600',
   },
