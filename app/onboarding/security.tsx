@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
@@ -7,6 +8,7 @@ import { simpleAppState } from '../../services/appstate';
 
 export default function SecurityScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const handleGetStarted = async () => {
     console.log('🎓 User completing onboarding via Get Started');
@@ -53,8 +55,11 @@ export default function SecurityScreen() {
           </View>
         </View>
 
-        {/* Buttons */}
-        <View style={styles.buttonContainer}>
+        {/* Buttons with Bottom Safe Area */}
+        <View style={[
+          styles.buttonContainer,
+          { paddingBottom: Math.max(insets.bottom + Layout.spacing.xl, Layout.spacing.xl) }
+        ]}>
           <TouchableOpacity style={styles.nextButton} onPress={handleGetStarted}>
             <Text style={styles.nextButtonText}>Get Started</Text>
           </TouchableOpacity>
@@ -124,8 +129,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   buttonContainer: {
-    paddingBottom: Layout.spacing.xl,
     gap: Layout.spacing.md,
+    // paddingBottom removed from here - now handled dynamically above
   },
   nextButton: {
     backgroundColor: Colors.primary,

@@ -12,24 +12,18 @@ import {
   BricolageGrotesque_800ExtraBold,
 } from '@expo-google-fonts/bricolage-grotesque';
 import * as SplashScreen from 'expo-splash-screen';
-import {
-  SafeAreaProvider,
-  SafeAreaView,
-} from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthProvider, AuthContext } from '../hooks/useAuth';
 
 SplashScreen.preventAutoHideAsync();
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const auth = useAuthProvider();
-  return (
-    <AuthContext.Provider value={auth}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 }
 
 export default function RootLayout() {
+  // ——— Load fonts ———
   const [loaded, error] = useFonts({
     BricolageGrotesque_200ExtraLight,
     BricolageGrotesque_300Light,
@@ -40,20 +34,26 @@ export default function RootLayout() {
     BricolageGrotesque_800ExtraBold,
   });
 
+  // ——— Hide splash screen when fonts are loaded or error occurs ———
   useEffect(() => {
     if (loaded || error) {
       SplashScreen.hideAsync();
     }
   }, [loaded, error]);
 
-  if (!loaded && !error) {
-    return null;
-  }
+  // ——— Return null until fonts are loaded ———
+  if (!loaded && !error) return null;
 
   return (
     <SafeAreaProvider>
-      {/* only apply the notch/top inset here */}
-      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#F4F2FF' }}>
+      <SafeAreaView
+        edges={['top']} // Only handle top safe area globally
+        style={{
+          flex: 1,
+          backgroundColor: '#F4F2FF',
+          // Removed bottom padding - let components handle their own bottom safe areas
+        }}
+      >
         <AuthProvider>
           <Stack
             screenOptions={{

@@ -1,3 +1,5 @@
+// app/components/WalletTokensSection.tsx
+
 import React, { useMemo } from 'react';
 import { 
   View, 
@@ -7,107 +9,169 @@ import {
   FlatList,
   Image
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { useTokens } from '../../hooks/useTokens';
+import { useDashboard } from '../../hooks/useDashboard';
 
-interface Token {
+interface WalletToken {
   id: string;
   name: string;
   symbol: string;
-  price: string;
-  change: string;
-  changePercent: string;
-  isPositive: boolean;
+  icon: any;
+  balance: number;
+  usdValue: number;
+  formattedBalance: string;
+  formattedUsdValue: string;
+  hasBalance: boolean;
 }
 
-interface TokensSectionProps {
+interface WalletTokensSectionProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
-  onAssetPress: (asset: Token) => void;
+  onAssetPress?: (asset: WalletToken) => void; // Make it optional since we handle routing internally
 }
 
-export default function TokensSection({ 
+export default function WalletTokensSection({ 
   activeTab, 
   onTabChange, 
   onAssetPress 
-}: TokensSectionProps) {
+}: WalletTokensSectionProps) {
+  const router = useRouter();
   
-  // Use the new useTokens hook instead of manually processing dashboard data
+  // Get token metadata from useTokens and balances from useDashboard
   const { 
     tokens: allTokens, 
-    favoriteTokens,
-    loading, 
-    error 
+    loading: tokensLoading, 
+    error: tokensError 
   } = useTokens();
 
-  // Debug logging
-  console.log('🔍 TokensSection Debug - useTokens Data:', {
-    allTokensCount: allTokens.length,
-    favoritesCount: favoriteTokens.length,
-    loading,
-    error,
-    tokenSymbols: allTokens.map(t => t.symbol),
-    hasNGNZ: allTokens.some(t => t.symbol === 'NGNZ')
-  });
+  const {
+    // Token balances
+    solBalance,
+    usdcBalance,
+    usdtBalance,
+    avaxBalance,
+    bnbBalance,
+    maticBalance,
+    ngnzBalance,
+    loading: dashboardLoading,
+    error: dashboardError
+  } = useDashboard();
 
-  // Transform useTokens data to match the component's expected Token interface
-  const transformedTokens: Token[] = useMemo(() => {
-    return allTokens.map(token => {
-      // Format price display
-      let priceDisplay = '';
-      if (token.symbol === 'NGNZ') {
-        priceDisplay = token.formattedPrice.naira;
-      } else {
-        priceDisplay = token.formattedPrice.usd;
-      }
+  // Combine loading and error states
+  const loading = tokensLoading || dashboardLoading;
+  const error = tokensError || dashboardError;
 
-      return {
-        id: token.id,
-        name: token.name,
-        symbol: token.symbol,
-        price: priceDisplay,
-        change: token.changeFormatted,
-        changePercent: `${Math.abs(token.change24h).toFixed(2)}%`,
-        isPositive: token.isPositive
-      };
+  // Filter tokens to only include wallet tokens and combine with balance data
+  const walletTokens: WalletToken[] = useMemo(() => {
+    const targetSymbols = ['SOL', 'USDC', 'USDT', 'AVAX', 'BNB', 'MATIC', 'NGNZ'];
+    const balanceMap = {
+      SOL: solBalance?.balance || 0,
+      USDC: usdcBalance?.balance || 0,
+      USDT: usdtBalance?.balance || 0,
+      AVAX: avaxBalance?.balance || 0,
+      BNB: bnbBalance?.balance || 0,
+      MATIC: maticBalance?.balance || 0,
+      NGNZ: ngnzBalance?.balance || 0,
+    };
+
+    const tokens = allTokens
+      .filter(token => targetSymbols.includes(token.symbol))
+      .map(token => {
+        const balance = balanceMap[token.symbol] || 0;
+        const usdValue = balance * (token.currentPrice || 0);
+        const hasBalance = balance > 0;
+        
+        // Format balance display
+        let formattedBalance = '';
+        if (token.symbol === 'NGNZ') {
+          formattedBalance = `₦${balance.toLocaleString('en-NG', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`;
+        } else {
+          formattedBalance = balance.toFixed(8);
+        }
+        
+        return {
+          id: token.id,
+          name: token.name,
+          symbol: token.symbol,
+          icon: token.icon,
+          balance,
+          usdValue,
+          hasBalance,
+          formattedBalance,
+          formattedUsdValue: `$${usdValue.toFixed(2)}`,
+        };
+      });
+
+    // Sort tokens: those with balances first (by USD value desc), then others alphabetically
+    return tokens.sort((a, b) => {
+      if (a.hasBalance && !b.hasBalance) return -1;
+      if (!a.hasBalance && b.hasBalance) return 1;
+      if (a.hasBalance && b.hasBalance) return b.usdValue - a.usdValue;
+      return a.name.localeCompare(b.name);
     });
-  }, [allTokens]);
+  }, [
+    allTokens,
+    solBalance, usdcBalance, usdtBalance, 
+    avaxBalance, bnbBalance, maticBalance, ngnzBalance
+  ]);
 
-  // Transform favorites for consistency
-  const transformedFavorites: Token[] = useMemo(() => {
-    return favoriteTokens.map(token => {
-      let priceDisplay = '';
-      if (token.symbol === 'NGNZ') {
-        priceDisplay = token.formattedPrice.naira;
-      } else {
-        priceDisplay = token.formattedPrice.usd;
-      }
+  // Get favorite tokens (tokens with balances for wallet)
+  const favoriteTokens = useMemo(() => {
+    return walletTokens.filter(token => token.hasBalance);
+  }, [walletTokens]);
 
-      return {
-        id: token.id,
-        name: token.name,
-        symbol: token.symbol,
-        price: priceDisplay,
-        change: token.changeFormatted,
-        changePercent: `${Math.abs(token.change24h).toFixed(2)}%`,
-        isPositive: token.isPositive
-      };
-    });
-  }, [favoriteTokens]);
+  // Handle token press with manual routing to individual token screens
+  const handleTokenPress = (token: WalletToken) => {
+    // If custom handler provided, use it
+    if (onAssetPress) {
+      onAssetPress(token);
+      return;
+    }
 
-  // Get token icon from useTokens data
-  const getTokenIcon = (symbol: string) => {
-    const token = allTokens.find(t => t.symbol === symbol);
-    return token?.icon;
+    // Manual routes for each token
+    switch (token.symbol) {
+      case 'SOL':
+        router.push('/wallet-screens/sol-wallet');
+        break;
+      case 'USDC':
+        router.push('/wallet-screens/usdc-wallet');
+        break;
+      case 'USDT':
+        router.push('/wallet-screens/usdt-wallet');
+        break;
+      case 'AVAX':
+        router.push('/wallet-screens/avax-wallet');
+        break;
+      case 'BNB':
+        router.push('/wallet-screens/bnb-wallet');
+        break;
+      case 'MATIC':
+        router.push('/wallet-screens/matic-wallet');
+        break;
+      case 'NGNZ':
+        router.push('/wallet-screens/ngnz-wallet');
+        break;
+      default:
+        console.log(`⚠️ No specific route for ${token.symbol}, redirecting to coming soon`);
+        router.push('/user/come-soon');
+    }
   };
 
-  const renderToken = ({ item }: { item: Token }) => (
-    <TouchableOpacity style={styles.tokenItem} onPress={() => onAssetPress(item)}>
+  const renderToken = ({ item }: { item: WalletToken }) => (
+    <TouchableOpacity 
+      style={styles.tokenItem} 
+      onPress={() => handleTokenPress(item)}
+    >
       <View style={styles.tokenLeft}>
         <View style={styles.tokenIcon}>
-          <Image source={getTokenIcon(item.symbol)} style={styles.tokenIconImage} />
+          <Image source={item.icon} style={styles.tokenIconImage} />
         </View>
         <View style={styles.tokenInfo}>
           <Text style={styles.tokenName}>{item.name}</Text>
@@ -115,12 +179,12 @@ export default function TokensSection({
         </View>
       </View>
       <View style={styles.tokenRight}>
-        <Text style={styles.tokenPrice}>{item.price}</Text>
-        <View style={[styles.changeContainer, { backgroundColor: item.isPositive ? '#E8F5E8' : '#FFE8E8' }]}>
-          <Text style={[styles.changeText, { color: item.isPositive ? '#4CAF50' : '#F44336' }]}>
-            {item.change}
-          </Text>
-        </View>
+        <Text style={styles.tokenBalance}>
+          {item.formattedBalance}
+        </Text>
+        <Text style={styles.tokenUsdValue}>
+          {item.formattedUsdValue}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -128,18 +192,10 @@ export default function TokensSection({
   // Get tokens based on active tab
   const displayTokens = useMemo(() => {
     if (activeTab === 'Favorites') {
-      return transformedFavorites;
+      return favoriteTokens;
     }
-    return transformedTokens;
-  }, [activeTab, transformedTokens, transformedFavorites]);
-
-  // Debug filtered tokens
-  console.log('🔍 Display Tokens Debug:', {
-    activeTab,
-    displayCount: displayTokens.length,
-    displayIds: displayTokens.map(t => t.id),
-    hasNGNZ: displayTokens.some(t => t.id === 'ngnz')
-  });
+    return walletTokens;
+  }, [activeTab, walletTokens, favoriteTokens]);
 
   // Show loading state
   if (loading) {
@@ -196,7 +252,7 @@ export default function TokensSection({
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>
-              {activeTab === 'Favorites' ? 'No favorite tokens' : 'No tokens available'}
+              {activeTab === 'Favorites' ? 'No tokens with balance' : 'No tokens available'}
             </Text>
           </View>
         )}
@@ -283,25 +339,17 @@ const styles = StyleSheet.create({
   tokenRight: {
     alignItems: 'flex-end',
   },
-  tokenPrice: {
+  tokenBalance: {
     fontFamily: Typography.medium,
     fontSize: 13,
     color: Colors.text.primary,
     marginBottom: 4,
     fontWeight: '600',
   },
-  changeContainer: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 50,
-  },
-  changeText: {
-    fontFamily: Typography.medium,
+  tokenUsdValue: {
+    fontFamily: Typography.regular,
     fontSize: 12,
-    fontWeight: '600',
+    color: Colors.text.secondary,
   },
   loadingContainer: {
     flex: 1,

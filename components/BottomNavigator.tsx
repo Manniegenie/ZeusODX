@@ -1,19 +1,18 @@
-import React, { useRef, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Animated, Image, Text, ViewStyle, TextStyle, ImageStyle } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
+import React, { useEffect, useRef } from 'react';
+import { Animated, ImageStyle, StyleSheet, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Typography } from '../constants/Typography';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
+import { Typography } from '../constants/Typography';
 
 // Tab icon imports
 const homeIcon = require('../components/icons/home-icon.png');
 const tradeIcon = require('../components/icons/trade-icon.png');
 const giftcardIcon = require('../components/icons/giftcard-icon.png');
-const activityIcon = require('../components/icons/activity-icon.png');
+const activityIcon = require('../components/icons/wallet-icon.png');
 const profileIcon = require('../components/icons/profile-icon.png');
 
-// Tab definition
 interface Tab {
   id: string;
   label: string;
@@ -29,15 +28,15 @@ interface AnimatedTabProps {
 
 const AnimatedTab: React.FC<AnimatedTabProps> = ({ tab, isActive, onPress }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const iconBgAnim = useRef(new Animated.Value(isActive ? 1 : 0)).current;
-  const iconColorAnim = useRef(new Animated.Value(isActive ? 1 : 0)).current;
-  const labelColorAnim = useRef(new Animated.Value(isActive ? 1 : 0)).current;
+  const colorAnim = useRef(new Animated.Value(isActive ? 1 : 0)).current;
   const translateYAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(iconBgAnim, { toValue: isActive ? 1 : 0, duration: 300, useNativeDriver: false }).start();
-    Animated.timing(iconColorAnim, { toValue: isActive ? 1 : 0, duration: 300, useNativeDriver: false }).start();
-    Animated.timing(labelColorAnim, { toValue: isActive ? 1 : 0, duration: 300, useNativeDriver: false }).start();
+    Animated.timing(colorAnim, {
+      toValue: isActive ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false
+    }).start();
 
     if (isActive) {
       Animated.sequence([
@@ -55,26 +54,34 @@ const AnimatedTab: React.FC<AnimatedTabProps> = ({ tab, isActive, onPress }) => 
     onPress(tab);
   };
 
-  const iconBackgroundColor = iconBgAnim.interpolate({ inputRange: [0, 1], outputRange: ['transparent', Colors.primary] });
-  const iconTintColor = iconColorAnim.interpolate({ inputRange: [0, 1], outputRange: [Colors.text.secondary, Colors.surface] });
-  const labelColor = labelColorAnim.interpolate({ inputRange: [0, 1], outputRange: [Colors.text.secondary, Colors.primary] });
-  const iconScale = iconBgAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] });
+  const iconTintColor = colorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [Colors.text.secondary, Colors.primary]
+  });
+  const labelColor = colorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [Colors.text.secondary, Colors.primary]
+  });
 
   return (
     <TouchableOpacity style={styles.tabItem} onPress={handlePress} activeOpacity={0.7}>
-      <Animated.View style={[styles.tabContainer, { transform: [{ scale: scaleAnim }, { translateY: translateYAnim }] }]}>        
-        <Animated.View
-          style={[
-            styles.tabIconContainer,
-            { backgroundColor: iconBackgroundColor, transform: [{ scale: iconScale }] },
-          ]}
-        >
-          <Animated.Image source={tab.icon} style={[styles.tabIcon, { tintColor: iconTintColor }]} />
-        </Animated.View>
+      <Animated.View
+        style={[
+          styles.tabContainer,
+          { transform: [{ scale: scaleAnim }, { translateY: translateYAnim }] }
+        ]}
+      >
+        <Animated.Image
+          source={tab.icon}
+          style={[styles.tabIcon, { tintColor: iconTintColor }]}
+        />
         <Animated.Text
           style={[
             styles.tabLabel,
-            { color: labelColor, fontFamily: isActive ? Typography.medium : Typography.regular },
+            {
+              color: labelColor,
+              fontFamily: isActive ? Typography.medium : Typography.regular,
+            }
           ]}
         >
           {tab.label}
@@ -95,11 +102,11 @@ const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({ activeTab }) =>
   const insets = useSafeAreaInsets();
 
   const tabs: Tab[] = [
-    { id: 'home', label: 'Home', icon: homeIcon, route: '../user/dashboard' },
-    { id: 'giftcard', label: 'Giftcard', icon: giftcardIcon, route: '/user/come-soon' },
-    { id: 'swap', label: 'Buy/Sell', icon: tradeIcon, route: '../user/Swap' },
-    { id: 'activity', label: 'Activity', icon: activityIcon, route: '/user/come-soon' },
-    { id: 'profile', label: 'Profile', icon: profileIcon, route: '/user/come-soon' },
+    { id: 'home',      label: 'Home',     icon: homeIcon,     route: '../user/dashboard' },
+    { id: 'giftcard',  label: 'Giftcard', icon: giftcardIcon, route: '/user/come-soon' },
+    { id: 'swap',      label: 'Buy/Sell', icon: tradeIcon,    route: '../user/Swap' },
+    { id: 'wallet',  label: 'Wallet', icon: activityIcon, route: '../user/wallet' },
+    { id: 'profile',   label: 'Profile',  icon: profileIcon,  route: '/user/come-soon' },
   ];
 
   const getCurrentTab = (): string => {
@@ -119,20 +126,7 @@ const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({ activeTab }) =>
   };
 
   const currentActiveTab = getCurrentTab();
-
-  useEffect(() => {
-    const entranceY = new Animated.Value(50);
-    const opacity = new Animated.Value(0);
-    Animated.parallel([
-      Animated.timing(entranceY, { toValue: 0, duration: 400, useNativeDriver: true }),
-      Animated.timing(opacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-    ]).start();
-  }, []);
-
   const slideTransform = slideAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 2] });
-
-  // Use full bottom inset for background cover and slightly push down
-  const bottomInset = insets.bottom;
 
   return (
     <Animated.View
@@ -140,8 +134,8 @@ const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({ activeTab }) =>
         styles.container,
         {
           transform: [{ translateY: slideTransform }],
-          height: 56 + bottomInset,
-          paddingBottom: bottomInset,
+          // Industry standard: fixed height + safe area inset
+          paddingBottom: Math.max(insets.bottom, 8), // Minimum 8px, or safe area
         },
       ]}
     >
@@ -164,7 +158,6 @@ interface Styles {
   tabNavContainer: ViewStyle;
   tabItem: ViewStyle;
   tabContainer: ViewStyle;
-  tabIconContainer: ViewStyle;
   tabIcon: ImageStyle;
   tabLabel: TextStyle;
 }
@@ -174,19 +167,15 @@ const styles = StyleSheet.create<Styles>({
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
+    paddingTop: 8, // Industry standard padding
+    // Removed shadow & elevation for cleaner look
   },
   tabNavContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
     paddingHorizontal: Layout.spacing.md,
-    paddingTop: Layout.spacing.sm,
-    height: 60,
+    height: 56, // Industry standard tab bar height
   },
   tabItem: {
     flex: 1,
@@ -196,30 +185,17 @@ const styles = StyleSheet.create<Styles>({
   tabContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Layout.spacing.sm,
-  },
-  tabIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Layout.spacing.xs,
-    shadowColor: Colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
   },
   tabIcon: {
-    width: 28,
-    height: 28,
+    width: 24, // Slightly smaller for better proportions
+    height: 24,
     resizeMode: 'contain',
   },
   tabLabel: {
     fontSize: 10,
     textAlign: 'center',
     letterSpacing: 0.2,
+    marginTop: 4, // Reduced margin for better spacing
   },
 });
 

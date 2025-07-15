@@ -35,7 +35,7 @@ const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     await refreshBalances();
   }, [refreshBalances]);
 
-  const displayBnb = bnbBalance?.toFixed(8) || '0.00000000';
+  const displayBnb = bnbBalance?.toFixed(8) || '0.0000000000';
   const displayUSD = bnbBalanceUSD?.toFixed(2) || '0.00';
 
   const quickActions = [

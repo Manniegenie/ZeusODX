@@ -1,4 +1,4 @@
-// app/components/PortfolioSection.tsx
+// app/components/WalletPortfolioSection.tsx
 
 import React, { useEffect, useRef } from 'react';
 import { 
@@ -18,7 +18,6 @@ import { useDashboard } from '../../hooks/useDashboard';
 // Asset imports
 const depositIcon    = require('../../components/icons/deposit-icon.png');
 const transferIcon   = require('../../components/icons/transfer-icon.png');
-const utilitiesIcon  = require('../../components/icons/utility.png'); 
 const swapIcon       = require('../../components/icons/swap-icon.png');
 const portfolioBg    = require('../../assets/images/portfolio-bgg.jpg');
 const eyeIcon        = require('../../components/icons/eye-icon.png');
@@ -30,21 +29,19 @@ interface QuickLink {
   route: string;
 }
 
-interface PortfolioSectionProps {
+interface WalletPortfolioSectionProps {
   balanceVisible: boolean;
   onQuickLinkPress: (link: QuickLink) => void;
-  onSeeMore: () => void;
   onSetupPress: () => void;
   onToggleBalanceVisibility: () => void;
 }
 
-export default function PortfolioSection({ 
+export default function WalletPortfolioSection({ 
   balanceVisible, 
   onQuickLinkPress, 
-  onSeeMore,
   onSetupPress,
   onToggleBalanceVisibility,
-}: PortfolioSectionProps) {
+}: WalletPortfolioSectionProps) {
   const { totalPortfolioBalance, completionPercentage } = useDashboard();
   const safeBalance = totalPortfolioBalance || 0;
   const formattedUsdBalance = `$${safeBalance.toLocaleString('en-US', {
@@ -52,11 +49,11 @@ export default function PortfolioSection({
     maximumFractionDigits: 2,
   })}`;
 
+  // Only 3 quick links for wallet
   const quickLinks: QuickLink[] = [
-    { id: 'deposit',   title: 'Deposit',   icon: depositIcon,   route: '/user/come-soon' },
-    { id: 'transfer',  title: 'Transfer',  icon: transferIcon,  route: '/user/come-soon' },
+    { id: 'deposit',   title: 'Deposit',   icon: depositIcon,   route: '/wallet/deposit' },
+    { id: 'transfer',  title: 'Transfer',  icon: transferIcon,  route: '/wallet/transfer' },
     { id: 'buy-sell',  title: 'Buy/Sell',  icon: swapIcon,      route: '/user/Swap' },
-    { id: 'utility',   title: 'Utility',   icon: utilitiesIcon, route: '/user/come-soon' },
   ];
 
   // Progress bar animation
@@ -114,10 +111,7 @@ export default function PortfolioSection({
       {/* Quick Links */}
       <View style={styles.quickLinksContainer}>
         <View style={styles.quickLinksHeader}>
-          <Text style={styles.quickLinksTitle}>Quick Links</Text>
-          <TouchableOpacity onPress={onSeeMore}>
-            <Text style={styles.seeMore}>see more</Text>
-          </TouchableOpacity>
+          <Text style={styles.quickLinksTitle}>Quick Actions</Text>
         </View>
         <View style={styles.quickLinksList}>
           {quickLinks.map(item => (
@@ -219,9 +213,6 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.lg,
   },
   quickLinksHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: Layout.spacing.md,
   },
   quickLinksTitle: {
@@ -229,14 +220,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.text.primary,
   },
-  seeMore: {
-    fontFamily: Typography.regular,
-    fontSize: 12,
-    color: Colors.primary,
-  },
   quickLinksList: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     alignItems: 'center',
     paddingHorizontal: Layout.spacing.xs,
   },
@@ -248,7 +234,7 @@ const styles = StyleSheet.create({
   quickLinkIconImage: {
     width: 44,
     height: 44,
-    borderRadius: 22,       // circular
+    borderRadius: 22,
     resizeMode: 'contain',
   },
   quickLinkText: {

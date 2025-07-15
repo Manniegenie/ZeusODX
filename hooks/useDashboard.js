@@ -202,9 +202,14 @@ export function useDashboard() {
   const usdtTrxWalletNetwork = usdtTrxWallet?.network || '';
   const ngnzWalletNetwork = ngnzWallet?.network || '';
 
-  // Refresh dashboard data
+  // FIXED: Refresh dashboard data - Clear cache before refetching
   const refreshDashboard = async () => {
     console.log('🔄 useDashboard: Refreshing dashboard data');
+    
+    // First clear the dashboard service cache
+    await dashboardService.refreshDashboard();
+    
+    // Then call refetch to get fresh data
     await refetch();
   };
 

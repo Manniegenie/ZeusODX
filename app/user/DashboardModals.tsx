@@ -82,7 +82,7 @@ export default function DashboardModals({
     usdtBscWalletAddress,
     usdtEthWalletAddress,
     usdtTrxWalletAddress,
-    ngnbWalletAddress,
+    ngnzWalletAddress,
     // Additional wallet objects for networks
     avaxBscWallet,
     bnbBscWallet,
@@ -97,7 +97,7 @@ export default function DashboardModals({
     avaxBalance,
     bnbBalance,
     maticBalance,
-    ngnbBalance,
+    ngnzBalance,
   } = useDashboard();
 
   const transferMethods: TransferMethod[] = [
@@ -123,7 +123,7 @@ export default function DashboardModals({
       symbol: 'NGNZ',
       icon: ngnzIcon,
       address: '', // Fiat doesn't need address
-      balance: ngnbBalance?.balance || 0,
+      balance: ngnzBalance?.balance || 0,
     }
   ];
 
@@ -447,14 +447,14 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: Layout.borderRadius.xl,
     borderTopRightRadius: Layout.borderRadius.xl,
     padding: Layout.spacing.lg,
-    height: '60%',
+    height: '80%', // Increased from 60% to 80%
   },
   transferModalContent: {
     backgroundColor: Colors.surface,
     borderTopLeftRadius: Layout.borderRadius.xl,
     borderTopRightRadius: Layout.borderRadius.xl,
     padding: Layout.spacing.lg,
-    height: '30%',
+    height: '40%', // Increased from 30% to 40%
   },
   modalHeader: {
     flexDirection: 'row',

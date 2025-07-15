@@ -181,12 +181,8 @@ export const dashboardService = {
       // Silent fail
     }
     
-    // Trigger price storage on backend
-    try {
-      await apiClient.post('/store-prices');
-    } catch (error) {
-      // Silent fail
-    }
+    // REMOVED: No longer calling /store-prices endpoint
+    // The cache clearing is sufficient for forcing fresh data
   },
 
   /**
