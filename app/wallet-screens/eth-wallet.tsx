@@ -11,6 +11,7 @@ import {
   RefreshControl,
   ActivityIndicator
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
@@ -37,6 +38,7 @@ const EthereumWalletScreen: React.FC<EthereumWalletScreenProps> = ({
   onQuickActionPress,
   onSeeMorePress
 }) => {
+  const router = useRouter();
   const { 
     ethBalance,
     ethBalanceUSD,
@@ -62,6 +64,10 @@ const EthereumWalletScreen: React.FC<EthereumWalletScreenProps> = ({
       console.error('❌ Error refreshing ETH wallet:', error);
     }
   }, [refreshBalances]);
+
+  const handleGoBack = () => {
+    router.back();
+  };
 
   const handleQuickAction = (actionId: string): void => {
     console.log(`ETH Quick action pressed: ${actionId}`);
@@ -98,11 +104,26 @@ const EthereumWalletScreen: React.FC<EthereumWalletScreenProps> = ({
         >
           {/* Header Section */}
           <View style={styles.headerSection}>
-            <View style={styles.headerGroup}>
-              <View style={styles.ethereumIcon}>
-                <Image source={ethIcon} style={styles.ethereumIconImage} />
+            <View style={styles.headerContainer}>
+              {/* Back Button */}
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={handleGoBack}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
+
+              {/* Title Group */}
+              <View style={styles.headerGroup}>
+                <View style={styles.ethereumIcon}>
+                  <Image source={ethIcon} style={styles.ethereumIconImage} />
+                </View>
+                <Text style={styles.headerTitle}>Ethereum</Text>
               </View>
-              <Text style={styles.headerTitle}>Ethereum</Text>
+
+              {/* Placeholder for balance */}
+              <View style={styles.headerRight} />
             </View>
           </View>
 
@@ -192,14 +213,36 @@ const styles = StyleSheet.create({
   
   headerSection: {
     paddingHorizontal: 16,
-    paddingTop: 12, // Reduced from 20
-    paddingBottom: 6, // Reduced from 10
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  backButtonText: {
+    fontSize: 20,
+    color: Colors.text.primary,
+    fontWeight: '500',
   },
   headerGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+    flex: 1,
+  },
+  headerRight: {
+    width: 40,
+    height: 40,
   },
   ethereumIcon: {
     width: 28,
@@ -222,10 +265,10 @@ const styles = StyleSheet.create({
 
   balanceSection: {
     paddingHorizontal: 16,
-    paddingVertical: 12, // Reduced from 20
+    paddingVertical: 12,
   },
   balanceCard: {
-    height: 120, // Reduced from 151
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
     borderBottomWidth: 1,
@@ -284,20 +327,20 @@ const styles = StyleSheet.create({
 
   quickActionsSection: {
     paddingHorizontal: 16,
-    paddingVertical: 12, // Reduced from 20
+    paddingVertical: 12,
   },
   quickActionsTitle: {
     color: Colors.text.primary,
     fontFamily: Typography.medium,
     fontSize: 13.8,
     fontWeight: '600',
-    marginBottom: 8, // Reduced from 16
+    marginBottom: 8,
   },
   quickActionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: 4, // Reduced from 10
+    paddingHorizontal: 4,
   },
   actionItem: {
     alignItems: 'center',
@@ -309,7 +352,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4, // Reduced from 8
+    marginBottom: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -338,13 +381,13 @@ const styles = StyleSheet.create({
 
   recentHistorySection: {
     paddingHorizontal: 16,
-    paddingVertical: 12, // Reduced from 20
+    paddingVertical: 12,
   },
   recentHistoryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12, // Reduced from 20
+    marginBottom: 12,
   },
   recentHistoryTitle: {
     color: Colors.text.primary,
@@ -362,7 +405,7 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 24, // Reduced from 40
+    paddingVertical: 24,
   },
   emptyIllustration: {
     width: 169,

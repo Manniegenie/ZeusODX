@@ -14,7 +14,7 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { useTokens } from '../../hooks/useTokens';
-import { useDashboard } from '../../hooks/useDashboard';
+import { useBalance } from '../../hooks/useWallet';
 
 interface WalletToken {
   id: string;
@@ -41,15 +41,16 @@ export default function WalletTokensSection({
 }: WalletTokensSectionProps) {
   const router = useRouter();
   
-  // Get token metadata from useTokens and balances from useDashboard
+  // Get token metadata from useTokens
   const { 
     tokens: allTokens, 
     loading: tokensLoading, 
     error: tokensError 
   } = useTokens();
 
+  // Get balances from useBalance hook
   const {
-    // Token balances
+    // Raw token balances
     solBalance,
     usdcBalance,
     usdtBalance,
@@ -57,25 +58,51 @@ export default function WalletTokensSection({
     bnbBalance,
     maticBalance,
     ngnzBalance,
-    loading: dashboardLoading,
-    error: dashboardError
-  } = useDashboard();
+    btcBalance,
+    // Formatted USD values
+    formattedSolBalanceUSD,
+    formattedUsdcBalanceUSD,
+    formattedUsdtBalanceUSD,
+    formattedAvaxBalanceUSD,
+    formattedBnbBalanceUSD,
+    formattedMaticBalanceUSD,
+    formattedNgnzBalanceUSD,
+    formattedBtcBalanceUSD,
+    // State
+    loading: balanceLoading,
+    error: balanceError
+  } = useBalance();
 
   // Combine loading and error states
-  const loading = tokensLoading || dashboardLoading;
-  const error = tokensError || dashboardError;
+  const loading = tokensLoading || balanceLoading;
+  const error = tokensError || balanceError;
 
   // Filter tokens to only include wallet tokens and combine with balance data
   const walletTokens: WalletToken[] = useMemo(() => {
-    const targetSymbols = ['SOL', 'USDC', 'USDT', 'AVAX', 'BNB', 'MATIC', 'NGNZ'];
+    const targetSymbols = ['SOL', 'USDC', 'USDT', 'AVAX', 'BNB', 'MATIC', 'NGNZ', 'BTC'];
+    
+    // Map of raw balances
     const balanceMap = {
-      SOL: solBalance?.balance || 0,
-      USDC: usdcBalance?.balance || 0,
-      USDT: usdtBalance?.balance || 0,
-      AVAX: avaxBalance?.balance || 0,
-      BNB: bnbBalance?.balance || 0,
-      MATIC: maticBalance?.balance || 0,
-      NGNZ: ngnzBalance?.balance || 0,
+      SOL: solBalance || 0,
+      USDC: usdcBalance || 0,
+      USDT: usdtBalance || 0,
+      AVAX: avaxBalance || 0,
+      BNB: bnbBalance || 0,
+      MATIC: maticBalance || 0,
+      NGNZ: ngnzBalance || 0,
+      BTC: btcBalance || 0,
+    };
+
+    // Map of formatted USD values
+    const usdValueMap = {
+      SOL: formattedSolBalanceUSD || '$0.00',
+      USDC: formattedUsdcBalanceUSD || '$0.00',
+      USDT: formattedUsdtBalanceUSD || '$0.00',
+      AVAX: formattedAvaxBalanceUSD || '$0.00',
+      BNB: formattedBnbBalanceUSD || '$0.00',
+      MATIC: formattedMaticBalanceUSD || '$0.00',
+      NGNZ: formattedNgnzBalanceUSD || '$0.00',
+      BTC: formattedBtcBalanceUSD || '$0.00',
     };
 
     const tokens = allTokens
@@ -92,6 +119,9 @@ export default function WalletTokensSection({
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}`;
+        } else if (token.symbol === 'BTC') {
+          // Format BTC with appropriate decimal places
+          formattedBalance = balance.toFixed(8);
         } else {
           formattedBalance = balance.toFixed(8);
         }
@@ -105,7 +135,7 @@ export default function WalletTokensSection({
           usdValue,
           hasBalance,
           formattedBalance,
-          formattedUsdValue: `$${usdValue.toFixed(2)}`,
+          formattedUsdValue: usdValueMap[token.symbol],
         };
       });
 
@@ -119,7 +149,10 @@ export default function WalletTokensSection({
   }, [
     allTokens,
     solBalance, usdcBalance, usdtBalance, 
-    avaxBalance, bnbBalance, maticBalance, ngnzBalance
+    avaxBalance, bnbBalance, maticBalance, ngnzBalance, btcBalance,
+    formattedSolBalanceUSD, formattedUsdcBalanceUSD, formattedUsdtBalanceUSD,
+    formattedAvaxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD,
+    formattedNgnzBalanceUSD, formattedBtcBalanceUSD
   ]);
 
   // Get favorite tokens (tokens with balances for wallet)
@@ -154,6 +187,9 @@ export default function WalletTokensSection({
         break;
       case 'MATIC':
         router.push('/wallet-screens/matic-wallet');
+        break;
+      case 'BTC':
+        router.push('/wallet-screens/btc-wallet');
         break;
       case 'NGNZ':
         router.push('/wallet-screens/ngnz-wallet');

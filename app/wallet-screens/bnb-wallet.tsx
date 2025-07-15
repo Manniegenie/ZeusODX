@@ -11,6 +11,7 @@ import {
   RefreshControl,
   ActivityIndicator
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
@@ -23,6 +24,7 @@ import depositIcon from '../../components/icons/deposit-icon.png';
 import emptyStateIcon from '../../components/icons/empty-state.png';
 
 const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
+  const router = useRouter();
   const {
     bnbBalance,
     bnbBalanceUSD,
@@ -34,6 +36,10 @@ const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const onRefresh = useCallback(async () => {
     await refreshBalances();
   }, [refreshBalances]);
+
+  const handleGoBack = () => {
+    router.back();
+  };
 
   const displayBnb = bnbBalance?.toFixed(8) || '0.0000000000';
   const displayUSD = bnbBalanceUSD?.toFixed(2) || '0.00';
@@ -69,11 +75,26 @@ const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
         >
           {/* Header Section */}
           <View style={styles.headerSection}>
-            <View style={styles.headerGroup}>
-              <View style={styles.iconWrapper}>
-                <Image source={bnbIcon} style={styles.iconImage} />
+            <View style={styles.headerContainer}>
+              {/* Back Button */}
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={handleGoBack}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
+
+              {/* Title Group */}
+              <View style={styles.headerGroup}>
+                <View style={styles.iconWrapper}>
+                  <Image source={bnbIcon} style={styles.iconImage} />
+                </View>
+                <Text style={styles.headerTitle}>BNB</Text>
               </View>
-              <Text style={styles.headerTitle}>BNB</Text>
+
+              {/* Placeholder for balance */}
+              <View style={styles.headerRight} />
             </View>
           </View>
 
@@ -155,14 +176,36 @@ const styles = StyleSheet.create({
 
   headerSection: {
     paddingHorizontal: 16,
-    paddingTop: 12, // Reduced from 20
-    paddingBottom: 6, // Reduced from 10
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  backButtonText: {
+    fontSize: 20,
+    color: Colors.text.primary,
+    fontWeight: '500',
   },
   headerGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+    flex: 1,
+  },
+  headerRight: {
+    width: 40,
+    height: 40,
   },
   iconWrapper: {
     width: 28,
@@ -185,10 +228,10 @@ const styles = StyleSheet.create({
 
   balanceSection: {
     paddingHorizontal: 16,
-    paddingVertical: 12, // Reduced from 20
+    paddingVertical: 12,
   },
   balanceCard: {
-    height: 120, // Reduced from 151
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
     borderBottomWidth: 1,
@@ -246,20 +289,20 @@ const styles = StyleSheet.create({
 
   quickActionsSection: {
     paddingHorizontal: 16,
-    paddingVertical: 12, // Reduced from 20
+    paddingVertical: 12,
   },
   quickActionsTitle: {
     color: Colors.text.primary,
     fontFamily: Typography.medium,
     fontSize: 13.8,
     fontWeight: '600',
-    marginBottom: 8, // Reduced from 16
+    marginBottom: 8,
   },
   quickActionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: 4, // Reduced from 10
+    paddingHorizontal: 4,
   },
   actionItem: {
     alignItems: 'center',
@@ -271,7 +314,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4, // Reduced from 8
+    marginBottom: 4,
     overflow: 'hidden',
   },
   actionIconDisabled: {
@@ -295,13 +338,13 @@ const styles = StyleSheet.create({
 
   recentHistorySection: {
     paddingHorizontal: 16,
-    paddingVertical: 12, // Reduced from 20
+    paddingVertical: 12,
   },
   recentHistoryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12, // Reduced from 20
+    marginBottom: 12,
   },
   recentHistoryTitle: {
     color: Colors.text.primary,
@@ -318,7 +361,7 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 24, // Reduced from 40
+    paddingVertical: 24,
   },
   emptyIllustration: {
     width: 169,

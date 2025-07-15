@@ -11,6 +11,7 @@ import {
   RefreshControl,
   ActivityIndicator
 } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
@@ -24,6 +25,7 @@ import swapIcon from '../../components/icons/swap-icon.png';
 import emptyStateIcon from '../../components/icons/empty-state.png';
 
 const MaticWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
+  const router = useRouter();
   const {
     maticBalance,
     maticBalanceUSD,
@@ -43,6 +45,10 @@ const MaticWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
       console.error('❌ Error refreshing MATIC wallet:', err);
     }
   }, [refreshBalances]);
+
+  const handleGoBack = () => {
+    router.back();
+  };
 
   const quickActions = [
     { id: 'deposit', title: 'Deposit', iconSrc: depositIcon },
@@ -85,11 +91,26 @@ const MaticWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
         >
           {/* Header */}
           <View style={styles.headerSection}>
-            <View style={styles.headerGroup}>
-              <View style={styles.maticIcon}>
-                <Image source={maticIcon} style={styles.maticIconImage} />
+            <View style={styles.headerContainer}>
+              {/* Back Button */}
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={handleGoBack}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
+
+              {/* Title Group */}
+              <View style={styles.headerGroup}>
+                <View style={styles.maticIcon}>
+                  <Image source={maticIcon} style={styles.maticIconImage} />
+                </View>
+                <Text style={styles.headerTitle}>Matic</Text>
               </View>
-              <Text style={styles.headerTitle}>Matic</Text>
+
+              {/* Placeholder for balance */}
+              <View style={styles.headerRight} />
             </View>
           </View>
 
@@ -180,11 +201,33 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 6,
   },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  backButtonText: {
+    fontSize: 20,
+    color: Colors.text.primary,
+    fontWeight: '500',
+  },
   headerGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+    flex: 1,
+  },
+  headerRight: {
+    width: 40,
+    height: 40,
   },
   maticIcon: {
     width: 28,

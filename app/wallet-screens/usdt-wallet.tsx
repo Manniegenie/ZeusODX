@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   ImageSourcePropType,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
@@ -40,6 +41,7 @@ const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({
   onQuickActionPress,
   onSeeMorePress,
 }) => {
+  const router = useRouter();
   const {
     usdtBalance,
     usdtBalanceUSD,
@@ -59,6 +61,10 @@ const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({
       console.error('❌ Refresh failed:', err);
     }
   }, [refreshBalances]);
+
+  const handleGoBack = () => {
+    router.back();
+  };
 
   const quickActions: QuickAction[] = [
     { id: 'deposit', title: 'Deposit', iconSrc: depositIcon },
@@ -101,11 +107,26 @@ const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({
         >
           {/* Header */}
           <View style={styles.headerSection}>
-            <View style={styles.headerGroup}>
-              <View style={styles.usdtIcon}>
-                <Image source={usdtIcon} style={styles.usdtIconImage} />
+            <View style={styles.headerContainer}>
+              {/* Back Button */}
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={handleGoBack}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
+
+              {/* Title Group */}
+              <View style={styles.headerGroup}>
+                <View style={styles.usdtIcon}>
+                  <Image source={usdtIcon} style={styles.usdtIconImage} />
+                </View>
+                <Text style={styles.headerTitle}>USD Tether</Text>
               </View>
-              <Text style={styles.headerTitle}>USD Tether</Text>
+
+              {/* Placeholder for balance */}
+              <View style={styles.headerRight} />
             </View>
           </View>
 
@@ -190,11 +211,33 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 10,
   },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  backButtonText: {
+    fontSize: 20,
+    color: Colors.text.primary,
+    fontWeight: '500',
+  },
   headerGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+    flex: 1,
+  },
+  headerRight: {
+    width: 40,
+    height: 40,
   },
   usdtIcon: {
     width: 28,

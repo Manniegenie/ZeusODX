@@ -11,6 +11,7 @@ import {
   RefreshControl,
   ActivityIndicator
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
@@ -23,6 +24,7 @@ import swapIcon from '../../components/icons/swap-icon.png';
 import emptyStateIcon from '../../components/icons/empty-state.png';
 
 const SolanaWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
+  const router = useRouter();
   const {
     solBalance,
     solBalanceUSD,
@@ -42,6 +44,10 @@ const SolanaWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
       console.error('❌ Refresh failed:', err);
     }
   }, [refreshBalances]);
+
+  const handleGoBack = () => {
+    router.back();
+  };
 
   const quickActions = [
     { id: 'deposit', title: 'Deposit', iconSrc: depositIcon },
@@ -70,10 +76,26 @@ const SolanaWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
             />
           }
         >
+          {/* Header Section */}
           <View style={styles.headerSection}>
-            <View style={styles.headerGroup}>
-              <Image source={solIcon} style={styles.iconImage} />
-              <Text style={styles.headerTitle}>Solana</Text>
+            <View style={styles.headerContainer}>
+              {/* Back Button */}
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={handleGoBack}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
+
+              {/* Title Group */}
+              <View style={styles.headerGroup}>
+                <Image source={solIcon} style={styles.iconImage} />
+                <Text style={styles.headerTitle}>Solana</Text>
+              </View>
+
+              {/* Placeholder for balance */}
+              <View style={styles.headerRight} />
             </View>
           </View>
 
@@ -148,7 +170,34 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
 
   headerSection: { padding: 16, paddingTop: 20 },
-  headerGroup: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  backButtonText: {
+    fontSize: 20,
+    color: Colors.text.primary,
+    fontWeight: '500',
+  },
+  headerGroup: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: 12,
+    flex: 1,
+  },
+  headerRight: {
+    width: 40,
+    height: 40,
+  },
   iconImage: { width: 28, height: 28, borderRadius: 14 },
   headerTitle: { fontSize: 16, fontWeight: '600', color: Colors.text.primary, fontFamily: Typography.medium },
 
