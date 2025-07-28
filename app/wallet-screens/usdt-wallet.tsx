@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,8 @@ import {
 import { useRouter } from 'expo-router';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
+import DashboardModals from '../user/DashboardModals';
+import NetworkSelectionModal from '../../components/Network';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useBalance } from '../../hooks/useWallet';
@@ -42,6 +44,10 @@ const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({
   onSeeMorePress,
 }) => {
   const router = useRouter();
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  
   const {
     usdtBalance,
     usdtBalanceUSD,
@@ -51,6 +57,18 @@ const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({
     error,
     refreshBalances,
   } = useBalance();
+
+  // USDT networks - BSC and Ethereum
+  const usdtNetworks = [
+    {
+      id: 'bsc',
+      name: 'BSC (Binance Smart Chain)',
+    },
+    {
+      id: 'ethereum',
+      name: 'Ethereum Network',
+    }
+  ];
 
   const onRefresh = useCallback(async () => {
     try {
@@ -73,13 +91,67 @@ const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({
   ];
 
   const handleQuickAction = (actionId: string) => {
-    console.log(`USDT quick action pressed: ${actionId}`);
-    onQuickActionPress?.(actionId);
+    if (actionId === 'transfer') {
+      setShowTransferModal(true);
+    } else if (actionId === 'deposit') {
+      // Show network selection modal for USDT deposit
+      setShowNetworkModal(true);
+    } else if (actionId === 'buy-sell') {
+      // Navigate to buy/sell screen
+      router.push('../user/Swap');
+    } else {
+      onQuickActionPress?.(actionId);
+    }
   };
 
   const handleSeeMore = () => {
     console.log('USDT see more pressed');
     onSeeMorePress?.();
+  };
+
+  // Modal handlers
+  const handleCloseTransferModal = () => {
+    setShowTransferModal(false);
+  };
+
+  const handleCloseWalletModal = () => {
+    setShowWalletModal(false);
+  };
+
+  const handleCloseNetworkModal = () => {
+    setShowNetworkModal(false);
+  };
+
+  const handleTransferMethodPress = (method) => {
+    setShowTransferModal(false);
+    // Handle the selected transfer method
+    if (method.id === 'zeus') {
+      // Navigate to Zeus username transfer screen for USDT
+      router.push('/transfer/zeus?token=usdt');
+    } else if (method.id === 'external') {
+      // Show wallet selection modal
+      setShowWalletModal(true);
+    }
+  };
+
+  const handleWalletOptionPress = (wallet) => {
+    setShowWalletModal(false);
+    // Handle the selected wallet for USDT transfers
+    router.push(`/transfer/external?wallet=${wallet.id}&token=usdt`);
+  };
+
+  const handleActionButtonPress = (action) => {
+    console.log('USDT Action button pressed:', action);
+  };
+
+  const handleNetworkSelect = (network) => {
+    // Route to the specific deposit screen based on network
+    if (network.id === 'bsc') {
+      router.push('../deposits/usdt-bsc');
+    } else if (network.id === 'ethereum') {
+      router.push('../deposits/usdt-eth');
+    }
+    setShowNetworkModal(false);
   };
 
   const displayBalance = formattedUsdtBalance || '0.00';
@@ -134,12 +206,12 @@ const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({
           <View style={styles.balanceSection}>
             <View style={styles.balanceCard}>
               {loading && !usdtBalance ? (
-                <View style={styles.loadingContainer}>
+                <View style={styles.centered}>
                   <ActivityIndicator size="small" color={Colors.primary} />
                   <Text style={styles.loadingText}>Loading balance...</Text>
                 </View>
               ) : error ? (
-                <View style={styles.errorContainer}>
+                <View style={styles.centered}>
                   <Text style={styles.errorText}>Unable to load balance</Text>
                   <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
                     <Text style={styles.retryText}>Retry</Text>
@@ -163,13 +235,13 @@ const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({
                   key={action.id}
                   style={styles.actionItem}
                   onPress={() => handleQuickAction(action.id)}
-                  activeOpacity={0.8}
                   disabled={loading}
+                  activeOpacity={0.8}
                 >
-                  <View style={[styles.actionIcon, loading && styles.actionIconDisabled]}>
+                  <View style={[styles.actionIcon, loading && { opacity: 0.5 }]}>
                     <Image source={action.iconSrc} style={styles.actionIconImage} />
                   </View>
-                  <Text style={[styles.actionLabel, loading && styles.actionLabelDisabled]}>
+                  <Text style={[styles.actionLabel, loading && { opacity: 0.5 }]}>
                     {action.title}
                   </Text>
                 </TouchableOpacity>
@@ -197,6 +269,25 @@ const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({
       </SafeAreaView>
 
       <BottomTabNavigator activeTab="wallet" />
+
+      {/* Transfer Modal */}
+      <DashboardModals
+        showTransferModal={showTransferModal}
+        showWalletModal={showWalletModal}
+        onCloseTransferModal={handleCloseTransferModal}
+        onCloseWalletModal={handleCloseWalletModal}
+        onTransferMethodPress={handleTransferMethodPress}
+        onWalletOptionPress={handleWalletOptionPress}
+        onActionButtonPress={handleActionButtonPress}
+      />
+
+      {/* Network Selection Modal */}
+      <NetworkSelectionModal
+        visible={showNetworkModal}
+        onClose={handleCloseNetworkModal}
+        onNetworkSelect={handleNetworkSelect}
+        availableNetworks={usdtNetworks}
+      />
     </View>
   );
 };
@@ -206,10 +297,11 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
 
-  headerSection: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 10,
+  // HEADER
+  headerSection: { 
+    paddingHorizontal: 16, 
+    paddingTop: 12, 
+    paddingBottom: 6 
   },
   headerContainer: {
     flexDirection: 'row',
@@ -239,17 +331,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  usdtIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  usdtIconImage: {
-    width: 28,
-    height: 28,
-    resizeMode: 'cover',
-  },
+  usdtIcon: { width: 28, height: 28, borderRadius: 14, overflow: 'hidden' },
+  usdtIconImage: { width: 28, height: 28, resizeMode: 'cover' },
   headerTitle: {
     color: Colors.text.primary,
     fontFamily: Typography.medium,
@@ -258,12 +341,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  balanceSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+  // BALANCE
+  balanceSection: { 
+    paddingHorizontal: 16, 
+    paddingVertical: 12 
   },
   balanceCard: {
-    height: 151,
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
     borderBottomWidth: 1,
@@ -287,19 +371,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  // STATES
+  centered: { alignItems: 'center', justifyContent: 'center' },
   loadingText: {
     color: Colors.text.secondary,
     fontFamily: Typography.regular,
     fontSize: 14,
     marginTop: 8,
-  },
-  errorContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   errorText: {
     color: Colors.text.secondary,
@@ -319,34 +397,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  quickActionsSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+  // QUICK ACTIONS
+  quickActionsSection: { 
+    paddingHorizontal: 16, 
+    paddingVertical: 12 
   },
   quickActionsTitle: {
     color: Colors.text.primary,
     fontFamily: Typography.medium,
     fontSize: 13.8,
     fontWeight: '600',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   quickActionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 4,
   },
-  actionItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
+  actionItem: { alignItems: 'center', flex: 1 },
   actionIcon: {
     width: 44,
     height: 44,
     borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -354,14 +430,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     overflow: 'hidden',
   },
-  actionIconDisabled: {
-    opacity: 0.5,
-  },
-  actionIconImage: {
-    width: 44,
-    height: 44,
-    resizeMode: 'cover',
-  },
+  actionIconImage: { width: 44, height: 44, resizeMode: 'cover' },
   actionLabel: {
     color: '#292d32',
     fontFamily: Typography.regular,
@@ -369,20 +438,17 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     textAlign: 'center',
   },
-  actionLabelDisabled: {
-    opacity: 0.5,
-  },
 
-  recentHistorySection: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    flex: 1,
+  // RECENT HISTORY
+  recentHistorySection: { 
+    paddingHorizontal: 16, 
+    paddingVertical: 12 
   },
   recentHistoryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   recentHistoryTitle: {
     color: Colors.text.primary,
@@ -396,24 +462,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '400',
   },
-
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  emptyIllustration: {
-    width: 169,
-    height: 156,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  emptyStateImage: {
-    width: 160,
-    height: 156,
-    resizeMode: 'contain',
-  },
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 24 },
+  emptyStateImage: { width: 160, height: 156, resizeMode: 'contain', marginBottom: 16 },
   emptyText: {
     color: Colors.text.secondary,
     fontFamily: Typography.regular,

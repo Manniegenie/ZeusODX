@@ -1,5 +1,5 @@
 // app/_layout.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Stack } from 'expo-router';
 import {
   useFonts,
@@ -14,8 +14,10 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthProvider, AuthContext } from '../hooks/useAuth';
+import ProfessionalSplashScreen from '../components/ProfessionalSplashScreen';
 
-SplashScreen.preventAutoHideAsync();
+// Hide native splash immediately when module loads
+SplashScreen.hideAsync();
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const auth = useAuthProvider();
@@ -23,7 +25,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  // ——— Load fonts ———
+  // ——— Load fonts (starts immediately) ———
   const [loaded, error] = useFonts({
     BricolageGrotesque_200ExtraLight,
     BricolageGrotesque_300Light,
@@ -34,24 +36,61 @@ export default function RootLayout() {
     BricolageGrotesque_800ExtraBold,
   });
 
-  // ——— Hide splash screen when fonts are loaded or error occurs ———
+  // ——— Loading states ———
+  const [isAppReady, setIsAppReady] = useState(false);
+  const [isSplashAnimationComplete, setIsSplashAnimationComplete] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
+  // ——— Initialize auth and other resources ———
   useEffect(() => {
-    if (loaded || error) {
-      SplashScreen.hideAsync();
+    async function prepareApp() {
+      try {
+        // Your initialization tasks
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsAuthReady(true);
+      } catch (e) {
+        console.warn('Error during app preparation:', e);
+        setIsAuthReady(true);
+      }
     }
-  }, [loaded, error]);
 
-  // ——— Return null until fonts are loaded ———
-  if (!loaded && !error) return null;
+    prepareApp();
+  }, []);
 
+  // ——— Check if everything is ready ———
+  useEffect(() => {
+    const fontsReady = loaded || error;
+    
+    if (fontsReady && isAuthReady) {
+      setIsAppReady(true);
+    }
+  }, [loaded, error, isAuthReady]);
+
+  // ——— Handle splash animation completion ———
+  const handleSplashAnimationComplete = useCallback(() => {
+    setIsSplashAnimationComplete(true);
+  }, []);
+
+  // ——— Determine when to show main app ———
+  const shouldShowMainApp = isAppReady && isSplashAnimationComplete;
+
+  // ——— Show custom splash or main app ———
+  if (!shouldShowMainApp) {
+    return (
+      <ProfessionalSplashScreen 
+        onAnimationComplete={handleSplashAnimationComplete}
+      />
+    );
+  }
+
+  // ——— Main app after everything is ready ———
   return (
     <SafeAreaProvider>
       <SafeAreaView
-        edges={['top']} // Only handle top safe area globally
+        edges={['top']}
         style={{
           flex: 1,
           backgroundColor: '#F4F2FF',
-          // Removed bottom padding - let components handle their own bottom safe areas
         }}
       >
         <AuthProvider>

@@ -16,27 +16,30 @@
       "package": "com.manniegenie.zeusodx",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/app-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#35297F"
       },
       "edgeToEdgeEnabled": true
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/app-icon.png"
+    },
+    "splash": {
+      "image": "./assets/images/splashscreen_logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#35297F"
     },
     "plugins": [
       "expo-router",
+      "expo-font",
+      "expo-secure-store",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "preventAutoHideAsync": true
         }
-      ],
-      "expo-font"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -44,8 +47,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "8ae3d227-9195-4513-941f-8f3cbf822d60"
+        "projectId": "53868df3-1f0b-40e0-9c85-903a42b22c92"
       }
-    }
+    },
+    "owner": "manuelwurld"
   }
 }

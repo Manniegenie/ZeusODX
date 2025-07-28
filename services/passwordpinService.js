@@ -15,33 +15,55 @@ export const passwordPinService = {
       if (response.success && response.data) {
         console.log('✅ Password PIN set successfully, account created');
         
-        // Store authentication tokens - CRITICAL for other services to work
+        // Collect all storage promises to ensure they complete before proceeding
+        const storagePromises = [];
+        
+        // Store authentication tokens using apiClient - CRITICAL for other services to work
         if (response.data.accessToken) {
-          console.log('🔑 Storing access token in AsyncStorage');
-          await AsyncStorage.setItem('auth_token', response.data.accessToken); // ✅ Changed to match apiClient
+          console.log('🔑 Storing access token in SecureStore via apiClient');
+          storagePromises.push(apiClient.setAuthToken(response.data.accessToken));
         } else {
           console.log('⚠️ No access token received - API calls may fail');
         }
         
-        // Store refresh token
+        // Store refresh token using authService (stores in SecureStore)
         if (response.data.refreshToken) {
-          console.log('🔄 Storing refresh token');
-          await AsyncStorage.setItem('refresh_token', response.data.refreshToken);
+          console.log('🔄 Storing refresh token in SecureStore via authService');
+          const authServicePromise = import('./authService').then(({ authService }) => 
+            authService.setRefreshToken(response.data.refreshToken)
+          );
+          storagePromises.push(authServicePromise);
         }
         
         // Store user data
         if (response.data.user) {
           console.log('👤 Storing user data');
-          await AsyncStorage.setItem('user_data', JSON.stringify(response.data.user));
+          storagePromises.push(
+            AsyncStorage.setItem('user_data', JSON.stringify(response.data.user))
+          );
           
           // Also save username separately for easy access
           if (response.data.user.username) {
-            await AsyncStorage.setItem('saved_username', response.data.user.username);
-            console.log('👤 Username saved separately:', response.data.user.username);
+            storagePromises.push(
+              AsyncStorage.setItem('saved_username', response.data.user.username)
+            );
+            console.log('👤 Username will be saved separately:', response.data.user.username);
           }
         }
         
+        // ✅ CRITICAL: Wait for ALL storage operations to complete before proceeding
+        console.log('⏳ Waiting for all storage operations to complete...');
+        await Promise.all(storagePromises);
         console.log('✅ All authentication data stored - other services can now make authorized requests');
+        
+        // Verify token is accessible before clearing pending data
+        console.log('🔍 Verifying token accessibility...');
+        const verificationToken = await apiClient.getAuthToken();
+        if (verificationToken) {
+          console.log('✅ Token verified and accessible');
+        } else {
+          console.log('⚠️ Warning: Token not immediately accessible after storage');
+        }
         
         // Clear pending user data after successful account creation
         await this.clearPendingUserData();
@@ -278,8 +300,11 @@ export const passwordPinService = {
   async getStoredTokens() {
     console.log('📱 Getting stored authentication tokens');
     try {
-      const accessToken = await AsyncStorage.getItem('auth_token'); // ✅ Changed to match apiClient
-      const refreshToken = await AsyncStorage.getItem('refresh_token');
+      // ✅ FIXED: Use apiClient to get token from SecureStore
+      const accessToken = await apiClient.getAuthToken();
+      // ✅ FIXED: Use authService to get refresh token from SecureStore
+      const { authService } = await import('./authService');
+      const refreshToken = await authService.getRefreshToken();
       const username = await AsyncStorage.getItem('saved_username');
       
       return {

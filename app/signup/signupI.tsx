@@ -15,10 +15,7 @@ export default function SignupScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [countryCode, setCountryCode] = useState('+234');
-  const [selectedFlag, setSelectedFlag] = useState('🇳🇬');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [showCountryCodeDropdown, setShowCountryCodeDropdown] = useState(false);
   const [error, setError] = useState<{
     show: boolean;
     type: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general';
@@ -31,19 +28,9 @@ export default function SignupScreen() {
     title: ''
   });
 
-  const countryCodeOptions = [
-    { code: '+234', country: '🇳🇬', name: 'Nigeria' },
-    { code: '+27', country: '🇿🇦', name: 'South Africa' },
-    { code: '+233', country: '🇬🇭', name: 'Ghana' },
-    { code: '+254', country: '🇰🇪', name: 'Kenya' },
-    { code: '+20', country: '🇪🇬', name: 'Egypt' },
-    { code: '+212', country: '🇲🇦', name: 'Morocco' },
-    { code: '+216', country: '🇹🇳', name: 'Tunisia' },
-    { code: '+213', country: '🇩🇿', name: 'Algeria' },
-    { code: '+251', country: '🇪🇹', name: 'Ethiopia' },
-    { code: '+256', country: '🇺🇬', name: 'Uganda' },
-    { code: '+255', country: '🇹🇿', name: 'Tanzania' },
-  ];
+  // Fixed to Nigeria only
+  const countryCode = '+234';
+  const countryFlag = '🇳🇬';
 
   // Check if all required fields are filled
   const isFormValid = 
@@ -135,16 +122,6 @@ export default function SignupScreen() {
     router.push('/login/login-phone');
   };
 
-  const selectCountryCode = (option: { code: string; country: string; name: string }) => {
-    setCountryCode(option.code);
-    setSelectedFlag(option.country);
-    setShowCountryCodeDropdown(false);
-  };
-
-  const closeDropdown = () => {
-    setShowCountryCodeDropdown(false);
-  };
-
   const handleDismissError = () => {
     setError({ show: false, type: 'general', message: '', title: '' });
   };
@@ -176,7 +153,7 @@ export default function SignupScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <Pressable style={styles.content} onPress={closeDropdown}>
+          <View style={styles.content}>
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Complete Your Sign-Up</Text>
@@ -231,34 +208,9 @@ export default function SignupScreen() {
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Phone number</Text>
                 <View style={styles.phoneContainer}>
-                  <View style={styles.countryCodeContainer}>
-                    <TouchableOpacity 
-                      style={styles.countryCodeButton}
-                      onPress={() => !isLoading && setShowCountryCodeDropdown(!showCountryCodeDropdown)}
-                      disabled={isLoading}
-                    >
-                      <Text style={styles.flagText}>{selectedFlag}</Text>
-                      <Text style={styles.countryCodeText}>{countryCode}</Text>
-                      <Text style={styles.countryCodeArrow}>▼</Text>
-                    </TouchableOpacity>
-                    
-                    {showCountryCodeDropdown && !isLoading && (
-                      <View style={styles.countryCodeDropdown}>
-                        <ScrollView style={styles.dropdownScrollView} nestedScrollEnabled={true}>
-                          {countryCodeOptions.map((option, index) => (
-                            <TouchableOpacity
-                              key={`${option.code}-${index}`}
-                              style={[styles.dropdownOption, index === countryCodeOptions.length - 1 && styles.lastDropdownOption]}
-                              onPress={() => selectCountryCode(option)}
-                              activeOpacity={0.7}
-                            >
-                              <Text style={styles.flagEmoji}>{option.country}</Text>
-                              <Text style={styles.dropdownOptionText}>{option.name} ({option.code})</Text>
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
-                      </View>
-                    )}
+                  <View style={styles.countryCodeDisplay}>
+                    <Text style={styles.flagText}>{countryFlag}</Text>
+                    <Text style={styles.countryCodeText}>{countryCode}</Text>
                   </View>
                   
                   <TextInput
@@ -269,7 +221,6 @@ export default function SignupScreen() {
                     onChangeText={handleInputChange(setPhoneNumber)}
                     keyboardType="phone-pad"
                     autoCorrect={false}
-                    onFocus={closeDropdown}
                     editable={!isLoading}
                   />
                 </View>
@@ -310,7 +261,7 @@ export default function SignupScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-          </Pressable>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -354,7 +305,6 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     gap: Layout.spacing.xs,
-    position: 'relative',
   },
   label: {
     ...Typography.styles.bodyMedium,
@@ -374,13 +324,9 @@ const styles = StyleSheet.create({
   phoneContainer: {
     flexDirection: 'row',
     gap: Layout.spacing.sm,
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
-  countryCodeContainer: {
-    position: 'relative',
-    zIndex: 1000,
-  },
-  countryCodeButton: {
+  countryCodeDisplay: {
     backgroundColor: Colors.surface,
     borderRadius: Layout.borderRadius.md,
     paddingHorizontal: Layout.spacing.sm,
@@ -400,10 +346,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.text.primary,
   },
-  countryCodeArrow: {
-    fontSize: 10,
-    color: Colors.text.secondary,
-  },
   phoneInput: {
     flex: 1,
     backgroundColor: Colors.surface,
@@ -415,49 +357,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.regular,
     fontSize: 16,
     color: Colors.text.primary,
-  },
-  countryCodeDropdown: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: Colors.surface,
-    borderRadius: Layout.borderRadius.md,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    zIndex: 2000,
-    maxHeight: 180,
-    width: 200,
-  },
-  dropdownScrollView: {
-    maxHeight: 180,
-  },
-  dropdownOption: {
-    paddingHorizontal: Layout.spacing.md,
-    paddingVertical: Layout.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 44,
-  },
-  lastDropdownOption: {
-    borderBottomWidth: 0,
-  },
-  dropdownOptionText: {
-    fontFamily: Typography.regular,
-    fontSize: 16,
-    color: Colors.text.primary,
-    flex: 1,
-  },
-  flagEmoji: {
-    fontSize: 16,
-    marginRight: Layout.spacing.xs,
   },
   buttonContainer: {
     paddingBottom: Layout.spacing.xl,
@@ -487,7 +386,7 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
   },
   loginContainer: {
-    alignItems: 'flex-end',
+    alignItems: 'center', // Changed from 'flex-end' to 'center'
     marginTop: Layout.spacing.md,
   },
   loginText: {

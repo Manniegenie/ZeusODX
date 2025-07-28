@@ -229,15 +229,44 @@ export default function LoginPinScreen() {
     inputRefs[0].current?.focus();
   };
 
-  // Format phone number for display (optional)
+  // Format phone number for display with masking
   const formatPhoneForDisplay = (phone: string) => {
     if (!phone) return '';
-    // Simple formatting for display - adjust based on your phone format
+    
+    // Remove all non-digit characters
     const cleaned = phone.replace(/\D/g, '');
-    if (cleaned.length === 10) {
-      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    
+    // Handle Nigerian numbers (starting with 234 or local format)
+    let formattedNumber = '';
+    
+    if (cleaned.startsWith('234')) {
+      // International format: 234XXXXXXXXXX
+      if (cleaned.length >= 13) {
+        const countryCode = '+234';
+        const firstTwo = cleaned.slice(3, 5); // First 2 digits after country code
+        const lastTwo = cleaned.slice(-2); // Last 2 digits
+        formattedNumber = `${countryCode}${firstTwo}******${lastTwo}`;
+      } else {
+        // Not enough digits, return as-is with + prefix
+        formattedNumber = `+${cleaned}`;
+      }
+    } else if (cleaned.startsWith('0') && cleaned.length >= 11) {
+      // Local Nigerian format: 0XXXXXXXXXX
+      const withoutLeadingZero = cleaned.slice(1);
+      const firstTwo = withoutLeadingZero.slice(0, 2);
+      const lastTwo = withoutLeadingZero.slice(-2);
+      formattedNumber = `+234${firstTwo}******${lastTwo}`;
+    } else if (cleaned.length >= 10) {
+      // Assume it's a Nigerian number without country code
+      const firstTwo = cleaned.slice(0, 2);
+      const lastTwo = cleaned.slice(-2);
+      formattedNumber = `+234${firstTwo}******${lastTwo}`;
+    } else {
+      // Not enough digits, return as-is
+      formattedNumber = phone;
     }
-    return phone; // Return as-is if not standard format
+    
+    return formattedNumber;
   };
 
   return (

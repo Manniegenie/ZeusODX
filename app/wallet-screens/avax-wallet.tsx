@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -12,37 +12,49 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
+
 import BottomTabNavigator from '../../components/BottomNavigator';
+import DashboardModals from '../user/DashboardModals';
+import NetworkSelectionModal from '../../components/Network';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useBalance } from '../../hooks/useWallet';
 
 import avaxIcon from '../../components/icons/avax-icon.png';
+import depositIcon from '../../components/icons/deposit-icon.png';
 import transferIcon from '../../components/icons/transfer-icon.png';
 import swapIcon from '../../components/icons/swap-icon.png';
-import depositIcon from '../../components/icons/deposit-icon.png';
 import emptyStateIcon from '../../components/icons/empty-state.png';
 
 const AvaxWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const router = useRouter();
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  
   const {
     avaxBalance,
     avaxBalanceUSD,
+    formattedAvaxBalance,
+    formattedAvaxBalanceUSD,
     loading,
     error,
     refreshBalances
   } = useBalance();
 
   const onRefresh = useCallback(async () => {
-    await refreshBalances();
+    try {
+      console.log('🔄 Refreshing AVAX wallet data...');
+      await refreshBalances();
+      console.log('✅ AVAX wallet refresh completed');
+    } catch (err) {
+      console.error('❌ Error refreshing AVAX wallet:', err);
+    }
   }, [refreshBalances]);
 
   const handleGoBack = () => {
     router.back();
   };
-
-  const displayAvax = avaxBalance?.toFixed(8) || '0.00000000';
-  const displayUSD = avaxBalanceUSD?.toFixed(2) || '0.00';
 
   const quickActions = [
     { id: 'deposit', title: 'Deposit', iconSrc: depositIcon },
@@ -50,14 +62,83 @@ const AvaxWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 
-  const handleQuickAction = (actionId) => onQuickActionPress?.(actionId);
-  const handleSeeMore = () => onSeeMorePress?.();
+  const displayAVAX = formattedAvaxBalance || '0.00000000';
+  const displayUSD = formattedAvaxBalanceUSD || '$0.00';
+
+  // AVAX networks - only BSC for this wallet
+  const avaxNetworks = [
+    {
+      id: 'bsc',
+      name: 'BSC (Binance Smart Chain)',
+    }
+  ];
+
+  const handleQuickAction = (actionId) => {
+    if (actionId === 'transfer') {
+      setShowTransferModal(true);
+    } else if (actionId === 'deposit') {
+      // Show network selection modal for AVAX deposit
+      setShowNetworkModal(true);
+    } else if (actionId === 'buy-sell') {
+      // Navigate to buy/sell screen
+      router.push('../user/Swap');
+    } else {
+      onQuickActionPress?.(actionId);
+    }
+  };
+
+  const handleSeeMore = () => {
+    console.log('AVAX See more pressed');
+    onSeeMorePress?.();
+  };
+
+  // Modal handlers
+  const handleCloseTransferModal = () => {
+    setShowTransferModal(false);
+  };
+
+  const handleCloseWalletModal = () => {
+    setShowWalletModal(false);
+  };
+
+  const handleCloseNetworkModal = () => {
+    setShowNetworkModal(false);
+  };
+
+  const handleTransferMethodPress = (method) => {
+    setShowTransferModal(false);
+    // Handle the selected transfer method
+    if (method.id === 'zeus') {
+      // Navigate to Zeus username transfer screen for AVAX
+      router.push('/transfer/zeus?token=avax');
+    } else if (method.id === 'external') {
+      // Show wallet selection modal
+      setShowWalletModal(true);
+    }
+  };
+
+  const handleWalletOptionPress = (wallet) => {
+    setShowWalletModal(false);
+    // Handle the selected wallet for AVAX transfers
+    router.push(`/transfer/external?wallet=${wallet.id}&token=avax`);
+  };
+
+  const handleActionButtonPress = (action) => {
+    console.log('AVAX Action button pressed:', action);
+  };
+
+  const handleNetworkSelect = (network) => {
+    // Route to the specific deposit screen based on network
+    if (network.id === 'bsc') {
+      router.push('../deposits/avax-bsc');
+    }
+    setShowNetworkModal(false);
+  };
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
-
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -73,7 +154,7 @@ const AvaxWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
             />
           }
         >
-          {/* Header Section */}
+          {/* Header */}
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
               {/* Back Button */}
@@ -87,8 +168,8 @@ const AvaxWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
               {/* Title Group */}
               <View style={styles.headerGroup}>
-                <View style={styles.tokenIcon}>
-                  <Image source={avaxIcon} style={styles.iconImage} />
+                <View style={styles.avaxIcon}>
+                  <Image source={avaxIcon} style={styles.avaxIconImage} />
                 </View>
                 <Text style={styles.headerTitle}>Avalanche</Text>
               </View>
@@ -98,16 +179,16 @@ const AvaxWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
             </View>
           </View>
 
-          {/* Balance Section */}
+          {/* Balance */}
           <View style={styles.balanceSection}>
             <View style={styles.balanceCard}>
               {loading && !avaxBalance ? (
-                <View style={styles.loadingContainer}>
+                <View style={styles.centered}>
                   <ActivityIndicator size="small" color={Colors.primary} />
                   <Text style={styles.loadingText}>Loading balance...</Text>
                 </View>
               ) : error ? (
-                <View style={styles.errorContainer}>
+                <View style={styles.centered}>
                   <Text style={styles.errorText}>Unable to load balance</Text>
                   <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
                     <Text style={styles.retryText}>Retry</Text>
@@ -115,8 +196,8 @@ const AvaxWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
                 </View>
               ) : (
                 <>
-                  <Text style={styles.balanceAmount}>AVAX {displayAvax}</Text>
-                  <Text style={styles.balanceUsd}>${displayUSD} USD</Text>
+                  <Text style={styles.balanceAmount}>AVAX {displayAVAX}</Text>
+                  <Text style={styles.balanceUsd}>{displayUSD}</Text>
                 </>
               )}
             </View>
@@ -131,13 +212,13 @@ const AvaxWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
                   key={action.id}
                   style={styles.actionItem}
                   onPress={() => handleQuickAction(action.id)}
-                  activeOpacity={0.8}
                   disabled={loading}
+                  activeOpacity={0.8}
                 >
-                  <View style={[styles.actionIcon, loading && styles.actionIconDisabled]}>
+                  <View style={[styles.actionIcon, loading && { opacity: 0.5 }]}>
                     <Image source={action.iconSrc} style={styles.actionIconImage} />
                   </View>
-                  <Text style={[styles.actionLabel, loading && styles.actionLabelDisabled]}>
+                  <Text style={[styles.actionLabel, loading && { opacity: 0.5 }]}>
                     {action.title}
                   </Text>
                 </TouchableOpacity>
@@ -154,11 +235,8 @@ const AvaxWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
               </TouchableOpacity>
             </View>
 
-            {/* Empty state */}
             <View style={styles.emptyState}>
-              <View style={styles.emptyIllustration}>
-                <Image source={emptyStateIcon} style={styles.emptyStateImage} />
-              </View>
+              <Image source={emptyStateIcon} style={styles.emptyStateImage} />
               <Text style={styles.emptyText}>No transaction yet</Text>
             </View>
           </View>
@@ -166,6 +244,25 @@ const AvaxWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
       </SafeAreaView>
 
       <BottomTabNavigator activeTab="wallet" />
+
+      {/* Transfer Modal */}
+      <DashboardModals
+        showTransferModal={showTransferModal}
+        showWalletModal={showWalletModal}
+        onCloseTransferModal={handleCloseTransferModal}
+        onCloseWalletModal={handleCloseWalletModal}
+        onTransferMethodPress={handleTransferMethodPress}
+        onWalletOptionPress={handleWalletOptionPress}
+        onActionButtonPress={handleActionButtonPress}
+      />
+
+      {/* Network Selection Modal */}
+      <NetworkSelectionModal
+        visible={showNetworkModal}
+        onClose={handleCloseNetworkModal}
+        onNetworkSelect={handleNetworkSelect}
+        availableNetworks={avaxNetworks}
+      />
     </View>
   );
 };
@@ -175,11 +272,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
 
-  headerSection: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 6,
-  },
+  headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -208,17 +301,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
   },
-  tokenIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  iconImage: {
-    width: 28,
-    height: 28,
-    resizeMode: 'cover',
-  },
+  avaxIcon: { width: 28, height: 28, borderRadius: 14, overflow: 'hidden' },
+  avaxIconImage: { width: 28, height: 28, resizeMode: 'cover' },
   headerTitle: {
     color: Colors.text.primary,
     fontFamily: Typography.medium,
@@ -227,10 +311,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  balanceSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
+  balanceSection: { paddingHorizontal: 16, paddingVertical: 12 },
   balanceCard: {
     height: 120,
     justifyContent: 'center',
@@ -256,19 +337,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  centered: { alignItems: 'center', justifyContent: 'center' },
   loadingText: {
     color: Colors.text.secondary,
     fontFamily: Typography.regular,
     fontSize: 14,
     marginTop: 8,
-  },
-  errorContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   errorText: {
     color: Colors.text.secondary,
@@ -288,10 +362,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  quickActionsSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
+  quickActionsSection: { paddingHorizontal: 16, paddingVertical: 12 },
   quickActionsTitle: {
     color: Colors.text.primary,
     fontFamily: Typography.medium,
@@ -305,10 +376,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 4,
   },
-  actionItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
+  actionItem: { alignItems: 'center', flex: 1 },
   actionIcon: {
     width: 44,
     height: 44,
@@ -316,16 +384,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
     overflow: 'hidden',
   },
-  actionIconDisabled: {
-    opacity: 0.5,
-  },
-  actionIconImage: {
-    width: 44,
-    height: 44,
-    resizeMode: 'cover',
-  },
+  actionIconImage: { width: 44, height: 44, resizeMode: 'cover' },
   actionLabel: {
     color: '#292d32',
     fontFamily: Typography.regular,
@@ -333,14 +399,8 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     textAlign: 'center',
   },
-  actionLabelDisabled: {
-    opacity: 0.5,
-  },
 
-  recentHistorySection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
+  recentHistorySection: { paddingHorizontal: 16, paddingVertical: 12 },
   recentHistoryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -359,23 +419,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '400',
   },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 24,
-  },
-  emptyIllustration: {
-    width: 169,
-    height: 156,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  emptyStateImage: {
-    width: 160,
-    height: 156,
-    resizeMode: 'contain',
-  },
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 24 },
+  emptyStateImage: { width: 160, height: 156, resizeMode: 'contain', marginBottom: 16 },
   emptyText: {
     color: Colors.text.secondary,
     fontFamily: Typography.regular,

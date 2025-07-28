@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import {
 import { useRouter } from 'expo-router';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
+import DashboardModals from '../user/DashboardModals';
+import NetworkSelectionModal from '../../components/Network';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useBalance } from '../../hooks/useWallet';
@@ -26,6 +28,10 @@ import emptyStateIcon from '../../components/icons/empty-state.png';
 
 const USDCWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const router = useRouter();
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  
   const {
     usdcBalance,
     usdcBalanceUSD,
@@ -35,6 +41,18 @@ const USDCWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     error,
     refreshBalances
   } = useBalance();
+
+  // USDC networks - BSC and Ethereum
+  const usdcNetworks = [
+    {
+      id: 'bsc',
+      name: 'BSC (Binance Smart Chain)',
+    },
+    {
+      id: 'ethereum',
+      name: 'Ethereum Network',
+    }
+  ];
 
   const onRefresh = useCallback(async () => {
     try {
@@ -60,13 +78,67 @@ const USDCWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const displayUSD = formattedUsdcBalanceUSD || '$0.00';
 
   const handleQuickAction = (actionId) => {
-    console.log(`USDC Quick action pressed: ${actionId}`);
-    onQuickActionPress?.(actionId);
+    if (actionId === 'transfer') {
+      setShowTransferModal(true);
+    } else if (actionId === 'deposit') {
+      // Show network selection modal for USDC deposit
+      setShowNetworkModal(true);
+    } else if (actionId === 'buy-sell') {
+      // Navigate to buy/sell screen
+      router.push('../user/Swap');
+    } else {
+      onQuickActionPress?.(actionId);
+    }
   };
 
   const handleSeeMore = () => {
     console.log('USDC See more pressed');
     onSeeMorePress?.();
+  };
+
+  // Modal handlers
+  const handleCloseTransferModal = () => {
+    setShowTransferModal(false);
+  };
+
+  const handleCloseWalletModal = () => {
+    setShowWalletModal(false);
+  };
+
+  const handleCloseNetworkModal = () => {
+    setShowNetworkModal(false);
+  };
+
+  const handleTransferMethodPress = (method) => {
+    setShowTransferModal(false);
+    // Handle the selected transfer method
+    if (method.id === 'zeus') {
+      // Navigate to Zeus username transfer screen for USDC
+      router.push('/transfer/zeus?token=usdc');
+    } else if (method.id === 'external') {
+      // Show wallet selection modal
+      setShowWalletModal(true);
+    }
+  };
+
+  const handleWalletOptionPress = (wallet) => {
+    setShowWalletModal(false);
+    // Handle the selected wallet for USDC transfers
+    router.push(`/transfer/external?wallet=${wallet.id}&token=usdc`);
+  };
+
+  const handleActionButtonPress = (action) => {
+    console.log('USDC Action button pressed:', action);
+  };
+
+  const handleNetworkSelect = (network) => {
+    // Route to the specific deposit screen based on network
+    if (network.id === 'bsc') {
+      router.push('../deposits/usdc-bsc');
+    } else if (network.id === 'ethereum') {
+      router.push('../deposits/usdc-eth');
+    }
+    setShowNetworkModal(false);
   };
 
   return (
@@ -117,12 +189,12 @@ const USDCWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
           <View style={styles.balanceSection}>
             <View style={styles.balanceCard}>
               {loading && !usdcBalance ? (
-                <View style={styles.loadingContainer}>
+                <View style={styles.centered}>
                   <ActivityIndicator size="small" color={Colors.primary} />
                   <Text style={styles.loadingText}>Loading balance...</Text>
                 </View>
               ) : error ? (
-                <View style={styles.errorContainer}>
+                <View style={styles.centered}>
                   <Text style={styles.errorText}>Unable to load balance</Text>
                   <TouchableOpacity onPress={onRefresh} style={styles.retryButton}>
                     <Text style={styles.retryText}>Retry</Text>
@@ -146,13 +218,13 @@ const USDCWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
                   key={action.id}
                   style={styles.actionItem}
                   onPress={() => handleQuickAction(action.id)}
-                  activeOpacity={0.8}
                   disabled={loading}
+                  activeOpacity={0.8}
                 >
-                  <View style={[styles.actionIcon, loading && styles.actionIconDisabled]}>
+                  <View style={[styles.actionIcon, loading && { opacity: 0.5 }]}>
                     <Image source={action.iconSrc} style={styles.actionIconImage} />
                   </View>
-                  <Text style={[styles.actionLabel, loading && styles.actionLabelDisabled]}>
+                  <Text style={[styles.actionLabel, loading && { opacity: 0.5 }]}>
                     {action.title}
                   </Text>
                 </TouchableOpacity>
@@ -170,9 +242,7 @@ const USDCWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
             </View>
 
             <View style={styles.emptyState}>
-              <View style={styles.emptyIllustration}>
-                <Image source={emptyStateIcon} style={styles.emptyStateImage} />
-              </View>
+              <Image source={emptyStateIcon} style={styles.emptyStateImage} />
               <Text style={styles.emptyText}>No transaction yet</Text>
             </View>
           </View>
@@ -180,6 +250,25 @@ const USDCWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
       </SafeAreaView>
 
       <BottomTabNavigator activeTab="wallet" />
+
+      {/* Transfer Modal */}
+      <DashboardModals
+        showTransferModal={showTransferModal}
+        showWalletModal={showWalletModal}
+        onCloseTransferModal={handleCloseTransferModal}
+        onCloseWalletModal={handleCloseWalletModal}
+        onTransferMethodPress={handleTransferMethodPress}
+        onWalletOptionPress={handleWalletOptionPress}
+        onActionButtonPress={handleActionButtonPress}
+      />
+
+      {/* Network Selection Modal */}
+      <NetworkSelectionModal
+        visible={showNetworkModal}
+        onClose={handleCloseNetworkModal}
+        onNetworkSelect={handleNetworkSelect}
+        availableNetworks={usdcNetworks}
+      />
     </View>
   );
 };
@@ -254,14 +343,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  loadingContainer: { alignItems: 'center', justifyContent: 'center' },
+  centered: { alignItems: 'center', justifyContent: 'center' },
   loadingText: {
     color: Colors.text.secondary,
     fontFamily: Typography.regular,
     fontSize: 14,
     marginTop: 8,
   },
-  errorContainer: { alignItems: 'center', justifyContent: 'center' },
   errorText: {
     color: Colors.text.secondary,
     fontFamily: Typography.regular,
@@ -309,7 +397,6 @@ const styles = StyleSheet.create({
     elevation: 2,
     overflow: 'hidden',
   },
-  actionIconDisabled: { opacity: 0.5 },
   actionIconImage: { width: 44, height: 44, resizeMode: 'cover' },
   actionLabel: {
     color: '#292d32',
@@ -318,7 +405,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     textAlign: 'center',
   },
-  actionLabelDisabled: { opacity: 0.5 },
 
   recentHistorySection: { paddingHorizontal: 16, paddingVertical: 12 },
   recentHistoryHeader: {
@@ -340,14 +426,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 24 },
-  emptyIllustration: {
-    width: 169,
-    height: 156,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  emptyStateImage: { width: 160, height: 156, resizeMode: 'contain' },
+  emptyStateImage: { width: 160, height: 156, resizeMode: 'contain', marginBottom: 16 },
   emptyText: {
     color: Colors.text.secondary,
     fontFamily: Typography.regular,

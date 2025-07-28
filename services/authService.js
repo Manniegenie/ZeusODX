@@ -1,18 +1,14 @@
 import { apiClient } from './apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 export const authService = {
-  // Storage keys (matching simpleAppState)
+  // Storage keys
   PHONE_NUMBER_KEY: 'saved_phone_number',
   USERNAME_KEY: 'saved_username',
+  REFRESH_TOKEN_KEY: 'refresh_token',
 
-  // Helper method to get auth headers
-  async getAuthHeaders() {
-    const token = await AsyncStorage.getItem('auth_token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  },
-
-  // Save phone number to AsyncStorage
+  // Save phone number to AsyncStorage (non-sensitive convenience data)
   async savePhoneNumber(phoneNumber) {
     try {
       await AsyncStorage.setItem(this.PHONE_NUMBER_KEY, phoneNumber);
@@ -35,7 +31,7 @@ export const authService = {
     }
   },
 
-  // Save username to AsyncStorage
+  // Save username to AsyncStorage (non-sensitive convenience data)
   async saveUsername(username) {
     try {
       await AsyncStorage.setItem(this.USERNAME_KEY, username);
@@ -55,6 +51,39 @@ export const authService = {
     } catch (error) {
       console.log('❌ Error getting saved username:', error);
       return null;
+    }
+  },
+
+  // Store refresh token securely
+  async setRefreshToken(refreshToken) {
+    try {
+      await SecureStore.setItemAsync(this.REFRESH_TOKEN_KEY, refreshToken);
+      console.log('✅ Refresh token stored securely');
+    } catch (error) {
+      console.error('❌ Error storing refresh token:', error);
+      throw error;
+    }
+  },
+
+  // Get refresh token securely
+  async getRefreshToken() {
+    try {
+      const refreshToken = await SecureStore.getItemAsync(this.REFRESH_TOKEN_KEY);
+      return refreshToken;
+    } catch (error) {
+      console.error('❌ Error getting refresh token:', error);
+      return null;
+    }
+  },
+
+  // Clear refresh token securely
+  async clearRefreshToken() {
+    try {
+      await SecureStore.deleteItemAsync(this.REFRESH_TOKEN_KEY);
+      console.log('✅ Refresh token cleared from SecureStore');
+    } catch (error) {
+      console.error('❌ Error clearing refresh token:', error);
+      throw error;
     }
   },
 
@@ -95,22 +124,22 @@ export const authService = {
         await this.saveUsername(response.data.user.username);
       }
       
-      // Store access token in AsyncStorage using same key as apiClient
+      // Store access token securely using apiClient
       if (response.data.accessToken) {
-        await AsyncStorage.setItem('auth_token', response.data.accessToken);
+        await apiClient.setAuthToken(response.data.accessToken);
       }
       
-      // Store refresh token
+      // Store refresh token securely
       if (response.data.refreshToken) {
-        await AsyncStorage.setItem('refresh_token', response.data.refreshToken);
+        await this.setRefreshToken(response.data.refreshToken);
       }
       
-      // Store user data
+      // Store user data in AsyncStorage (non-sensitive)
       if (response.data.user) {
         await AsyncStorage.setItem('user_data', JSON.stringify(response.data.user));
       }
       
-      // Store portfolio data
+      // Store portfolio data in AsyncStorage (non-sensitive)
       if (response.data.portfolio) {
         await AsyncStorage.setItem('portfolio_data', JSON.stringify(response.data.portfolio));
       }
@@ -138,8 +167,14 @@ export const authService = {
         await this.saveUsername(response.data.user.username);
       }
       
+      // Store access token securely using apiClient
       if (response.data.accessToken) {
-        await AsyncStorage.setItem('auth_token', response.data.accessToken);
+        await apiClient.setAuthToken(response.data.accessToken);
+      }
+
+      // Store refresh token securely
+      if (response.data.refreshToken) {
+        await this.setRefreshToken(response.data.refreshToken);
       }
     }
     
@@ -148,22 +183,33 @@ export const authService = {
 
   async logout() {
     console.log('🚪 Logging out user');
-    // Clear all stored data using same keys as apiClient
-    await AsyncStorage.multiRemove([
-      'auth_token',
-      'refresh_token', 
-      'user_data', 
-      'portfolio_data'
-      // Note: We keep phone number and username for easier re-login
-    ]);
     
-    return { success: true };
+    try {
+      // Clear auth token securely using apiClient
+      await apiClient.clearAuthToken();
+      
+      // Clear refresh token securely
+      await this.clearRefreshToken();
+      
+      // Clear non-sensitive data from AsyncStorage
+      await AsyncStorage.multiRemove([
+        'user_data', 
+        'portfolio_data'
+        // Note: We keep phone number and username for easier re-login
+      ]);
+      
+      console.log('✅ Logout successful, all sensitive data cleared');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error during logout:', error);
+      return { success: false, error: error.message };
+    }
   },
 
   async refreshToken() {
     console.log('🔄 Refreshing auth token');
     try {
-      const refreshToken = await AsyncStorage.getItem('refresh_token');
+      const refreshToken = await this.getRefreshToken();
       if (!refreshToken) {
         throw new Error('No refresh token found');
       }
@@ -173,7 +219,13 @@ export const authService = {
       });
       
       if (response.success && response.data.accessToken) {
-        await AsyncStorage.setItem('auth_token', response.data.accessToken);
+        // Store new access token securely using apiClient
+        await apiClient.setAuthToken(response.data.accessToken);
+        
+        // Update refresh token if provided
+        if (response.data.refreshToken) {
+          await this.setRefreshToken(response.data.refreshToken);
+        }
       }
       
       return response;
@@ -195,9 +247,8 @@ export const authService = {
         };
       }
       
-      // If not in storage, fetch from API with auth headers
-      const authHeaders = await this.getAuthHeaders();
-      return apiClient.get('/auth/me', authHeaders);
+      // If not in storage, fetch from API (apiClient handles auth headers automatically)
+      return apiClient.get('/auth/me');
     } catch (error) {
       console.log('❌ Get current user failed:', error);
       return { success: false, error: error.message };
@@ -223,14 +274,14 @@ export const authService = {
 
   // Check if user is authenticated
   async isAuthenticated() {
-    const token = await AsyncStorage.getItem('auth_token');
+    const token = await apiClient.getAuthToken();
     return !!token;
   },
 
   // Get stored access token
   async getStoredAccessToken() {
     try {
-      return await AsyncStorage.getItem('auth_token');
+      return await apiClient.getAuthToken();
     } catch (error) {
       console.log('❌ Get stored access token failed:', error);
       return null;

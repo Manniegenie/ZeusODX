@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
+import DashboardModals from '../user/DashboardModals';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useBalance } from '../../hooks/useWallet';
@@ -26,6 +27,9 @@ import emptyStateIcon from '../../components/icons/empty-state.png';
 
 const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const router = useRouter();
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  
   const {
     ngnzBalance,
     ngnzBalanceUSD,
@@ -37,13 +41,7 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   } = useBalance();
 
   const onRefresh = useCallback(async () => {
-    try {
-      console.log('🔄 Refreshing NGNZ wallet...');
-      await refreshBalances();
-      console.log('✅ NGNZ wallet refresh done');
-    } catch (err) {
-      console.error('❌ NGNZ refresh failed:', err);
-    }
+    await refreshBalances();
   }, [refreshBalances]);
 
   const handleGoBack = () => {
@@ -60,13 +58,52 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const displayUSD = formattedNgnzBalanceUSD || '$0.00';
 
   const handleQuickAction = (actionId) => {
-    console.log(`Quick action: ${actionId}`);
-    onQuickActionPress?.(actionId);
+    if (actionId === 'transfer') {
+      setShowTransferModal(true);
+    } else if (actionId === 'deposit') {
+      // Navigate to deposit screen placeholder
+      router.push('/deposit/ngnz');
+    } else if (actionId === 'buy-sell') {
+      // Navigate to buy/sell screen placeholder
+      router.push('../user/Swap');
+    } else {
+      onQuickActionPress?.(actionId);
+    }
   };
 
   const handleSeeMore = () => {
-    console.log('NGNZ: see more pressed');
     onSeeMorePress?.();
+  };
+
+  // Modal handlers
+  const handleCloseTransferModal = () => {
+    setShowTransferModal(false);
+  };
+
+  const handleCloseWalletModal = () => {
+    setShowWalletModal(false);
+  };
+
+  const handleTransferMethodPress = (method) => {
+    setShowTransferModal(false);
+    // Handle the selected transfer method
+    if (method.id === 'zeus') {
+      // Navigate to Zeus username transfer screen
+      router.push('/transfer/zeus');
+    } else if (method.id === 'external') {
+      // Show wallet selection modal
+      setShowWalletModal(true);
+    }
+  };
+
+  const handleWalletOptionPress = (wallet) => {
+    setShowWalletModal(false);
+    // Handle the selected wallet
+    router.push(`/transfer/external?wallet=${wallet.id}`);
+  };
+
+  const handleActionButtonPress = (action) => {
+    console.log('Action button pressed:', action);
   };
 
   return (
@@ -181,6 +218,17 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
       </SafeAreaView>
 
       <BottomTabNavigator activeTab="wallet" />
+
+      {/* Transfer Modal */}
+      <DashboardModals
+        showTransferModal={showTransferModal}
+        showWalletModal={showWalletModal}
+        onCloseTransferModal={handleCloseTransferModal}
+        onCloseWalletModal={handleCloseWalletModal}
+        onTransferMethodPress={handleTransferMethodPress}
+        onWalletOptionPress={handleWalletOptionPress}
+        onActionButtonPress={handleActionButtonPress}
+      />
     </View>
   );
 };

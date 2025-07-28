@@ -11,14 +11,12 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
-// Import your custom icons from components/icons folder
+// Import your custom icons
 const AirtimeIcon = require('../../components/icons/Airtimeicon.png');
 const DataIcon = require('../../components/icons/Airtimeicon.png');
 const ElectricityIcon = require('../../components/icons/electricity.png');
 const BettingIcon = require('../../components/icons/betting.png');
-const P2PIcon = require('../../components/icons/P2P.png');
 const CableTVIcon = require('../../components/icons/cabletv.png');
-const EducationIcon = require('../../components/icons/Education.png');
 const GiftCardIcon = require('../../components/icons/giftcard.png');
 const CloseIcon = require('../../components/icons/close.png');
 
@@ -38,14 +36,14 @@ const UtilitiesScreen: React.FC = () => {
       title: 'Buy Airtime',
       icon: AirtimeIcon,
       color: '#FFFFFF',
-      route: 'BuyAirtime'
+      route: 'Airtime'
     },
     {
       id: 'data',
       title: 'Buy Data',
       icon: DataIcon,
       color: '#FFFFFF',
-      route: 'BuyData'
+      route: 'Data'
     },
     {
       id: 'electricity',
@@ -62,13 +60,6 @@ const UtilitiesScreen: React.FC = () => {
       route: 'Betting'
     },
     {
-      id: 'p2p',
-      title: 'P2P',
-      icon: P2PIcon,
-      color: '#FFFFFF',
-      route: 'P2P'
-    },
-    {
       id: 'cable_tv',
       title: 'Cable TV',
       icon: CableTVIcon,
@@ -76,24 +67,16 @@ const UtilitiesScreen: React.FC = () => {
       route: 'CableTV'
     },
     {
-      id: 'education',
-      title: 'Education',
-      icon: EducationIcon,
-      color: '#FFFFFF',
-      route: 'Education'
-    },
-    {
       id: 'gift_cards',
       title: 'Gift Cards',
       icon: GiftCardIcon,
       color: '#FFFFFF',
-      route: 'GiftCards'
+      route: 'Giftcard'
     }
   ];
 
   const handleServicePress = (service: Service): void => {
-    router.push(service.route);
-    console.log(`Selected service: ${service.title}`);
+    router.push(`user/${service.route}`);
   };
 
   const renderServiceItem = (service: Service, containerStyle: any, textStyle: any, isLast: boolean = false): JSX.Element => (
@@ -146,18 +129,11 @@ const UtilitiesScreen: React.FC = () => {
             {renderServiceItem(services[2], styles.frame257, styles.textWrapper369, true)}
           </View>
 
-          {/* Second Row - Betting, P2P, Cable TV */}
+          {/* Second Row - Betting, Cable TV, Gift Cards */}
           <View style={styles.serviceRow}>
             {renderServiceItem(services[3], styles.frame257, styles.textWrapper368)}
             {renderServiceItem(services[4], styles.frame257, styles.textWrapper369)}
             {renderServiceItem(services[5], styles.frame257, styles.textWrapper369, true)}
-          </View>
-
-          {/* Third Row - Education, Gift Cards */}
-          <View style={styles.serviceRow}>
-            {renderServiceItem(services[6], styles.frame252, styles.textWrapper367)}
-            {renderServiceItem(services[7], styles.frame252, styles.textWrapper367)}
-            <View style={styles.serviceItem} />
           </View>
         </View>
       </LinearGradient>
@@ -203,7 +179,6 @@ const styles = StyleSheet.create({
     tintColor: '#FFFFFF',
   },
   
-  // Services content container
   servicesContent: {
     flex: 1,
     justifyContent: 'flex-start',
@@ -211,8 +186,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     paddingTop: 60,
   },
-  
-  // Service row container
   serviceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -220,20 +193,14 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 70,
   },
-  
-  // Service item container
   serviceItem: {
     alignItems: 'center',
     flexDirection: 'column',
     flex: 1,
   },
-  
-  // Last service item (no right margin)
   lastServiceItem: {
     marginRight: 0,
   },
-  
-  // Icon containers
   frame257: {
     width: 35,
     height: 35,
@@ -243,40 +210,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  frame252: {
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  
-  // Icon image
   iconImage: {
     width: 30,
     height: 30,
     resizeMode: 'contain',
   },
-  
-  // Text styles
   textWrapper368: {
     color: '#FFFFFF',
     fontSize: 12,
@@ -285,13 +228,6 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   textWrapper369: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '400',
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  textWrapper367: {
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '400',

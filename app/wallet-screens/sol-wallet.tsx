@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
+import DashboardModals from '../user/DashboardModals';
+import NetworkSelectionModal from '../../components/Network';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useBalance } from '../../hooks/useWallet';
@@ -25,6 +27,10 @@ import emptyStateIcon from '../../components/icons/empty-state.png';
 
 const SolanaWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const router = useRouter();
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  
   const {
     solBalance,
     solBalanceUSD,
@@ -35,14 +41,16 @@ const SolanaWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     refreshBalances
   } = useBalance();
 
-  const onRefresh = useCallback(async () => {
-    try {
-      console.log('🔄 Refreshing SOL wallet...');
-      await refreshBalances();
-      console.log('✅ Refresh done');
-    } catch (err) {
-      console.error('❌ Refresh failed:', err);
+  // Solana networks - only Solana network
+  const solanaNetworks = [
+    {
+      id: 'solana',
+      name: 'Solana',
     }
+  ];
+
+  const onRefresh = useCallback(async () => {
+    await refreshBalances();
   }, [refreshBalances]);
 
   const handleGoBack = () => {
@@ -57,6 +65,67 @@ const SolanaWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
   const displaySOL = formattedSolBalance || '0.000000';
   const displayUSD = formattedSolBalanceUSD || '$0.00';
+
+  const handleQuickAction = (actionId) => {
+    if (actionId === 'transfer') {
+      setShowTransferModal(true);
+    } else if (actionId === 'deposit') {
+      // Show network selection modal for Solana deposit
+      setShowNetworkModal(true);
+    } else if (actionId === 'buy-sell') {
+      // Navigate to buy/sell screen placeholder
+      router.push('../user/Swap');
+    } else {
+      onQuickActionPress?.(actionId);
+    }
+  };
+
+  const handleSeeMore = () => {
+    onSeeMorePress?.();
+  };
+
+  // Modal handlers
+  const handleCloseTransferModal = () => {
+    setShowTransferModal(false);
+  };
+
+  const handleCloseWalletModal = () => {
+    setShowWalletModal(false);
+  };
+
+  const handleCloseNetworkModal = () => {
+    setShowNetworkModal(false);
+  };
+
+  const handleTransferMethodPress = (method) => {
+    setShowTransferModal(false);
+    // Handle the selected transfer method
+    if (method.id === 'zeus') {
+      // Navigate to Zeus username transfer screen for Solana
+      router.push('/transfer/zeus?token=sol');
+    } else if (method.id === 'external') {
+      // Show wallet selection modal
+      setShowWalletModal(true);
+    }
+  };
+
+  const handleWalletOptionPress = (wallet) => {
+    setShowWalletModal(false);
+    // Handle the selected wallet for Solana transfers
+    router.push(`/transfer/external?wallet=${wallet.id}&token=sol`);
+  };
+
+  const handleActionButtonPress = (action) => {
+    console.log('Solana Action button pressed:', action);
+  };
+
+  const handleNetworkSelect = (network) => {
+    // Route to the Solana deposit screen
+    if (network.id === 'solana') {
+      router.push('../deposits/sol');
+    }
+    setShowNetworkModal(false);
+  };
 
   return (
     <View style={styles.container}>
@@ -129,7 +198,7 @@ const SolanaWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
                 <TouchableOpacity
                   key={action.id}
                   style={styles.actionItem}
-                  onPress={() => onQuickActionPress?.(action.id)}
+                  onPress={() => handleQuickAction(action.id)}
                   disabled={loading}
                   activeOpacity={0.8}
                 >
@@ -147,7 +216,7 @@ const SolanaWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
           <View style={styles.recentHistorySection}>
             <View style={styles.recentHistoryHeader}>
               <Text style={styles.recentHistoryTitle}>Recent History</Text>
-              <TouchableOpacity onPress={onSeeMorePress} activeOpacity={0.7}>
+              <TouchableOpacity onPress={handleSeeMore} activeOpacity={0.7}>
                 <Text style={styles.seeMoreLink}>See more</Text>
               </TouchableOpacity>
             </View>
@@ -160,6 +229,25 @@ const SolanaWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
         </ScrollView>
       </SafeAreaView>
       <BottomTabNavigator activeTab="wallet" />
+
+      {/* Transfer Modal */}
+      <DashboardModals
+        showTransferModal={showTransferModal}
+        showWalletModal={showWalletModal}
+        onCloseTransferModal={handleCloseTransferModal}
+        onCloseWalletModal={handleCloseWalletModal}
+        onTransferMethodPress={handleTransferMethodPress}
+        onWalletOptionPress={handleWalletOptionPress}
+        onActionButtonPress={handleActionButtonPress}
+      />
+
+      {/* Network Selection Modal */}
+      <NetworkSelectionModal
+        visible={showNetworkModal}
+        onClose={handleCloseNetworkModal}
+        onNetworkSelect={handleNetworkSelect}
+        availableNetworks={solanaNetworks}
+      />
     </View>
   );
 };

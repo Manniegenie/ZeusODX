@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
+import DashboardModals from '../user/DashboardModals';
+import NetworkSelectionModal from '../../components/Network';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useBalance } from '../../hooks/useWallet';
@@ -25,6 +27,10 @@ import emptyStateIcon from '../../components/icons/empty-state.png';
 
 const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const router = useRouter();
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  
   const {
     bnbBalance,
     bnbBalanceUSD,
@@ -50,8 +56,78 @@ const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 
-  const handleQuickAction = (actionId) => onQuickActionPress?.(actionId);
+  // BNB networks - Ethereum ERC20 and BSC
+  const bnbNetworks = [
+    {
+      id: 'ethereum',
+      name: 'Ethereum Network (ERC20)',
+    },
+    {
+      id: 'bsc',
+      name: 'BSC (Binance Smart Chain)',
+    }
+  ];
+
+  const handleQuickAction = (actionId) => {
+    if (actionId === 'transfer') {
+      setShowTransferModal(true);
+    } else if (actionId === 'deposit') {
+      // Show network selection modal for BNB deposit
+      setShowNetworkModal(true);
+    } else if (actionId === 'buy-sell') {
+      // Navigate to buy/sell screen placeholder
+      router.push('../user/Swap');
+    } else {
+      onQuickActionPress?.(actionId);
+    }
+  };
+
   const handleSeeMore = () => onSeeMorePress?.();
+
+  // Modal handlers
+  const handleCloseTransferModal = () => {
+    setShowTransferModal(false);
+  };
+
+  const handleCloseWalletModal = () => {
+    setShowWalletModal(false);
+  };
+
+  const handleCloseNetworkModal = () => {
+    setShowNetworkModal(false);
+  };
+
+  const handleTransferMethodPress = (method) => {
+    setShowTransferModal(false);
+    // Handle the selected transfer method
+    if (method.id === 'zeus') {
+      // Navigate to Zeus username transfer screen for BNB
+      router.push('/transfer/zeus?token=bnb');
+    } else if (method.id === 'external') {
+      // Show wallet selection modal
+      setShowWalletModal(true);
+    }
+  };
+
+  const handleWalletOptionPress = (wallet) => {
+    setShowWalletModal(false);
+    // Handle the selected wallet for BNB transfers
+    router.push(`/transfer/external?wallet=${wallet.id}&token=bnb`);
+  };
+
+  const handleActionButtonPress = (action) => {
+    console.log('BNB Action button pressed:', action);
+  };
+
+  const handleNetworkSelect = (network) => {
+    // Route to the specific deposit screen based on network
+    if (network.id === 'ethereum') {
+      router.push('../deposits/bnb-eth');
+    } else if (network.id === 'bsc') {
+      router.push('../deposits/bnb-bsc');
+    }
+    setShowNetworkModal(false);
+  };
 
   return (
     <View style={styles.container}>
@@ -165,6 +241,25 @@ const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
       </SafeAreaView>
 
       <BottomTabNavigator activeTab="wallet" />
+
+      {/* Transfer Modal */}
+      <DashboardModals
+        showTransferModal={showTransferModal}
+        showWalletModal={showWalletModal}
+        onCloseTransferModal={handleCloseTransferModal}
+        onCloseWalletModal={handleCloseWalletModal}
+        onTransferMethodPress={handleTransferMethodPress}
+        onWalletOptionPress={handleWalletOptionPress}
+        onActionButtonPress={handleActionButtonPress}
+      />
+
+      {/* Network Selection Modal */}
+      <NetworkSelectionModal
+        visible={showNetworkModal}
+        onClose={handleCloseNetworkModal}
+        onNetworkSelect={handleNetworkSelect}
+        availableNetworks={bnbNetworks}
+      />
     </View>
   );
 };

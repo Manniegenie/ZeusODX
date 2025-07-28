@@ -13,13 +13,16 @@ import { Layout } from '../../constants/Layout';
 import { authService } from '../../services/authService';
 
 const bellIcon = require('../../components/icons/bell-icon.png');
+const activityIcon = require('../../components/icons/activity-icon.png');
 
 interface DashboardHeaderProps {
   onNotificationPress: () => void;
+  onActivityPress?: () => void;
 }
 
 export default function DashboardHeader({ 
-  onNotificationPress
+  onNotificationPress,
+  onActivityPress
 }: DashboardHeaderProps) {
   const [username, setUsername] = useState<string>('');
 
@@ -38,6 +41,10 @@ export default function DashboardHeader({
     }
   };
 
+  const handleActivityPress = () => {
+    onActivityPress?.();
+  };
+
   return (
     <>
       <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
@@ -53,9 +60,16 @@ export default function DashboardHeader({
             <View style={styles.headerSpacer} />
           )}
         </View>
-        <TouchableOpacity style={styles.notificationButton} onPress={onNotificationPress}>
-          <Image source={bellIcon} style={styles.bellIcon} />
-        </TouchableOpacity>
+        
+        <View style={styles.iconsContainer}>
+          <TouchableOpacity style={styles.iconButton} onPress={handleActivityPress}>
+            <Image source={activityIcon} style={styles.activityIcon} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.iconButton} onPress={onNotificationPress}>
+            <Image source={bellIcon} style={styles.bellIcon} />
+          </TouchableOpacity>
+        </View>
       </View>
     </>
   );
@@ -84,11 +98,21 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 24,
   },
-  notificationButton: {
+  iconsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  iconButton: {
     width: 24,
     height: 24,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  activityIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
   },
   bellIcon: {
     width: 20,

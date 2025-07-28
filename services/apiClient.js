@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 class ApiClient {
   constructor() {
@@ -14,10 +14,31 @@ class ApiClient {
 
   async getAuthToken() {
     try {
-      return await AsyncStorage.getItem('auth_token');
+      const token = await SecureStore.getItemAsync('auth_token');
+      return token;
     } catch (error) {
-      console.error('Error getting auth token:', error);
+      console.error('Error getting auth token from SecureStore:', error);
       return null;
+    }
+  }
+
+  async setAuthToken(token) {
+    try {
+      await SecureStore.setItemAsync('auth_token', token);
+      console.log('✅ Auth token stored securely');
+    } catch (error) {
+      console.error('Error storing auth token in SecureStore:', error);
+      throw error;
+    }
+  }
+
+  async clearAuthToken() {
+    try {
+      await SecureStore.deleteItemAsync('auth_token');
+      console.log('✅ Auth token cleared from SecureStore');
+    } catch (error) {
+      console.error('Error clearing auth token from SecureStore:', error);
+      throw error;
     }
   }
 
@@ -90,14 +111,6 @@ class ApiClient {
 
   async delete(endpoint) {
     return this.request(endpoint, { method: 'DELETE' });
-  }
-
-  setAuthToken(token) {
-    AsyncStorage.setItem('auth_token', token);
-  }
-
-  clearAuthToken() {
-    AsyncStorage.removeItem('auth_token');
   }
 }
 

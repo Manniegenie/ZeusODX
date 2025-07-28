@@ -103,7 +103,7 @@ const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({ activeTab }) =>
 
   const tabs: Tab[] = [
     { id: 'home',      label: 'Home',     icon: homeIcon,     route: '../user/dashboard' },
-    { id: 'giftcard',  label: 'Giftcard', icon: giftcardIcon, route: '/user/come-soon' },
+    { id: 'giftcard',  label: 'Giftcard', icon: giftcardIcon, route: '/user/Giftcard' },
     { id: 'swap',      label: 'Buy/Sell', icon: tradeIcon,    route: '../user/Swap' },
     { id: 'wallet',  label: 'Wallet', icon: activityIcon, route: '../user/wallet' },
     { id: 'profile',   label: 'Profile',  icon: profileIcon,  route: '/user/come-soon' },

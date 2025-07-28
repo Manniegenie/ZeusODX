@@ -18,7 +18,7 @@ import { useDashboard } from '../../hooks/useDashboard';
 // Asset imports
 const depositIcon    = require('../../components/icons/deposit-icon.png');
 const transferIcon   = require('../../components/icons/transfer-icon.png');
-const utilitiesIcon  = require('../../components/icons/utility.png'); 
+const utilitiesIcon  = require('../../components/icons/Airtime.png'); 
 const swapIcon       = require('../../components/icons/swap-icon.png');
 const portfolioBg    = require('../../assets/images/portfolio-bgg.jpg');
 const eyeIcon        = require('../../components/icons/eye-icon.png');
@@ -56,7 +56,7 @@ export default function PortfolioSection({
     { id: 'deposit',   title: 'Deposit',   icon: depositIcon,   route: '/user/come-soon' },
     { id: 'transfer',  title: 'Transfer',  icon: transferIcon,  route: '/user/come-soon' },
     { id: 'buy-sell',  title: 'Buy/Sell',  icon: swapIcon,      route: '/user/Swap' },
-    { id: 'utility',   title: 'Utility',   icon: utilitiesIcon, route: '/user/come-soon' },
+    { id: 'utility',   title: 'Buy Airtime',   icon: utilitiesIcon, route: '/user/Airtime' },
   ];
 
   // Progress bar animation

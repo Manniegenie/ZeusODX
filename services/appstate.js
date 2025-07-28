@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiClient } from './apiClient';
+import { authService } from './authService';
 
 export const simpleAppState = {
   // Storage keys
@@ -113,15 +115,32 @@ export const simpleAppState = {
   // Reset everything (for testing/logout)
   async resetAppState() {
     try {
+      console.log('🧹 Starting app state reset...');
+      
+      // Clear secure tokens using proper methods
+      try {
+        await apiClient.clearAuthToken();
+        console.log('✅ Auth token cleared from SecureStore');
+      } catch (error) {
+        console.log('⚠️ Error clearing auth token:', error);
+      }
+      
+      try {
+        await authService.clearRefreshToken();
+        console.log('✅ Refresh token cleared from SecureStore');
+      } catch (error) {
+        console.log('⚠️ Error clearing refresh token:', error);
+      }
+      
+      // Clear non-sensitive data from AsyncStorage
       await AsyncStorage.multiRemove([
         this.ONBOARDING_KEY,
         this.PHONE_NUMBER_KEY,
         this.USERNAME_KEY,
-        'auth_token', // Clear any auth tokens
         'user_data',
-        'refresh_token',
         'portfolio_data'
       ]);
+      
       console.log('🧹 App state reset successfully');
       return { success: true };
     } catch (error) {
@@ -139,13 +158,17 @@ export const simpleAppState = {
     const hasUsername = !!savedUsername;
     const initialScreen = await this.getInitialScreen();
     
+    // Check if user is authenticated (from secure storage)
+    const isAuthenticated = await authService.isAuthenticated();
+    
     return {
       onboardingCompleted,
       hasPhoneNumber: hasPhone,
       hasUsername: hasUsername,
       savedPhoneNumber: savedPhone ? `***${savedPhone.slice(-4)}` : null, // Masked for security
       savedUsername: savedUsername,
-      initialScreen
+      initialScreen,
+      isAuthenticated
     };
   }
 };

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
+import DashboardModals from '../user/DashboardModals';
+import NetworkSelectionModal from '../../components/Network';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useBalance } from '../../hooks/useWallet';
@@ -39,6 +41,10 @@ const EthereumWalletScreen: React.FC<EthereumWalletScreenProps> = ({
   onSeeMorePress
 }) => {
   const router = useRouter();
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  
   const { 
     ethBalance,
     ethBalanceUSD,
@@ -55,14 +61,16 @@ const EthereumWalletScreen: React.FC<EthereumWalletScreenProps> = ({
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 
-  const onRefresh = useCallback(async () => {
-    try {
-      console.log('🔄 Refreshing ETH wallet data...');
-      await refreshBalances();
-      console.log('✅ ETH wallet refresh completed');
-    } catch (error) {
-      console.error('❌ Error refreshing ETH wallet:', error);
+  // Ethereum networks - only Ethereum network
+  const ethereumNetworks = [
+    {
+      id: 'ethereum',
+      name: 'Ethereum Network',
     }
+  ];
+
+  const onRefresh = useCallback(async () => {
+    await refreshBalances();
   }, [refreshBalances]);
 
   const handleGoBack = () => {
@@ -70,13 +78,64 @@ const EthereumWalletScreen: React.FC<EthereumWalletScreenProps> = ({
   };
 
   const handleQuickAction = (actionId: string): void => {
-    console.log(`ETH Quick action pressed: ${actionId}`);
-    onQuickActionPress?.(actionId);
+    if (actionId === 'transfer') {
+      setShowTransferModal(true);
+    } else if (actionId === 'deposit') {
+      // Show network selection modal for Ethereum deposit
+      setShowNetworkModal(true);
+    } else if (actionId === 'buy-sell') {
+      // Navigate to buy/sell screen placeholder
+      router.push('../user/Swap');
+    } else {
+      onQuickActionPress?.(actionId);
+    }
   };
 
   const handleSeeMore = (): void => {
-    console.log('ETH See more pressed');
     onSeeMorePress?.();
+  };
+
+  // Modal handlers
+  const handleCloseTransferModal = () => {
+    setShowTransferModal(false);
+  };
+
+  const handleCloseWalletModal = () => {
+    setShowWalletModal(false);
+  };
+
+  const handleCloseNetworkModal = () => {
+    setShowNetworkModal(false);
+  };
+
+  const handleTransferMethodPress = (method: any) => {
+    setShowTransferModal(false);
+    // Handle the selected transfer method
+    if (method.id === 'zeus') {
+      // Navigate to Zeus username transfer screen for Ethereum
+      router.push('/transfer/zeus?token=eth');
+    } else if (method.id === 'external') {
+      // Show wallet selection modal
+      setShowWalletModal(true);
+    }
+  };
+
+  const handleWalletOptionPress = (wallet: any) => {
+    setShowWalletModal(false);
+    // Handle the selected wallet for Ethereum transfers
+    router.push(`/transfer/external?wallet=${wallet.id}&token=eth`);
+  };
+
+  const handleActionButtonPress = (action: any) => {
+    console.log('Ethereum Action button pressed:', action);
+  };
+
+  const handleNetworkSelect = (network) => {
+    // Route to the Ethereum deposit screen
+    if (network.id === 'ethereum') {
+      router.push('../deposits/eth');
+    }
+    setShowNetworkModal(false);
   };
 
   const displayEthBalance = formattedEthBalance || '0.000000';
@@ -195,6 +254,25 @@ const EthereumWalletScreen: React.FC<EthereumWalletScreenProps> = ({
       </SafeAreaView>
 
       <BottomTabNavigator activeTab="wallet" />
+
+      {/* Transfer Modal */}
+      <DashboardModals
+        showTransferModal={showTransferModal}
+        showWalletModal={showWalletModal}
+        onCloseTransferModal={handleCloseTransferModal}
+        onCloseWalletModal={handleCloseWalletModal}
+        onTransferMethodPress={handleTransferMethodPress}
+        onWalletOptionPress={handleWalletOptionPress}
+        onActionButtonPress={handleActionButtonPress}
+      />
+
+      {/* Network Selection Modal */}
+      <NetworkSelectionModal
+        visible={showNetworkModal}
+        onClose={handleCloseNetworkModal}
+        onNetworkSelect={handleNetworkSelect}
+        availableNetworks={ethereumNetworks}
+      />
     </View>
   );
 };

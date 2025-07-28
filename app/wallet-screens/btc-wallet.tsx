@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
+import DashboardModals from '../user/DashboardModals';
+import NetworkSelectionModal from '../../components/Network';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useBalance } from '../../hooks/useWallet';
@@ -39,6 +41,10 @@ const BitcoinWalletScreen: React.FC<BitcoinWalletScreenProps> = ({
   onSeeMorePress
 }) => {
   const router = useRouter();
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  
   const { 
     btcBalance,
     btcBalanceUSD,
@@ -53,6 +59,14 @@ const BitcoinWalletScreen: React.FC<BitcoinWalletScreenProps> = ({
     { id: 'deposit', title: 'Deposit', iconSrc: depositIcon },
     { id: 'transfer', title: 'Transfer', iconSrc: transferIcon },
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
+  ];
+
+  // Bitcoin networks - only Bitcoin network
+  const bitcoinNetworks = [
+    {
+      id: 'bitcoin',
+      name: 'Bitcoin',
+    }
   ];
 
   const onRefresh = useCallback(async () => {
@@ -71,12 +85,65 @@ const BitcoinWalletScreen: React.FC<BitcoinWalletScreenProps> = ({
 
   const handleQuickAction = (actionId: string): void => {
     console.log(`Quick action pressed: ${actionId}`);
-    onQuickActionPress?.(actionId);
+    if (actionId === 'transfer') {
+      setShowTransferModal(true);
+    } else if (actionId === 'deposit') {
+      // Show network selection modal for Bitcoin deposit
+      setShowNetworkModal(true);
+    } else if (actionId === 'buy-sell') {
+      // Navigate to buy/sell screen placeholder
+      router.push('../user/Swap');
+    } else {
+      onQuickActionPress?.(actionId);
+    }
   };
 
   const handleSeeMore = (): void => {
     console.log('See more pressed');
     onSeeMorePress?.();
+  };
+
+  // Modal handlers
+  const handleCloseTransferModal = () => {
+    setShowTransferModal(false);
+  };
+
+  const handleCloseWalletModal = () => {
+    setShowWalletModal(false);
+  };
+
+  const handleCloseNetworkModal = () => {
+    setShowNetworkModal(false);
+  };
+
+  const handleTransferMethodPress = (method: any) => {
+    setShowTransferModal(false);
+    // Handle the selected transfer method
+    if (method.id === 'zeus') {
+      // Navigate to Zeus username transfer screen for Bitcoin
+      router.push('/transfer/zeus?token=btc');
+    } else if (method.id === 'external') {
+      // Show wallet selection modal
+      setShowWalletModal(true);
+    }
+  };
+
+  const handleWalletOptionPress = (wallet: any) => {
+    setShowWalletModal(false);
+    // Handle the selected wallet for Bitcoin transfers
+    router.push(`/transfer/external?wallet=${wallet.id}&token=btc`);
+  };
+
+  const handleActionButtonPress = (action: any) => {
+    console.log('Bitcoin Action button pressed:', action);
+  };
+
+  const handleNetworkSelect = (network) => {
+    // Route to the Bitcoin deposit screen
+    if (network.id === 'bitcoin') {
+      router.push('../deposits/btc');
+    }
+    setShowNetworkModal(false);
   };
 
   const displayBtcBalance = formattedBtcBalance || '0.00000000';
@@ -195,6 +262,25 @@ const BitcoinWalletScreen: React.FC<BitcoinWalletScreenProps> = ({
       </SafeAreaView>
 
       <BottomTabNavigator activeTab="wallet" />
+
+      {/* Transfer Modal */}
+      <DashboardModals
+        showTransferModal={showTransferModal}
+        showWalletModal={showWalletModal}
+        onCloseTransferModal={handleCloseTransferModal}
+        onCloseWalletModal={handleCloseWalletModal}
+        onTransferMethodPress={handleTransferMethodPress}
+        onWalletOptionPress={handleWalletOptionPress}
+        onActionButtonPress={handleActionButtonPress}
+      />
+
+      {/* Network Selection Modal */}
+      <NetworkSelectionModal
+        visible={showNetworkModal}
+        onClose={handleCloseNetworkModal}
+        onNetworkSelect={handleNetworkSelect}
+        availableNetworks={bitcoinNetworks}
+      />
     </View>
   );
 };

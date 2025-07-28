@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import {
 import { useRouter } from 'expo-router';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
+import DashboardModals from '../user/DashboardModals';
+import NetworkSelectionModal from '../../components/Network';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useBalance } from '../../hooks/useWallet';
@@ -26,6 +28,10 @@ import emptyStateIcon from '../../components/icons/empty-state.png';
 
 const MaticWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const router = useRouter();
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  
   const {
     maticBalance,
     maticBalanceUSD,
@@ -36,14 +42,16 @@ const MaticWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     refreshBalances
   } = useBalance();
 
-  const onRefresh = useCallback(async () => {
-    try {
-      console.log('🔄 Refreshing MATIC wallet data...');
-      await refreshBalances();
-      console.log('✅ MATIC wallet refresh completed');
-    } catch (err) {
-      console.error('❌ Error refreshing MATIC wallet:', err);
+  // MATIC networks - only Ethereum network
+  const maticNetworks = [
+    {
+      id: 'ethereum',
+      name: 'Ethereum Network',
     }
+  ];
+
+  const onRefresh = useCallback(async () => {
+    await refreshBalances();
   }, [refreshBalances]);
 
   const handleGoBack = () => {
@@ -60,13 +68,64 @@ const MaticWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const displayUSD = formattedMaticBalanceUSD || '$0.00';
 
   const handleQuickAction = (actionId) => {
-    console.log(`MATIC Quick action pressed: ${actionId}`);
-    onQuickActionPress?.(actionId);
+    if (actionId === 'transfer') {
+      setShowTransferModal(true);
+    } else if (actionId === 'deposit') {
+      // Show network selection modal for MATIC deposit
+      setShowNetworkModal(true);
+    } else if (actionId === 'buy-sell') {
+      // Navigate to buy/sell screen placeholder
+      router.push('../user/Swap');
+    } else {
+      onQuickActionPress?.(actionId);
+    }
   };
 
   const handleSeeMore = () => {
-    console.log('MATIC See more pressed');
     onSeeMorePress?.();
+  };
+
+  // Modal handlers
+  const handleCloseTransferModal = () => {
+    setShowTransferModal(false);
+  };
+
+  const handleCloseWalletModal = () => {
+    setShowWalletModal(false);
+  };
+
+  const handleCloseNetworkModal = () => {
+    setShowNetworkModal(false);
+  };
+
+  const handleTransferMethodPress = (method) => {
+    setShowTransferModal(false);
+    // Handle the selected transfer method
+    if (method.id === 'zeus') {
+      // Navigate to Zeus username transfer screen for MATIC
+      router.push('/transfer/zeus?token=matic');
+    } else if (method.id === 'external') {
+      // Show wallet selection modal
+      setShowWalletModal(true);
+    }
+  };
+
+  const handleWalletOptionPress = (wallet) => {
+    setShowWalletModal(false);
+    // Handle the selected wallet for MATIC transfers
+    router.push(`/transfer/external?wallet=${wallet.id}&token=matic`);
+  };
+
+  const handleActionButtonPress = (action) => {
+    console.log('MATIC Action button pressed:', action);
+  };
+
+  const handleNetworkSelect = (network) => {
+    // Route to the Ethereum deposit screen for MATIC
+    if (network.id === 'ethereum') {
+      router.push('../deposits/matic-eth');
+    }
+    setShowNetworkModal(false);
   };
 
   return (
@@ -181,6 +240,25 @@ const MaticWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
       </SafeAreaView>
 
       <BottomTabNavigator activeTab="wallet" />
+
+      {/* Transfer Modal */}
+      <DashboardModals
+        showTransferModal={showTransferModal}
+        showWalletModal={showWalletModal}
+        onCloseTransferModal={handleCloseTransferModal}
+        onCloseWalletModal={handleCloseWalletModal}
+        onTransferMethodPress={handleTransferMethodPress}
+        onWalletOptionPress={handleWalletOptionPress}
+        onActionButtonPress={handleActionButtonPress}
+      />
+
+      {/* Network Selection Modal */}
+      <NetworkSelectionModal
+        visible={showNetworkModal}
+        onClose={handleCloseNetworkModal}
+        onNetworkSelect={handleNetworkSelect}
+        availableNetworks={maticNetworks}
+      />
     </View>
   );
 };
