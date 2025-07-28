@@ -4,18 +4,29 @@
     "slug": "ZeusODX",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/zeus-logo.png",
+    "icon": "./assets/images/app-icon.png",
     "scheme": "zeusodx",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#35297F"
+    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.manniegenie.zeusodx"
+      "bundleIdentifier": "com.manniegenie.zeusodx",
+      "icon": "./assets/images/app-icon.png"
     },
     "android": {
       "package": "com.manniegenie.zeusodx",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/app-icon.png",
+        "backgroundColor": "#35297F"
+      },
+      "splash": {
+        "image": "./assets/images/splash.png",
+        "resizeMode": "contain",
         "backgroundColor": "#35297F"
       },
       "edgeToEdgeEnabled": true
@@ -25,20 +36,13 @@
       "output": "static",
       "favicon": "./assets/images/app-icon.png"
     },
-    "splash": {
-      "image": "./assets/images/splashscreen_logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#35297F"
-    },
     "plugins": [
       "expo-router",
       "expo-font",
       "expo-secure-store",
       [
         "expo-splash-screen",
-        {
-          "preventAutoHideAsync": true
-        }
+        { "preventAutoHideAsync": true }
       ]
     ],
     "experiments": {
