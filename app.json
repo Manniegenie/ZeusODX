@@ -9,8 +9,6 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
       "backgroundColor": "#35297F"
     },
     "ios": {
@@ -24,11 +22,6 @@
         "foregroundImage": "./assets/images/app-icon.png",
         "backgroundColor": "#35297F"
       },
-      "splash": {
-        "image": "./assets/images/splash.png",
-        "resizeMode": "contain",
-        "backgroundColor": "#35297F"
-      },
       "edgeToEdgeEnabled": true
     },
     "web": {
@@ -39,11 +32,7 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-secure-store",
-      [
-        "expo-splash-screen",
-        { "preventAutoHideAsync": true }
-      ]
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

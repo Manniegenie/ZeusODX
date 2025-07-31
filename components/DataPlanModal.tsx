@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,22 +19,44 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MODAL_WIDTH = 393;
 const MODAL_HEIGHT = 537;
 
-const DataPlansModal = ({
+interface DataPlan {
+  id?: string;
+  variationId?: string;
+  variation_id?: string;
+  data?: string;
+  dataAllowance?: string;
+  duration?: string;
+  validity?: string;
+  price?: number;
+  formattedPrice?: string;
+  originalPlan?: any;
+}
+
+interface DataPlansModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSelectPlan: (plan: any) => void;
+  selectedPlan?: DataPlan | null;
+  networkId?: string;
+  networkName?: string;
+  loading?: boolean;
+}
+
+const DataPlansModal: React.FC<DataPlansModalProps> = ({
   visible,
   onClose,
   onSelectPlan,
   selectedPlan = null,
-  networkId = '', // Network ID to fetch plans for (mtn, airtel, glo, 9mobile, smile)
+  networkId = '',
   networkName = '',
   loading: externalLoading = false
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('daily');
 
-  // Use the useDataPlans hook
+  // Safe hook usage with error boundaries
   const {
-    loading: plansLoading,
-    error: plansError,
+    loading: plansLoading = false,
+    error: plansError = null,
     getDataPlans,
     hasDataPlans,
     getModalFormattedPlans,
@@ -43,26 +65,100 @@ const DataPlansModal = ({
     getErrorAction,
     getUserFriendlyMessage,
     isLoadingForNetwork
-  } = useDataPlans();
+  } = useDataPlans() || {};
+
+  // Safe function wrappers
+  const safeGetDataPlans = useCallback((id: string) => {
+    try {
+      if (getDataPlans && typeof getDataPlans === 'function') {
+        return getDataPlans(id);
+      }
+    } catch (error) {
+      console.error('Error calling getDataPlans:', error);
+    }
+  }, [getDataPlans]);
+
+  const safeHasDataPlans = useCallback((id: string): boolean => {
+    try {
+      if (hasDataPlans && typeof hasDataPlans === 'function') {
+        return hasDataPlans(id);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error calling hasDataPlans:', error);
+      return false;
+    }
+  }, [hasDataPlans]);
+
+  const safeGetModalFormattedPlans = useCallback((id: string) => {
+    try {
+      if (getModalFormattedPlans && typeof getModalFormattedPlans === 'function') {
+        return getModalFormattedPlans(id);
+      }
+      return { daily: [], weekly: [], monthly: [], other: [] };
+    } catch (error) {
+      console.error('Error calling getModalFormattedPlans:', error);
+      return { daily: [], weekly: [], monthly: [], other: [] };
+    }
+  }, [getModalFormattedPlans]);
+
+  const safeGetCachedDataPlans = useCallback((id: string): DataPlan[] => {
+    try {
+      if (getCachedDataPlans && typeof getCachedDataPlans === 'function') {
+        return getCachedDataPlans(id) || [];
+      }
+      return [];
+    } catch (error) {
+      console.error('Error calling getCachedDataPlans:', error);
+      return [];
+    }
+  }, [getCachedDataPlans]);
+
+  const safeClearErrors = useCallback(() => {
+    try {
+      if (clearErrors && typeof clearErrors === 'function') {
+        clearErrors();
+      }
+    } catch (error) {
+      console.error('Error calling clearErrors:', error);
+    }
+  }, [clearErrors]);
+
+  const safeIsLoadingForNetwork = useCallback((id: string): boolean => {
+    try {
+      if (isLoadingForNetwork && typeof isLoadingForNetwork === 'function') {
+        return isLoadingForNetwork(id);
+      }
+      return false;
+    } catch (error) {
+      console.error('Error calling isLoadingForNetwork:', error);
+      return false;
+    }
+  }, [isLoadingForNetwork]);
 
   // Fetch plans when modal opens and network is available
   useEffect(() => {
-    if (visible && networkId && !hasDataPlans(networkId)) {
-      console.log(`📋 Modal opened, fetching plans for ${networkId}`);
-      getDataPlans(networkId);
-    } else if (visible && networkId && hasDataPlans(networkId)) {
-      console.log(`📋 Modal opened, using cached plans for ${networkId}`);
-    }
-  }, [visible, networkId, getDataPlans, hasDataPlans]);
+    if (!visible || !networkId) return;
 
-  // Clear search and reset tab when modal opens
+    try {
+      if (!safeHasDataPlans(networkId)) {
+        console.log(`📋 Modal opened, fetching plans for ${networkId}`);
+        safeGetDataPlans(networkId);
+      } else {
+        console.log(`📋 Modal opened, using cached plans for ${networkId}`);
+      }
+    } catch (error) {
+      console.error('Error in useEffect for fetching plans:', error);
+    }
+  }, [visible, networkId, safeGetDataPlans, safeHasDataPlans]);
+
+  // Clear and reset tab when modal opens
   useEffect(() => {
     if (visible) {
-      setSearchQuery('');
       setActiveTab('daily');
-      clearErrors();
+      safeClearErrors();
     }
-  }, [visible, clearErrors]);
+  }, [visible, safeClearErrors]);
 
   // Tab configuration
   const tabs = [
@@ -72,179 +168,248 @@ const DataPlansModal = ({
     { id: 'other', label: 'Other plans' }
   ];
 
-  // Get current plans based on active tab and search
-  const getCurrentPlans = () => {
-    let tabPlans = [];
-
-    if (networkId) {
-      // Get formatted plans using the hook
-      const allFormattedPlans = getModalFormattedPlans(networkId);
-      tabPlans = allFormattedPlans[activeTab] || [];
+  // Safe plan property access
+  const getSafePlanProperty = (plan: any, property: string, fallback: any = '') => {
+    try {
+      if (!plan || typeof plan !== 'object') return fallback;
+      return plan[property] ?? fallback;
+    } catch (error) {
+      console.warn(`Error accessing plan property ${property}:`, error);
+      return fallback;
     }
-    
-    // Apply search filter if there's a query
-    if (searchQuery.trim()) {
-      tabPlans = tabPlans.filter(plan => 
-        plan.data?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        plan.duration?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        plan.formattedPrice?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        plan.price?.toString().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    return tabPlans;
   };
+
+  // Get current plans based on active tab
+  const getCurrentPlans = useCallback((): DataPlan[] => {
+    try {
+      let tabPlans: DataPlan[] = [];
+
+      if (networkId) {
+        const allFormattedPlans = safeGetModalFormattedPlans(networkId);
+        tabPlans = Array.isArray(allFormattedPlans[activeTab]) ? allFormattedPlans[activeTab] : [];
+      }
+      
+      return tabPlans;
+    } catch (error) {
+      console.error('Error getting current plans:', error);
+      return [];
+    }
+  }, [networkId, activeTab, safeGetModalFormattedPlans]);
 
   const currentPlans = getCurrentPlans();
-  const isLoading = plansLoading || externalLoading || isLoadingForNetwork(networkId);
+  const isLoading = plansLoading || externalLoading || safeIsLoadingForNetwork(networkId);
 
-  const handlePlanSelect = (plan) => {
-    console.log('📋 Plan selected in modal:', plan);
-    onSelectPlan(plan);
-    onClose();
-  };
+  const handlePlanSelect = useCallback((plan: DataPlan) => {
+    try {
+      console.log('📋 Plan selected in modal:', plan);
+      
+      if (!plan) {
+        console.error('Plan is null or undefined');
+        return;
+      }
 
-  const handleTabPress = (tabId) => {
-    setActiveTab(tabId);
-    setSearchQuery(''); // Clear search when switching tabs
-  };
+      // Create a safe plan object for the parent component
+      const safePlan = {
+        id: getSafePlanProperty(plan, 'id') || getSafePlanProperty(plan, 'variationId'),
+        variationId: getSafePlanProperty(plan, 'variationId') || getSafePlanProperty(plan, 'id'),
+        data: getSafePlanProperty(plan, 'data') || getSafePlanProperty(plan, 'dataAllowance'),
+        duration: getSafePlanProperty(plan, 'duration') || getSafePlanProperty(plan, 'validity'),
+        price: getSafePlanProperty(plan, 'price', 0),
+        formattedPrice: getSafePlanProperty(plan, 'formattedPrice') || `₦${getSafePlanProperty(plan, 'price', 0)}`,
+        originalPlan: plan // Include the original plan data for the parent component
+      };
 
-  const handleRetryFetch = () => {
-    if (networkId) {
-      clearErrors();
-      getDataPlans(networkId);
+      onSelectPlan(safePlan);
+      onClose();
+    } catch (error) {
+      console.error('Error handling plan selection:', error);
     }
-  };
+  }, [onSelectPlan, onClose]);
+
+  const handleTabPress = useCallback((tabId: string) => {
+    try {
+      setActiveTab(tabId);
+    } catch (error) {
+      console.error('Error handling tab press:', error);
+    }
+  }, []);
+
+  const handleRetryFetch = useCallback(() => {
+    try {
+      if (networkId) {
+        safeClearErrors();
+        safeGetDataPlans(networkId);
+      }
+    } catch (error) {
+      console.error('Error handling retry fetch:', error);
+    }
+  }, [networkId, safeClearErrors, safeGetDataPlans]);
 
   // Get display content based on state
   const getDisplayContent = () => {
-    if (isLoading) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#35297F" />
-          <Text style={styles.loadingText}>Loading plans...</Text>
-        </View>
-      );
-    }
+    try {
+      if (isLoading) {
+        return (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#35297F" />
+            <Text style={styles.loadingText}>Loading plans...</Text>
+          </View>
+        );
+      }
 
-    if (plansError) {
-      const errorAction = getErrorAction(plansError);
-      return (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>
-            {getUserFriendlyMessage(plansError, 'Failed to load data plans')}
-          </Text>
-          <TouchableOpacity 
-            style={styles.retryButton}
-            onPress={handleRetryFetch}
-          >
-            <Text style={styles.retryButtonText}>
-              {errorAction?.actionText || 'Try Again'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
+      if (plansError) {
+        const errorAction = getErrorAction ? getErrorAction(plansError) : null;
+        const errorMessage = getUserFriendlyMessage ? 
+          getUserFriendlyMessage(plansError, 'Failed to load data plans') : 
+          'Failed to load data plans';
 
-    if (!networkId) {
-      return (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Please select a network first</Text>
-        </View>
-      );
-    }
-
-    if (currentPlans.length === 0) {
-      const hasAnyPlans = networkId ? getCachedDataPlans(networkId).length > 0 : false;
-      
-      return (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
-            {searchQuery 
-              ? 'No plans found for your search' 
-              : hasAnyPlans 
-                ? `No ${activeTab} plans available` 
-                : 'No data plans available for this network'}
-          </Text>
-          {searchQuery && (
-            <TouchableOpacity 
-              style={styles.clearSearchButton}
-              onPress={() => setSearchQuery('')}
-            >
-              <Text style={styles.clearSearchText}>Clear search</Text>
-            </TouchableOpacity>
-          )}
-          {!hasAnyPlans && !searchQuery && networkId && (
+        return (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{errorMessage}</Text>
             <TouchableOpacity 
               style={styles.retryButton}
               onPress={handleRetryFetch}
             >
-              <Text style={styles.retryButtonText}>Retry</Text>
+              <Text style={styles.retryButtonText}>
+                {errorAction?.actionText || 'Try Again'}
+              </Text>
             </TouchableOpacity>
-          )}
+          </View>
+        );
+      }
+
+      if (!networkId) {
+        return (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Please select a network first</Text>
+          </View>
+        );
+      }
+
+      if (currentPlans.length === 0) {
+        const hasAnyPlans = networkId ? safeGetCachedDataPlans(networkId).length > 0 : false;
+        
+        return (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {hasAnyPlans 
+                ? `No ${activeTab} plans available` 
+                : 'No data plans available for this network'}
+            </Text>
+            {!hasAnyPlans && networkId && (
+              <TouchableOpacity 
+                style={styles.retryButton}
+                onPress={handleRetryFetch}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        );
+      }
+
+      return (
+        <View style={styles.plansGrid}>
+          {currentPlans.map((plan, index) => {
+            try {
+              // Generate a unique key using plan id or fallback to index
+              const planId = getSafePlanProperty(plan, 'id') || 
+                           getSafePlanProperty(plan, 'variationId') || 
+                           getSafePlanProperty(plan, 'variation_id');
+              const planKey = planId || `plan-${index}`;
+              
+              const isSelected = selectedPlan && (
+                selectedPlan.id === planId || 
+                selectedPlan.variationId === planId ||
+                selectedPlan.variationId === getSafePlanProperty(plan, 'variationId')
+              );
+              
+              return (
+                <TouchableOpacity
+                  key={planKey}
+                  style={[
+                    styles.planCard,
+                    isSelected && styles.planCardSelected
+                  ]}
+                  onPress={() => handlePlanSelect(plan)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.planData}>
+                    {getSafePlanProperty(plan, 'data') || 
+                     getSafePlanProperty(plan, 'dataAllowance') || 
+                     'N/A'}
+                  </Text>
+                  <Text style={styles.planDuration}>
+                    {getSafePlanProperty(plan, 'duration') || 
+                     getSafePlanProperty(plan, 'validity') || 
+                     'N/A'}
+                  </Text>
+                  <Text style={styles.planPrice}>
+                    {getSafePlanProperty(plan, 'formattedPrice') || 
+                     `₦${getSafePlanProperty(plan, 'price', 0)}`}
+                  </Text>
+                </TouchableOpacity>
+              );
+            } catch (error) {
+              console.error(`Error rendering plan at index ${index}:`, error);
+              return null;
+            }
+          })}
+        </View>
+      );
+    } catch (error) {
+      console.error('Error getting display content:', error);
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>An error occurred while displaying plans</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={handleRetryFetch}
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
         </View>
       );
     }
-
-    return (
-      <View style={styles.plansGrid}>
-        {currentPlans.map((plan, index) => {
-          // Generate a unique key using plan id or fallback to index
-          const planKey = plan.id || plan.variationId || `plan-${index}`;
-          const isSelected = selectedPlan?.id === plan.id || 
-                           selectedPlan?.variationId === plan.id ||
-                           selectedPlan?.variationId === plan.variationId;
-          
-          return (
-            <TouchableOpacity
-              key={planKey}
-              style={[
-                styles.planCard,
-                isSelected && styles.planCardSelected
-              ]}
-              onPress={() => handlePlanSelect(plan)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.planData}>
-                {plan.data || plan.dataAllowance || 'N/A'}
-              </Text>
-              <Text style={styles.planDuration}>
-                {plan.duration || plan.validity || 'N/A'}
-              </Text>
-              <Text style={styles.planPrice}>
-                {plan.formattedPrice || `₦${plan.price || 0}`}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    );
   };
 
   // Debug logging for current plans
   useEffect(() => {
     if (visible && networkId) {
-      console.log('📋 Modal debug info:', {
-        networkId,
-        activeTab,
-        currentPlansCount: currentPlans.length,
-        hasDataPlans: hasDataPlans(networkId),
-        cachedPlansCount: getCachedDataPlans(networkId).length,
-        isLoading,
-        plansError
-      });
+      try {
+        console.log('📋 Modal debug info:', {
+          networkId,
+          activeTab,
+          currentPlansCount: currentPlans.length,
+          hasDataPlans: safeHasDataPlans(networkId),
+          cachedPlansCount: safeGetCachedDataPlans(networkId).length,
+          isLoading,
+          plansError
+        });
+      } catch (error) {
+        console.error('Error in debug logging:', error);
+      }
     }
-  }, [visible, networkId, activeTab, currentPlans.length, hasDataPlans, getCachedDataPlans, isLoading, plansError]);
+  }, [visible, networkId, activeTab, currentPlans.length, safeHasDataPlans, safeGetCachedDataPlans, isLoading, plansError]);
+
+  // Safe modal close handler
+  const handleModalClose = useCallback(() => {
+    try {
+      onClose();
+    } catch (error) {
+      console.error('Error closing modal:', error);
+    }
+  }, [onClose]);
 
   return (
     <Modal
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={handleModalClose}
       statusBarTranslucent
     >
-      <TouchableWithoutFeedback onPress={onClose}>
+      <TouchableWithoutFeedback onPress={handleModalClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
             <View style={styles.modalContainer}>
@@ -255,36 +420,11 @@ const DataPlansModal = ({
                 </Text>
                 <TouchableOpacity 
                   style={styles.closeButton}
-                  onPress={onClose}
+                  onPress={handleModalClose}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Text style={styles.closeButtonText}>✕</Text>
                 </TouchableOpacity>
-              </View>
-
-              {/* Search Bar */}
-              <View style={styles.searchContainer}>
-                <View style={styles.searchInputContainer}>
-                  <Text style={styles.searchIcon}>🔍</Text>
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search plans..."
-                    placeholderTextColor="#9CA3AF"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    editable={!isLoading && !plansError && networkId}
-                  />
-                  {searchQuery.length > 0 && (
-                    <TouchableOpacity
-                      style={styles.clearSearchIcon}
-                      onPress={() => setSearchQuery('')}
-                    >
-                      <Text style={styles.clearSearchIconText}>✕</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
               </View>
 
               {/* Tabs */}
@@ -368,42 +508,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontSize: 18,
     fontWeight: '500',
-  },
-
-  // Search styles
-  searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  searchIcon: {
-    fontSize: 16,
-    marginRight: 8,
-    opacity: 0.5,
-  },
-  searchInput: {
-    flex: 1,
-    color: '#111827',
-    fontFamily: Typography.regular || 'System',
-    fontSize: 16,
-    fontWeight: '400',
-    paddingVertical: 0,
-  },
-  clearSearchIcon: {
-    padding: 4,
-  },
-  clearSearchIconText: {
-    color: '#6B7280',
-    fontSize: 14,
   },
 
   // Tabs styles
@@ -536,17 +640,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.medium || 'System',
     fontSize: 14,
     fontWeight: '600',
-  },
-  clearSearchButton: {
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  clearSearchText: {
-    color: '#35297F',
-    fontFamily: Typography.medium || 'System',
-    fontSize: 14,
-    fontWeight: '500',
   },
 });
 

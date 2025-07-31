@@ -246,7 +246,16 @@ export default function SwapScreen({
             <Text style={styles.inputLabel}>Sell</Text>
             <View style={styles.inputCard}>
               <View style={styles.inputLeft}>
-                <TextInput style={styles.amountInput} value={formatDisplayAmount(fromAmount)} onChangeText={setFromAmount} placeholder="0" keyboardType="decimal-pad" placeholderTextColor={Colors.text.secondary} />
+                <TextInput 
+                  style={styles.amountInput} 
+                  value={fromAmount} 
+                  onFocus={() => { if (fromAmount === '0') setFromAmount(''); }}
+                  onBlur={() => { if (!fromAmount) setFromAmount('0'); }}
+                  onChangeText={setFromAmount} 
+                  placeholder="0" 
+                  keyboardType="decimal-pad" 
+                  placeholderTextColor={Colors.text.secondary} 
+                />
                 <Text style={styles.usdValue}>{formatUsdValue(fromAmount, selectedFromToken)}</Text>
               </View>
               <View style={styles.inputRight}>
@@ -269,7 +278,14 @@ export default function SwapScreen({
             <Text style={styles.inputLabel}>Buy</Text>
             <View style={styles.inputCard}>
               <View style={styles.inputLeft}>
-                <TextInput style={styles.amountInput} value={formatDisplayAmount(toAmount)} editable={false} placeholder="0" keyboardType="decimal-pad" placeholderTextColor={Colors.text.secondary} />
+                <TextInput 
+                  style={styles.amountInput} 
+                  value={formatDisplayAmount(toAmount)} 
+                  editable={false} 
+                  placeholder="0" 
+                  keyboardType="decimal-pad" 
+                  placeholderTextColor={Colors.text.secondary} 
+                />
                 <Text style={styles.usdValue}>{formatUsdValue(toAmount, selectedToToken)}</Text>
               </View>
               <View style={styles.inputRight}>

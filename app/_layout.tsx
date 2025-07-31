@@ -11,13 +11,9 @@ import {
   BricolageGrotesque_700Bold,
   BricolageGrotesque_800ExtraBold,
 } from '@expo-google-fonts/bricolage-grotesque';
-import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthProvider, AuthContext } from '../hooks/useAuth';
 import ProfessionalSplashScreen from '../components/ProfessionalSplashScreen';
-
-// Hide native splash immediately when module loads
-SplashScreen.hideAsync();
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const auth = useAuthProvider();

@@ -1,5 +1,5 @@
 // components/ProfessionalSplashScreen.tsx
-// Simplified splash with single red lightning animation
+// Reduced to 2-second splash with single red lightning animation
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -41,18 +41,18 @@ function ProfessionalSplashScreen(props: ProfessionalSplashScreenProps) {
         if (onAnimationComplete) {
           onAnimationComplete();
         }
-      }, 500); // Small delay for smooth transition
+      }, 200); // Reduced delay for smooth transition
     }
   }, [animationReady, isAppReady, onAnimationComplete]);
 
   useEffect(() => {
     startAnimation();
     
-    // Minimum splash duration for good UX (even if loading finishes early)
-    const minimumSplashTime = 3000;
+    // ✅ REDUCED: 2-second splash duration
+    const minimumSplashTime = 2000; // Reduced from 3000ms
     
-    // Maximum splash duration as safety net
-    const maxSplashTime = 8000;
+    // ✅ REDUCED: Maximum splash duration as safety net
+    const maxSplashTime = 3000; // Reduced from 8000ms
     
     const minTimeout = setTimeout(() => {
       // Minimum splash time reached
@@ -71,55 +71,55 @@ function ProfessionalSplashScreen(props: ProfessionalSplashScreenProps) {
   }, [onAnimationComplete]);
 
   const startAnimation = () => {
-    // Background pulse
+    // ✅ FASTER: Background pulse with shorter duration
     Animated.loop(
       Animated.sequence([
         Animated.timing(backgroundPulse, {
           toValue: 1.02,
-          duration: 3000,
+          duration: 1500, // Reduced from 3000ms
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(backgroundPulse, {
           toValue: 1,
-          duration: 3000,
+          duration: 1500, // Reduced from 3000ms
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
       ])
     ).start();
 
-    // Start lightning early - even before logo
+    // ✅ FASTER: Start lightning immediately
     setTimeout(() => {
       setShowLightning(true);
-    }, 200); // Lightning starts after just 200ms
+    }, 100); // Reduced from 200ms
 
-    // Main logo animation sequence
+    // ✅ FASTER: Main logo animation sequence
     Animated.sequence([
-      // Small initial delay
-      Animated.delay(400),
+      // ✅ REDUCED: Smaller initial delay
+      Animated.delay(150), // Reduced from 400ms
       
-      // Phase 1: Logo entrance (now happens with lightning already playing)
+      // ✅ FASTER: Logo entrance
       Animated.parallel([
         Animated.timing(logoOpacity, {
           toValue: 1,
-          duration: 800,
+          duration: 500, // Reduced from 800ms
           easing: Easing.out(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.spring(logoScale, {
           toValue: 1,
-          tension: 80,
+          tension: 120, // Increased for faster spring
           friction: 8,
           useNativeDriver: true,
         }),
       ]),
       
     ]).start(() => {
-      // Mark animation as ready after logo entrance completes
+      // ✅ FASTER: Mark animation as ready much sooner
       setTimeout(() => {
         setAnimationReady(true);
-      }, 1500); // Reduced from 2500ms since lightning started earlier
+      }, 500); // Reduced from 1500ms
     });
   };
 
@@ -167,7 +167,7 @@ function ProfessionalSplashScreen(props: ProfessionalSplashScreenProps) {
             style={styles.lightning}
             autoPlay={true}
             loop={true}
-            speed={1.0}
+            speed={1.5} // ✅ FASTER: Increased speed for quicker animation
           />
         </View>
       )}

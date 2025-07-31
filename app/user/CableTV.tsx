@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+// Updated CableTvScreen with Showmax icon and proper 4-icon spacing
+
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,90 +12,179 @@ import {
   TextInput,
   Alert,
   Image,
-  ActivityIndicator
+  ActivityIndicator,
+  ImageSourcePropType
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import BottomTabNavigator from '../../components/BottomNavigator';
+import PinEntryModal from '../../components/PinEntry';
+import TwoFactorAuthModal from '../../components/2FA';
+import ErrorDisplay from '../../components/ErrorDisplay';
+import CablePackageModal from '../../components/cablePackageModal';
+import CableTvConfirmationModal from '../../components/CabletvConfirmModal';
+import { Typography } from '../../constants/Typography';
+import { Colors } from '../../constants/Colors';
+import { useCableTV } from '../../hooks/useCabletv';
+import { useDashboard } from '../../hooks/useDashboard';
+import { useCustomer } from '../../hooks/useCustomer';
 
-// Import cable TV provider icons
+// ✅ UPDATED: Import cable TV provider icons including Showmax
 const DstvIcon = require('../../components/icons/Dstv.png');
 const GotvIcon = require('../../components/icons/Gotv.png');
 const StarTimesIcon = require('../../components/icons/StarTimes.png');
+const ShowmaxIcon = require('../../components/icons/Showmax.png');
 const checkmarkIcon = require('../../components/icons/green-checkmark.png');
+const profileIcon = require('../../components/icons/profile.png');
 
-// Mock data for cable TV providers
-const cableTvProviders = [
-  { id: 'dstv', name: 'DStv', icon: DstvIcon },
-  { id: 'gotv', name: 'GOtv', icon: GotvIcon },
-  { id: 'startimes', name: 'StarTimes', icon: StarTimesIcon },
-];
-
-// Mock plans for each provider
-const providerPlans = {
-  dstv: [
-    { id: 'dstv-padi', name: 'DStv Padi', price: 2150 },
-    { id: 'dstv-yanga', name: 'DStv Yanga', price: 2950 },
-    { id: 'dstv-confam', name: 'DStv Confam', price: 5300 },
-    { id: 'dstv-compact', name: 'DStv Compact', price: 9000 },
-    { id: 'dstv-compact-plus', name: 'DStv Compact Plus', price: 14250 },
-    { id: 'dstv-premium', name: 'DStv Premium', price: 21000 },
-  ],
-  gotv: [
-    { id: 'gotv-smallie', name: 'GOtv Smallie', price: 900 },
-    { id: 'gotv-jinja', name: 'GOtv Jinja', price: 1900 },
-    { id: 'gotv-jolli', name: 'GOtv Jolli', price: 2800 },
-    { id: 'gotv-max', name: 'GOtv Max', price: 4150 },
-    { id: 'gotv-supa', name: 'GOtv Supa', price: 5500 },
-  ],
-  startimes: [
-    { id: 'nova', name: 'Nova', price: 900 },
-    { id: 'basic', name: 'Basic', price: 1850 },
-    { id: 'smart', name: 'Smart', price: 2600 },
-    { id: 'classic', name: 'Classic', price: 3300 },
-    { id: 'super', name: 'Super', price: 4900 },
-  ],
+// ✅ UPDATED: Provider icon mapping including Showmax
+const providerIcons: Record<string, ImageSourcePropType> = {
+  'dstv': DstvIcon,
+  'gotv': GotvIcon,
+  'startimes': StarTimesIcon,
+  'showmax': ShowmaxIcon,
 };
 
-// Colors from your electricity screen
-const Colors = {
-  background: '#F8F9FA',
-  surface: '#FFFFFF',
-  text: {
-    primary: '#111827',
-    secondary: '#6B7280'
-  }
+// ✅ CONSISTENT TYPOGRAPHY STYLE
+const baseTextStyle = {
+  fontFamily: 'Bricolage Grotesque',
+  fontWeight: '400' as const,
+  fontSize: 14,
+  lineHeight: 21,
+  letterSpacing: 0,
 };
 
-// Typography from your electricity screen
-const Typography = {
-  regular: 'System',
-  medium: 'System'
-};
-
-interface CableTvProvider {
-  id: string;
-  name: string;
-  icon: any;
+// Interfaces
+interface ErrorAction { 
+  title: string; 
+  message: string; 
+  actionText: string; 
+  route?: string; 
+  priority?: 'high' | 'medium' | 'low'; 
 }
 
-interface Plan {
-  id: string;
+interface ErrorDisplayData { 
+  type?: string; 
+  title?: string; 
+  message?: string; 
+  errorAction?: ErrorAction; 
+  onActionPress?: () => void; 
+  autoHide?: boolean; 
+  duration?: number; 
+  dismissible?: boolean; 
+}
+
+interface PurchaseData {
+  customer_id: string;
+  service_id: string;
+  variation_id: string;
+  subscription_type: string;
+  amount: number;
+  twoFactorCode: string;
+  passwordpin: string;
+}
+
+interface CableTvPackage {
+  variationId: string;
   name: string;
+  description?: string;
   price: number;
+  formattedPrice: string;
+  formattedChannels?: string;
+  channels?: number;
+  features?: string[];
+  category?: string;
+  subscriptionType?: string;
+  provider?: string;
+  serviceName?: string;
+  availability?: string;
+  variation_id?: string;
+  id?: string;
 }
 
 const CableTvScreen: React.FC = () => {
   const router = useRouter();
+  const { dailyLimit } = useDashboard();
+  const {
+    loading,
+    error,
+    providers,
+    selectedProvider,
+    selectedSubscriptionType,
+    selectedPackage,
+    purchaseCableTV,
+    getCableTVProviders,
+    getSubscriptionTypes,
+    selectProvider,
+    selectSubscriptionType,
+    selectPackage,
+    clearErrors,
+    validateCustomerId,
+    formatCustomerId,
+    getProviderDisplayName,
+    formatAmount,
+    isFormComplete,
+    getErrorAction,
+    getUserFriendlyMessage,
+    initialize
+  } = useCableTV();
+  
+  const { 
+    verifyCableTVCustomer, 
+    loading: customerLoading, 
+    customerData, 
+    error: customerError,
+    clearError: clearCustomerError,
+    clearCustomerData,
+    formatCustomerName,
+    getUserFriendlyMessage: getCustomerUserFriendlyMessage,
+    getErrorAction: getCustomerErrorAction
+  } = useCustomer();
   
   // Form state
-  const [selectedProvider, setSelectedProvider] = useState<CableTvProvider | null>(null);
   const [smartcardNumber, setSmartcardNumber] = useState<string>('');
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-  
+
+  // Track customer verification separately to prevent clearing
+  const [isCustomerVerified, setIsCustomerVerified] = useState<boolean>(false);
+  const [verifiedSmartcardNumber, setVerifiedSmartcardNumber] = useState<string>('');
+
   // Modal states
-  const [showProviderModal, setShowProviderModal] = useState<boolean>(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [proceedLoading, setProceedLoading] = useState<boolean>(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState<boolean>(false);
+
+  // Error display
+  const [showErrorDisplay, setShowErrorDisplay] = useState(false);
+  const [errorDisplayData, setErrorDisplayData] = useState<ErrorDisplayData | null>(null);
+
+  // Authentication
+  const [passwordPin, setPasswordPin] = useState('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+
+  // Initialize hook on mount
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  // Set default subscription type to 'change' when component mounts
+  useEffect(() => {
+    const subscriptionTypes = getSubscriptionTypes();
+    const defaultType = subscriptionTypes.find(t => t.id === 'change');
+    if (defaultType && !selectedSubscriptionType) {
+      selectSubscriptionType(defaultType);
+    }
+  }, [getSubscriptionTypes, selectSubscriptionType, selectedSubscriptionType]);
+
+  // Monitor customer data changes
+  useEffect(() => {
+    if (customerData && smartcardNumber) {
+      setIsCustomerVerified(true);
+      setVerifiedSmartcardNumber(smartcardNumber);
+    } else if (!customerData) {
+      setIsCustomerVerified(false);
+      setVerifiedSmartcardNumber('');
+    }
+  }, [customerData, smartcardNumber]);
 
   // Navigation handlers
   const handleGoBack = (): void => {
@@ -104,112 +195,417 @@ const CableTvScreen: React.FC = () => {
     router.push('/history');
   };
 
-  const handleProceedSmartcard = async (): Promise<void> => {
+  // Error Helpers
+  const showErrorMessage = (data: ErrorDisplayData) => { 
+    setErrorDisplayData(data); 
+    setShowErrorDisplay(true); 
+  };
+  
+  const hideErrorDisplay = () => { 
+    setShowErrorDisplay(false); 
+    setErrorDisplayData(null); 
+  };
+
+  const getErrorType = (code: string): ErrorDisplayData['type'] => {
+    switch (code) {
+      case 'SETUP_2FA_REQUIRED': case 'SETUP_PIN_REQUIRED': return 'setup';
+      case 'INVALID_2FA_CODE': case 'INVALID_PASSWORDPIN': return 'auth';
+      case 'KYC_LIMIT_EXCEEDED': return 'limit';
+      case 'INSUFFICIENT_BALANCE': return 'balance';
+      case 'VALIDATION_ERROR': case 'INVALID_CUSTOMER_ID': case 'AMOUNT_PACKAGE_MISMATCH': return 'validation';
+      case 'NETWORK_ERROR': return 'network';
+      case 'SERVICE_ERROR': case 'PURCHASE_FAILED': return 'server';
+      default: return 'general';
+    }
+  };
+
+  // Provider selection that preserves customer data for same provider
+  const handleProviderSelect = (provider: any): void => {
+    console.log('🔄 Provider selected:', provider);
+    
+    // Only clear customer data if provider actually changes
+    const providerChanged = selectedProvider?.id !== provider.id;
+    
+    selectProvider(provider);
+    clearErrors();
+    
+    if (providerChanged) {
+      console.log('🔄 Provider changed, clearing customer and package data');
+      // Clear customer verification when provider changes
+      if (customerData) {
+        clearCustomerData();
+        clearCustomerError();
+        setIsCustomerVerified(false);
+        setVerifiedSmartcardNumber('');
+      }
+      // Clear selected package when provider changes
+      if (selectedPackage) {
+        console.log('🗑️ Clearing previously selected package');
+        selectPackage(null);
+      }
+    } else {
+      console.log('🔄 Same provider selected, keeping customer and package data');
+    }
+  };
+
+  // Only clear customer data when smartcard number actually changes
+  const handleSmartcardNumberChange = (value: string): void => {
+    const numericValue = value.replace(/[^0-9]/g, '');
+    setSmartcardNumber(numericValue);
+    
+    // Only clear customer data if the smartcard number actually changed
+    if (verifiedSmartcardNumber && numericValue !== verifiedSmartcardNumber) {
+      console.log('🔄 Smartcard number changed, clearing customer data');
+      if (customerData) {
+        clearCustomerData();
+        clearCustomerError();
+        setIsCustomerVerified(false);
+        setVerifiedSmartcardNumber('');
+      }
+    }
+  };
+
+  const handleVerifySmartcard = async (): Promise<void> => {
     if (!smartcardNumber.trim()) {
-      Alert.alert('Smartcard Number Required', 'Please enter a smartcard number to proceed');
+      showErrorMessage({
+        type: 'validation',
+        title: 'Smartcard Number Required',
+        message: 'Please enter your smartcard/IUC number',
+        autoHide: true,
+        duration: 3000
+      });
       return;
     }
 
     if (!selectedProvider) {
-      Alert.alert('Provider Required', 'Please select a cable TV provider first');
+      showErrorMessage({
+        type: 'validation',
+        title: 'Provider Required',
+        message: 'Please select a cable TV provider first',
+        autoHide: true,
+        duration: 3000
+      });
       return;
     }
 
-    setProceedLoading(true);
+    if (!validateCustomerId(smartcardNumber)) {
+      showErrorMessage({
+        type: 'validation',
+        title: 'Invalid Smartcard Number',
+        message: 'Please enter a valid smartcard/IUC number (8-20 characters, alphanumeric)',
+        autoHide: true,
+        duration: 3000
+      });
+      return;
+    }
+
+    // Clear any previous customer errors
+    clearCustomerError();
+
+    try {
+      const result = await verifyCableTVCustomer(
+        smartcardNumber, 
+        selectedProvider.id
+      );
+      
+      if (result && result.success) {
+        console.log('✅ Customer verified successfully');
+        // Customer verified successfully - verification state will be updated by useEffect
+      } else {
+        // Handle verification failure
+        const errorAction = getCustomerErrorAction?.(result?.requiresAction || 'RETRY');
+        const friendlyMessage = getCustomerUserFriendlyMessage?.(result?.error, result?.message);
+        
+        if (errorAction) {
+          showErrorMessage({
+            type: 'validation',
+            title: errorAction.title,
+            message: errorAction.message,
+            autoHide: true,
+            duration: 4000
+          });
+        } else {
+          showErrorMessage({
+            type: 'server',
+            title: 'Verification Failed',
+            message: friendlyMessage || 'Unable to verify customer. Please check your information.',
+            autoHide: true,
+            duration: 4000
+          });
+        }
+      }
+    } catch (error) {
+      // Error handling is already done in the hook, but show user-friendly message
+      const friendlyMessage = getCustomerUserFriendlyMessage?.(customerError, 'Unable to verify customer at this time.');
+      showErrorMessage({
+        type: 'server',
+        title: 'Verification Error',
+        message: friendlyMessage || 'Unable to verify customer at this time.',
+        autoHide: true,
+        duration: 4000
+      });
+    }
+  };
+
+  // Simplified package selection (modal now guarantees good data)
+  const handlePackageSelect = (pkg: CableTvPackage): void => {
+    console.log('📦 Normalized package received from modal:', pkg);
     
-    // Simulate API call to verify smartcard
-    setTimeout(() => {
-      setProceedLoading(false);
-      Alert.alert('Success', 'Smartcard number verified successfully');
-    }, 2000);
-  };
-
-  const handleProviderSelect = (provider: CableTvProvider): void => {
-    setSelectedProvider(provider);
-    setSelectedPlan(null); // Reset plan when provider changes
-    setShowProviderModal(false);
-  };
-
-  const handlePlanSelect = (plan: Plan): void => {
-    setSelectedPlan(plan);
+    const packageForApp = {
+      id: pkg.variationId,              // Guaranteed to exist
+      variation_id: pkg.variationId,    // Modal ensures this is set
+      name: pkg.name,                   // Modal validates this
+      price: pkg.price,                 // Modal validates this > 0
+      formattedPrice: pkg.formattedPrice,
+      data: pkg.name,
+      duration: pkg.subscriptionType,
+      description: pkg.description,
+      channels: pkg.channels,
+      features: pkg.features
+    };
+    
+    console.log('📦 Package for app:', packageForApp);
+    selectPackage(packageForApp);
     setShowPlanModal(false);
   };
 
-  const handleSmartcardNumberChange = (value: string): void => {
-    setSmartcardNumber(value);
-  };
-
+  // Purchase flow
   const validateForm = (): boolean => {
+    clearErrors();
+    
     if (!selectedProvider) {
-      Alert.alert('Provider Required', 'Please select a cable TV provider to continue');
+      showErrorMessage({
+        type: 'validation',
+        title: 'Provider Required',
+        message: 'Please select a cable TV provider',
+        autoHide: true,
+        duration: 3000
+      });
       return false;
     }
+    
     if (!smartcardNumber.trim()) {
-      Alert.alert('Smartcard Number Required', 'Please enter your smartcard number');
+      showErrorMessage({
+        type: 'validation',
+        title: 'Smartcard Number Required',
+        message: 'Please enter your smartcard/IUC number',
+        autoHide: true,
+        duration: 3000
+      });
       return false;
     }
-    if (!selectedPlan) {
-      Alert.alert('Plan Required', 'Please select a subscription plan');
+    
+    if (!validateCustomerId(smartcardNumber)) {
+      showErrorMessage({
+        type: 'validation',
+        title: 'Invalid Smartcard Number',
+        message: 'Please enter a valid smartcard/IUC number',
+        autoHide: true,
+        duration: 3000
+      });
       return false;
     }
+
+    // Use our tracked verification state
+    if (!isCustomerVerified || !customerData) {
+      showErrorMessage({
+        type: 'validation',
+        title: 'Customer Not Verified',
+        message: 'Please verify your smartcard number first',
+        autoHide: true,
+        duration: 3000
+      });
+      return false;
+    }
+    
+    if (!selectedPackage) {
+      showErrorMessage({
+        type: 'validation',
+        title: 'Package Required',
+        message: 'Please select a subscription package',
+        autoHide: true,
+        duration: 3000
+      });
+      return false;
+    }
+
+    if (selectedPackage.price > dailyLimit) {
+      showErrorMessage({
+        type: 'limit',
+        title: 'Daily Limit Exceeded',
+        message: `Package price exceeds daily limit of ₦${dailyLimit.toLocaleString()}`,
+        autoHide: true,
+        duration: 4000
+      });
+      return false;
+    }
+    
     return true;
   };
 
   const handleContinue = (): void => {
     if (validateForm()) {
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        Alert.alert('Success!', `Cable TV subscription successful for ${selectedProvider?.name} - ${selectedPlan?.name}`);
-      }, 2000);
+      setShowConfirmationModal(true);
     }
   };
 
+  const handleConfirmationConfirm = (): void => {
+    setShowConfirmationModal(false);
+    setShowPinModal(true);
+  };
+
+  const handlePinSubmit = (pin: string) => {
+    setPasswordPin(pin);
+    setShowPinModal(false);
+    setShowTwoFactorModal(true);
+  };
+
+  // Simplified two factor submit (no need to re-validate variation_id)
+  const handleTwoFactorSubmit = async (code: string) => {
+    setTwoFactorCode(code);
+    
+    if (!selectedProvider || !selectedPackage || !selectedSubscriptionType) {
+      showErrorMessage({
+        type: 'validation',
+        title: 'Missing Information',
+        message: 'Please ensure all fields are properly selected',
+        autoHide: true,
+        duration: 3000
+      });
+      return;
+    }
+
+    // No need to validate variation_id anymore - modal guarantees it exists
+    const variationId = selectedPackage.variation_id;
+
+    try {
+      const purchaseData: PurchaseData = {
+        customer_id: smartcardNumber,
+        service_id: selectedProvider.id,
+        variation_id: variationId,  // Guaranteed to be valid
+        subscription_type: selectedSubscriptionType.id,
+        amount: selectedPackage.price,
+        twoFactorCode: code,
+        passwordpin: passwordPin
+      };
+
+      console.log('🚀 Purchase data:', {
+        ...purchaseData,
+        twoFactorCode: '***',
+        passwordpin: '***'
+      });
+
+      const result = await purchaseCableTV(purchaseData);
+      
+      if (result.success) {
+        setShowTwoFactorModal(false);
+        setShowPinModal(false);
+        setPasswordPin('');
+        setTwoFactorCode('');
+        
+        Alert.alert(
+          result.data?.status === 'completed-api' ? 'Success!' : 'Processing',
+          result.data?.status === 'completed-api'
+            ? `Cable TV subscription successful for ${selectedProvider.name}`
+            : 'Your cable TV subscription is being processed.',
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
+      } else {
+        setShowTwoFactorModal(false);
+        const errorAction = getErrorAction?.(result.requiresAction);
+        const errorType = getErrorType(result.error || 'GENERAL_ERROR');
+        
+        if (errorAction) {
+          showErrorMessage({
+            type: errorType,
+            title: errorAction.title,
+            message: errorAction.message,
+            errorAction,
+            onActionPress: () => {
+              if (errorAction.route) {
+                router.push(errorAction.route);
+              } else if (result.requiresAction === 'RETRY_PIN') {
+                setPasswordPin('');
+                setShowPinModal(true);
+              } else if (result.requiresAction === 'RETRY_2FA') {
+                setTwoFactorCode('');
+                setShowTwoFactorModal(true);
+              }
+            },
+            autoHide: false,
+            dismissible: true
+          });
+        } else {
+          showErrorMessage({
+            type: errorType,
+            title: 'Purchase Failed',
+            message: getUserFriendlyMessage?.(result.error || 'PURCHASE_FAILED', result.message || 'Cable TV purchase failed'),
+            autoHide: true,
+            duration: 4000
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Purchase error:", err);
+      setShowTwoFactorModal(false);
+      showErrorMessage({
+        type: 'server',
+        title: 'Unexpected Error',
+        message: 'An unexpected error occurred. Please try again.',
+        autoHide: true,
+        duration: 4000
+      });
+    }
+  };
+
+  // Form validation includes customer verification state
   const isFormValid: boolean = !!(
     selectedProvider && 
     smartcardNumber.trim() &&
-    selectedPlan
+    isCustomerVerified && // Use our tracked state
+    customerData && 
+    selectedPackage
   );
-
-  const getAvailablePlans = (): Plan[] => {
-    if (!selectedProvider) return [];
-    return providerPlans[selectedProvider.id] || [];
-  };
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        
+        {showErrorDisplay && errorDisplayData && (
+          <ErrorDisplay {...errorDisplayData} onDismiss={hideErrorDisplay} />
+        )}
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {/* Header */}
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
               <TouchableOpacity style={styles.backButton} onPress={handleGoBack} activeOpacity={0.7}>
                 <Text style={styles.backButtonText}>←</Text>
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>Cable</Text>
+              <Text style={styles.headerTitle}>Cable TV</Text>
               <TouchableOpacity onPress={handleHistoryPress}>
                 <Text style={styles.historyLink}>History</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Provider Selection Section */}
+          {/* ✅ UPDATED: Provider Selection Section with proper 4-icon spacing */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Select provider</Text>
+            <Text style={styles.sectionTitle}>Select Cable TV Provider</Text>
             <View style={styles.providerGrid}>
-              {cableTvProviders.map((provider) => (
+              {providers.map((provider) => (
                 <TouchableOpacity
                   key={provider.id}
-                  style={styles.providerContainer}
+                  style={styles.providerCard}
                   onPress={() => handleProviderSelect(provider)}
                   activeOpacity={0.8}
                 >
                   <Image 
-                    source={provider.icon}
+                    source={providerIcons[provider.id]}
                     style={[
                       styles.providerIcon,
-                      selectedProvider?.id === provider.id && styles.providerIconSelected
+                      provider.id === 'showmax' && styles.showmaxIcon
                     ]}
                     resizeMode="contain"
                   />
@@ -225,12 +621,12 @@ const CableTvScreen: React.FC = () => {
 
           {/* Smartcard Number Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Smartcard number</Text>
+            <Text style={styles.sectionTitle}>Smartcard/IUC Number</Text>
             <View style={styles.smartcardInputContainer}>
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter smartcard number"
+                  placeholder="Enter smartcard/IUC number"
                   placeholderTextColor={Colors.text?.secondary}
                   value={smartcardNumber}
                   onChangeText={handleSmartcardNumberChange}
@@ -238,39 +634,115 @@ const CableTvScreen: React.FC = () => {
                   maxLength={15}
                 />
               </View>
+              <TouchableOpacity style={styles.profileIconContainer}>
+                <Image source={profileIcon} style={styles.profileIcon} />
+              </TouchableOpacity>
               <TouchableOpacity
-                style={styles.proceedButton}
-                onPress={handleProceedSmartcard}
-                disabled={!smartcardNumber.trim() || proceedLoading || !selectedProvider}
+                style={[
+                  styles.verifyButton,
+                  (!smartcardNumber.trim() || !selectedProvider || customerLoading) && styles.verifyButtonDisabled
+                ]}
+                onPress={handleVerifySmartcard}
+                disabled={!smartcardNumber.trim() || !selectedProvider || customerLoading}
                 activeOpacity={0.8}
               >
-                {proceedLoading ? (
+                {customerLoading ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.proceedButtonText}>Proceed</Text>
+                  <Text style={styles.verifyButtonText}>Verify</Text>
                 )}
               </TouchableOpacity>
             </View>
+            <Text style={styles.helperText}>
+              Enter your smartcard or IUC number (e.g., 1234567890)
+            </Text>
+          </View>
+
+          {/* Customer Name Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Customer Name</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.input, styles.uneditableInput]}
+                placeholder="Customer name will appear here"
+                placeholderTextColor={Colors.text?.secondary}
+                value={customerData ? (customerData.customer_name || '').trim() : ''}
+                editable={false}
+              />
+            </View>
+            {/* Verification status indicator */}
+            {isCustomerVerified && (
+              <Text style={styles.verificationStatus}>
+                ✅ Customer verified for {verifiedSmartcardNumber}
+              </Text>
+            )}
           </View>
 
           {/* Plan Selection Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Plan</Text>
+            <Text style={styles.sectionTitle}>Select Package</Text>
+            
+            {/* Bouquet Tab */}
             <TouchableOpacity
-              style={styles.planSelector}
-              onPress={() => setShowPlanModal(true)}
-              disabled={!selectedProvider}
+              style={[
+                styles.planTab,
+                (!selectedProvider || !isCustomerVerified) && styles.planTabDisabled
+              ]}
+              onPress={() => {
+                console.log('📱 Opening package modal for provider:', selectedProvider?.id);
+                console.log('👤 Customer verified:', isCustomerVerified);
+                setShowPlanModal(true);
+              }}
+              disabled={!selectedProvider || !isCustomerVerified}
               activeOpacity={0.8}
             >
               <Text style={[
-                styles.planSelectorText,
-                !selectedPlan && styles.planSelectorPlaceholder
+                styles.planTabText,
+                !selectedPackage && styles.planTabPlaceholder
               ]}>
-                {selectedPlan ? `${selectedPlan.name} - ₦${selectedPlan.price.toLocaleString()}` : 'Select a plan'}
+                {selectedPackage 
+                  ? selectedPackage.name
+                  : selectedProvider && isCustomerVerified
+                    ? 'Select bouquet'
+                    : 'Select provider and verify customer first'
+                }
               </Text>
-              <Text style={styles.dropdownArrow}>↓</Text>
+              {selectedPackage && (
+                <Text style={styles.dropdownArrow}>↓</Text>
+              )}
             </TouchableOpacity>
+            
+            {/* Amount Tab */}
+            {selectedPackage && (
+              <TouchableOpacity
+                style={styles.amountTab}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.amountTabText}>
+                  N{selectedPackage.price.toLocaleString()}
+                </Text>
+              </TouchableOpacity>
+            )}
+            
+            {loading && selectedProvider && (
+              <Text style={styles.helperText}>Loading packages...</Text>
+            )}
           </View>
+
+          {/* Summary */}
+          {selectedPackage && (
+            <View style={styles.summarySection}>
+              <Text style={styles.summaryTitle}>Selected Package</Text>
+              <View style={styles.summaryContent}>
+                <Text style={styles.summaryData}>{selectedPackage.name}</Text>
+                <Text style={styles.summaryPrice}>{formatAmount(selectedPackage.price)}</Text>
+              </View>
+              <Text style={styles.summaryValidity}>Duration: {selectedPackage.duration || '1 Month'}</Text>
+              {selectedProvider && (
+                <Text style={styles.summaryProvider}>Provider: {getProviderDisplayName(selectedProvider.id)}</Text>
+              )}
+            </View>
+          )}
         </ScrollView>
 
         {/* Continue Button */}
@@ -284,111 +756,175 @@ const CableTvScreen: React.FC = () => {
             disabled={!isFormValid || loading}
             activeOpacity={0.8}
           >
-            {loading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.continueButtonText}>Continue</Text>
-            )}
+            <Text style={styles.continueButtonText}>
+              {loading ? 'Processing...' : 'Continue'}
+            </Text>
           </TouchableOpacity>
         </View>
+
+        <CablePackageModal
+          visible={showPlanModal}
+          onClose={() => setShowPlanModal(false)}
+          onSelectPackage={handlePackageSelect}
+          selectedPackage={selectedPackage ? {
+            variationId: selectedPackage.variation_id || selectedPackage.id,
+            name: selectedPackage.name,
+            description: selectedPackage.description || '',
+            price: selectedPackage.price,
+            formattedPrice: selectedPackage.formattedPrice || `₦${selectedPackage.price?.toLocaleString()}`,
+            formattedChannels: selectedPackage.channels ? `${selectedPackage.channels} channels` : 'Multiple channels',
+            channels: selectedPackage.channels || 0,
+            features: selectedPackage.features || [],
+            category: 'standard',
+            subscriptionType: selectedPackage.duration || '1 Month',
+            provider: selectedProvider?.id || '',
+            serviceName: selectedProvider?.name || '',
+            availability: 'available'
+          } : null}
+          provider={selectedProvider}
+        />
+
+        <CableTvConfirmationModal
+          visible={showConfirmationModal}
+          onClose={() => setShowConfirmationModal(false)}
+          onConfirm={handleConfirmationConfirm}
+          loading={loading}
+          provider={selectedProvider ? {
+            id: selectedProvider.id,
+            name: selectedProvider.name,
+            icon: providerIcons[selectedProvider.id]
+          } : null}
+          smartcardNumber={smartcardNumber}
+          customerData={customerData}
+          selectedPackage={selectedPackage}
+        />
       </SafeAreaView>
 
-      {/* Plan Selection Modal */}
-      {showPlanModal && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Plan</Text>
-              <TouchableOpacity 
-                onPress={() => setShowPlanModal(false)}
-                style={styles.modalCloseButton}
-              >
-                <Text style={styles.modalCloseText}>×</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.modalContent}>
-              {getAvailablePlans().map((plan) => (
-                <TouchableOpacity
-                  key={plan.id}
-                  style={[
-                    styles.planOption,
-                    selectedPlan?.id === plan.id && styles.planOptionSelected
-                  ]}
-                  onPress={() => handlePlanSelect(plan)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.planDetails}>
-                    <Text style={styles.planName}>{plan.name}</Text>
-                    <Text style={styles.planPrice}>₦{plan.price.toLocaleString()}</Text>
-                  </View>
-                  {selectedPlan?.id === plan.id && (
-                    <View style={styles.checkmark}>
-                      <Text style={styles.checkmarkText}>✓</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      )}
+      <BottomTabNavigator activeTab="cabletv" />
+
+      <PinEntryModal 
+        visible={showPinModal} 
+        onClose={() => { 
+          setShowPinModal(false); 
+          setPasswordPin(''); 
+        }} 
+        onSubmit={handlePinSubmit} 
+        loading={false} 
+        title="Enter Password PIN" 
+        subtitle="Enter your 6-digit PIN to continue" 
+      />
+      
+      <TwoFactorAuthModal 
+        visible={showTwoFactorModal} 
+        onClose={() => { 
+          setShowTwoFactorModal(false); 
+          setTwoFactorCode(''); 
+          setShowPinModal(true); 
+        }} 
+        onSubmit={handleTwoFactorSubmit} 
+        loading={loading} 
+        title="Two-Factor Authentication" 
+        subtitle="Enter 6-digit authenticator code" 
+      />
     </View>
   );
 };
 
+// ✅ UPDATED STYLES WITH PROPER 4-ICON SPACING AND CONSISTENT TYPOGRAPHY
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
-  safeArea: { flex: 1 },
-  scrollView: { flex: 1 },
+  container: { 
+    flex: 1, 
+    backgroundColor: Colors.background || '#F8F9FA' 
+  },
+  safeArea: { 
+    flex: 1 
+  },
+  scrollView: { 
+    flex: 1 
+  },
   headerSection: {
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 24,
   },
-  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backButtonText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
+  headerContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between' 
+  },
+  backButton: { 
+    width: 40, 
+    height: 40, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderRadius: 20 
+  },
+  backButtonText: { 
+    ...baseTextStyle,
+    fontSize: 20, 
+    color: Colors.text?.primary || '#111827', 
+    fontWeight: '500' 
+  },
   headerTitle: {
+    ...baseTextStyle,
     color: '#35297F',
-    fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  historyLink: { color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 14, fontWeight: '500' },
-  section: { paddingHorizontal: 16, marginBottom: 24 },
+  historyLink: { 
+    ...baseTextStyle,
+    color: '#35297F', 
+    fontWeight: '500' 
+  },
+  section: { 
+    paddingHorizontal: 16, 
+    marginBottom: 24 
+  },
   sectionTitle: {
+    ...baseTextStyle,
     color: Colors.text?.secondary || '#6B7280',
-    fontFamily: Typography.regular || 'System',
-    fontSize: 14,
-    fontWeight: '400',
     marginBottom: 16,
   },
+  
+  // ✅ UPDATED: Provider grid with same spacing as data screen (4 icons)
   providerGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 12,
+    flexWrap: 'wrap',
+    gap: 12, // Same as data screen
   },
-  providerContainer: {
-    flex: 1,
+  
+  // ✅ UPDATED: Provider card with fixed width like data screen
+  providerCard: {
+    width: 80, // Same as data screen networkCard width
+    height: 60, // Same as data screen networkCard height
+    borderRadius: 8,
+    justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
+  
+  // ✅ UPDATED: Provider icon with proper sizing
   providerIcon: {
-    width: 97,
-    height: 48,
+    width: 79, // Same as data screen networkIcon width
+    height: 53, // Same as data screen networkIcon height
+    resizeMode: 'contain',
+  },
+  
+  // ✅ NEW: Specific styling for Showmax icon to match others
+  showmaxIcon: {
+    width: 75, // Slightly smaller to match visual weight
+    height: 48, // Adjusted height for better proportion
+    borderRadius: 6, // Soften sharp borders
     backgroundColor: 'transparent',
   },
-  providerIconSelected: {
-    opacity: 0.8,
-  },
+  
   checkmarkContainer: {
     position: 'absolute',
     top: -8,
-    right: 8,
+    right: -8,
     zIndex: 1,
   },
   checkmarkIcon: {
@@ -410,8 +946,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, 
     paddingVertical: 12 
   },
-  input: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular || 'System', fontSize: 16, fontWeight: '400', paddingVertical: 4 },
-  proceedButton: {
+  input: { 
+    ...baseTextStyle,
+    color: Colors.text?.primary || '#111827',
+    fontSize: 16,
+    paddingVertical: 4 
+  },
+  uneditableInput: {
+    backgroundColor: '#F9FAFB',
+    color: Colors.text?.secondary || '#6B7280',
+  },
+  profileIconContainer: { 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  profileIcon: { 
+    width: 40, 
+    height: 30, 
+    resizeMode: 'contain' 
+  },
+  verifyButton: {
     backgroundColor: '#35297F',
     borderRadius: 6,
     paddingHorizontal: 12,
@@ -420,13 +974,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 70,
   },
-  proceedButtonText: {
+  verifyButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  verifyButtonText: {
+    ...baseTextStyle,
     color: '#FFFFFF',
-    fontFamily: Typography.medium || 'System',
     fontSize: 12,
     fontWeight: '600',
   },
-  planSelector: {
+  helperText: { 
+    ...baseTextStyle,
+    color: Colors.text?.secondary || '#6B7280',
+    fontSize: 11,
+    marginTop: 6, 
+    fontStyle: 'italic' 
+  },
+  // Verification status
+  verificationStatus: {
+    ...baseTextStyle,
+    color: '#059669',
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  planTab: {
     backgroundColor: Colors.surface || '#FFFFFF',
     borderRadius: 8,
     borderWidth: 1,
@@ -435,17 +1007,88 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 12,
   },
-  planSelectorText: { 
-    color: Colors.text?.primary || '#111827', 
-    fontFamily: Typography.regular || 'System', 
-    fontSize: 16, 
-    fontWeight: '400', 
+  planTabDisabled: { 
+    backgroundColor: '#F9FAFB', 
+    borderColor: '#E5E7EB' 
+  },
+  planTabText: { 
+    ...baseTextStyle,
+    color: Colors.text?.primary || '#111827',
+    fontSize: 16,
     flex: 1 
   },
-  planSelectorPlaceholder: { color: Colors.text?.secondary || '#6B7280' },
-  dropdownArrow: { color: Colors.text?.secondary || '#6B7280', fontSize: 16, fontWeight: '500' },
-  buttonContainer: { paddingHorizontal: 16, paddingVertical: 24, backgroundColor: Colors.background || '#F8F9FA' },
+  planTabPlaceholder: { 
+    color: Colors.text?.secondary || '#6B7280' 
+  },
+  amountTab: {
+    backgroundColor: Colors.surface || '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    alignItems: 'flex-start',
+  },
+  amountTabText: {
+    ...baseTextStyle,
+    color: Colors.text?.primary || '#111827',
+    fontSize: 16,
+  },
+  dropdownArrow: { 
+    ...baseTextStyle,
+    color: Colors.text?.secondary || '#6B7280', 
+    fontSize: 16, 
+    fontWeight: '500' 
+  },
+  summarySection: { 
+    backgroundColor: '#F3F4F6', 
+    borderRadius: 8, 
+    padding: 16, 
+    marginHorizontal: 16, 
+    marginBottom: 24 
+  },
+  summaryTitle: { 
+    ...baseTextStyle,
+    color: Colors.text?.primary || '#111827',
+    fontWeight: '600', 
+    marginBottom: 8 
+  },
+  summaryContent: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 4 
+  },
+  summaryData: { 
+    ...baseTextStyle,
+    color: Colors.text?.primary || '#111827',
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
+  summaryPrice: { 
+    ...baseTextStyle,
+    color: '#35297F',
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
+  summaryValidity: { 
+    ...baseTextStyle,
+    color: Colors.text?.secondary || '#6B7280',
+    fontSize: 12,
+  },
+  summaryProvider: { 
+    ...baseTextStyle,
+    color: Colors.text?.secondary || '#6B7280',
+    fontSize: 12,
+    marginTop: 2
+  },
+  buttonContainer: { 
+    paddingHorizontal: 16, 
+    paddingVertical: 24, 
+    backgroundColor: Colors.background || '#F8F9FA' 
+  },
   continueButton: {
     backgroundColor: '#35297F',
     borderRadius: 8,
@@ -458,89 +1101,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  continueButtonDisabled: { backgroundColor: '#9CA3AF', elevation: 0, shadowOpacity: 0 },
-  continueButtonText: { color: '#FFFFFF', fontFamily: Typography.medium || 'System', fontSize: 16, fontWeight: '600' },
-  
-  // Modal styles
-  modalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  continueButtonDisabled: { 
+    backgroundColor: '#9CA3AF', 
+    elevation: 0, 
+    shadowOpacity: 0 
   },
-  modalContainer: {
-    backgroundColor: Colors.surface || '#FFFFFF',
-    borderRadius: 12,
-    margin: 20,
-    maxHeight: '70%',
-    width: '90%',
+  continueButtonText: { 
+    ...baseTextStyle,
+    color: '#FFFFFF',
+    fontSize: 16, 
+    fontWeight: '600' 
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.text?.primary || '#111827',
-  },
-  modalCloseButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-  },
-  modalCloseText: {
-    fontSize: 20,
-    color: Colors.text?.secondary || '#6B7280',
-  },
-  modalContent: {
-    maxHeight: 400,
-  },
-  planOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  planOptionSelected: {
-    backgroundColor: '#F8F7FF',
-  },
-  planDetails: {
-    flex: 1,
-  },
-  planName: {
-    fontSize: 16,
-    color: Colors.text?.primary || '#111827',
-    fontWeight: '500',
-  },
-  planPrice: {
-    fontSize: 14,
-    color: Colors.text?.secondary || '#6B7280',
-    marginTop: 2,
-  },
-  checkmark: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#35297F',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkmarkText: { color: '#FFFFFF', fontSize: 12, fontWeight: 'bold' },
 });
 
 export default CableTvScreen;
