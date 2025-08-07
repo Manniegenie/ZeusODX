@@ -31,6 +31,8 @@ const AnimatedTab: React.FC<AnimatedTabProps> = ({ tab, isActive, onPress }) => 
   const colorAnim = useRef(new Animated.Value(isActive ? 1 : 0)).current;
   const translateYAnim = useRef(new Animated.Value(0)).current;
 
+  const isBuySellTab = tab.id === 'swap';
+
   useEffect(() => {
     Animated.timing(colorAnim, {
       toValue: isActive ? 1 : 0,
@@ -38,13 +40,13 @@ const AnimatedTab: React.FC<AnimatedTabProps> = ({ tab, isActive, onPress }) => 
       useNativeDriver: false
     }).start();
 
-    if (isActive) {
+    if (isActive && !isBuySellTab) {
       Animated.sequence([
         Animated.timing(translateYAnim, { toValue: -2, duration: 150, useNativeDriver: true }),
         Animated.spring(translateYAnim, { toValue: 0, tension: 300, friction: 10, useNativeDriver: true }),
       ]).start();
     }
-  }, [isActive]);
+  }, [isActive, isBuySellTab]);
 
   const handlePress = () => {
     Animated.sequence([
@@ -58,11 +60,48 @@ const AnimatedTab: React.FC<AnimatedTabProps> = ({ tab, isActive, onPress }) => 
     inputRange: [0, 1],
     outputRange: [Colors.text.secondary, Colors.primary]
   });
+  
   const labelColor = colorAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [Colors.text.secondary, Colors.primary]
   });
 
+  if (isBuySellTab) {
+    return (
+      <TouchableOpacity style={styles.specialTabItem} onPress={handlePress} activeOpacity={0.7}>
+        <Animated.View
+          style={[
+            styles.specialTabContainer,
+            { transform: [{ scale: scaleAnim }] }
+          ]}
+        >
+          <View style={styles.specialIconContainer}>
+            <Animated.Image
+              source={tab.icon}
+              style={[
+                styles.specialTabIcon,
+                { tintColor: '#FFFFFF' }
+              ]}
+            />
+          </View>
+          <Animated.Text
+            style={[
+              styles.specialTabLabel,
+              {
+                color: '#FFFFFF',
+                fontFamily: Typography.medium,
+                fontWeight: '600',
+              }
+            ]}
+          >
+            {tab.label}
+          </Animated.Text>
+        </Animated.View>
+      </TouchableOpacity>
+    );
+  }
+
+  // Regular tab styling for other tabs
   return (
     <TouchableOpacity style={styles.tabItem} onPress={handlePress} activeOpacity={0.7}>
       <Animated.View
@@ -134,8 +173,7 @@ const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({ activeTab }) =>
         styles.container,
         {
           transform: [{ translateY: slideTransform }],
-          // Industry standard: fixed height + safe area inset
-          paddingBottom: Math.max(insets.bottom, 8), // Minimum 8px, or safe area
+          paddingBottom: Math.max(insets.bottom, 8),
         },
       ]}
     >
@@ -160,6 +198,11 @@ interface Styles {
   tabContainer: ViewStyle;
   tabIcon: ImageStyle;
   tabLabel: TextStyle;
+  specialTabItem: ViewStyle;
+  specialTabContainer: ViewStyle;
+  specialIconContainer: ViewStyle;
+  specialTabIcon: ImageStyle;
+  specialTabLabel: TextStyle;
 }
 
 const styles = StyleSheet.create<Styles>({
@@ -167,27 +210,27 @@ const styles = StyleSheet.create<Styles>({
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
-    paddingTop: 8, // Industry standard padding
-    // Removed shadow & elevation for cleaner look
+    paddingTop: 8,
   },
   tabNavContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'center',
+    alignItems: 'center', // Back to center alignment
     paddingHorizontal: Layout.spacing.md,
-    height: 56, // Industry standard tab bar height
+    height: 56, // Back to original height
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    height: 56, // Back to original height
   },
   tabContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabIcon: {
-    width: 24, // Slightly smaller for better proportions
+    width: 24,
     height: 24,
     resizeMode: 'contain',
   },
@@ -195,7 +238,47 @@ const styles = StyleSheet.create<Styles>({
     fontSize: 10,
     textAlign: 'center',
     letterSpacing: 0.2,
-    marginTop: 4, // Reduced margin for better spacing
+    marginTop: 4,
+  },
+  // Special styles for Buy/Sell tab
+  specialTabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 56, // Same as regular tabs
+    marginTop: -6, // Reduced from -12 to -6 for subtle raise
+  },
+  specialTabContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  specialIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#35297F',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#35297F',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    // Gradient effect using multiple layers
+    borderWidth: 2,
+    borderColor: '#35297F33',
+  },
+  specialTabIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
+  specialTabLabel: {
+    fontSize: 10,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+    marginTop: 6,
+    fontWeight: '600',
   },
 });
 

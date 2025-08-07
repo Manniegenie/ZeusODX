@@ -1,6 +1,4 @@
-// app/components/WalletPortfolioSection.tsx
-
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   View, 
   Text, 
@@ -10,10 +8,13 @@ import {
   ImageBackground,
   Animated
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { useDashboard } from '../../hooks/useDashboard';
+import SelectTokenModal, { WalletOption } from '../../components/SelectToken';
+import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 
 // Asset imports
 const depositIcon    = require('../../components/icons/deposit-icon.png');
@@ -31,17 +32,16 @@ interface QuickLink {
 
 interface WalletPortfolioSectionProps {
   balanceVisible: boolean;
-  onQuickLinkPress: (link: QuickLink) => void;
   onSetupPress: () => void;
   onToggleBalanceVisibility: () => void;
 }
 
 export default function WalletPortfolioSection({ 
   balanceVisible, 
-  onQuickLinkPress, 
   onSetupPress,
   onToggleBalanceVisibility,
 }: WalletPortfolioSectionProps) {
+  const router = useRouter();
   const { totalPortfolioBalance, completionPercentage } = useDashboard();
   const safeBalance = totalPortfolioBalance || 0;
   const formattedUsdBalance = `$${safeBalance.toLocaleString('en-US', {
@@ -49,12 +49,65 @@ export default function WalletPortfolioSection({
     maximumFractionDigits: 2,
   })}`;
 
+  // Modals state
+  const [showSelectTokenModal, setShowSelectTokenModal] = useState(false);
+  const [showTransferMethodModal, setShowTransferMethodModal] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<WalletOption | null>(null);
+
   // Only 3 quick links for wallet
   const quickLinks: QuickLink[] = [
     { id: 'deposit',   title: 'Deposit',   icon: depositIcon,   route: '/wallet/deposit' },
     { id: 'transfer',  title: 'Transfer',  icon: transferIcon,  route: '/wallet/transfer' },
     { id: 'buy-sell',  title: 'Buy/Sell',  icon: swapIcon,      route: '/user/Swap' },
   ];
+
+  const handleQuickLinkPress = (link: QuickLink) => {
+    if (link.id === 'deposit') {
+      router.push(link.route);
+    } else if (link.id === 'transfer') {
+      setShowSelectTokenModal(true);
+    } else {
+      router.push(link.route);
+    }
+  };
+
+  const handleSelectTokenForTransfer = (token: WalletOption) => {
+    setSelectedToken(token);
+    setShowTransferMethodModal(true);
+  };
+
+  const handleTransferMethodSelect = (method: TransferMethod) => {
+    if (!selectedToken) return;
+
+    if (method.id === 'zeus') {
+      router.push({
+        pathname: '/user/usernametransfer',
+        params: { 
+          tokenId: selectedToken.id, 
+          tokenName: selectedToken.name,
+          tokenSymbol: selectedToken.symbol,
+          transferMethod: 'zeus'
+        }
+      });
+    } else if (method.id === 'external') {
+      router.push({
+        pathname: '/user/externaltransfer',
+        params: { 
+          tokenId: selectedToken.id, 
+          tokenName: selectedToken.name,
+          tokenSymbol: selectedToken.symbol,
+          transferMethod: 'external'
+        }
+      });
+    }
+    setSelectedToken(null);
+    setShowTransferMethodModal(false);
+  };
+
+  const handleCloseTransferMethodModal = () => {
+    setShowTransferMethodModal(false);
+    setSelectedToken(null);
+  };
 
   // Progress bar animation
   const progressAnim = useRef(new Animated.Value(completionPercentage)).current;
@@ -118,7 +171,7 @@ export default function WalletPortfolioSection({
             <TouchableOpacity
               key={item.id}
               style={styles.quickLinkItem}
-              onPress={() => onQuickLinkPress(item)}
+              onPress={() => handleQuickLinkPress(item)}
               activeOpacity={0.7}
             >
               <Image source={item.icon} style={styles.quickLinkIconImage} />
@@ -153,6 +206,19 @@ export default function WalletPortfolioSection({
         </TouchableOpacity>
       )}
 
+      {/* Modals for Transfer Flow */}
+      <SelectTokenModal
+        visible={showSelectTokenModal}
+        onClose={() => setShowSelectTokenModal(false)}
+        onSelectToken={handleSelectTokenForTransfer}
+        title="Select Token to Transfer"
+      />
+      <TransferMethodModal
+        visible={showTransferMethodModal}
+        onClose={handleCloseTransferMethodModal}
+        onSelectMethod={handleTransferMethodSelect}
+        title={`Send ${selectedToken?.name || 'Token'}`}
+      />
     </View>
   );
 }

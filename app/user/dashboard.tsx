@@ -1,240 +1,101 @@
+// app/user/DashboardScreen.tsx
 import { useRouter } from 'expo-router';
 import React, { useState, useCallback } from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  View,
-  RefreshControl
-} from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, View, RefreshControl } from 'react-native';
 import BottomTabNavigator from '../../components/BottomNavigator';
+import SelectTokenModal, { WalletOption } from '../../components/SelectToken';
+import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-
-// Import the dashboard hook
 import { useDashboard } from '../../hooks/useDashboard';
-
-// Import the separated components
 import DashboardHeader from './DashboardHeader';
 import DashboardModals from './DashboardModals';
 import PortfolioSection from './PortfolioSection';
 import TokensSection from './TokensSection';
-
-interface QuickLink {
-  id: string;
-  title: string;
-  icon: any;
-  route: string;
-}
-
-interface Token {
-  id: string;
-  name: string;
-  symbol: string;
-  price: string;
-  change: string;
-  changePercent: string;
-  isPositive: boolean;
-}
-
-interface TransferMethod {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-}
-
-interface WalletOption {
-  id: string;
-  name: string;
-  symbol: string;
-  icon: string;
-}
 
 export default function DashboardScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('All tokens');
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showSelectTokenModal, setShowSelectTokenModal] = useState(false);
+  const [showTransferMethodModal, setShowTransferMethodModal] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<WalletOption | null>(null);
   const [balanceVisible, setBalanceVisible] = useState(true);
-  
-  // Use the dashboard hook
-  const { 
-    refreshDashboard, 
-    loading, 
-    error,
-    dashboard,
-    profile,
-    portfolio,
-    market,
-    wallets
-  } = useDashboard();
 
-  // Pull-to-refresh handler using the dashboard hook
-  const onRefresh = useCallback(async () => {
-    try {
-      console.log('🔄 Refreshing dashboard data...');
-      await refreshDashboard();
-      console.log('✅ Dashboard refresh completed');
-    } catch (error) {
-      console.error('❌ Error refreshing dashboard:', error);
-    }
-  }, [refreshDashboard]);
+  const { refreshDashboard, loading, kyc } = useDashboard();
 
-  // Handler functions
-  const handleQuickLinkPress = (link: QuickLink) => {
-    if (link.id === 'transfer') {
-      setShowTransferModal(true);
-    } else if (link.id === 'deposit') {
+  const handleKYCInitiate = async (level: number, documentType: string) => {
+    console.log(`🚀 KYC Level ${level} with ${documentType} - Navigation to KYC flow`);
+    router.push('/user/kyc-flow');
+  };
+
+  const handleQuickLinkPress = (link: any) => {
+    if (link.id === 'deposit') {
       setShowWalletModal(true);
+    } else if (link.id === 'transfer') {
+      setShowSelectTokenModal(true);
     } else {
       router.push(link.route);
     }
   };
 
-  const handleSeeMore = () => {
-    router.push('/user/see-more');
+  const handleSelectTokenForTransfer = (token: WalletOption) => {
+    setSelectedToken(token);
+    setShowTransferMethodModal(true);
   };
 
-  const handleAssetPress = (asset: Token) => {
-    console.log(`🪙 Token pressed: ${asset.name} (${asset.symbol})`);
-    
-    // Route based on token ID to individual wallet screens
-    switch (asset.id) {
-      case 'btc':
-        router.push('/wallet-screens/btc-wallet');
-        break;
-      case 'eth':
-        router.push('/wallet-screens/eth-wallet');
-        break;
-      case 'usdt':
-        router.push('/wallet-screens/usdt-wallet');
-        break;
-      case 'usdc':
-        router.push('/wallet-screens/usdc-wallet');
-        break;
-      case 'ngnz':
-        router.push('/wallet-screens/ngnz-wallet');
-        break;
-      case 'sol':
-        router.push('/wallet-screens/sol-wallet');
-        break;
-      case 'bnb':
-        router.push('/wallet-screens/bnb-wallet');
-        break;
-      case 'matic':
-        router.push('/wallet-screens/matic-wallet');
-        break;
-      case 'doge':
-        router.push('/wallet-screens/doge-wallet');
-        break;
-      case 'avax':
-        router.push('/wallet-screens/avax-wallet');
-        break;
-      default:
-        console.log(`⚠️ No specific route for ${asset.symbol}, redirecting to coming soon`);
-        router.push('/user/come-soon');
+  const handleTransferMethodSelect = (method: TransferMethod) => {
+    if (!selectedToken) return;
+
+    if (method.id === 'zeus') {
+      router.push({
+        pathname: '/user/usernametransfer',
+        params: { 
+          tokenId: selectedToken.id, 
+          tokenName: selectedToken.name,
+          tokenSymbol: selectedToken.symbol,
+          transferMethod: 'zeus'
+        }
+      });
+    } else if (method.id === 'external') {
+      router.push({
+        pathname: '/user/externaltransfer',
+        params: { 
+          tokenId: selectedToken.id, 
+          tokenName: selectedToken.name,
+          tokenSymbol: selectedToken.symbol,
+          transferMethod: 'external'
+        }
+      });
     }
+
+    setSelectedToken(null);
   };
 
-  const handleTransferMethodPress = (method: TransferMethod) => {
-    setShowTransferModal(false);
-    router.push('/user/come-soon');
+  const handleCloseTransferMethodModal = () => {
+    setShowTransferMethodModal(false);
+    setSelectedToken(null);
   };
 
-  const handleWalletOptionPress = (wallet: WalletOption) => {
-    console.log(`💰 Deposit wallet pressed: ${wallet.name} (${wallet.symbol})`);
-    setShowWalletModal(false);
-    
-    // Route to specific deposit screens based on wallet ID and network
-    switch (wallet.id) {
-      case 'ngnz':
-        router.push('/deposits/ngnz');
-        break;
-      case 'btc':
-        router.push('/deposits/btc');
-        break;
-      case 'eth':
-        router.push('/deposits/eth');
-        break;
-      case 'sol':
-        router.push('/deposits/sol');
-        break;
-      case 'usdc_bsc':
-        router.push('/deposits/usdc-bsc');
-        break;
-      case 'usdc_eth':
-        router.push('/deposits/usdc-eth');
-        break;
-      case 'usdt_bsc':
-        router.push('/deposits/usdt-bsc');
-        break;
-      case 'usdt_eth':
-        router.push('/deposits/usdt-eth');
-        break;
-      case 'usdt_trx':
-        router.push('/deposits/usdt-trx');
-        break;
-      case 'avax_bsc':
-        router.push('/deposits/avax-bsc');
-        break;
-      case 'bnb_bsc':
-        router.push('/deposits/bnb-bsc');
-        break;
-      case 'bnb_eth':
-        router.push('/deposits/bnb-eth');
-        break;
-      case 'matic_eth':
-        router.push('/deposits/matic-eth');
-        break;
-      default:
-        console.log(`⚠️ No specific deposit route for ${wallet.symbol}, redirecting to coming soon`);
-        router.push('/user/come-soon');
+  const onRefresh = useCallback(async () => {
+    try {
+      await refreshDashboard();
+    } catch (error) {
+      console.error('❌ Error refreshing dashboard:', error);
     }
-  };
-
-  const handleActionButtonPress = (action: string) => {
-    router.push('/user/come-soon');
-  };
-
-  const handleNotificationPress = () => {
-    router.push('/user/come-soon');
-  };
-
-  const handleSetupPress = () => {
-    router.push('/user/come-soon');
-  };
-
-  const handlePromoBannerPress = () => {
-    router.push('/user/come-soon');
-  };
-
-  const handleWalletTabPress = () => {
-    router.push('/user/come-soon');
-  };
-
-  // Balance visibility toggle handler
-  const handleBalanceVisibilityToggle = () => {
-    console.log('🔄 DashboardScreen: Balance visibility toggled, current balanceVisible:', balanceVisible);
-    setBalanceVisible(!balanceVisible);
-  };
-
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
-  };
+  }, [refreshDashboard]);
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        
-        {/* Header Section */}
         <DashboardHeader
-          onNotificationPress={handleNotificationPress}
-          onSetupPress={handleSetupPress}
+          onNotificationPress={() => router.push('/user/come-soon')}
+          onSetupPress={() => router.push('/user/settings')}
         />
 
-        <ScrollView 
-          style={styles.scrollView} 
+        <ScrollView
+          style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollViewContent}
           refreshControl={
@@ -249,54 +110,56 @@ export default function DashboardScreen() {
             />
           }
         >
-          {/* Portfolio Section */}
           <PortfolioSection
             balanceVisible={balanceVisible}
             onQuickLinkPress={handleQuickLinkPress}
-            onSeeMore={handleSeeMore}
-            onSetupPress={handleSetupPress}
-            onToggleBalanceVisibility={handleBalanceVisibilityToggle}
+            onSeeMore={() => router.push('/user/see-more')}
+            onToggleBalanceVisibility={() => setBalanceVisible(!balanceVisible)}
+            onKYCInitiate={handleKYCInitiate}
+            kycLoading={false}
+            kycData={kyc}
           />
-
-          {/* Tokens Section */}
           <TokensSection
             activeTab={activeTab}
-            onTabChange={handleTabChange}
-            onAssetPress={handleAssetPress}
+            onTabChange={setActiveTab}
+            onAssetPress={(asset) => router.push(`/wallet-screens/${asset.symbol.toLowerCase()}-wallet`)}
           />
         </ScrollView>
       </SafeAreaView>
 
-      {/* Modals */}
       <DashboardModals
         showTransferModal={showTransferModal}
         showWalletModal={showWalletModal}
         onCloseTransferModal={() => setShowTransferModal(false)}
         onCloseWalletModal={() => setShowWalletModal(false)}
-        onTransferMethodPress={handleTransferMethodPress}
-        onWalletOptionPress={handleWalletOptionPress}
-        onActionButtonPress={handleActionButtonPress}
-        onWalletTabPress={handleWalletTabPress}
+        onTransferMethodPress={() => router.push('/user/come-soon')}
+        onWalletOptionPress={() => router.push('/user/come-soon')}
+        onActionButtonPress={() => router.push('/user/come-soon')}
+        onWalletTabPress={() => router.push('/user/come-soon')}
       />
 
-      {/* Bottom Tab Navigator */}
+      <SelectTokenModal
+        visible={showSelectTokenModal}
+        onClose={() => setShowSelectTokenModal(false)}
+        onSelectToken={handleSelectTokenForTransfer}
+        title="Select Token to Transfer"
+      />
+
+      <TransferMethodModal
+        visible={showTransferMethodModal}
+        onClose={handleCloseTransferMethodModal}
+        onSelectMethod={handleTransferMethodSelect}
+        title={`Send ${selectedToken?.name || 'Token'}`}
+      />
+
       <BottomTabNavigator activeTab="home" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    paddingBottom: Layout.spacing.xl,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  safeArea: { flex: 1 },
+  scrollView: { flex: 1 },
+  scrollViewContent: { paddingBottom: Layout.spacing.xl },
 });

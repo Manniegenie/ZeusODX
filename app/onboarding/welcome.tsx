@@ -14,7 +14,7 @@ export default function WelcomeScreen() {
   };
 
   const handleSkip = () => {
-    router.push('/home');
+    router.push('/onboarding/security');
   };
 
   return (

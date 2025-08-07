@@ -2,23 +2,32 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, SafeAreaView } 
 import { Typography } from '../constants/Typography';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
+import { useRouter } from 'expo-router';
 
 interface SwapSuccessfulScreenProps {
   fromAmount: string;
   fromToken: string;
   toToken: string;
-  onContinue: () => void;
   visible?: boolean;
+  onContinue?: () => void; // Added to allow parent to close modal
 }
 
 export default function SwapSuccessfulScreen({ 
   fromAmount, 
   fromToken, 
   toToken, 
-  onContinue,
-  visible = true
+  visible = true,
+  onContinue
 }: SwapSuccessfulScreenProps) {
-  
+  const router = useRouter();
+
+  const handleContinue = () => {
+    if (onContinue) onContinue(); // Close modal in parent
+    setTimeout(() => {
+      router.push('/user/wallet'); // Navigate after modal closes
+    }, 150);
+  };
+
   return (
     <Modal
       visible={visible}
@@ -28,12 +37,10 @@ export default function SwapSuccessfulScreen({
     >
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
-          {/* Main content */}
           <View style={styles.mainContent}>
-            {/* Success Icon */}
             <View style={styles.iconContainer}>
               <Image 
-                source={require('../components/icons/check-check.png')} // You'll import your checkmark icon here
+                source={require('../components/icons/check-check.png')}
                 style={styles.checkmarkIcon}
                 resizeMode="contain"
               />
@@ -45,9 +52,8 @@ export default function SwapSuccessfulScreen({
             </Text>
           </View>
 
-          {/* Continue Button */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.continueButton} onPress={onContinue}>
+            <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
               <Text style={styles.continueButtonText}>Continue</Text>
             </TouchableOpacity>
           </View>

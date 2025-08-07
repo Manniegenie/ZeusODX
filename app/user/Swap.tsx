@@ -10,6 +10,7 @@ import {
   TextInput,
   Alert
 } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
@@ -28,7 +29,11 @@ const solIcon = require('../../components/icons/sol-icon.png');
 const usdtIcon = require('../../components/icons/usdt-icon.png');
 const usdcIcon = require('../../components/icons/usdc-icon.png');
 const ngnzIcon = require('../../components/icons/NGNZ.png');
+const avaxIcon = require('../../components/icons/avax-icon.png');
+const bnbIcon = require('../../components/icons/bnb-icon.png');
 const swapIcon = require('../../components/icons/swap-icon.png');
+const maticIcon = require('../../components/icons/matic-icon.png');
+
 
 interface SwapScreenProps {
   onBack?: () => void;
@@ -53,6 +58,8 @@ export default function SwapScreen({
   onSelectToken, 
   onSwap 
 }: SwapScreenProps) {
+  const { defaultToken } = useLocalSearchParams(); // Capture passed token (e.g., BTC, ETH, BNB, AVAX...)
+
   const [activeTab, setActiveTab] = useState<SwapTab>('buy-sell');
   const [fromAmount, setFromAmount] = useState('0');
   const [toAmount, setToAmount] = useState('0');
@@ -121,28 +128,61 @@ export default function SwapScreen({
     : hasCryptoSufficientBalance(symbol, amount);
 
   const clearQuote = () => (isNGNZOperation() ? clearNGNZQuote() : clearCryptoQuote());
-  const getTokenIcon = (id: string) => ({ btc: btcIcon, eth: ethIcon, sol: solIcon, usdt: usdtIcon, usdc: usdcIcon, ngnz: ngnzIcon }[id] || btcIcon);
+  const getTokenIcon = (id: string) => ({
+  btc: btcIcon,
+  eth: ethIcon,
+  sol: solIcon,
+  usdt: usdtIcon,
+  usdc: usdcIcon,
+  ngnz: ngnzIcon,
+  avax: avaxIcon,
+  bnb: bnbIcon,
+  matic: maticIcon
+}[id] || btcIcon);
 
+
+  // Set default token based on navigation param
   useEffect(() => {
-    if (!selectedFromToken && btcPrice > 0) {
-      setSelectedFromToken({
-        id: 'btc',
-        name: 'Bitcoin',
-        symbol: 'BTC',
-        icon: btcIcon,
-        price: btcPrice,
-        balance: btcBalance?.balance || 0,
-      });
+    if (!selectedFromToken) {
+      const tokenMap: { [key: string]: TokenOption } = {
+        BTC: { id: 'btc', name: 'Bitcoin', symbol: 'BTC', icon: btcIcon, price: btcPrice, balance: btcBalance?.balance || 0 },
+        ETH: { id: 'eth', name: 'Ethereum', symbol: 'ETH', icon: ethIcon, price: ethPrice, balance: ethBalance?.balance || 0 },
+        SOL: { id: 'sol', name: 'Solana', symbol: 'SOL', icon: solIcon, price: solPrice, balance: solBalance?.balance || 0 },
+        USDT: { id: 'usdt', name: 'Tether', symbol: 'USDT', icon: usdtIcon, price: usdtPrice, balance: usdtBalance?.balance || 0 },
+        USDC: { id: 'usdc', name: 'USD Coin', symbol: 'USDC', icon: usdcIcon, price: usdcPrice, balance: usdcBalance?.balance || 0 },
+        NGNZ: { id: 'ngnz', name: 'Nigerian Naira', symbol: 'NGNZ', icon: ngnzIcon, price: ngnzExchangeRate, balance: ngnzBalance || 0 },
+        AVAX: { id: 'avax', name: 'Avalanche', symbol: 'AVAX', icon: avaxIcon, price: 0, balance: 0 },
+        BNB: { id: 'bnb', name: 'Binance Coin', symbol: 'BNB', icon: bnbIcon, price: 0, balance: 0 },
+        MATIC: { id: 'matic', name: 'Polygon', symbol: 'MATIC', icon: maticIcon, price: 0, balance: 0 },
+
+      };
+      if (defaultToken && tokenMap[defaultToken]) {
+        setSelectedFromToken(tokenMap[defaultToken]);
+      } else if (btcPrice > 0) {
+        setSelectedFromToken(tokenMap['BTC']);
+      }
     }
-  }, [btcPrice, btcBalance]);
+  }, [defaultToken, btcPrice, ethPrice, solPrice, usdtPrice, usdcPrice, ngnzExchangeRate, btcBalance, ethBalance, solBalance, usdtBalance, usdcBalance, ngnzBalance]);
+
+  // Helpers to format numbers with commas
+  const formatWithCommas = (value: string): string => {
+    if (!value) return '';
+    const numericValue = value.replace(/,/g, '');
+    if (isNaN(Number(numericValue))) return value;
+    const [integer, decimal] = numericValue.split('.');
+    const formattedInt = Number(integer).toLocaleString('en-US');
+    return decimal !== undefined ? `${formattedInt}.${decimal}` : formattedInt;
+  };
+  const unformat = (value: string): string => value.replace(/,/g, '');
 
   const formatDisplayAmount = (amount: string | number): string => {
-    const num = parseFloat(amount as string) || 0;
+    const num = parseFloat(amount as string);
+    if (!num || num === 0) return '0';
     return num >= 1 ? num.toFixed(2) : num.toFixed(4);
   };
 
   const formatUsdValue = (amount: string, token: TokenOption | null): string => {
-    const val = parseFloat(amount) || 0;
+    const val = parseFloat(unformat(amount)) || 0;
     const price = token?.price || 0;
     const usdValue = val * price;
     return token?.symbol === 'NGNZ' ? `₦${usdValue.toFixed(2)}` : `$${usdValue.toFixed(2)}`;
@@ -158,23 +198,24 @@ export default function SwapScreen({
     if (!selectedFromToken) return;
     const balance = getTokenBalance(selectedFromToken.symbol);
     setSelectedFromToken(prev => prev ? { ...prev, balance } : null);
-    setFromAmount(balance.toString());
+    setFromAmount(formatWithCommas(balance.toString()));
   };
 
   const handleCreateQuote = async () => {
-    if (!selectedFromToken || !selectedToToken || parseFloat(fromAmount) <= 0) {
+    const rawAmount = parseFloat(unformat(fromAmount));
+    if (!selectedFromToken || !selectedToToken || rawAmount <= 0) {
       Alert.alert('Invalid Input', 'Please select tokens and enter a valid amount');
       return;
     }
-    if (!hasSufficientBalance(selectedFromToken.symbol, parseFloat(fromAmount))) {
+    if (!hasSufficientBalance(selectedFromToken.symbol, rawAmount)) {
       Alert.alert('Insufficient Balance', `You don't have enough ${selectedFromToken.symbol}. Available: ${getMaxBalance(selectedFromToken)}`);
       return;
     }
 
     try {
       let quoteResult = isNGNZOperation()
-        ? await createNGNZQuote(selectedFromToken.symbol, selectedToToken.symbol, parseFloat(fromAmount), 'SELL')
-        : await createCryptoQuote(selectedFromToken.symbol, selectedToToken.symbol, parseFloat(fromAmount), 'SELL');
+        ? await createNGNZQuote(selectedFromToken.symbol, selectedToToken.symbol, rawAmount, 'SELL')
+        : await createCryptoQuote(selectedFromToken.symbol, selectedToToken.symbol, rawAmount, 'SELL');
 
       if (!quoteResult.success) {
         Alert.alert('Quote Failed', quoteResult.error || 'Failed to create quote');
@@ -182,7 +223,7 @@ export default function SwapScreen({
       }
 
       let receiveAmount = quoteResult.data?.data?.amountReceived || quoteResult.data?.amountReceived || quoteResult.data?.data?.data?.amountReceived;
-      if (receiveAmount) setToAmount(receiveAmount.toString());
+      if (receiveAmount) setToAmount(formatWithCommas(receiveAmount.toString()));
 
       setShowPreviewModal(true);
     } catch (error) {
@@ -230,13 +271,12 @@ export default function SwapScreen({
   };
 
   const { quoteLoading, acceptLoading } = getLoadingStates();
-  const isSwapDisabled = !selectedFromToken || !selectedToToken || parseFloat(fromAmount) <= 0 || quoteLoading || acceptLoading;
+  const isSwapDisabled = !selectedFromToken || !selectedToToken || parseFloat(unformat(fromAmount)) <= 0 || quoteLoading || acceptLoading;
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollViewContent}>
-          {/* Title Tabs */}
           <View style={styles.tabContainer}>
             <Text style={styles.activeTabText}>Buy/Sell</Text>
           </View>
@@ -248,10 +288,10 @@ export default function SwapScreen({
               <View style={styles.inputLeft}>
                 <TextInput 
                   style={styles.amountInput} 
-                  value={fromAmount} 
+                  value={fromAmount}
                   onFocus={() => { if (fromAmount === '0') setFromAmount(''); }}
                   onBlur={() => { if (!fromAmount) setFromAmount('0'); }}
-                  onChangeText={setFromAmount} 
+                  onChangeText={(text) => setFromAmount(formatWithCommas(text))}
                   placeholder="0" 
                   keyboardType="decimal-pad" 
                   placeholderTextColor={Colors.text.secondary} 
@@ -280,7 +320,7 @@ export default function SwapScreen({
               <View style={styles.inputLeft}>
                 <TextInput 
                   style={styles.amountInput} 
-                  value={formatDisplayAmount(toAmount)} 
+                  value={toAmount === '0' ? '0' : formatWithCommas(formatDisplayAmount(toAmount))} 
                   editable={false} 
                   placeholder="0" 
                   keyboardType="decimal-pad" 
@@ -311,10 +351,10 @@ export default function SwapScreen({
       <ChooseTokenModal visible={showTokenModal} onClose={() => setShowTokenModal(false)} onTokenSelect={handleTokenSelect} selectedTokenId={tokenSelectorType === 'from' ? selectedFromToken?.id : selectedToToken?.id} title="Choose token" showBalances={true} />
 
       {/* Preview Modal */}
-      <SwapPreviewModal visible={showPreviewModal} onClose={() => setShowPreviewModal(false)} onConfirm={handleAcceptQuote} fromAmount={formatDisplayAmount(fromAmount)} fromToken={selectedFromToken?.symbol || ''} toAmount={formatDisplayAmount(toAmount)} toToken={selectedToToken?.symbol || ''} rate={`1 ${selectedFromToken?.symbol} = ${(parseFloat(toAmount)/parseFloat(fromAmount)).toFixed(6)} ${selectedToToken?.symbol}`} />
+      <SwapPreviewModal visible={showPreviewModal} onClose={() => setShowPreviewModal(false)} onConfirm={handleAcceptQuote} fromAmount={formatDisplayAmount(unformat(fromAmount))} fromToken={selectedFromToken?.symbol || ''} toAmount={formatDisplayAmount(unformat(toAmount))} toToken={selectedToToken?.symbol || ''} rate={`1 ${selectedFromToken?.symbol} = ${(parseFloat(unformat(toAmount))/parseFloat(unformat(fromAmount)) || 0).toFixed(6)} ${selectedToToken?.symbol}`} />
 
       {/* Success Screen */}
-      <SwapSuccessfulScreen visible={showSuccessScreen} fromAmount={formatDisplayAmount(fromAmount)} fromToken={selectedFromToken?.symbol || ''} toToken={selectedToToken?.symbol || ''} onContinue={handleSuccessScreenContinue} />
+      <SwapSuccessfulScreen visible={showSuccessScreen} fromAmount={formatDisplayAmount(unformat(fromAmount))} fromToken={selectedFromToken?.symbol || ''} toToken={selectedToToken?.symbol || ''} onContinue={handleSuccessScreenContinue} />
     </View>
   );
 }

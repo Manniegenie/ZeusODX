@@ -60,12 +60,22 @@ const GiftCardScreen = ({ onGiftCardSelect }) => {
         >
           {/* Header Section */}
           <View style={styles.headerSection}>
-            <Text style={styles.headerTitle}>Gift Card</Text>
-          </View>
+            <View style={styles.headerContainer}>
+              {/* Back Button */}
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={handleGoBack}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.backButtonText}>←</Text>
+              </TouchableOpacity>
 
-          {/* Subtitle Section */}
-          <View style={styles.subtitleSection}>
-            <Text style={styles.subtitleText}>Select your desired giftcard below</Text>
+              {/* Title */}
+              <Text style={styles.headerTitle}>Gift Card</Text>
+
+              {/* Empty space for alignment */}
+              <View style={styles.emptySpace} />
+            </View>
           </View>
 
           {/* Search Section */}
@@ -114,29 +124,40 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
 
+  // Header styles
   headerSection: {
     paddingHorizontal: 16,
-    paddingTop: 32,
+    paddingTop: 12,
     paddingBottom: 6,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  backButtonText: {
+    fontSize: 20,
+    color: Colors.text?.primary || '#111827',
+    fontWeight: '500',
   },
   headerTitle: {
     color: '#35297F',
-    fontFamily: Typography.medium,
+    fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
-    textAlign: 'left',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 16,
   },
-
-  subtitleSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-  },
-  subtitleText: {
-    color: Colors.text.secondary,
-    fontFamily: Typography.regular,
-    fontSize: 14,
-    fontWeight: '400',
-    textAlign: 'left',
+  emptySpace: {
+    width: 40,
   },
 
   searchSection: {
