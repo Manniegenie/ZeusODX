@@ -12,8 +12,10 @@ import {
   BricolageGrotesque_800ExtraBold,
 } from '@expo-google-fonts/bricolage-grotesque';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { ZendeskProvider } from 'react-native-zendesk-unified';
 import { useAuthProvider, AuthContext } from '../hooks/useAuth';
 import ProfessionalSplashScreen from '../components/ProfessionalSplashScreen';
+import { zendeskConfig } from '../ZendeskConfig';
 
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const auth = useAuthProvider();
@@ -21,7 +23,6 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export default function RootLayout() {
-  // ——— Load fonts (starts immediately) ———
   const [loaded, error] = useFonts({
     BricolageGrotesque_200ExtraLight,
     BricolageGrotesque_300Light,
@@ -32,71 +33,45 @@ export default function RootLayout() {
     BricolageGrotesque_800ExtraBold,
   });
 
-  // ——— Loading states ———
   const [isAppReady, setIsAppReady] = useState(false);
   const [isSplashAnimationComplete, setIsSplashAnimationComplete] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  // ——— Initialize auth and other resources ———
   useEffect(() => {
-    async function prepareApp() {
+    (async () => {
       try {
-        // Your initialization tasks
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setIsAuthReady(true);
-      } catch (e) {
-        console.warn('Error during app preparation:', e);
+        await new Promise(r => setTimeout(r, 1000));
+      } finally {
         setIsAuthReady(true);
       }
-    }
-
-    prepareApp();
+    })();
   }, []);
 
-  // ——— Check if everything is ready ———
   useEffect(() => {
-    const fontsReady = loaded || error;
-    
-    if (fontsReady && isAuthReady) {
-      setIsAppReady(true);
-    }
+    if ((loaded || error) && isAuthReady) setIsAppReady(true);
   }, [loaded, error, isAuthReady]);
 
-  // ——— Handle splash animation completion ———
   const handleSplashAnimationComplete = useCallback(() => {
     setIsSplashAnimationComplete(true);
   }, []);
 
-  // ——— Determine when to show main app ———
-  const shouldShowMainApp = isAppReady && isSplashAnimationComplete;
-
-  // ——— Show custom splash or main app ———
-  if (!shouldShowMainApp) {
-    return (
-      <ProfessionalSplashScreen 
-        onAnimationComplete={handleSplashAnimationComplete}
-      />
-    );
+  if (!(isAppReady && isSplashAnimationComplete)) {
+    return <ProfessionalSplashScreen onAnimationComplete={handleSplashAnimationComplete} />;
   }
 
-  // ——— Main app after everything is ready ———
   return (
     <SafeAreaProvider>
-      <SafeAreaView
-        edges={['top']}
-        style={{
-          flex: 1,
-          backgroundColor: '#F4F2FF',
-        }}
-      >
-        <AuthProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: 'transparent' },
-            }}
-          />
-        </AuthProvider>
+      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#F4F2FF' }}>
+        <ZendeskProvider zendeskConfig={zendeskConfig}>
+          <AuthProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: 'transparent' },
+              }}
+            />
+          </AuthProvider>
+        </ZendeskProvider>
       </SafeAreaView>
     </SafeAreaProvider>
   );

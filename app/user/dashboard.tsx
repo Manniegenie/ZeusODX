@@ -1,7 +1,8 @@
 // app/user/DashboardScreen.tsx
 import { useRouter } from 'expo-router';
 import React, { useState, useCallback } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, View, RefreshControl } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, View, RefreshControl, TouchableOpacity, Text } from 'react-native';
+import { useZendesk } from 'react-native-zendesk-unified';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import SelectTokenModal, { WalletOption } from '../../components/SelectToken';
 import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
@@ -15,6 +16,7 @@ import TokensSection from './TokensSection';
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const zendesk = useZendesk(); // ← Add Zendesk hook
   const [activeTab, setActiveTab] = useState('All tokens');
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
@@ -24,6 +26,17 @@ export default function DashboardScreen() {
   const [balanceVisible, setBalanceVisible] = useState(true);
 
   const { refreshDashboard, loading, kyc } = useDashboard();
+
+  // ← Add Zendesk support function
+  const handleSupportPress = async () => {
+    try {
+      await zendesk.openHelpCenter();
+    } catch (error) {
+      console.log('Error opening support:', error);
+      // Fallback: could navigate to a contact screen
+      // router.push('/user/contact-support');
+    }
+  };
 
   const handleKYCInitiate = async (level: number, documentType: string) => {
     console.log(`🚀 KYC Level ${level} with ${documentType} - Navigation to KYC flow`);
@@ -152,6 +165,15 @@ export default function DashboardScreen() {
         title={`Send ${selectedToken?.name || 'Token'}`}
       />
 
+      {/* ← Zendesk Support Widget - Floating Button */}
+      <TouchableOpacity 
+        style={styles.supportButton} 
+        onPress={handleSupportPress}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.supportIcon}>?</Text>
+      </TouchableOpacity>
+
       <BottomTabNavigator activeTab="home" />
     </View>
   );
@@ -162,4 +184,28 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   scrollViewContent: { paddingBottom: Layout.spacing.xl },
+  
+  // ← Zendesk Support Button Styles
+  supportButton: {
+    position: 'absolute',
+    bottom: 100, // Above bottom navigation (adjust as needed)
+    right: 20,   // 20px from right edge
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary, // Use your brand color
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8, // Android shadow
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    zIndex: 1000, // Ensure it stays on top
+  },
+  supportIcon: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
 });
