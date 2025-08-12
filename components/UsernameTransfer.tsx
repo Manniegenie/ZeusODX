@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+// screens/TransferBottomSheet.tsx
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,18 +12,19 @@ import {
   Animated,
   Dimensions,
   PanResponder,
-  Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router'; // Add this import for navigation
+import { useRouter } from 'expo-router';
 import { Typography } from '../constants/Typography';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
 import { useTokens } from '../hooks/useTokens';
 import { useBalance } from '../hooks/useWallet';
-import { useInternalTransfer } from '../hooks/useInternalTransfer';
+import { useUsernameTransfer } from '../hooks/useInternalTransfer';
+import { useDashboard } from '../hooks/useDashboard';
 import PinEntryModal from '../components/PinEntry';
 import TwoFactorAuthModal from '../components/2FA';
 import ErrorDisplay from '../components/ErrorDisplay';
+import TransferSuccessModal from '../components/TransferSuccess';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BOTTOM_SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.9;
@@ -79,89 +81,69 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
   selectedUser,
   defaultToken,
 }) => {
-  const router = useRouter(); // Add router for navigation
+  const router = useRouter();
 
-  // Get token metadata from useTokens
-  const { 
-    tokens: allTokens, 
-    loading: tokensLoading, 
-    error: tokensError 
-  } = useTokens();
+  // Tokens
+  const { tokens: allTokens, loading: tokensLoading, error: tokensError } = useTokens();
 
-  // Get balances from useBalance hook
+  // Balances
   const {
-    solBalance,
-    usdcBalance,
-    usdtBalance,
-    ethBalance,
-    avaxBalance,
-    bnbBalance,
-    maticBalance,
-    ngnzBalance,
-    btcBalance,
-    formattedSolBalanceUSD,
-    formattedUsdcBalanceUSD,
-    formattedUsdtBalanceUSD,
-    formattedEthBalanceUSD,
-    formattedAvaxBalanceUSD,
-    formattedBnbBalanceUSD,
-    formattedMaticBalanceUSD,
-    formattedNgnzBalanceUSD,
-    formattedBtcBalanceUSD,
-    loading: balanceLoading,
-    error: balanceError
+    solBalance, usdcBalance, usdtBalance, ethBalance, avaxBalance, bnbBalance, maticBalance, ngnzBalance, btcBalance,
+    formattedSolBalanceUSD, formattedUsdcBalanceUSD, formattedUsdtBalanceUSD, formattedEthBalanceUSD,
+    formattedAvaxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD, formattedNgnzBalanceUSD, formattedBtcBalanceUSD,
+    loading: balanceLoading, error: balanceError
   } = useBalance();
 
-  // Use internal transfer hook
+  // Dashboard data for NGNZ exchange rate
+  const { ngnzExchangeRate } = useDashboard();
+
+  // Username transfer hook
   const {
-    isInitiating,
-    isLoading,
+    isTransferring,
+    transferResult,
     error: transferError,
     hasError,
-    initiateTransfer,
-    formatAmount,
-    validateTransfer,
-    clearErrors,
-    getErrorAction
-  } = useInternalTransfer();
+    executeTransfer,
+    resetTransfer,
+    clearError,
+    clearResult,
+    validateTransferData,
+    formatAmount: formatTransferAmount,
+    formatUsername,
+    requiresAction,
+    errorCode
+  } = useUsernameTransfer();
 
-  // Combine loading and error states
   const loading = tokensLoading || balanceLoading;
   const error = tokensError || balanceError;
 
-  // Form state
+  // Form
   const [amount, setAmount] = useState('0');
-  const [rawAmount, setRawAmount] = useState(0); // Store full precision for calculations
-  
-  // Modal states
-  const [showPinModal, setShowPinModal] = useState<boolean>(false);
-  const [showTwoFactorModal, setShowTwoFactorModal] = useState<boolean>(false);
-  
-  // Error display state
+  const [rawAmount, setRawAmount] = useState(0);
+
+  // Modals
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Error display
   const [showErrorDisplay, setShowErrorDisplay] = useState<boolean>(false);
   const [errorDisplayData, setErrorDisplayData] = useState<ErrorDisplayData | null>(null);
-  
-  // Authentication data
-  const [passwordPin, setPasswordPin] = useState<string>('');
-  const [twoFactorCode, setTwoFactorCode] = useState<string>('');
 
-  // Create tokenMap with the same pattern as WalletTokensSection
+  // Auth
+  const [passwordPin, setPasswordPin] = useState('');
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+
+  // Token map
   const tokenMap = useMemo((): { [key: string]: TokenOption } => {
     const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'AVAX', 'BNB', 'MATIC', 'NGNZ', 'BTC'];
-    
-    const balanceMap = {
-      SOL: solBalance || 0,
-      USDC: usdcBalance || 0,
-      USDT: usdtBalance || 0,
-      ETH: ethBalance || 0,
-      AVAX: avaxBalance || 0,
-      BNB: bnbBalance || 0,
-      MATIC: maticBalance || 0,
-      NGNZ: ngnzBalance || 0,
-      BTC: btcBalance || 0,
+
+    const balanceMap: Record<string, number> = {
+      SOL: solBalance || 0, USDC: usdcBalance || 0, USDT: usdtBalance || 0, ETH: ethBalance || 0,
+      AVAX: avaxBalance || 0, BNB: bnbBalance || 0, MATIC: maticBalance || 0, NGNZ: ngnzBalance || 0, BTC: btcBalance || 0,
     };
 
-    const usdValueMap = {
+    const usdValueMap: Record<string, string> = {
       SOL: formattedSolBalanceUSD || '$0.00',
       USDC: formattedUsdcBalanceUSD || '$0.00',
       USDT: formattedUsdtBalanceUSD || '$0.00',
@@ -173,46 +155,41 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
       BTC: formattedBtcBalanceUSD || '$0.00',
     };
 
-    const tokenMapResult: { [key: string]: TokenOption } = {};
-
+    const acc: { [key: string]: TokenOption } = {};
     allTokens
-      .filter(token => targetSymbols.includes(token.symbol))
-      .forEach(token => {
-        const balance = balanceMap[token.symbol] || 0;
-        const usdValue = balance * (token.currentPrice || 0);
-        const hasBalance = balance > 0;
-        
+      .filter(t => targetSymbols.includes(t.symbol))
+      .forEach(t => {
+        const bal = balanceMap[t.symbol] || 0;
+        const usdVal = bal * (t.currentPrice || 0);
+
         let formattedBalance = '';
-        if (token.symbol === 'NGNZ') {
-          formattedBalance = balance.toLocaleString('en-NG', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          });
-        } else if (token.symbol === 'BTC') {
-          formattedBalance = balance.toFixed(8);
-        } else if (token.symbol === 'ETH') {
-          formattedBalance = balance.toFixed(6);
-        } else if (token.symbol === 'USDT' || token.symbol === 'USDC') {
-          formattedBalance = balance.toFixed(2);
+        if (t.symbol === 'NGNZ') {
+          formattedBalance = bal.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        } else if (t.symbol === 'BTC') {
+          formattedBalance = bal.toFixed(8);
+        } else if (t.symbol === 'ETH') {
+          formattedBalance = bal.toFixed(6);
+        } else if (t.symbol === 'USDT' || t.symbol === 'USDC') {
+          formattedBalance = bal.toFixed(2);
         } else {
-          formattedBalance = balance.toFixed(4);
+          formattedBalance = bal.toFixed(4);
         }
-        
-        tokenMapResult[token.symbol.toLowerCase()] = {
-          id: token.id,
-          name: token.name,
-          symbol: token.symbol,
-          icon: token.icon,
-          balance,
-          usdValue,
-          hasBalance,
+
+        acc[t.symbol.toLowerCase()] = {
+          id: t.id,
+          name: t.name,
+          symbol: t.symbol,
+          icon: t.icon,
+          balance: bal,
+          usdValue: usdVal,
+          hasBalance: bal > 0,
           formattedBalance,
-          formattedUsdValue: usdValueMap[token.symbol],
-          currentPrice: token.currentPrice || 0,
+          formattedUsdValue: usdValueMap[t.symbol],
+          currentPrice: t.currentPrice || 0,
         };
       });
 
-    return tokenMapResult;
+    return acc;
   }, [
     allTokens,
     solBalance, usdcBalance, usdtBalance, ethBalance,
@@ -223,46 +200,52 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
   ]);
 
   const selectedToken = useMemo(() => {
-    const tokenId = defaultToken?.id || 'usdt';
+    const tokenId = (defaultToken?.id || 'usdt').toLowerCase();
     return tokenMap[tokenId] || tokenMap['usdt'] || tokenMap['btc'] || Object.values(tokenMap)[0];
   }, [defaultToken, tokenMap]);
 
   const translateY = useState(new Animated.Value(SCREEN_HEIGHT))[0];
 
-  // Error handling functions (same as airtime component)
   const showErrorMessage = (errorData: ErrorDisplayData): void => {
     setErrorDisplayData(errorData);
     setShowErrorDisplay(true);
   };
-
-  const hideErrorDisplay = (): void => {
+  const hideErrorDisplay = useCallback(() => {
     setShowErrorDisplay(false);
     setErrorDisplayData(null);
+  }, []);
+
+  const getErrorType = useCallback((code: string): ErrorDisplayData['type'] => {
+    switch (code) {
+      case 'SETUP_2FA_REQUIRED':
+      case 'SETUP_PIN_REQUIRED': return 'setup';
+      case 'INVALID_2FA_CODE':
+      case 'INVALID_PASSWORDPIN': return 'auth';
+      case 'KYC_LIMIT_EXCEEDED': return 'limit';
+      case 'INSUFFICIENT_BALANCE': return 'balance';
+      case 'RECIPIENT_NOT_FOUND':
+      case 'RECIPIENT_INACTIVE': return 'notFound';
+      case 'VALIDATION_ERROR':
+      case 'MINIMUM_AMOUNT_ERROR': return 'validation';
+      case 'NETWORK_ERROR': return 'network';
+      case 'TRANSFER_EXECUTION_FAILED':
+      case 'TRANSFER_FAILED': return 'server';
+      default: return 'general';
+    }
+  }, []);
+
+  const actionMap: { [key: string]: ErrorAction } = {
+    'SETUP_2FA': { title: '2FA Setup Required', message: 'Two-factor authentication is required for transfers. Please set it up to continue.', actionText: 'Setup 2FA', route: '/settings/security/2fa', priority: 'high' },
+    'SETUP_PIN': { title: 'Password PIN Required', message: 'A password PIN is required for transfers. Please set it up to continue.', actionText: 'Setup PIN', route: '/settings/security/pin', priority: 'high' },
+    'RETRY_2FA': { title: 'Invalid 2FA Code', message: 'The 2FA code you entered is incorrect. Please try again.', actionText: 'Retry', priority: 'medium' },
+    'RETRY_PIN': { title: 'Invalid PIN', message: 'The password PIN you entered is incorrect. Please try again.', actionText: 'Retry', priority: 'medium' },
+    'UPGRADE_KYC': { title: 'Upgrade Verification', message: 'This transfer exceeds your current account limits. Please upgrade your verification level.', actionText: 'Upgrade KYC', route: '/settings/verification', priority: 'high' },
+    'ADD_FUNDS': { title: 'Insufficient Balance', message: 'You don\'t have enough balance for this transfer. Please add funds to your account.', actionText: 'Add Funds', route: '/wallet/deposit', priority: 'medium' },
+    'CHECK_USERNAME': { title: 'User Not Found', message: 'The username you entered was not found. Please check and try again.', actionText: 'Try Again', priority: 'medium' },
+    'CONTACT_RECIPIENT': { title: 'Recipient Inactive', message: 'The recipient account is inactive and cannot receive transfers.', actionText: 'OK', priority: 'low' },
   };
 
-  const getErrorType = (errorCode: string): ErrorDisplayData['type'] => {
-    switch (errorCode) {
-      case 'SETUP_2FA_REQUIRED':
-      case 'SETUP_PIN_REQUIRED':
-        return 'setup';
-      case 'INVALID_2FA_CODE':
-      case 'INVALID_PASSWORDPIN':
-        return 'auth';
-      case 'KYC_LIMIT_EXCEEDED':
-        return 'limit';
-      case 'INSUFFICIENT_BALANCE':
-        return 'balance';
-      case 'VALIDATION_ERROR':
-        return 'validation';
-      case 'NETWORK_ERROR':
-        return 'network';
-      case 'SERVICE_ERROR':
-      case 'TRANSFER_FAILED':
-        return 'server';
-      default:
-        return 'general';
-    }
-  };
+  const getErrorAction = useCallback((reqAction: string | null): ErrorAction | null => (reqAction ? actionMap[reqAction] || null : null), []);
 
   const resetForm = () => {
     setAmount('0');
@@ -271,42 +254,88 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
     setTwoFactorCode('');
     setShowPinModal(false);
     setShowTwoFactorModal(false);
-    clearErrors();
+    resetTransfer();
     hideErrorDisplay();
   };
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(translateY, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
-      }).start();
+      Animated.spring(translateY, { toValue: 0, useNativeDriver: true, tension: 100, friction: 8 }).start();
     } else {
-      Animated.timing(translateY, {
-        toValue: SCREEN_HEIGHT,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      Animated.timing(translateY, { toValue: SCREEN_HEIGHT, duration: 300, useNativeDriver: true }).start();
     }
   }, [visible, translateY]);
 
   useEffect(() => {
     if (visible) {
-      clearErrors();
+      clearError();
       hideErrorDisplay();
     }
-  }, [visible, clearErrors]);
+  }, [visible, clearError, hideErrorDisplay]);
+
+  // Success -> show success modal with amount + @username
+  useEffect(() => {
+    if (transferResult) {
+      setShowTwoFactorModal(false);
+      setShowSuccess(true);
+    }
+  }, [transferResult]);
+
+  // Errors
+  useEffect(() => {
+    if (hasError && transferError) {
+      setShowTwoFactorModal(false);
+      setShowPinModal(false);
+
+      const errorAction = getErrorAction(requiresAction);
+      const errorType = getErrorType(errorCode || 'GENERAL_ERROR');
+
+      if (errorAction) {
+        showErrorMessage({
+          type: errorType,
+          title: errorAction.title,
+          message: errorAction.message,
+          errorAction,
+          onActionPress: () => {
+            if (errorAction.route) {
+              try {
+                router.push(errorAction.route);
+              } catch {
+                handleClose();
+              }
+            } else {
+              // Retry flows
+              if (requiresAction === 'RETRY_PIN') {
+                setPasswordPin('');
+                setShowPinModal(true);
+              } else if (requiresAction === 'RETRY_2FA') {
+                setTwoFactorCode('');
+                setShowTwoFactorModal(true);
+              }
+            }
+            hideErrorDisplay();
+          },
+          autoHide: false,
+          dismissible: true
+        });
+      } else {
+        showErrorMessage({
+          type: errorType,
+          title: 'Transfer Failed',
+          message: transferError.message || 'Something went wrong. Please try again.',
+          autoHide: true,
+          duration: 4000
+        });
+      }
+    }
+  }, [hasError, transferError, requiresAction, errorCode, getErrorAction, getErrorType, router, hideErrorDisplay]);
 
   // Pan to close
   const panResponder = PanResponder.create({
-    onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
-    onPanResponderMove: (_, gestureState) => {
-      if (gestureState.dy > 0) translateY.setValue(gestureState.dy);
-    },
-    onPanResponderRelease: (_, gestureState) => {
-      if (gestureState.dy > BOTTOM_SHEET_MIN_HEIGHT / 4) handleClose();
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 5,
+    onPanResponderMove: (_, g) => { if (g.dy > 0) translateY.setValue(g.dy); },
+    onPanResponderRelease: (_, g) => {
+      if (g.dy > BOTTOM_SHEET_MIN_HEIGHT / 4) handleClose();
       else Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start();
     },
   });
@@ -316,290 +345,102 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
     onClose();
   };
 
-  const handlePercentage = (percentage: number) => {
-    const balance = selectedToken?.balance || 0;
-    const percentageAmount = (balance * percentage) / 100;
-    const formattedAmount = formatAmountForDisplay(percentageAmount, selectedToken?.symbol);
-    
-    console.log('Setting percentage amount:', {
-      percentage,
-      rawBalance: balance,
-      calculatedAmount: percentageAmount,
-      formattedDisplay: formattedAmount,
-      symbol: selectedToken?.symbol
-    });
-    
-    setRawAmount(percentageAmount);
-    setAmount(formattedAmount);
+  const handlePercentage = (pct: number) => {
+    const bal = selectedToken?.balance || 0;
+    const val = (bal * pct) / 100;
+    const formatted = formatAmountForDisplay(val, selectedToken?.symbol);
+    setRawAmount(val);
+    setAmount(formatted);
   };
 
-  // Helper function to format amounts for display based on token type
   const formatAmountForDisplay = (value: number, symbol?: string): string => {
     if (!symbol) return value.toString();
-    
     switch (symbol) {
       case 'NGNZ':
-        return value.toLocaleString('en-NG', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        });
+        return value.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
       case 'BTC':
-        // For BTC, show up to 8 decimals but remove trailing zeros
         return Number(value.toFixed(8)).toString();
       case 'ETH':
-        // For ETH, show up to 6 decimals but remove trailing zeros
         return Number(value.toFixed(6)).toString();
       case 'USDT':
       case 'USDC':
         return value.toFixed(2);
       default:
-        // Smart formatting for other tokens
-        if (value >= 1000) {
-          return value.toFixed(2);
-        } else if (value >= 1) {
-          return Number(value.toFixed(4)).toString();
-        } else if (value >= 0.01) {
-          return Number(value.toFixed(4)).toString();
-        } else if (value >= 0.001) {
-          return Number(value.toFixed(6)).toString();
-        } else {
-          // For very small amounts, find the first 3 significant digits
-          const str = value.toPrecision(3);
-          return Number(str).toString();
-        }
+        if (value >= 1000) return value.toFixed(2);
+        if (value >= 1) return Number(value.toFixed(4)).toString();
+        if (value >= 0.01) return Number(value.toFixed(4)).toString();
+        if (value >= 0.001) return Number(value.toFixed(6)).toString();
+        return Number(value.toPrecision(3)).toString();
     }
   };
 
   const handleMaxAmount = () => {
-    const balance = selectedToken?.balance || 0;
-    const formattedAmount = formatAmountForDisplay(balance, selectedToken?.symbol);
-    
-    console.log('Setting max amount:', {
-      rawBalance: balance,
-      formattedDisplay: formattedAmount,
-      symbol: selectedToken?.symbol
-    });
-    
-    setRawAmount(balance);
-    setAmount(formattedAmount);
+    const bal = selectedToken?.balance || 0;
+    const formatted = formatAmountForDisplay(bal, selectedToken?.symbol);
+    setRawAmount(bal);
+    setAmount(formatted);
   };
 
-  const handleReview = () => {
+  const handleReview = useCallback(() => {
     if (!selectedToken) {
-      showErrorMessage({
-        type: 'validation',
-        title: 'Token Required',
-        message: 'No token selected for transfer',
-        autoHide: true,
-        duration: 3000
-      });
+      showErrorMessage({ type: 'validation', title: 'Token Required', message: 'No token selected for transfer', autoHide: true, duration: 3000 });
       return;
     }
-
     if (!selectedUser) {
-      showErrorMessage({
-        type: 'validation',
-        title: 'Recipient Required',
-        message: 'No recipient selected for transfer',
-        autoHide: true,
-        duration: 3000
-      });
+      showErrorMessage({ type: 'validation', title: 'Recipient Required', message: 'No recipient selected for transfer', autoHide: true, duration: 3000 });
       return;
     }
-
-    // Use rawAmount for validation (full precision) or parse the current amount
     const numericAmount = rawAmount > 0 ? rawAmount : parseFloat(unformat(amount));
     if (!numericAmount || numericAmount <= 0) {
-      showErrorMessage({
-        type: 'validation',
-        title: 'Invalid Amount',
-        message: 'Please enter an amount greater than 0',
-        autoHide: true,
-        duration: 3000
-      });
+      showErrorMessage({ type: 'validation', title: 'Invalid Amount', message: 'Please enter an amount greater than 0', autoHide: true, duration: 3000 });
       return;
     }
-
     if (numericAmount > (selectedToken.balance || 0)) {
-      showErrorMessage({
-        type: 'balance',
-        title: 'Insufficient Balance',
-        message: 'You do not have enough balance for this transfer',
-        autoHide: true,
-        duration: 3000
-      });
+      showErrorMessage({ type: 'balance', title: 'Insufficient Balance', message: 'You do not have enough balance for this transfer', autoHide: true, duration: 3000 });
       return;
     }
 
-    const minimumAmounts = {
-      BTC: 0.00001,
-      ETH: 0.001,
-      SOL: 0.01,
-      USDT: 1,
-      USDC: 1,
-      BNB: 0.001,
-      MATIC: 1,
-      AVAX: 0.01,
-      NGNZ: 100,
-    };
-
-    const minAmount = minimumAmounts[selectedToken.symbol] || 0;
-    if (numericAmount < minAmount) {
-      showErrorMessage({
-        type: 'validation',
-        title: 'Amount Too Low',
-        message: `Minimum transfer amount for ${selectedToken.symbol} is ${minAmount}`,
-        autoHide: true,
-        duration: 3000
-      });
-      return;
-    }
-
-    const transferData = {
+    const tx = {
       recipientUsername: selectedUser.username,
-      amount: numericAmount.toString(),
+      amount: numericAmount,
       currency: selectedToken.symbol,
       twoFactorCode: '000000',
       passwordpin: '000000',
       memo: ''
     };
-
-    const validation = validateTransfer(transferData);
-    if (!validation.success) {
-      showErrorMessage({
-        type: 'validation',
-        title: 'Validation Error',
-        message: validation.message,
-        autoHide: true,
-        duration: 3000
-      });
+    const validation = validateTransferData(tx);
+    if (!validation.isValid) {
+      showErrorMessage({ type: 'validation', title: 'Validation Error', message: validation.errors.join('; '), autoHide: true, duration: 3000 });
       return;
     }
-
     setShowPinModal(true);
-  };
+  }, [selectedToken, selectedUser, rawAmount, amount, validateTransferData]);
 
-  const handlePinSubmit = (pin: string): void => {
+  const handlePinSubmit = (pin: string) => {
     setPasswordPin(pin);
     setShowPinModal(false);
     setShowTwoFactorModal(true);
   };
-
-  const handlePinModalClose = (): void => {
+  const handlePinModalClose = () => {
     setShowPinModal(false);
     setPasswordPin('');
   };
 
-  const handleTwoFactorSubmit = async (code: string): Promise<void> => {
+  const handleTwoFactorSubmit = async (code: string) => {
     setTwoFactorCode(code);
-    
     try {
-      if (!selectedUser || !selectedToken) {
-        throw new Error('Missing required data');
-      }
-
+      if (!selectedUser || !selectedToken) throw new Error('Missing required data');
       const numericAmount = rawAmount > 0 ? rawAmount : parseFloat(unformat(amount));
-      
-      const transferData = {
+      const tx = {
         recipientUsername: selectedUser.username,
-        amount: numericAmount.toString(),
+        amount: numericAmount,
         currency: selectedToken.symbol,
         twoFactorCode: code,
         passwordpin: passwordPin,
         memo: ''
       };
-
-      console.log('Processing internal transfer:', {
-        ...transferData,
-        passwordpin: '[REDACTED]'
-      });
-
-      const result = await initiateTransfer(transferData);
-
-      console.log('Transfer result:', {
-        success: result?.success,
-        error: result?.error,
-        requiresAction: result?.requiresAction,
-        message: result?.message
-      });
-
-      if (result?.success) {
-        setShowTwoFactorModal(false);
-        
-        Alert.alert(
-          'Transfer Successful',
-          `Successfully transferred ${formatAmount(result.data.amount, result.data.currency)} ${result.data.currency} to @${result.data.recipient.username}`,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                handleClose();
-              }
-            }
-          ]
-        );
-      } else {
-        setShowTwoFactorModal(false);
-        
-        console.log('Transfer failed, checking for error action...');
-        const errorAction = getErrorAction?.(result?.requiresAction);
-        const errorType = getErrorType(result?.error || 'GENERAL_ERROR');
-        
-        console.log('Error action found:', errorAction);
-        console.log('Error type:', errorType);
-        
-        if (errorAction) {
-          showErrorMessage({
-            type: errorType,
-            title: errorAction.title,
-            message: errorAction.message,
-            errorAction: errorAction,
-            onActionPress: () => {
-              console.log('Error action pressed, route:', errorAction.route);
-              if (errorAction.route) {
-                // Navigate to setup screen
-                try {
-                  router.push(errorAction.route);
-                } catch (navError) {
-                  console.log('Navigation error:', navError);
-                  // Fallback: close modal and show simple alert
-                  handleClose();
-                  Alert.alert(
-                    errorAction.title,
-                    `${errorAction.message}\n\nPlease go to Settings > Security to complete setup.`,
-                    [{ text: 'OK' }]
-                  );
-                }
-              } else {
-                // Handle retry actions
-                if (result?.requiresAction === 'RETRY_PIN') {
-                  setPasswordPin('');
-                  setShowPinModal(true);
-                } else if (result?.requiresAction === 'RETRY_2FA') {
-                  setTwoFactorCode('');
-                  setShowTwoFactorModal(true);
-                }
-              }
-            },
-            autoHide: false,
-            dismissible: true
-          });
-        } else {
-          console.log('No error action found, showing generic error');
-          // Use original message if available, otherwise fall back to result message
-          const displayMessage = result?.originalMessage || result?.message || 'Something went wrong. Please try again.';
-          showErrorMessage({
-            type: errorType,
-            title: 'Transfer Failed',
-            message: displayMessage,
-            autoHide: true,
-            duration: 4000
-          });
-        }
-      }
-      
-    } catch (error) {
-      console.error('Transfer error:', error);
+      await executeTransfer(tx);
+    } catch (e) {
       setShowTwoFactorModal(false);
       showErrorMessage({
         type: 'server',
@@ -611,55 +452,42 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
     }
   };
 
-  const handleTwoFactorModalClose = (): void => {
+  const handleTwoFactorModalClose = () => {
     setShowTwoFactorModal(false);
     setTwoFactorCode('');
     setShowPinModal(true);
   };
 
-  // Helper functions
-  const unformat = (value: string): string => value.replace(/,/g, '');
+  const unformat = (v: string) => v.replace(/,/g, '');
 
-  const formatUsdValue = (amount: string, token: TokenOption | null): string => {
-    // Use rawAmount if available (from max/percentage), otherwise parse the display amount
-    const val = rawAmount > 0 ? rawAmount : (parseFloat(unformat(amount)) || 0);
-    const price = token?.currentPrice || 0;
-    const usdValue = val * price;
+  const formatUsdValue = (amt: string, token: TokenOption | null): string => {
+    const val = rawAmount > 0 ? rawAmount : (parseFloat(unformat(amt)) || 0);
+    
+    if (!val || isNaN(val) || val <= 0) {
+      return '$0.00';
+    }
     
     if (token?.symbol === 'NGNZ') {
-      return `₦${usdValue.toFixed(2)}`;
-    }
-    return `$${usdValue.toFixed(2)}`;
-  };
-
-  const handleAmountChange = (text: string) => {
-    const cleanText = text.replace(/[^0-9.]/g, '');
-    setAmount(cleanText);
-    setRawAmount(0); // Reset raw amount when manually typing
-  };
-
-  const handleAmountFocus = () => {
-    if (amount === '0') setAmount('');
-  };
-
-  const handleAmountBlur = () => {
-    if (!amount) {
-      setAmount('0');
-      setRawAmount(0);
-    } else {
-      // When user finishes typing, format the display value
-      const numericValue = parseFloat(amount);
-      if (!isNaN(numericValue)) {
-        const formatted = formatAmountForDisplay(numericValue, selectedToken?.symbol);
-        setAmount(formatted);
-        setRawAmount(numericValue);
+      const exchangeRate = ngnzExchangeRate;
+      if (!exchangeRate || isNaN(exchangeRate) || exchangeRate <= 0) {
+        return '$0.00';
       }
+      const usdValue = val / exchangeRate;
+      return '$' + usdValue.toFixed(2);
     }
+    
+    const price = token?.currentPrice || 0;
+    if (!price || isNaN(price) || price <= 0) {
+      return '$0.00';
+    }
+    
+    const usdValue = val * price;
+    return '$' + usdValue.toFixed(2);
   };
 
   if (!selectedUser) return null;
 
-  // Show loading state
+  // Loading
   if (loading) {
     return (
       <Modal visible={visible} transparent statusBarTranslucent onRequestClose={handleClose}>
@@ -676,7 +504,7 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
     );
   }
 
-  // Show error state
+  // Error
   if (error) {
     return (
       <Modal visible={visible} transparent statusBarTranslucent onRequestClose={handleClose}>
@@ -698,7 +526,7 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
 
   return (
     <>
-      {/* Error Display */}
+      {/* Inline banners */}
       {showErrorDisplay && errorDisplayData && (
         <ErrorDisplay
           type={errorDisplayData.type}
@@ -713,7 +541,7 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
         />
       )}
 
-      {/* PIN Entry Modal */}
+      {/* PIN */}
       {showPinModal && (
         <PinEntryModal
           visible={showPinModal}
@@ -725,19 +553,37 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
         />
       )}
 
-      {/* Two-Factor Authentication Modal */}
+      {/* 2FA */}
       {showTwoFactorModal && (
         <TwoFactorAuthModal
           visible={showTwoFactorModal}
           onClose={handleTwoFactorModalClose}
           onSubmit={handleTwoFactorSubmit}
-          loading={isInitiating || isLoading}
+          loading={isTransferring}
           title="Two-Factor Authentication"
           subtitle="Please enter the 6-digit code from your authenticator app"
         />
       )}
 
-      {/* Main Transfer Modal */}
+      {/* Success Modal */}
+      {showSuccess && transferResult && (
+        <TransferSuccessModal
+          visible={showSuccess}
+          onContinue={() => {
+            setShowSuccess(false);
+            clearResult();
+            handleClose();
+          }}
+          amount={transferResult.amount}
+          currency={transferResult.currency}
+          recipientUsername={transferResult.recipient?.username || selectedUser?.username || ''}
+          transactionRef={transferResult.reference || transferResult.transactionRef}
+          transferDate={transferResult.createdAt || transferResult.date}
+          transferType="Username Transfer"
+        />
+      )}
+
+      {/* Main Modal */}
       {!showPinModal && !showTwoFactorModal && (
         <Modal visible={visible} transparent statusBarTranslucent onRequestClose={handleClose}>
           <View style={styles.overlay}>
@@ -761,13 +607,22 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
                       <TextInput
                         style={styles.amountInput}
                         value={amount}
-                        onFocus={handleAmountFocus}
-                        onBlur={handleAmountBlur}
-                        onChangeText={handleAmountChange}
+                        onFocus={() => { if (amount === '0') setAmount(''); }}
+                        onBlur={() => {
+                          if (!amount) { setAmount('0'); setRawAmount(0); }
+                          else {
+                            const n = parseFloat(amount);
+                            if (!isNaN(n)) {
+                              setAmount(formatAmountForDisplay(n, selectedToken?.symbol));
+                              setRawAmount(n);
+                            }
+                          }
+                        }}
+                        onChangeText={(t) => { const clean = t.replace(/[^0-9.]/g, ''); setAmount(clean); setRawAmount(0); }}
                         placeholder="0"
                         keyboardType="decimal-pad"
                         placeholderTextColor={Colors.text.secondary}
-                        editable={!isInitiating && !isLoading}
+                        editable={!isTransferring}
                       />
                       <Text style={styles.usdValue}>{formatUsdValue(amount, selectedToken)}</Text>
                     </View>
@@ -780,10 +635,7 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
                         <Text style={styles.balanceText}>
                           {selectedToken?.formattedBalance} {selectedToken?.symbol}
                         </Text>
-                        <TouchableOpacity 
-                          onPress={handleMaxAmount}
-                          disabled={isInitiating || isLoading}
-                        >
+                        <TouchableOpacity onPress={handleMaxAmount} disabled={isTransferring}>
                           <Text style={styles.maxText}>Max</Text>
                         </TouchableOpacity>
                       </View>
@@ -793,15 +645,9 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
 
                 {/* Percentages */}
                 <View style={styles.percentageSection}>
-                  {[25, 50, 75, 100].map((percentage) => (
-                    <TouchableOpacity 
-                      key={percentage} 
-                      style={styles.percentageButton} 
-                      onPress={() => handlePercentage(percentage)} 
-                      activeOpacity={0.7}
-                      disabled={isInitiating || isLoading}
-                    >
-                      <Text style={styles.percentageText}>{percentage}%</Text>
+                  {[25, 50, 75, 100].map((p) => (
+                    <TouchableOpacity key={p} style={styles.percentageButton} onPress={() => handlePercentage(p)} activeOpacity={0.7} disabled={isTransferring}>
+                      <Text style={styles.percentageText}>{p}%</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -825,20 +671,15 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
                   </View>
                 </View>
 
-                {/* Transfer button */}
+                {/* Transfer */}
                 <View style={styles.reviewSection}>
-                  <TouchableOpacity 
-                    style={[
-                      styles.reviewButton,
-                      (isInitiating || isLoading) && styles.reviewButtonDisabled
-                    ]} 
-                    onPress={handleReview} 
+                  <TouchableOpacity
+                    style={[styles.reviewButton, isTransferring && styles.reviewButtonDisabled]}
+                    onPress={handleReview}
                     activeOpacity={0.8}
-                    disabled={isInitiating || isLoading}
+                    disabled={isTransferring}
                   >
-                    <Text style={styles.reviewButtonText}>
-                      {isInitiating || isLoading ? 'Processing...' : 'Transfer'}
-                    </Text>
+                    <Text style={styles.reviewButtonText}>{isTransferring ? 'Processing...' : 'Transfer'}</Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>
@@ -883,47 +724,18 @@ const styles = StyleSheet.create({
   userInitials: { color: '#FFFFFF', fontFamily: 'Bricolage Grotesque', fontSize: 8, fontWeight: '600' },
   textContainer: { alignItems: 'center', justifyContent: 'center' },
   userInfo: { width: 152, height: 34, alignItems: 'center', justifyContent: 'center' },
-  userName: { color: Colors.text.primary, fontFamily: 'Bricolage Grotesque', fontSize: 14, fontWeight: '700', lineHeight: 16, letterSpacing: 0, textAlign: 'center', marginBottom: 2 },
-  userUsername: { color: Colors.text.secondary, fontFamily: 'Bricolage Grotesque', fontSize: 10, fontWeight: '500', lineHeight: 16, letterSpacing: 0, textAlign: 'center' },
+  userName: { color: Colors.text.primary, fontFamily: 'Bricolage Grotesque', fontSize: 14, fontWeight: '700', lineHeight: 16, textAlign: 'center', marginBottom: 2 },
+  userUsername: { color: Colors.text.secondary, fontFamily: 'Bricolage Grotesque', fontSize: 10, fontWeight: '500', lineHeight: 16, textAlign: 'center' },
   reviewSection: { paddingHorizontal: Layout.spacing.xl, paddingTop: Layout.spacing.xxl, paddingBottom: Layout.spacing.xl },
   reviewButton: { backgroundColor: Colors.primary, borderRadius: Layout.borderRadius.lg, paddingVertical: Layout.spacing.md, alignItems: 'center' },
   reviewButtonDisabled: { backgroundColor: Colors.text.secondary, opacity: 0.6 },
   reviewButtonText: { fontFamily: Typography.medium, fontSize: 16, color: Colors.surface, fontWeight: '600' },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: Layout.spacing.xl,
-  },
-  loadingText: {
-    fontFamily: Typography.regular,
-    fontSize: 14,
-    color: Colors.text.secondary,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: Layout.spacing.xl,
-  },
-  errorText: {
-    fontFamily: Typography.regular,
-    fontSize: 14,
-    color: Colors.text.secondary,
-    marginBottom: Layout.spacing.md,
-  },
-  retryButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: Layout.borderRadius.md,
-    paddingVertical: Layout.spacing.sm,
-    paddingHorizontal: Layout.spacing.lg,
-  },
-  retryButtonText: {
-    fontFamily: Typography.medium,
-    fontSize: 14,
-    color: Colors.surface,
-    fontWeight: '600',
-  },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: Layout.spacing.xl },
+  loadingText: { fontFamily: Typography.regular, fontSize: 14, color: Colors.text.secondary },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: Layout.spacing.xl },
+  errorText: { fontFamily: Typography.regular, fontSize: 14, color: Colors.text.secondary, marginBottom: Layout.spacing.md },
+  retryButton: { backgroundColor: Colors.primary, borderRadius: Layout.borderRadius.md, paddingVertical: Layout.spacing.sm, paddingHorizontal: Layout.spacing.lg },
+  retryButtonText: { fontFamily: Typography.medium, fontSize: 14, color: Colors.surface, fontWeight: '600' },
 });
 
 export default TransferBottomSheet;

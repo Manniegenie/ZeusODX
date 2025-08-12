@@ -22,6 +22,7 @@ const usdcIcon = require('../components/icons/usdc-icon.png');
 const avaxIcon = require('../components/icons/avax-icon.png');
 const bnbIcon = require('../components/icons/bnb-icon.png');
 const maticIcon = require('../components/icons/matic-icon.png');
+const ngnzIcon = require('../components/icons/NGNZ.png'); // ✅ NGNZ icon
 
 export interface WalletOption {
   id: string;
@@ -54,6 +55,7 @@ export default function DepositTokenModal({
     { id: 'avax', name: 'Avalanche', symbol: 'AVAX', icon: avaxIcon },
     { id: 'bnb', name: 'Binance Coin', symbol: 'BNB', icon: bnbIcon },
     { id: 'matic', name: 'Polygon', symbol: 'MATIC', icon: maticIcon },
+    { id: 'ngnz', name: 'NGNZ', symbol: 'NGNZ', icon: ngnzIcon }, // ✅ Added NGNZ
   ];
 
   const handleSelectToken = (token: WalletOption) => {

@@ -215,15 +215,15 @@ const styles = StyleSheet.create<Styles>({
   tabNavContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    alignItems: 'center', // Back to center alignment
+    alignItems: 'center',
     paddingHorizontal: Layout.spacing.md,
-    height: 56, // Back to original height
+    height: 56,
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 56, // Back to original height
+    height: 56,
   },
   tabContainer: {
     alignItems: 'center',
@@ -240,13 +240,13 @@ const styles = StyleSheet.create<Styles>({
     letterSpacing: 0.2,
     marginTop: 4,
   },
-  // Special styles for Buy/Sell tab
+  // Special styles for Buy/Sell tab - Shadow effects removed
   specialTabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 56, // Same as regular tabs
-    marginTop: -6, // Reduced from -12 to -6 for subtle raise
+    height: 56,
+    marginTop: -6,
   },
   specialTabContainer: {
     alignItems: 'center',
@@ -259,12 +259,6 @@ const styles = StyleSheet.create<Styles>({
     backgroundColor: '#35297F',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#35297F',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    // Gradient effect using multiple layers
     borderWidth: 2,
     borderColor: '#35297F33',
   },

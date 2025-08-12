@@ -1,432 +1,345 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { internalTransferService } from '../services/internalTransferService';
+// hooks/useUsernameTransfer.js
+import { useState, useCallback, useRef } from 'react';
+import { usernameTransferService } from '../services/internalTransferService';
 
-export const useInternalTransfer = () => {
-  // Loading states
-  const [isInitiating, setIsInitiating] = useState(false);
-  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-
-  // Data states
-  const [activeTransfers, setActiveTransfers] = useState([]);
-  const [currentTransfer, setCurrentTransfer] = useState(null);
-
-  // Error states
+export const useUsernameTransfer = () => {
+  // State management
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [transferResult, setTransferResult] = useState(null);
   const [error, setError] = useState(null);
-  const [statusError, setStatusError] = useState(null);
+  const [lastTransferData, setLastTransferData] = useState(null);
 
-  // Refs for cleanup and polling
-  const statusPollingRef = useRef(null);
-  const mountedRef = useRef(true);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-      if (statusPollingRef.current) {
-        clearInterval(statusPollingRef.current);
-      }
-    };
-  }, []);
+  // Ref to track the current transfer to prevent duplicate requests
+  const currentTransferRef = useRef(null);
 
   /**
-   * Clear all errors
+   * Reset all states to initial values
    */
-  const clearErrors = useCallback(() => {
+  const resetTransfer = useCallback(() => {
+    setIsTransferring(false);
+    setTransferResult(null);
     setError(null);
-    setStatusError(null);
+    setLastTransferData(null);
+    currentTransferRef.current = null;
   }, []);
 
   /**
-   * Clear specific error
+   * Clear only error state
    */
-  const clearError = useCallback((errorType) => {
-    switch (errorType) {
-      case 'transfer':
-        setError(null);
-        break;
-      case 'status':
-        setStatusError(null);
-        break;
-      default:
-        clearErrors();
-    }
-  }, [clearErrors]);
-
-  /**
-   * Map API error messages to action codes and error types
-   */
-  const mapErrorToAction = useCallback((result) => {
-    if (!result) return result;
-
-    // Check both message and error fields for the actual error content
-    // The service layer may transform the original message, so check error field first
-    let errorText = '';
-    if (result.error && typeof result.error === 'string') {
-      errorText = result.error.toLowerCase();
-    } else if (result.message) {
-      errorText = result.message.toLowerCase();
-    }
-
-    if (!errorText) return result;
-
-    console.log('🔍 Hook: Analyzing error text:', errorText);
-
-    let requiresAction = null;
-    let errorCode = 'GENERAL_ERROR';
-
-    // Check for specific error patterns
-    if (errorText.includes('two-factor authentication is not set up') || 
-        errorText.includes('2fa') && errorText.includes('not enabled') ||
-        errorText.includes('please enable 2fa first')) {
-      requiresAction = 'SETUP_2FA_REQUIRED';
-      errorCode = 'SETUP_2FA_REQUIRED';
-    } else if (errorText.includes('password pin') && errorText.includes('not set up')) {
-      requiresAction = 'SETUP_PIN_REQUIRED';
-      errorCode = 'SETUP_PIN_REQUIRED';
-    } else if (errorText.includes('password pin') && errorText.includes('invalid')) {
-      requiresAction = 'RETRY_PIN';
-      errorCode = 'INVALID_PASSWORDPIN';
-    } else if (errorText.includes('two-factor') && (errorText.includes('invalid') || errorText.includes('incorrect'))) {
-      requiresAction = 'RETRY_2FA';
-      errorCode = 'INVALID_2FA_CODE';
-    } else if (errorText.includes('insufficient balance')) {
-      errorCode = 'INSUFFICIENT_BALANCE';
-    } else if (errorText.includes('limit exceeded') || errorText.includes('daily limit')) {
-      errorCode = 'KYC_LIMIT_EXCEEDED';
-    } else if (errorText.includes('network') || errorText.includes('connection')) {
-      errorCode = 'NETWORK_ERROR';
-    } else if (errorText.includes('validation') || errorText.includes('invalid')) {
-      errorCode = 'VALIDATION_ERROR';
-    } else {
-      errorCode = 'SERVICE_ERROR';
-    }
-
-    console.log('🎯 Hook: Mapped to action code:', errorCode, 'requiresAction:', requiresAction);
-
-    return {
-      ...result,
-      error: errorCode,
-      requiresAction: requiresAction,
-      originalMessage: result.error || result.message // Preserve original message
-    };
+  const clearError = useCallback(() => {
+    setError(null);
   }, []);
 
   /**
-   * Get error action configuration
+   * Clear only success result
    */
-  const getErrorAction = useCallback((actionCode) => {
-    switch (actionCode) {
-      case 'SETUP_2FA_REQUIRED':
-        return {
-          title: '2FA Setup Required',
-          message: 'Two-factor authentication is required for transfers. Please set up 2FA to continue.',
-          actionText: 'Setup 2FA',
-          route: '/settings/security/2fa',
-          priority: 'high'
-        };
-
-      case 'SETUP_PIN_REQUIRED':
-        return {
-          title: 'PIN Setup Required',
-          message: 'A password PIN is required for transfers. Please set up your PIN to continue.',
-          actionText: 'Setup PIN',
-          route: '/settings/security/pin',
-          priority: 'high'
-        };
-
-      case 'RETRY_PIN':
-        return {
-          title: 'Invalid PIN',
-          message: 'The password PIN you entered is incorrect. Please try again.',
-          actionText: 'Retry PIN',
-          priority: 'medium'
-        };
-
-      case 'RETRY_2FA':
-        return {
-          title: 'Invalid 2FA Code',
-          message: 'The two-factor authentication code is incorrect. Please try again.',
-          actionText: 'Retry 2FA',
-          priority: 'medium'
-        };
-
-      default:
-        return null;
-    }
+  const clearResult = useCallback(() => {
+    setTransferResult(null);
   }, []);
 
   /**
-   * Initiate internal transfer
+   * Validate transfer data before making request
+   * @param {Object} transferData - Transfer data to validate
+   * @returns {Object} Validation result
    */
-  const initiateTransfer = useCallback(async (transferData) => {
-    if (!mountedRef.current) return null;
+  const validateTransferData = useCallback((transferData) => {
+    return usernameTransferService.validateTransferData(transferData);
+  }, []);
+
+  /**
+   * Execute username transfer
+   * @param {Object} transferData - Transfer parameters
+   * @param {string} transferData.recipientUsername - Recipient's username
+   * @param {number} transferData.amount - Amount to transfer
+   * @param {string} transferData.currency - Currency code
+   * @param {string} transferData.twoFactorCode - 2FA code
+   * @param {string} transferData.passwordpin - 6-digit password PIN
+   * @param {string} [transferData.memo] - Optional memo
+   * @returns {Promise<Object>} Transfer result
+   */
+  const executeTransfer = useCallback(async (transferData) => {
+    // Prevent multiple simultaneous transfers
+    if (isTransferring || currentTransferRef.current) {
+      console.warn('Transfer already in progress, ignoring duplicate request');
+      return {
+        success: false,
+        error: 'TRANSFER_IN_PROGRESS',
+        message: 'A transfer is already in progress. Please wait.'
+      };
+    }
+
+    // Validate transfer data
+    const validation = validateTransferData(transferData);
+    if (!validation.isValid) {
+      const errorMessage = validation.errors.join('; ');
+      setError({
+        code: 'VALIDATION_ERROR',
+        message: errorMessage,
+        errors: validation.errors,
+        requiresAction: 'FIX_INPUT'
+      });
+      return {
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: errorMessage,
+        errors: validation.errors
+      };
+    }
+
+    // Check minimum amount
+    const minAmountCheck = usernameTransferService.validateMinimumAmount(
+      transferData.amount, 
+      transferData.currency
+    );
+    if (!minAmountCheck.isValid) {
+      setError({
+        code: 'MINIMUM_AMOUNT_ERROR',
+        message: minAmountCheck.message,
+        requiresAction: 'FIX_INPUT'
+      });
+      return {
+        success: false,
+        error: 'MINIMUM_AMOUNT_ERROR',
+        message: minAmountCheck.message
+      };
+    }
+
+    // Set loading state and clear previous states
+    setIsTransferring(true);
+    setError(null);
+    setTransferResult(null);
+    setLastTransferData(transferData);
+
+    // Create transfer identifier for duplicate prevention
+    const transferId = `${transferData.recipientUsername}_${transferData.amount}_${transferData.currency}_${Date.now()}`;
+    currentTransferRef.current = transferId;
 
     try {
-      setIsInitiating(true);
-      setError(null);
-      
-      console.log('🔄 Hook: Initiating internal transfer...');
-      
-      const result = await internalTransferService.initiateInternalTransfer(transferData);
-      
-      if (!mountedRef.current) return null;
+      console.log('🚀 Initiating username transfer:', {
+        recipientUsername: transferData.recipientUsername,
+        amount: transferData.amount,
+        currency: transferData.currency,
+        transferId: transferId
+      });
+
+      // Execute the transfer
+      const result = await usernameTransferService.transferToUsername(transferData);
+
+      // Check if this is still the current transfer
+      if (currentTransferRef.current !== transferId) {
+        console.warn('Transfer response received for outdated request, ignoring');
+        return {
+          success: false,
+          error: 'OUTDATED_REQUEST',
+          message: 'This transfer request is no longer current'
+        };
+      }
 
       if (result.success) {
-        setCurrentTransfer(result.data);
-        
-        // Update active transfers
-        const updatedTransfers = internalTransferService.getActiveTransfers();
-        setActiveTransfers(updatedTransfers);
-
-        console.log('✅ Hook: Internal transfer initiated successfully');
-        return result;
-      } else {
-        // Map the error to include action codes
-        const mappedResult = mapErrorToAction(result);
-        setError(mappedResult);
-        
-        console.log('❌ Hook: Internal transfer initiation failed');
-        console.log('❌ Mapped result:', {
-          error: mappedResult.error,
-          requiresAction: mappedResult.requiresAction,
-          message: mappedResult.message
+        // Success case
+        setTransferResult({
+          ...result.data,
+          timestamp: new Date().toISOString(),
+          userFriendlyMessage: result.data.message || 'Transfer completed successfully!'
         });
         
-        return mappedResult;
-      }
-    } catch (error) {
-      if (!mountedRef.current) return null;
+        console.log('✅ Username transfer completed successfully:', {
+          transactionId: result.data.transactionId,
+          transferReference: result.data.transferReference,
+          recipient: result.data.recipient.username,
+          amount: result.data.amount,
+          currency: result.data.currency
+        });
 
-      const errorResult = {
-        success: false,
-        error: 'NETWORK_ERROR',
-        message: 'Failed to initiate internal transfer. Please check your connection.',
-        requiresAction: null
-      };
-      
-      setError(errorResult);
-      console.log('❌ Hook: Internal transfer error:', error);
-      return errorResult;
-    } finally {
-      if (mountedRef.current) {
-        setIsInitiating(false);
-      }
-    }
-  }, [mapErrorToAction]);
-
-  /**
-   * Check internal transfer status
-   */
-  const checkTransferStatus = useCallback(async (transactionId) => {
-    if (!mountedRef.current || !transactionId) return null;
-
-    try {
-      setIsCheckingStatus(true);
-      setStatusError(null);
-
-      console.log('🔄 Hook: Checking internal transfer status...');
-      
-      const result = await internalTransferService.getInternalTransferStatus(transactionId);
-      
-      if (!mountedRef.current) return null;
-
-      if (result.success) {
-        // Update current transfer if it matches
-        if (currentTransfer?.transactionId === transactionId) {
-          setCurrentTransfer(prev => ({ ...prev, ...result.data }));
-        }
-
-        // Update active transfers
-        const updatedTransfers = internalTransferService.getActiveTransfers();
-        setActiveTransfers(updatedTransfers);
-
-        console.log('✅ Hook: Status check completed');
+        // Clear transfer data after successful transfer
+        setLastTransferData(null);
+        
         return result;
       } else {
-        const mappedResult = mapErrorToAction(result);
-        setStatusError(mappedResult);
-        console.log('❌ Hook: Status check failed');
-        return mappedResult;
+        // Error case
+        const userFriendlyMessage = usernameTransferService.getUserFriendlyMessage(
+          result.error, 
+          result.message
+        );
+
+        setError({
+          code: result.error,
+          message: userFriendlyMessage,
+          originalMessage: result.message,
+          requiresAction: result.requiresAction,
+          details: result.details,
+          timestamp: new Date().toISOString()
+        });
+
+        console.log('❌ Username transfer failed:', {
+          error: result.error,
+          message: result.message,
+          requiresAction: result.requiresAction
+        });
+
+        return result;
       }
     } catch (error) {
-      if (!mountedRef.current) return null;
+      // Network or unexpected error
+      if (currentTransferRef.current !== transferId) {
+        console.warn('Transfer error received for outdated request, ignoring');
+        return {
+          success: false,
+          error: 'OUTDATED_REQUEST',
+          message: 'This transfer request is no longer current'
+        };
+      }
+
+      console.error('💥 Username transfer service error:', error);
 
       const errorResult = {
+        code: 'NETWORK_ERROR',
+        message: 'Network connection failed. Please check your internet connection and try again.',
+        originalMessage: error.message,
+        requiresAction: 'RETRY_LATER',
+        timestamp: new Date().toISOString()
+      };
+
+      setError(errorResult);
+
+      return {
         success: false,
         error: 'NETWORK_ERROR',
-        message: 'Failed to check internal transfer status',
-        requiresAction: null
+        message: errorResult.message
       };
-      
-      setStatusError(errorResult);
-      console.log('❌ Hook: Status check error:', error);
-      return errorResult;
     } finally {
-      if (mountedRef.current) {
-        setIsCheckingStatus(false);
-      }
+      setIsTransferring(false);
+      currentTransferRef.current = null;
     }
-  }, [currentTransfer, mapErrorToAction]);
+  }, [isTransferring, validateTransferData]);
 
   /**
-   * Start polling transfer status
+   * Retry the last transfer with the same data
+   * @returns {Promise<Object>} Transfer result
    */
-  const startStatusPolling = useCallback((transactionId, interval = 15000) => {
-    if (statusPollingRef.current) {
-      clearInterval(statusPollingRef.current);
+  const retryTransfer = useCallback(async () => {
+    if (!lastTransferData) {
+      const errorMessage = 'No previous transfer data available to retry';
+      setError({
+        code: 'NO_RETRY_DATA',
+        message: errorMessage,
+        requiresAction: null
+      });
+      return {
+        success: false,
+        error: 'NO_RETRY_DATA',
+        message: errorMessage
+      };
     }
 
-    console.log('🔄 Hook: Starting status polling for:', transactionId);
-
-    statusPollingRef.current = setInterval(async () => {
-      if (!mountedRef.current) {
-        clearInterval(statusPollingRef.current);
-        return;
-      }
-
-      const result = await checkTransferStatus(transactionId);
-      
-      if (result?.success && result.data) {
-        const { isCompleted, isFailed } = result.data;
-        
-        // Stop polling if transfer is completed or failed
-        if (isCompleted || isFailed) {
-          console.log('🛑 Hook: Stopping status polling - transfer finished');
-          stopStatusPolling();
-        }
-      }
-    }, interval);
-  }, [checkTransferStatus]);
+    console.log('🔄 Retrying username transfer');
+    return executeTransfer(lastTransferData);
+  }, [lastTransferData, executeTransfer]);
 
   /**
-   * Stop status polling
+   * Get formatted minimum amount for a currency
+   * @param {string} currency - Currency code
+   * @returns {string} Formatted minimum amount
    */
-  const stopStatusPolling = useCallback(() => {
-    if (statusPollingRef.current) {
-      clearInterval(statusPollingRef.current);
-      statusPollingRef.current = null;
-      console.log('🛑 Hook: Status polling stopped');
-    }
+  const getMinimumAmount = useCallback((currency) => {
+    const minimums = usernameTransferService.getMinimumTransferAmounts();
+    const minAmount = minimums[currency?.toUpperCase()] || 0;
+    return usernameTransferService.formatAmount(minAmount, currency);
   }, []);
 
   /**
-   * Format transfer amount for display
+   * Get supported currencies
+   * @returns {Array} Array of supported currencies
+   */
+  const getSupportedCurrencies = useCallback(() => {
+    return usernameTransferService.getSupportedCurrencies();
+  }, []);
+
+  /**
+   * Format amount for display
+   * @param {number|string} amount - Amount to format
+   * @param {string} currency - Currency code
+   * @returns {string} Formatted amount
    */
   const formatAmount = useCallback((amount, currency) => {
-    return internalTransferService.formatTransferAmount(amount, currency);
+    return usernameTransferService.formatAmount(amount, currency);
   }, []);
 
   /**
-   * Format currency amount for display
+   * Format username for display
+   * @param {string} username - Username to format
+   * @returns {string} Formatted username with @ prefix
    */
-  const formatCurrency = useCallback((amount, currency = 'USD') => {
-    return internalTransferService.formatCurrency(amount, currency);
+  const formatUsername = useCallback((username) => {
+    return usernameTransferService.formatUsername(username);
   }, []);
 
   /**
-   * Validate transfer data
+   * Get currency information
+   * @param {string} currencyCode - Currency code
+   * @returns {Object} Currency information
    */
-  const validateTransfer = useCallback((transferData) => {
-    return internalTransferService.validateInternalTransferRequest(transferData);
+  const getCurrencyInfo = useCallback((currencyCode) => {
+    return usernameTransferService.getCurrencyInfo(currencyCode);
   }, []);
 
   /**
-   * Reset current transfer
+   * Check if a retry is possible
+   * @returns {boolean} True if retry is possible
    */
-  const resetCurrentTransfer = useCallback(() => {
-    setCurrentTransfer(null);
-    stopStatusPolling();
-    clearErrors();
-  }, [stopStatusPolling, clearErrors]);
+  const canRetry = useCallback(() => {
+    return !isTransferring && !!lastTransferData && !!error;
+  }, [isTransferring, lastTransferData, error]);
 
   /**
-   * Refresh all data
+   * Get transfer status summary
+   * @returns {Object} Status summary
    */
-  const refreshAll = useCallback(async () => {
-    console.log('🔄 Hook: Refreshing all transfer data...');
-    
-    // Update active transfers
-    const updatedTransfers = internalTransferService.getActiveTransfers();
-    setActiveTransfers(updatedTransfers);
-    
-    // Check current transfer status if exists
-    if (currentTransfer?.transactionId) {
-      await checkTransferStatus(currentTransfer.transactionId);
-    }
-    
-    console.log('✅ Hook: All data refreshed');
-  }, [currentTransfer, checkTransferStatus]);
-
-  /**
-   * Get transfer by transaction ID from active transfers
-   */
-  const getTransferById = useCallback((transactionId) => {
-    return activeTransfers.find(t => t.transactionId === transactionId);
-  }, [activeTransfers]);
-
-  /**
-   * Check if transfer is retryable
-   */
-  const isTransferRetryable = useCallback((transferError) => {
-    return internalTransferService.isErrorRetryable(transferError?.error);
-  }, []);
-
-  // Auto-update active transfers periodically
-  useEffect(() => {
-    const updateActiveTransfers = () => {
-      if (mountedRef.current) {
-        const updated = internalTransferService.getActiveTransfers();
-        setActiveTransfers(updated);
-      }
+  const getStatusSummary = useCallback(() => {
+    return {
+      isLoading: isTransferring,
+      hasError: !!error,
+      hasResult: !!transferResult,
+      canRetry: canRetry(),
+      isIdle: !isTransferring && !error && !transferResult
     };
+  }, [isTransferring, error, transferResult, canRetry]);
 
-    const interval = setInterval(updateActiveTransfers, 30000); // Every 30 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
+  // Return the hook interface
   return {
-    // Loading states
-    isInitiating,
-    isCheckingStatus,
-    isLoading: isInitiating || isCheckingStatus,
-
-    // Data states
-    activeTransfers,
-    currentTransfer,
-
-    // Error states
+    // State
+    isTransferring,
+    transferResult,
     error,
-    statusError,
-    hasError: !!(error || statusError),
+    lastTransferData,
 
-    // Main actions
-    initiateTransfer,
-    checkTransferStatus,
-
-    // Status polling
-    startStatusPolling,
-    stopStatusPolling,
-    isPolling: !!statusPollingRef.current,
-
-    // Utility functions
-    formatAmount,
-    formatCurrency,
-    validateTransfer,
-    getTransferById,
-    isTransferRetryable,
-    getErrorAction, // Added this export
-
-    // Management functions
-    resetCurrentTransfer,
-    refreshAll,
-    clearErrors,
+    // Actions
+    executeTransfer,
+    retryTransfer,
+    resetTransfer,
     clearError,
+    clearResult,
+
+    // Validation and utilities
+    validateTransferData,
+    getMinimumAmount,
+    getSupportedCurrencies,
+    formatAmount,
+    formatUsername,
+    getCurrencyInfo,
 
     // Status helpers
-    hasActiveTransfers: activeTransfers.length > 0,
-    
-    // Cache info (for debugging)
-    cacheStatus: internalTransferService.getCacheStatus()
+    canRetry,
+    getStatusSummary,
+
+    // Computed states
+    hasError: !!error,
+    hasResult: !!transferResult,
+    isIdle: !isTransferring && !error && !transferResult,
+    requiresAction: error?.requiresAction || null,
+    errorCode: error?.code || null,
+    resultData: transferResult || null
   };
 };
+
+export default useUsernameTransfer;

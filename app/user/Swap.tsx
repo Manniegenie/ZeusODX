@@ -185,9 +185,36 @@ export default function SwapScreen({
 
   const formatUsdValue = (amount: string, token: TokenOption | null): string => {
     const val = parseFloat(unformat(amount)) || 0;
+    
+    // Return $0.00 if amount is invalid or zero
+    if (!val || isNaN(val) || val <= 0) {
+      return '$0.00';
+    }
+    
+    if (token?.symbol === 'NGNZ') {
+      // Use NGNZ exchange rate to convert to USD
+      const exchangeRate = ngnzExchangeRate;
+      
+      // Handle cases where exchange rate is not available yet
+      if (!exchangeRate || isNaN(exchangeRate) || exchangeRate <= 0) {
+        return '$0.00';
+      }
+      
+      // For NGNZ: divide by exchange rate to get USD value
+      const usdValue = val / exchangeRate;
+      return '$' + usdValue.toFixed(2);
+    }
+    
+    // For all other tokens, use their current price
     const price = token?.price || 0;
+    
+    // Handle cases where price is not available yet
+    if (!price || isNaN(price) || price <= 0) {
+      return '$0.00';
+    }
+    
     const usdValue = val * price;
-    return token?.symbol === 'NGNZ' ? `₦${usdValue.toFixed(2)}` : `$${usdValue.toFixed(2)}`;
+    return '$' + usdValue.toFixed(2);
   };
 
   const getMaxBalance = (token: TokenOption | null): string => {

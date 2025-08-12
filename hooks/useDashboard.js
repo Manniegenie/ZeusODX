@@ -56,8 +56,9 @@ export function useDashboard() {
     return dashboard?.data?.market || null;
   }, [dashboard]);
 
-  // Individual market fields
-  const ngnzExchangeRate = market?.ngnzExchangeRate || null;
+  // Individual market fields - FIXED: Access the rate property correctly
+  const ngnzExchangeRate = market?.ngnzExchangeRate?.rate || null;
+  const ngnzExchangeRateData = market?.ngnzExchangeRate || null; // Full object if needed
   const pricesLastUpdated = market?.pricesLastUpdated || null;
   const prices = market?.prices || {};
   const priceChanges12h = market?.priceChanges12h || {};
@@ -248,8 +249,9 @@ export function useDashboard() {
     securityIs2FAEnabled,
     lastFailedLogin,
     
-    // Market fields
-    ngnzExchangeRate,
+    // Market fields - FIXED: Now correctly exports the rate number
+    ngnzExchangeRate, // This is now the rate number, not the object
+    ngnzExchangeRateData, // Full object with rate, lastUpdated, source
     pricesLastUpdated,
     prices,
     priceChanges12h,

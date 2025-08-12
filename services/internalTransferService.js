@@ -1,376 +1,385 @@
+// services/usernameTransferService.js
 import { apiClient } from './apiClient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const internalTransferService = {
-  // Active transfers tracking
-  activeTransfers: new Map(),
+function pick(obj, path, fallback = undefined) {
+  return path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj) ?? fallback;
+}
 
+function normalizeResponse(raw) {
+  // Support both axios responses and pre-unwrapped client responses
+  const root = raw?.data ?? raw;
+
+  // Some backends nest the payload inside data.data
+  const payload = root?.data ?? root;
+
+  const amount = pick(payload, 'amount', 0);
+  const currency = pick(payload, 'currency', '');
+  const recipient = pick(payload, 'recipient', null);
+  const recipientUsername =
+    recipient?.username ??
+    pick(payload, 'recipientUsername', '') ??
+    '';
+
+  const normalized = {
+    transactionId: pick(payload, 'transactionId') ?? pick(payload, '_id') ?? null,
+    reference:
+      pick(payload, 'transferReference') ??
+      pick(payload, 'reference') ??
+      pick(payload, 'transferRef') ??
+      null,
+    transferReference:
+      pick(payload, 'transferReference') ??
+      pick(payload, 'reference') ??
+      null,
+    recipient: recipient
+      ? { username: recipient.username ?? '', fullName: recipient.fullName ?? '' }
+      : { username: recipientUsername, fullName: pick(payload, 'recipient.fullName') ?? pick(payload, 'recipientFullName') ?? '' },
+    amount,
+    currency,
+    status: pick(payload, 'status', null),
+    memo: pick(payload, 'memo', null),
+    completedAt: pick(payload, 'completedAt') ?? pick(payload, 'date') ?? null,
+    securityInfo:
+      pick(payload, 'security_info') ??
+      pick(payload, 'securityInfo') ??
+      null,
+    message: pick(root, 'message') ?? 'Transfer completed successfully',
+  };
+
+  return normalized;
+}
+
+function isSuccess(raw) {
+  const root = raw?.data ?? raw;
+  // Accept truthy success OR presence of typical success fields
+  return Boolean(root?.success ?? pick(root, 'data.status') ?? pick(root, 'status')) || false;
+}
+
+export const usernameTransferService = {
   /**
-   * Initiate internal transfer with comprehensive validation
+   * Transfer funds to another user by username
    */
-  async initiateInternalTransfer(transferData) {
+  async transferToUsername(transferData) {
     try {
-      const {
-        recipientUsername,
-        amount,
-        currency,
-        twoFactorCode,
-        passwordpin,
-        memo
-      } = transferData;
-
-      console.log('🔄 Initiating internal transfer:', {
-        recipientUsername,
-        currency,
-        amount
+      console.log('💸 Starting username transfer:', {
+        recipientUsername: transferData.recipientUsername,
+        amount: transferData.amount,
+        currency: transferData.currency,
+        memo: transferData.memo ? 'Present' : 'None',
       });
 
-      // Client-side validation
-      const validation = this.validateInternalTransferRequest(transferData);
-      if (!validation.success) {
-        console.log('❌ Internal transfer validation failed:', validation.errors);
-        return {
-          success: false,
-          error: 'VALIDATION_ERROR',
-          message: validation.message,
-          errors: validation.errors
-        };
-      }
-
-      // Prepare request payload
-      const payload = {
-        recipientUsername: recipientUsername.trim(),
-        amount: Number(amount),
-        currency: currency.toUpperCase(),
-        twoFactorCode: twoFactorCode.trim(),
-        passwordpin: String(passwordpin).trim(),
-        memo: memo?.trim() || null
+      const body = {
+        recipientUsername: transferData.recipientUsername.trim(),
+        amount: Number(transferData.amount),
+        currency: transferData.currency.toUpperCase(),
+        twoFactorCode: transferData.twoFactorCode,
+        passwordpin: transferData.passwordpin,
+        memo: transferData.memo?.trim() || null,
       };
 
-      // Make API request
-      const response = await apiClient.post('/username-withdraw/internal', payload);
+      const res = await apiClient.post('/username-withdraw/internal', body);
 
-      if (response.success) {
-        const transferData = response.data;
-        
-        // Track active transfer
-        this.trackActiveTransfer(transferData.transactionId, {
-          ...transferData,
-          initiatedAt: new Date().toISOString()
-        });
+      if (isSuccess(res)) {
+        const normalized = normalizeResponse(res);
 
-        console.log('✅ Internal transfer initiated successfully:', {
-          transactionId: transferData.transactionId,
-          transferReference: transferData.transferReference,
-          currency: transferData.currency,
-          amount: transferData.amount,
-          recipient: transferData.recipient.username,
-          status: transferData.status
-        });
-
-        return {
-          success: true,
-          data: {
-            ...transferData,
-            message: 'Internal transfer completed successfully'
-          }
-        };
-      } else {
-        console.log('❌ Internal transfer API error:', response.error);
-        return this.handleTransferError(response);
-      }
-    } catch (error) {
-      console.log('❌ Internal transfer service error:', error);
-      return this.handleTransferError(error);
-    }
-  },
-
-  /**
-   * Get internal transfer status by transaction ID
-   */
-  async getInternalTransferStatus(transactionId) {
-    try {
-      console.log('📊 Fetching internal transfer status for:', transactionId);
-
-      if (!transactionId) {
-        return {
-          success: false,
-          error: 'INVALID_TRANSACTION_ID',
-          message: 'Transaction ID is required'
-        };
-      }
-
-      const response = await apiClient.get(`/transfer/internal/status/${transactionId}`);
-
-      if (response.success) {
-        const statusData = response.data;
-        
-        // Update tracked transfer if exists
-        if (this.activeTransfers.has(transactionId)) {
-          const existing = this.activeTransfers.get(transactionId);
-          this.activeTransfers.set(transactionId, {
-            ...existing,
-            ...statusData,
-            lastUpdated: new Date().toISOString()
-          });
+        // Guard to avoid UI crash
+        if (!normalized.recipient?.username) {
+          console.warn('⚠️ Missing recipient.username in backend response. Sample:', res?.data ?? res);
         }
 
-        console.log('✅ Internal transfer status retrieved:', {
-          transactionId,
-          type: statusData.type,
-          status: statusData.status,
-          currency: statusData.currency,
-          amount: statusData.amount
+        console.log('✅ Username transfer successful:', {
+          transactionId: normalized.transactionId,
+          reference: normalized.reference,
+          recipient: normalized.recipient.username,
+          amount: normalized.amount,
+          currency: normalized.currency,
+          status: normalized.status,
         });
 
         return {
           success: true,
-          data: {
-            ...statusData,
-            statusDescription: this.getStatusDescription(statusData.status),
-            isCompleted: ['COMPLETED', 'SUCCESS'].includes(statusData.status),
-            isFailed: ['FAILED', 'CANCELLED', 'REJECTED'].includes(statusData.status),
-            isPending: ['PENDING', 'PROCESSING'].includes(statusData.status),
-            isSent: statusData.type === 'INTERNAL_TRANSFER_SENT',
-            isReceived: statusData.type === 'INTERNAL_TRANSFER_RECEIVED'
-          }
-        };
-      } else {
-        console.log('❌ Failed to fetch internal transfer status:', response.error);
-        return {
-          success: false,
-          error: response.error || 'STATUS_FETCH_ERROR',
-          message: 'Failed to fetch internal transfer status'
+          data: normalized,
         };
       }
+
+      // Standardize error from backend (non-2xx or success=false)
+      const root = res?.data ?? res ?? {};
+      const backendMessage = root.error || root.message || 'Transfer failed';
+      const statusCode = root.status || root.statusCode || 400;
+      const errorCode = this.generateErrorCode(backendMessage, root.error);
+      const requiresAction = this.getRequiredAction(errorCode, backendMessage);
+
+      console.log('❌ Username transfer failed:', {
+        backend_message: backendMessage,
+        error_code: errorCode,
+        backend_error: root.error,
+        requires_action: requiresAction,
+        status: statusCode,
+      });
+
+      return {
+        success: false,
+        error: errorCode,
+        message: this.getUserFriendlyMessage(errorCode, backendMessage),
+        status: statusCode,
+        requiresAction,
+        details: root.details || root.kycDetails || null,
+      };
     } catch (error) {
-      console.log('❌ Error fetching internal transfer status:', error);
+      // Axios style errors
+      const hasResponse = !!error?.response;
+      if (hasResponse) {
+        const root = error.response?.data ?? {};
+        const backendMessage = root.error || root.message || error.message || 'Transfer failed';
+        const statusCode = error.response?.status || root.status || 400;
+        const errorCode = this.generateErrorCode(backendMessage, root.error);
+        const requiresAction = this.getRequiredAction(errorCode, backendMessage);
+
+        console.error('❌ Username transfer HTTP error:', {
+          status: statusCode,
+          backend_message: backendMessage,
+          error_code: errorCode,
+        });
+
+        return {
+          success: false,
+          error: errorCode,
+          message: this.getUserFriendlyMessage(errorCode, backendMessage),
+          status: statusCode,
+          requiresAction,
+          details: root.details || null,
+        };
+      }
+
+      console.error('❌ Username transfer service network/error:', {
+        error: error?.message || String(error),
+        type: 'NETWORK_ERROR',
+      });
+
       return {
         success: false,
         error: 'NETWORK_ERROR',
-        message: 'Network error occurred while fetching status'
+        message: 'Network connection failed. Please check your internet connection and try again.',
       };
     }
   },
 
-  /**
-   * Validate internal transfer request client-side
-   */
-  validateInternalTransferRequest(transferData) {
-    const {
-      recipientUsername,
-      amount,
-      currency,
-      twoFactorCode,
-      passwordpin,
-      memo
-    } = transferData;
+  /** Generate standardized error code */
+  generateErrorCode(errorMessage, backendError) {
+    if (backendError) {
+      const standardErrors = [
+        'RECIPIENT_NOT_FOUND',
+        'INSUFFICIENT_BALANCE',
+        'KYC_LIMIT_EXCEEDED',
+        'DUPLICATE_TRANSFER',
+        'TRANSFER_EXECUTION_FAILED',
+        'UNSUPPORTED_CURRENCY',
+        'INVALID_2FA_CODE',
+        'INVALID_PASSWORDPIN',
+        'SETUP_2FA_REQUIRED',
+        'SETUP_PIN_REQUIRED',
+      ];
+      if (standardErrors.includes(backendError)) return backendError;
+    }
 
+    if (!errorMessage || typeof errorMessage !== 'string') return 'TRANSFER_FAILED';
+
+    const msg = errorMessage.toLowerCase().trim();
+
+    if (msg.includes('two-factor authentication')) {
+      if (msg.includes('not set up') || msg.includes('not enabled')) return 'SETUP_2FA_REQUIRED';
+      if (msg.includes('invalid') || msg.includes('incorrect')) return 'INVALID_2FA_CODE';
+    }
+    if (msg.includes('password pin') || msg.includes('passwordpin')) {
+      if (msg.includes('not set up') || msg.includes('not enabled')) return 'SETUP_PIN_REQUIRED';
+      if (msg.includes('invalid') || msg.includes('incorrect')) return 'INVALID_PASSWORDPIN';
+    }
+
+    if (
+      msg.includes('recipient user not found') ||
+      msg.includes('user not found') ||
+      msg.includes('cannot send to yourself')
+    ) return 'RECIPIENT_NOT_FOUND';
+
+    if (msg.includes('recipient account is inactive')) return 'RECIPIENT_INACTIVE';
+
+    if (msg.includes('insufficient') && msg.includes('balance')) return 'INSUFFICIENT_BALANCE';
+
+    if (
+      msg.includes('kyc limit') ||
+      msg.includes('transaction limit') ||
+      msg.includes('limit exceeded') ||
+      (msg.includes('exceeds') && msg.includes('limit'))
+    ) return 'KYC_LIMIT_EXCEEDED';
+
+    if (
+      msg.includes('duplicate') ||
+      msg.includes('similar transfer request') ||
+      msg.includes('already pending') ||
+      msg.includes('too many pending transfers')
+    ) return 'DUPLICATE_TRANSFER';
+
+    if (
+      msg.includes('validation failed') ||
+      msg.includes('invalid username') ||
+      msg.includes('invalid amount') ||
+      msg.includes('invalid currency') ||
+      msg.includes('required field') ||
+      msg.includes('minimum transfer amount')
+    ) return 'VALIDATION_ERROR';
+
+    if (msg.includes('currency') && msg.includes('not supported')) return 'UNSUPPORTED_CURRENCY';
+
+    return 'TRANSFER_FAILED';
+  },
+
+  /** Map error -> user action */
+  getRequiredAction(errorCode) {
+    const actionMap = {
+      SETUP_2FA_REQUIRED: 'SETUP_2FA',
+      SETUP_PIN_REQUIRED: 'SETUP_PIN',
+      INVALID_2FA_CODE: 'RETRY_2FA',
+      INVALID_PASSWORDPIN: 'RETRY_PIN',
+      RECIPIENT_NOT_FOUND: 'CHECK_USERNAME',
+      RECIPIENT_INACTIVE: 'CONTACT_RECIPIENT',
+      KYC_LIMIT_EXCEEDED: 'UPGRADE_KYC',
+      INSUFFICIENT_BALANCE: 'ADD_FUNDS',
+      DUPLICATE_TRANSFER: 'WAIT_PENDING',
+      VALIDATION_ERROR: 'FIX_INPUT',
+      UNSUPPORTED_CURRENCY: 'SELECT_CURRENCY',
+      TRANSFER_EXECUTION_FAILED: 'RETRY_LATER',
+    };
+    return actionMap[errorCode] || null;
+  },
+
+  /** User-friendly messages */
+  getUserFriendlyMessage(errorCode, originalMessage) {
+    const friendly = {
+      SETUP_2FA_REQUIRED: 'Two-factor authentication is required for transfers. Please set it up in your security settings.',
+      SETUP_PIN_REQUIRED: 'A password PIN is required for transfers. Please set it up in your security settings.',
+      INVALID_2FA_CODE: 'The 2FA code you entered is incorrect. Please check your authenticator app and try again.',
+      INVALID_PASSWORDPIN: 'The password PIN you entered is incorrect. Please try again.',
+      RECIPIENT_NOT_FOUND: 'The username you entered was not found or you cannot send to yourself.',
+      RECIPIENT_INACTIVE: 'The recipient account is inactive and cannot receive transfers.',
+      KYC_LIMIT_EXCEEDED: 'This transfer exceeds your account limit. Please upgrade your verification.',
+      INSUFFICIENT_BALANCE: "You don't have enough balance for this transfer.",
+      DUPLICATE_TRANSFER: 'You have a similar pending transfer. Please wait or try again later.',
+      VALIDATION_ERROR: 'Please check your transfer details and try again.',
+      UNSUPPORTED_CURRENCY: 'The selected currency is not supported.',
+      TRANSFER_EXECUTION_FAILED: 'Transfer processing failed. Please try again later.',
+      NETWORK_ERROR: 'Network connection failed. Please check your internet connection and try again.',
+      TRANSFER_FAILED: 'Transfer failed. Please try again.',
+    };
+    return friendly[errorCode] || (originalMessage?.length > 10 ? originalMessage : 'Something went wrong. Please try again.');
+  },
+
+  /** Validation helpers (unchanged except for NGNZ code fix) */
+  validateTransferData(data) {
     const errors = [];
 
-    // Required fields validation
-    if (!recipientUsername?.trim()) {
+    if (!data.recipientUsername?.trim()) {
       errors.push('Recipient username is required');
+    } else {
+      const username = data.recipientUsername.trim();
+      if (username.length < 3) errors.push('Username must be at least 3 characters long');
+      else if (username.length > 50) errors.push('Username is too long');
+      else if (!/^[a-zA-Z0-9_.-]+$/.test(username)) errors.push('Username contains invalid characters');
     }
-    if (!amount) {
-      errors.push('Transfer amount is required');
-    }
-    if (!currency?.trim()) {
+
+    const amount = Number(data.amount);
+    if (!data.amount || Number.isNaN(amount)) errors.push('Amount is required');
+    else if (amount <= 0) errors.push('Amount must be greater than zero');
+    else if (amount > 1000000) errors.push('Amount is too large');
+
+    if (!data.currency?.trim()) {
       errors.push('Currency is required');
-    }
-    if (!twoFactorCode?.trim()) {
-      errors.push('Two-factor authentication code is required');
-    }
-    if (!passwordpin?.trim()) {
-      errors.push('Password PIN is required');
+    } else {
+      // NOTE: align with app (uses NGNZ)
+      const valid = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'BNB', 'DOGE', 'MATIC', 'AVAX', 'NGNZ'];
+      if (!valid.includes(data.currency.toUpperCase())) errors.push('Please select a valid currency');
     }
 
-    // Amount validation
-    const numericAmount = Number(amount);
-    if (isNaN(numericAmount) || numericAmount <= 0) {
-      errors.push('Amount must be a positive number');
-    }
+    if (!data.twoFactorCode?.trim()) errors.push('Two-factor authentication code is required');
+    else if (!/^\d{6}$/.test(data.twoFactorCode.trim())) errors.push('2FA code must be exactly 6 digits');
 
-    // Password PIN format validation
-    if (passwordpin) {
-      const pinStr = String(passwordpin).trim();
-      if (!/^\d{6}$/.test(pinStr)) {
-        errors.push('Password PIN must be exactly 6 digits');
-      }
-    }
+    if (!data.passwordpin?.trim()) errors.push('Password PIN is required');
+    else if (!/^\d{6}$/.test(data.passwordpin.trim())) errors.push('Password PIN must be exactly 6 digits');
 
-    // 2FA code format validation
-    if (twoFactorCode) {
-      const codeStr = String(twoFactorCode).trim();
-      if (!/^\d{6}$/.test(codeStr)) {
-        errors.push('Two-factor code must be exactly 6 digits');
-      }
-    }
+    if (data.memo && data.memo.length > 200) errors.push('Memo cannot exceed 200 characters');
 
-    // Username format validation
-    if (recipientUsername && recipientUsername.trim().length < 3) {
-      errors.push('Username must be at least 3 characters');
-    }
+    return { isValid: errors.length === 0, errors };
+  },
 
-    // Username format - only alphanumeric and underscore
-    if (recipientUsername && !/^[a-zA-Z0-9_]+$/.test(recipientUsername.trim())) {
-      errors.push('Username can only contain letters, numbers, and underscores');
+  formatAmount(amount, currency) {
+    const num = Number(amount);
+    if (Number.isNaN(num)) return `0 ${currency}`;
+    if (['USDT', 'USDC', 'NGNZ'].includes(currency?.toUpperCase())) {
+      return `${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+    } else if (['BTC', 'ETH'].includes(currency?.toUpperCase())) {
+      return `${num.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 8 })} ${currency}`;
     }
+    return `${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })} ${currency}`;
+  },
 
-    // Memo validation
-    if (memo && memo.length > 200) {
-      errors.push('Memo cannot exceed 200 characters');
-    }
+  getSupportedCurrencies() {
+    return [
+      { code: 'BTC', name: 'Bitcoin', symbol: '₿', decimals: 8, type: 'crypto' },
+      { code: 'ETH', name: 'Ethereum', symbol: 'Ξ', decimals: 18, type: 'crypto' },
+      { code: 'SOL', name: 'Solana', symbol: 'SOL', decimals: 9, type: 'crypto' },
+      { code: 'USDT', name: 'Tether USD', symbol: '$', decimals: 6, type: 'stablecoin' },
+      { code: 'USDC', name: 'USD Coin', symbol: '$', decimals: 6, type: 'stablecoin' },
+      { code: 'BNB', name: 'BNB', symbol: 'BNB', decimals: 18, type: 'crypto' },
+      { code: 'DOGE', name: 'Dogecoin', symbol: 'Ð', decimals: 8, type: 'crypto' },
+      { code: 'MATIC', name: 'Polygon', symbol: 'MATIC', decimals: 18, type: 'crypto' },
+      { code: 'AVAX', name: 'Avalanche', symbol: 'AVAX', decimals: 18, type: 'crypto' },
+      { code: 'NGNZ', name: 'Nigerian Naira Z', symbol: '₦', decimals: 2, type: 'fiat-bridge' }, // aligned
+    ];
+  },
 
-    if (errors.length > 0) {
+  getCurrencyInfo(currencyCode) {
+    const list = this.getSupportedCurrencies();
+    return list.find(c => c.code === currencyCode?.toUpperCase()) || {
+      code: currencyCode,
+      name: currencyCode,
+      symbol: currencyCode,
+      decimals: 2,
+      type: 'unknown',
+    };
+  },
+
+  getMinimumTransferAmounts() {
+    return {
+      BTC: 0.00001,
+      ETH: 0.001,
+      SOL: 0.01,
+      USDT: 1,
+      USDC: 1,
+      BNB: 0.001,
+      DOGE: 1,
+      MATIC: 1,
+      AVAX: 0.01,
+      NGNZ: 100,
+    };
+  },
+
+  validateMinimumAmount(amount, currency) {
+    const minimums = this.getMinimumTransferAmounts();
+    const min = minimums[currency?.toUpperCase()] || 0;
+    if (amount < min) {
       return {
-        success: false,
-        errors,
-        message: errors.join('; ')
+        isValid: false,
+        message: `Minimum transfer amount for ${currency} is ${this.formatAmount(min, currency)}`,
       };
     }
-
-    return { success: true };
+    return { isValid: true };
   },
 
-  /**
-   * Handle internal transfer errors with user-friendly messages
-   */
-  handleTransferError(errorResponse) {
-    const error = errorResponse.error || errorResponse.message || 'Unknown error';
-    const statusCode = errorResponse.status || errorResponse.statusCode || 500;
-
-    // Map backend errors to user-friendly messages
-    const errorMessages = {
-      'VALIDATION_ERROR': 'Please check your input and try again',
-      'INSUFFICIENT_BALANCE': 'Insufficient balance for this transfer',
-      'KYC_LIMIT_EXCEEDED': 'Transfer exceeds your KYC limits',
-      'DUPLICATE_TRANSFER': 'Similar transfer is already pending',
-      'RECIPIENT_NOT_FOUND': 'Recipient user not found',
-      'TRANSFER_EXECUTION_FAILED': 'Failed to complete transfer',
-      'INTERNAL_SERVER_ERROR': 'Transfer service temporarily unavailable'
-    };
-
-    const userMessage = errorMessages[error] || 'Transfer failed. Please try again.';
-
-    console.log('❌ Handling internal transfer error:', { error, statusCode, userMessage });
-
-    return {
-      success: false,
-      error,
-      message: userMessage,
-      statusCode,
-      isRetryable: this.isErrorRetryable(error)
-    };
+  formatUsername(username) {
+    if (!username) return '';
+    return username.startsWith('@') ? username : `@${username}`;
   },
 
-  /**
-   * Check if error is retryable
-   */
-  isErrorRetryable(error) {
-    const retryableErrors = [
-      'NETWORK_ERROR',
-      'INTERNAL_SERVER_ERROR',
-      'TRANSFER_EXECUTION_FAILED'
-    ];
-    return retryableErrors.includes(error);
+  generateReferencePreview() {
+    return `INT_${Date.now()}_xxxxxxx`;
   },
-
-  /**
-   * Get human-readable status description
-   */
-  getStatusDescription(status) {
-    const descriptions = {
-      'PENDING': 'Transfer is being processed',
-      'PROCESSING': 'Transfer in progress',
-      'COMPLETED': 'Transfer completed successfully',
-      'SUCCESS': 'Transfer completed successfully',
-      'FAILED': 'Transfer failed',
-      'CANCELLED': 'Transfer was cancelled',
-      'REJECTED': 'Transfer was rejected'
-    };
-    return descriptions[status] || 'Unknown status';
-  },
-
-  /**
-   * Track active transfer
-   */
-  trackActiveTransfer(transactionId, data) {
-    this.activeTransfers.set(transactionId, {
-      ...data,
-      trackedAt: new Date().toISOString()
-    });
-
-    // Clean up old tracked transfers (older than 24 hours)
-    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
-    for (const [id, transfer] of this.activeTransfers.entries()) {
-      if (new Date(transfer.trackedAt).getTime() < oneDayAgo) {
-        this.activeTransfers.delete(id);
-      }
-    }
-  },
-
-  /**
-   * Get all active tracked transfers
-   */
-  getActiveTransfers() {
-    return Array.from(this.activeTransfers.entries()).map(([id, data]) => ({
-      transactionId: id,
-      ...data
-    }));
-  },
-
-  /**
-   * Format transfer amount with proper decimals
-   */
-  formatTransferAmount(amount, currency) {
-    const formatters = {
-      'BTC': (amt) => amt.toFixed(8),
-      'ETH': (amt) => amt.toFixed(6),
-      'SOL': (amt) => amt.toFixed(6),
-      'USDT': (amt) => amt.toFixed(2),
-      'USDC': (amt) => amt.toFixed(2),
-      'BNB': (amt) => amt.toFixed(4),
-      'DOGE': (amt) => amt.toFixed(4),
-      'MATIC': (amt) => amt.toFixed(4),
-      'AVAX': (amt) => amt.toFixed(4),
-      'NGNZ': (amt) => amt.toFixed(0)
-    };
-
-    const formatter = formatters[currency?.toUpperCase()];
-    return formatter ? formatter(amount) : amount.toFixed(4);
-  },
-
-  /**
-   * Format currency amount
-   */
-  formatCurrency(amount, currency = 'USD') {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: currency === 'USD' ? 2 : 0,
-      maximumFractionDigits: currency === 'USD' ? 2 : 0
-    }).format(amount);
-  },
-
-  /**
-   * Clear all transfer data
-   */
-  async clearAllData() {
-    console.log('🧹 Clearing all transfer data...');
-    
-    // Clear active transfers
-    this.activeTransfers.clear();
-    
-    console.log('✅ All transfer data cleared');
-  },
-
-  /**
-   * Get cache status for debugging
-   */
-  getCacheStatus() {
-    return {
-      activeTransfersCount: this.activeTransfers.size
-    };
-  }
 };

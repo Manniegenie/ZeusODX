@@ -9,7 +9,6 @@ import {
   StatusBar,
   ImageSourcePropType,
   ScrollView,
-  Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
@@ -23,9 +22,6 @@ import utilityElectricityIcon from '../../components/icons/utility-electricity.p
 import utilityCableIcon from '../../components/icons/utility-cable.png';
 import utilityBettingIcon from '../../components/icons/utility-betting.png';
 import utilityGiftcardIcon from '../../components/icons/utility-giftcard.png';
-
-// Get screen dimensions
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 // Type definitions
 interface UtilityService {
@@ -132,14 +128,10 @@ const UtilityScreen: React.FC = () => {
           {/* Utility Services Grid */}
           <View style={styles.servicesContainer}>
             <View style={styles.servicesGrid}>
-              {utilityServices.map((service, index) => (
+              {utilityServices.map((service) => (
                 <TouchableOpacity
                   key={service.id}
-                  style={[
-                    styles.serviceCard,
-                    // Special styling for the last item if odd number of items
-                    index === utilityServices.length - 1 && utilityServices.length % 2 === 1 && styles.lastServiceCard
-                  ]}
+                  style={styles.serviceCard}
                   onPress={() => handleServiceSelect(service)}
                   activeOpacity={0.8}
                 >
@@ -219,32 +211,28 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 20, // Extra padding at bottom
+    paddingBottom: 20,
   },
 
-  // Services grid styles - Responsive
+  // Services grid styles - Fixed dimensions
   servicesContainer: {
-    paddingHorizontal: Math.max(16, (screenWidth - 340) / 2), // Responsive horizontal padding
+    paddingHorizontal: 16,
     paddingTop: 20,
   },
   servicesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 12, // Reduced gap for better fit
+    justifyContent: 'center',
+    columnGap: 28,
+    rowGap: 1,
   },
   serviceCard: {
-    width: (screenWidth - 64) / 2 - 6, // Responsive width: (screen width - padding) / 2 - gap
-    height: Math.min(81, (screenWidth - 64) / 2 * 0.52), // Responsive height with max limit
+    width: 150,        // Original width that works on all phones
+    height: 80,        // Fixed height for consistency
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12, // Reduced margin
-  },
-  lastServiceCard: {
-    // For odd number of items, center the last card
-    width: (screenWidth - 64) / 2 - 6,
-    alignSelf: 'flex-start',
+    marginBottom: 12,
   },
   serviceIcon: {
     width: '100%',
@@ -255,7 +243,7 @@ const styles = StyleSheet.create({
 
   // Bottom spacer for navigation
   bottomSpacer: {
-    height: 100, // Space for bottom navigation
+    height: 100,
   },
 });
 
