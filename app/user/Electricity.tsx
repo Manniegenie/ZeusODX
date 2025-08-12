@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// app/electricity/index.tsx
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +9,6 @@ import {
   StatusBar,
   ScrollView,
   TextInput,
-  Alert,
   Image,
   ActivityIndicator
 } from 'react-native';
@@ -19,13 +19,13 @@ import PinEntryModal from '../../components/PinEntry';
 import TwoFactorAuthModal from '../../components/2FA';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import ProviderSelectionModal from '../../components/ElectricityProviderModal';
+import UtilityPurchaseSuccessModal from '../../components/ElectricitySuccess'; // ⬅️ NEW POPUP MODAL
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
-import { useDashboard } from '../../hooks/useDashboard';
 import { useElectricity } from '../../hooks/useElectricity';
 import { useCustomer } from '../../hooks/useCustomer';
 
-// Type definitions
+// ---- Types ----
 interface ErrorAction {
   title: string;
   message: string;
@@ -67,72 +67,79 @@ interface PurchaseData {
   paymentType: 'prepaid' | 'postpaid';
 }
 
+type ElectricityReceipt = {
+  customer_name?: string;
+  customer_address?: string;
+  token?: string;
+  units?: string | number;
+  band?: string;
+  amount?: number | string;
+  request_id?: string;
+  service_name?: string;
+  status?: string;
+  order_id?: string | number;
+};
+
 const ElectricityScreen: React.FC = () => {
   const router = useRouter();
-  const { dailyLimit } = useDashboard();
   const {
     loading,
-    error,
-    providers,
     purchaseElectricity,
     clearErrors,
     getErrorAction
   } = useElectricity();
-  const { 
-    verifyElectricityCustomer, 
-    loading: customerLoading, 
-    customerData, 
+
+  const {
+    verifyElectricityCustomer,
+    loading: customerLoading,
+    customerData,
     error: customerError,
     clearError: clearCustomerError,
     clearCustomerData,
     formatCustomerName,
-    formatAmount,
-    hasOutstandingBalance,
-    getOutstandingAmount,
     getUserFriendlyMessage,
     getErrorAction: getCustomerErrorAction
   } = useCustomer();
 
-  // Form state
+  // ---- Form state ----
   const [selectedProvider, setSelectedProvider] = useState<ElectricityProvider | null>(null);
   const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentType>({ id: 'prepaid', name: 'Prepaid' });
   const [meterNumber, setMeterNumber] = useState<string>('');
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState<string>('');
-  
-  // Modal states
+
+  // ---- Modal state ----
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
   const [showTwoFactorModal, setShowTwoFactorModal] = useState<boolean>(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState<boolean>(false);
   const [showProviderModal, setShowProviderModal] = useState<boolean>(false);
-  
-  // Error display state
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+
+  // ---- Error display ----
   const [showErrorDisplay, setShowErrorDisplay] = useState<boolean>(false);
   const [errorDisplayData, setErrorDisplayData] = useState<ErrorDisplayData | null>(null);
-  
-  // Authentication data
+
+  // ---- Auth inputs ----
   const [passwordPin, setPasswordPin] = useState<string>('');
   const [twoFactorCode, setTwoFactorCode] = useState<string>('');
 
-  // Payment types
+  // ---- Raw receipt from backend ----
+  const [purchaseReceipt, setPurchaseReceipt] = useState<ElectricityReceipt | null>(null);
+
+  // ---- Constants ----
   const paymentTypes: PaymentType[] = [
     { id: 'prepaid', name: 'Prepaid' },
     { id: 'postpaid', name: 'Postpaid' },
   ];
-
-  // Predefined amounts
   const predefinedAmounts = [1000, 2000, 3000, 5000, 10000, 20000];
 
-  // Navigation handler
-  const handleGoBack = (): void => {
-    router.back();
-  };
+  // ---- Helpers ----
+  const handleGoBack = (): void => router.back();
 
   const showErrorMessage = (errorData: ErrorDisplayData): void => {
     setErrorDisplayData(errorData);
     setShowErrorDisplay(true);
   };
-
   const hideErrorDisplay = (): void => {
     setShowErrorDisplay(false);
     setErrorDisplayData(null);
@@ -170,30 +177,20 @@ const ElectricityScreen: React.FC = () => {
     return 0;
   };
 
-  const handleProviderSelect = (provider: ElectricityProvider): void => {
-    setSelectedProvider(provider);
-  };
-
-  const handlePaymentTypeSelect = (paymentType: PaymentType): void => {
-    setSelectedPaymentType(paymentType);
-  };
-
+  // ---- UI handlers ----
+  const handleProviderSelect = (provider: ElectricityProvider): void => setSelectedProvider(provider);
+  const handlePaymentTypeSelect = (paymentType: PaymentType): void => setSelectedPaymentType(paymentType);
   const handleAmountSelect = (amount: number): void => {
     setSelectedAmount(amount);
-    setCustomAmount(amount.toString()); // Reflect selected amount in custom field
+    setCustomAmount(amount.toString());
   };
-
   const handleCustomAmountChange = (value: string): void => {
     const numericValue = value.replace(/[^0-9.]/g, '');
     setCustomAmount(numericValue);
-    if (numericValue.trim()) {
-      setSelectedAmount(null); // Clear selected predefined amount when typing custom amount
-    }
+    if (numericValue.trim()) setSelectedAmount(null);
   };
-
   const handleMeterNumberChange = (value: string): void => {
     setMeterNumber(value);
-    // Clear customer data when meter number changes
     if (customerData) {
       clearCustomerData();
       clearCustomerError();
@@ -202,128 +199,52 @@ const ElectricityScreen: React.FC = () => {
 
   const handleProceedCustomer = async (): Promise<void> => {
     if (!meterNumber.trim()) {
-      showErrorMessage({
-        type: 'validation',
-        title: 'Meter Number Required',
-        message: 'Please enter a meter number to proceed',
-        autoHide: true,
-        duration: 3000
-      });
+      showErrorMessage({ type: 'validation', title: 'Meter Number Required', message: 'Please enter a meter number to proceed', autoHide: true, duration: 3000 });
       return;
     }
-
     if (!selectedProvider) {
-      showErrorMessage({
-        type: 'validation',
-        title: 'Provider Required',
-        message: 'Please select an electricity provider first',
-        autoHide: true,
-        duration: 3000
-      });
+      showErrorMessage({ type: 'validation', title: 'Provider Required', message: 'Please select an electricity provider first', autoHide: true, duration: 3000 });
       return;
     }
 
-    // Clear any previous customer errors
     clearCustomerError();
-
     try {
-      const result = await verifyElectricityCustomer(
-        meterNumber, 
-        selectedProvider.id, 
-        selectedPaymentType.id
-      );
-      
-      if (result && result.success) {
-        // Successfully verified customer - no need to show success message
-        // The Account Name field will show the customer name as visual confirmation
-      } else {
-        // Handle verification failure
+      const result = await verifyElectricityCustomer(meterNumber, selectedProvider.id, selectedPaymentType.id);
+      if (!(result && result.success)) {
         const errorAction = getCustomerErrorAction(result?.requiresAction || 'RETRY');
         const friendlyMessage = getUserFriendlyMessage(result?.error, result?.message);
-        
         if (errorAction) {
-          showErrorMessage({
-            type: 'validation',
-            title: errorAction.title,
-            message: errorAction.message,
-            autoHide: true,
-            duration: 4000
-          });
+          showErrorMessage({ type: 'validation', title: errorAction.title, message: errorAction.message, autoHide: true, duration: 4000 });
         } else {
-          showErrorMessage({
-            type: 'server',
-            title: 'Verification Failed',
-            message: friendlyMessage,
-            autoHide: true,
-            duration: 4000
-          });
+          showErrorMessage({ type: 'server', title: 'Verification Failed', message: friendlyMessage, autoHide: true, duration: 4000 });
         }
       }
-    } catch (error) {
-      // Error handling is already done in the hook, but show user-friendly message
+    } catch (error: any) {
       const friendlyMessage = getUserFriendlyMessage(customerError, error.message);
-      showErrorMessage({
-        type: 'server',
-        title: 'Verification Error',
-        message: friendlyMessage,
-        autoHide: true,
-        duration: 4000
-      });
+      showErrorMessage({ type: 'server', title: 'Verification Error', message: friendlyMessage, autoHide: true, duration: 4000 });
     }
   };
 
   const validateForm = (): boolean => {
     clearErrors();
     if (!selectedProvider) {
-      showErrorMessage({
-        type: 'validation',
-        title: 'Provider Required',
-        message: 'Please select an electricity provider to continue',
-        autoHide: true,
-        duration: 3000
-      });
+      showErrorMessage({ type: 'validation', title: 'Provider Required', message: 'Please select an electricity provider to continue', autoHide: true, duration: 3000 });
       return false;
     }
     if (!meterNumber.trim() || meterNumber.length < 10) {
-      showErrorMessage({
-        type: 'validation',
-        title: 'Invalid Meter Number',
-        message: 'Please enter a valid meter or account number',
-        autoHide: true,
-        duration: 3000
-      });
+      showErrorMessage({ type: 'validation', title: 'Invalid Meter Number', message: 'Please enter a valid meter or account number', autoHide: true, duration: 3000 });
       return false;
     }
     const currentAmount = getCurrentAmount();
-    const minimumAmount = 1000; // Fixed minimum amount
-    
-    if (currentAmount < minimumAmount) {
-      showErrorMessage({
-        type: 'validation',
-        title: 'Amount Too Low',
-        message: `Minimum amount is ₦1,000.00`,
-        autoHide: true,
-        duration: 3000
-      });
-      return false;
-    }
-    if (currentAmount > dailyLimit) {
-      showErrorMessage({
-        type: 'limit',
-        title: 'Daily Limit Exceeded',
-        message: `This amount exceeds your daily limit of ₦${dailyLimit.toLocaleString()}`,
-        autoHide: true,
-        duration: 4000
-      });
+    if (currentAmount < 1000) {
+      showErrorMessage({ type: 'validation', title: 'Amount Too Low', message: 'Minimum amount is ₦1,000.00', autoHide: true, duration: 3000 });
       return false;
     }
     return true;
   };
 
   const handleContinue = (): void => {
-    if (validateForm()) {
-      setShowConfirmationModal(true);
-    }
+    if (validateForm()) setShowConfirmationModal(true);
   };
 
   const handleConfirmationModalClose = (): void => setShowConfirmationModal(false);
@@ -337,7 +258,6 @@ const ElectricityScreen: React.FC = () => {
     setShowPinModal(false);
     setShowTwoFactorModal(true);
   };
-
   const handlePinModalClose = (): void => {
     setShowPinModal(false);
     setPasswordPin('');
@@ -347,8 +267,8 @@ const ElectricityScreen: React.FC = () => {
   const handleTwoFactorSubmit = async (code: string): Promise<void> => {
     setTwoFactorCode(code);
     try {
-      const purchaseDataPayload: PurchaseData = {
-        meterNumber: meterNumber,
+      const payload: PurchaseData = {
+        meterNumber,
         service_id: selectedProvider!.id,
         variation_id: selectedPaymentType.id,
         amount: getCurrentAmount(),
@@ -356,48 +276,34 @@ const ElectricityScreen: React.FC = () => {
         passwordpin: passwordPin,
         paymentType: selectedPaymentType.id
       };
-      const result = await purchaseElectricity(purchaseDataPayload);
-      if (result.success) {
+
+      // Expect RAW: { code, message, data }
+      const result = await purchaseElectricity(payload);
+
+      if (result?.code === 'success') {
+        setPurchaseReceipt(result.data || null); // raw fields for popup
         setShowTwoFactorModal(false);
         setShowPinModal(false);
         setShowConfirmationModal(false);
         setPasswordPin('');
         setTwoFactorCode('');
-        Alert.alert('Success!', `Electricity payment completed successfully for ${meterNumber}`, [{ text: 'OK', onPress: () => router.back() }]);
+        setShowSuccessModal(true);
       } else {
         setShowTwoFactorModal(false);
-        const errorAction = getErrorAction?.(result.requiresAction);
-        const errorType = getErrorType(result.error || 'GENERAL_ERROR');
-        if (errorAction) {
-          showErrorMessage({
-            type: errorType,
-            title: errorAction.title,
-            message: errorAction.message,
-            errorAction: errorAction,
-            onActionPress: () => {
-              if (errorAction.route) router.push(errorAction.route);
-              if (result.requiresAction === 'RETRY_PIN') {
-                setPasswordPin('');
-                setShowPinModal(true);
-              } else if (result.requiresAction === 'RETRY_2FA') {
-                setTwoFactorCode('');
-                setShowTwoFactorModal(true);
-              }
-            },
-            autoHide: false,
-            dismissible: true
-          });
-        } else {
-          showErrorMessage({
-            type: errorType,
-            title: 'Payment Failed',
-            message: result.message || 'Something went wrong. Please try again.',
-            autoHide: true,
-            duration: 4000
-          });
-        }
+        const errorType = getErrorType(result?.error || 'SERVICE_ERROR');
+        const action = getErrorAction?.(result?.requiresAction);
+        showErrorMessage({
+          type: errorType,
+          title: action?.title || 'Payment Failed',
+          message: action?.message || result?.message || 'Something went wrong. Please try again.',
+          autoHide: !action,
+          duration: action ? undefined : 4000,
+          errorAction: action,
+          onActionPress: action?.route ? () => router.push(action.route!) : undefined,
+          dismissible: true
+        });
       }
-    } catch (error) {
+    } catch {
       setShowTwoFactorModal(false);
       showErrorMessage({
         type: 'server',
@@ -415,12 +321,17 @@ const ElectricityScreen: React.FC = () => {
     setShowPinModal(true);
   };
 
+  const handleSuccessModalClose = (): void => {
+    setShowSuccessModal(false);
+    setPurchaseReceipt(null);
+  };
+
   const isFormValid: boolean = !!(
-    selectedProvider && 
-    meterNumber.trim() && 
+    selectedProvider &&
+    meterNumber.trim() &&
     meterNumber.length >= 10 &&
     getCurrentAmount() >= 1000 &&
-    customerData // Customer must be verified
+    customerData // must verify customer first
   );
 
   return (
@@ -445,7 +356,7 @@ const ElectricityScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Provider Selection Section */}
+          {/* Provider Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Select provider</Text>
             <TouchableOpacity
@@ -454,52 +365,37 @@ const ElectricityScreen: React.FC = () => {
               activeOpacity={0.8}
             >
               {selectedProvider?.icon && (
-                <Image 
-                  source={selectedProvider.icon} 
-                  style={styles.providerLogo}
-                  resizeMode="contain"
-                />
+                <Image source={selectedProvider.icon} style={styles.providerLogo} resizeMode="contain" />
               )}
-              <Text style={[
-                styles.providerSelectorText,
-                !selectedProvider && styles.providerSelectorPlaceholder
-              ]}>
+              <Text style={[styles.providerSelectorText, !selectedProvider && styles.providerSelectorPlaceholder]}>
                 {selectedProvider?.name || 'Select electricity provider'}
               </Text>
               <Text style={styles.dropdownArrow}>↓</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Payment Type Section */}
+          {/* Payment Type */}
           <View style={styles.section}>
             <View style={styles.paymentTypeContainer}>
               {paymentTypes.map((type) => (
                 <TouchableOpacity
                   key={type.id}
-                  style={[
-                    styles.paymentTypeButton,
-                    selectedPaymentType.id === type.id && styles.paymentTypeButtonSelected
-                  ]}
+                  style={[styles.paymentTypeButton, selectedPaymentType.id === type.id && styles.paymentTypeButtonSelected]}
                   onPress={() => handlePaymentTypeSelect(type)}
                   activeOpacity={0.8}
                 >
-                  <Text style={[
-                    styles.paymentTypeText,
-                    selectedPaymentType.id === type.id && styles.paymentTypeTextSelected
-                  ]}>
+                  <Text style={[styles.paymentTypeText, selectedPaymentType.id === type.id && styles.paymentTypeTextSelected]}>
                     {type.name}
                   </Text>
                   {selectedPaymentType.id === type.id && (
-                    <View style={styles.checkmark}>
-                      <Text style={styles.checkmarkText}>✓</Text>
-                    </View>
+                    <View style={styles.checkmark}><Text style={styles.checkmarkText}>✓</Text></View>
                   )}
                 </TouchableOpacity>
               ))}
             </View>
           </View>
 
-          {/* Meter Number Section */}
+          {/* Meter Number */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Meter / Account Number</Text>
             <View style={styles.meterInputContainer}>
@@ -529,7 +425,7 @@ const ElectricityScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Account Name Section */}
+          {/* Account Name */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account Name</Text>
             <View style={styles.inputContainer}>
@@ -543,24 +439,18 @@ const ElectricityScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Amount Selection Section */}
+          {/* Amount presets */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Select amount</Text>
             <View style={styles.amountGrid}>
               {predefinedAmounts.map((amount) => (
                 <TouchableOpacity
                   key={amount}
-                  style={[
-                    styles.amountButton,
-                    selectedAmount === amount && styles.amountButtonSelected
-                  ]}
+                  style={[styles.amountButton, selectedAmount === amount && styles.amountButtonSelected]}
                   onPress={() => handleAmountSelect(amount)}
                   activeOpacity={0.8}
                 >
-                  <Text style={[
-                    styles.amountButtonText,
-                    selectedAmount === amount && styles.amountButtonTextSelected
-                  ]}>
+                  <Text style={[styles.amountButtonText, selectedAmount === amount && styles.amountButtonTextSelected]}>
                     ₦{amount.toLocaleString()}
                   </Text>
                 </TouchableOpacity>
@@ -568,7 +458,7 @@ const ElectricityScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Custom Amount Section */}
+          {/* Custom amount */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Amount</Text>
             <View style={styles.inputContainer}>
@@ -581,26 +471,19 @@ const ElectricityScreen: React.FC = () => {
                 keyboardType="numeric"
               />
             </View>
-            <Text style={styles.helperText}>
-              Minimum amount - ₦1,000.00
-            </Text>
+            <Text style={styles.helperText}>Minimum amount - ₦1,000.00</Text>
           </View>
         </ScrollView>
 
-        {/* Continue Button */}
+        {/* Continue */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[
-              styles.continueButton,
-              !isFormValid && styles.continueButtonDisabled
-            ]}
+            style={[styles.continueButton, !isFormValid && styles.continueButtonDisabled]}
             onPress={handleContinue}
             disabled={!isFormValid || loading}
             activeOpacity={0.8}
           >
-            <Text style={styles.continueButtonText}>
-              {loading ? 'Processing...' : 'Continue'}
-            </Text>
+            <Text style={styles.continueButtonText}>{loading ? 'Processing...' : 'Continue'}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -642,6 +525,17 @@ const ElectricityScreen: React.FC = () => {
         onSelectProvider={handleProviderSelect}
         selectedProvider={selectedProvider}
       />
+
+      {/* ✅ Popup success modal with RAW receipt fields */}
+      <UtilityPurchaseSuccessModal
+        visible={showSuccessModal}
+        onContinue={handleSuccessModalClose}
+        utilityType="Electricity"
+        amount={`₦${getCurrentAmount().toLocaleString()}`}
+        phoneNumber={meterNumber}
+        network={selectedProvider?.name || ''}
+        receipt={purchaseReceipt}
+      />
     </View>
   );
 };
@@ -650,41 +544,20 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
-  headerSection: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 24,
-  },
+  headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
   backButtonText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
   headerTitle: {
-    color: '#35297F',
-    fontFamily: Typography.medium || 'System',
-    fontSize: 18,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
-    marginHorizontal: 16,
+    color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600',
+    flex: 1, textAlign: 'center', marginHorizontal: 16,
   },
   historyLink: { color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 14, fontWeight: '500' },
   section: { paddingHorizontal: 16, marginBottom: 24 },
-  sectionTitle: {
-    color: Colors.text?.secondary || '#6B7280',
-    fontFamily: Typography.regular || 'System',
-    fontSize: 14,
-    fontWeight: '400',
-    marginBottom: 16,
-  },
+  sectionTitle: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400', marginBottom: 16 },
   providerSelector: {
-    backgroundColor: Colors.surface || '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: Colors.surface || '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB',
+    paddingHorizontal: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center',
   },
   providerLogo: { width: 28, height: 28, marginRight: 12, borderRadius: 14, backgroundColor: '#F3F4F6' },
   providerSelectorText: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular || 'System', fontSize: 16, fontWeight: '400', flex: 1 },
@@ -692,77 +565,30 @@ const styles = StyleSheet.create({
   dropdownArrow: { color: Colors.text?.secondary || '#6B7280', fontSize: 16, fontWeight: '500' },
   paymentTypeContainer: { flexDirection: 'row', gap: 12 },
   paymentTypeButton: {
-    flex: 1,
-    backgroundColor: Colors.surface || '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
+    flex: 1, backgroundColor: Colors.surface || '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB',
+    paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', position: 'relative',
   },
   paymentTypeButtonSelected: { borderColor: '#35297F', backgroundColor: '#F8F7FF' },
   paymentTypeText: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400' },
   paymentTypeTextSelected: { color: '#35297F', fontWeight: '500' },
   checkmark: {
-    position: 'absolute',
-    right: 12,
-    top: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#35297F',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: 'absolute', right: 12, top: 8, width: 20, height: 20, borderRadius: 10, backgroundColor: '#35297F',
+    justifyContent: 'center', alignItems: 'center',
   },
   checkmarkText: { color: '#FFFFFF', fontSize: 12, fontWeight: 'bold' },
-  meterInputContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 8 
-  },
-  inputContainer: { 
-    flex: 1,
-    backgroundColor: Colors.surface || '#FFFFFF', 
-    borderRadius: 8, 
-    borderWidth: 1, 
-    borderColor: '#E5E7EB', 
-    paddingHorizontal: 16, 
-    paddingVertical: 12 
+  meterInputContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  inputContainer: {
+    flex: 1, backgroundColor: Colors.surface || '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB',
+    paddingHorizontal: 16, paddingVertical: 12
   },
   input: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular || 'System', fontSize: 16, fontWeight: '400', paddingVertical: 4 },
-  uneditableInput: {
-    backgroundColor: '#F9FAFB',
-    color: Colors.text?.secondary || '#6B7280',
-  },
-  proceedButton: {
-    backgroundColor: '#35297F',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minWidth: 70,
-  },
-  proceedButtonText: {
-    color: '#FFFFFF',
-    fontFamily: Typography.medium || 'System',
-    fontSize: 12,
-    fontWeight: '600',
-  },
+  uneditableInput: { backgroundColor: '#F9FAFB', color: Colors.text?.secondary || '#6B7280' },
+  proceedButton: { backgroundColor: '#35297F', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 12, justifyContent: 'center', alignItems: 'center', minWidth: 70 },
+  proceedButtonText: { color: '#FFFFFF', fontFamily: Typography.medium || 'System', fontSize: 12, fontWeight: '600' },
   amountGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   amountButton: {
-    width: '31%',
-    backgroundColor: Colors.surface || '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    paddingVertical: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: '31%', backgroundColor: Colors.surface || '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB',
+    paddingVertical: 16, justifyContent: 'center', alignItems: 'center',
   },
   amountButtonSelected: { borderColor: '#35297F', backgroundColor: '#F8F7FF' },
   amountButtonText: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400' },
@@ -770,16 +596,8 @@ const styles = StyleSheet.create({
   helperText: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', fontSize: 11, fontWeight: '400', marginTop: 6, fontStyle: 'italic' },
   buttonContainer: { paddingHorizontal: 16, paddingVertical: 24, backgroundColor: Colors.background || '#F8F9FA' },
   continueButton: {
-    backgroundColor: '#35297F',
-    borderRadius: 8,
-    paddingVertical: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: '#35297F', borderRadius: 8, paddingVertical: 16, justifyContent: 'center', alignItems: 'center',
+    elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4,
   },
   continueButtonDisabled: { backgroundColor: '#9CA3AF', elevation: 0, shadowOpacity: 0 },
   continueButtonText: { color: '#FFFFFF', fontFamily: Typography.medium || 'System', fontSize: 16, fontWeight: '600' },

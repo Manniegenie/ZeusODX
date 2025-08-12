@@ -23,13 +23,13 @@ export const dataService = {
         network: this.getNetworkDisplayName(purchaseData.service_id)
       });
 
+      // FIXED: Use same field names as airtime and electricity endpoints
       const response = await apiClient.post('/data/purchase', {
-        phone_number: purchaseData.phone,
+        phone: purchaseData.phone,                                    // FIXED: Changed from phone_number to phone
         service_id: purchaseData.service_id.toLowerCase(),
-        service_type: 'data',
-        variation_id: purchaseData.variation_id,
+        variation_id: purchaseData.variation_id,                      // FIXED: Removed service_type field
         amount: parseFloat(purchaseData.amount),
-        payment_currency: 'NGNZ', // FIXED: Changed from NGNB to NGNZ
+        payment_currency: 'NGNZ',                                     // FIXED: Changed from NGNB to NGNZ
         twoFactorCode: purchaseData.twoFactorCode,
         passwordpin: purchaseData.passwordpin
       });
@@ -110,7 +110,8 @@ export const dataService = {
     try {
       console.log('📋 Fetching data plans for:', this.getNetworkDisplayName(serviceId));
 
-      const response = await apiClient.get(`/data/purchase/${serviceId.toLowerCase()}`);
+      // FIXED: Use correct endpoint format to match your backend
+      const response = await apiClient.get(`/data/plans/${serviceId.toLowerCase()}`);
 
       if (response.success && response.data) {
         console.log('✅ Data plans fetched successfully:', {
@@ -301,7 +302,7 @@ export const dataService = {
       'INVALID_2FA_CODE': 'The 2FA code you entered is incorrect. Please check your authenticator app and try again.',
       'INVALID_PASSWORDPIN': 'The password PIN you entered is incorrect. Please try again.',
       'KYC_LIMIT_EXCEEDED': 'This transaction exceeds your account limit. Please upgrade your verification level.',
-      'INSUFFICIENT_BALANCE': 'You don\'t have enough NGNZ balance for this transaction. Please add funds to your account.', // UPDATED: Changed from NGNB to NGNZ
+      'INSUFFICIENT_BALANCE': 'You don\'t have enough NGNZ balance for this transaction. Please add funds to your account.',
       'INVALID_DATA_PLAN': 'The selected data plan is invalid or no longer available. Please select a different plan.',
       'AMOUNT_PLAN_MISMATCH': 'The amount you entered doesn\'t match the selected data plan price. Please check and try again.',
       'PENDING_TRANSACTION_EXISTS': 'You have a pending data transaction. Please wait for it to complete.',

@@ -7,7 +7,9 @@ import {
   Image,
   SafeAreaView,
   StatusBar,
-  ImageSourcePropType
+  ImageSourcePropType,
+  ScrollView,
+  Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
@@ -21,6 +23,9 @@ import utilityElectricityIcon from '../../components/icons/utility-electricity.p
 import utilityCableIcon from '../../components/icons/utility-cable.png';
 import utilityBettingIcon from '../../components/icons/utility-betting.png';
 import utilityGiftcardIcon from '../../components/icons/utility-giftcard.png';
+
+// Get screen dimensions
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 // Type definitions
 interface UtilityService {
@@ -94,7 +99,7 @@ const UtilityScreen: React.FC = () => {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
 
-        {/* Header Section */}
+        {/* Header Section - Fixed */}
         <View style={styles.headerSection}>
           <View style={styles.headerContainer}>
             {/* Back Button */}
@@ -117,28 +122,39 @@ const UtilityScreen: React.FC = () => {
           <View style={styles.headerUnderline} />
         </View>
 
-        {/* Utility Services Grid */}
-        <View style={styles.servicesContainer}>
-          <View style={styles.servicesGrid}>
-            {utilityServices.map((service, index) => (
-              <TouchableOpacity
-                key={service.id}
-                style={[
-                  styles.serviceCard,
-                  // Special styling for the last item (Giftcard) to make it single column
-                  index === utilityServices.length - 1 && styles.lastServiceCard
-                ]}
-                onPress={() => handleServiceSelect(service)}
-                activeOpacity={0.8}
-              >
-                <Image source={service.iconSrc} style={styles.serviceIcon} />
-              </TouchableOpacity>
-            ))}
+        {/* Scrollable Content */}
+        <ScrollView 
+          style={styles.scrollContainer}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          {/* Utility Services Grid */}
+          <View style={styles.servicesContainer}>
+            <View style={styles.servicesGrid}>
+              {utilityServices.map((service, index) => (
+                <TouchableOpacity
+                  key={service.id}
+                  style={[
+                    styles.serviceCard,
+                    // Special styling for the last item if odd number of items
+                    index === utilityServices.length - 1 && utilityServices.length % 2 === 1 && styles.lastServiceCard
+                  ]}
+                  onPress={() => handleServiceSelect(service)}
+                  activeOpacity={0.8}
+                >
+                  <Image source={service.iconSrc} style={styles.serviceIcon} />
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
+
+          {/* Bottom spacing to account for bottom navigation */}
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
       </SafeAreaView>
 
-      {/* Add BottomTabNavigator */}
+      {/* Bottom Tab Navigator */}
       <BottomTabNavigator activeTab="home" />
     </View>
   );
@@ -153,11 +169,13 @@ const styles = StyleSheet.create({
     flex: 1 
   },
 
-  // Header styles
+  // Header styles - Fixed header
   headerSection: {
     paddingHorizontal: 16,
-    paddingTop: 6,        // Reduced from 12 to 6
-    paddingBottom: 12,    // Reduced from 24 to 12
+    paddingTop: 6,
+    paddingBottom: 12,
+    backgroundColor: Colors.background || '#F3F4F6',
+    zIndex: 1,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -195,35 +213,49 @@ const styles = StyleSheet.create({
     marginHorizontal: -16,
   },
 
-  // Services grid styles
-  servicesContainer: {
+  // Scroll container
+  scrollContainer: {
     flex: 1,
-    paddingHorizontal: 32,
-    paddingTop: 20,       // Reduced from 40 to 20
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20, // Extra padding at bottom
+  },
+
+  // Services grid styles - Responsive
+  servicesContainer: {
+    paddingHorizontal: Math.max(16, (screenWidth - 340) / 2), // Responsive horizontal padding
+    paddingTop: 20,
   },
   servicesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 16,
+    gap: 12, // Reduced gap for better fit
   },
   serviceCard: {
-    width: 155,
-    height: 81,
+    width: (screenWidth - 64) / 2 - 6, // Responsive width: (screen width - padding) / 2 - gap
+    height: Math.min(81, (screenWidth - 64) / 2 * 0.52), // Responsive height with max limit
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12, // Reduced margin
   },
   lastServiceCard: {
-    // For giftcard to be positioned properly in the layout
+    // For odd number of items, center the last card
+    width: (screenWidth - 64) / 2 - 6,
     alignSelf: 'flex-start',
   },
   serviceIcon: {
-    width: 155,
-    height: 81,
+    width: '100%',
+    height: '100%',
     resizeMode: 'contain',
     borderRadius: 8,
+  },
+
+  // Bottom spacer for navigation
+  bottomSpacer: {
+    height: 100, // Space for bottom navigation
   },
 });
 

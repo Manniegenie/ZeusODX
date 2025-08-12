@@ -22,10 +22,10 @@ import TwoFactorAuthModal from '../../components/2FA';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import CablePackageModal from '../../components/cablePackageModal';
 import CableTvConfirmationModal from '../../components/CabletvConfirmModal';
+import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useCableTV } from '../../hooks/useCabletv';
-import { useDashboard } from '../../hooks/useDashboard';
 import { useCustomer } from '../../hooks/useCustomer';
 
 // ✅ UPDATED: Import cable TV provider icons including Showmax
@@ -103,7 +103,6 @@ interface CableTvPackage {
 
 const CableTvScreen: React.FC = () => {
   const router = useRouter();
-  const { dailyLimit } = useDashboard();
   const {
     loading,
     error,
@@ -152,6 +151,7 @@ const CableTvScreen: React.FC = () => {
   const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState<boolean>(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState<boolean>(false);
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
 
   // Error display
   const [showErrorDisplay, setShowErrorDisplay] = useState(false);
@@ -428,17 +428,6 @@ const CableTvScreen: React.FC = () => {
       });
       return false;
     }
-
-    if (selectedPackage.price > dailyLimit) {
-      showErrorMessage({
-        type: 'limit',
-        title: 'Daily Limit Exceeded',
-        message: `Package price exceeds daily limit of ₦${dailyLimit.toLocaleString()}`,
-        autoHide: true,
-        duration: 4000
-      });
-      return false;
-    }
     
     return true;
   };
@@ -503,13 +492,8 @@ const CableTvScreen: React.FC = () => {
         setPasswordPin('');
         setTwoFactorCode('');
         
-        Alert.alert(
-          result.data?.status === 'completed-api' ? 'Success!' : 'Processing',
-          result.data?.status === 'completed-api'
-            ? `Cable TV subscription successful for ${selectedProvider.name}`
-            : 'Your cable TV subscription is being processed.',
-          [{ text: 'OK', onPress: () => router.back() }]
-        );
+        // Show success modal instead of Alert
+        setShowSuccessModal(true);
       } else {
         setShowTwoFactorModal(false);
         const errorAction = getErrorAction?.(result.requiresAction);
@@ -556,6 +540,11 @@ const CableTvScreen: React.FC = () => {
         duration: 4000
       });
     }
+  };
+
+  // Success modal handler
+  const handleSuccessModalClose = (): void => {
+    setShowSuccessModal(false);
   };
 
   // Form validation includes customer verification state
@@ -670,12 +659,6 @@ const CableTvScreen: React.FC = () => {
                 editable={false}
               />
             </View>
-            {/* Verification status indicator */}
-            {isCustomerVerified && (
-              <Text style={styles.verificationStatus}>
-                ✅ Customer verified for {verifiedSmartcardNumber}
-              </Text>
-            )}
           </View>
 
           {/* Plan Selection Section */}
@@ -797,6 +780,17 @@ const CableTvScreen: React.FC = () => {
           smartcardNumber={smartcardNumber}
           customerData={customerData}
           selectedPackage={selectedPackage}
+        />
+
+        {/* Success Modal */}
+        <UtilityPurchaseSuccessModal
+          visible={showSuccessModal}
+          utilityType="Cable TV"
+          amount={selectedPackage?.name || ''}
+          phoneNumber={smartcardNumber}
+          network={selectedProvider?.name || ''}
+          onContinue={handleSuccessModalClose}
+          additionalInfo={selectedPackage ? `Duration: ${selectedPackage.duration || '1 Month'}` : undefined}
         />
       </SafeAreaView>
 
@@ -989,14 +983,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 6, 
     fontStyle: 'italic' 
-  },
-  // Verification status
-  verificationStatus: {
-    ...baseTextStyle,
-    color: '#059669',
-    fontSize: 12,
-    marginTop: 4,
-    fontWeight: '500',
   },
   planTab: {
     backgroundColor: Colors.surface || '#FFFFFF',

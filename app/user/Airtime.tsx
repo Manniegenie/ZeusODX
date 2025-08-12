@@ -10,7 +10,8 @@ import {
   ScrollView,
   TextInput,
   Alert,
-  ImageSourcePropType
+  ImageSourcePropType,
+  Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
@@ -18,18 +19,51 @@ import AirtimeConfirmationModal from '../../components/Airtimeconfirm';
 import PinEntryModal from '../../components/PinEntry';
 import TwoFactorAuthModal from '../../components/2FA';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
-import { useDashboard } from '../../hooks/useDashboard';
 import { useAirtime } from '../../hooks/useAirtime';
 
-// Network provider icons - replace with actual paths
+// Network provider icons
 import mtnIcon from '../../components/icons/mtn.png';
 import gloIcon from '../../components/icons/glo.png';
 import airtelIcon from '../../components/icons/airtel.png';
 import nineMobileIcon from '../../components/icons/9mobile.png';
 import profileIcon from '../../components/icons/profile.png';
 import checkmarkIcon from '../../components/icons/green-checkmark.png';
+
+// Get screen dimensions for responsive design
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+// Calculate responsive dimensions
+const getResponsiveDimensions = () => {
+  const isSmallScreen = screenWidth < 350;
+  const isMediumScreen = screenWidth >= 350 && screenWidth < 400;
+  
+  return {
+    // Network cards
+    networkCardWidth: isSmallScreen ? (screenWidth - 64) / 4 - 6 : isMediumScreen ? 75 : 80,
+    networkCardHeight: isSmallScreen ? 45 : isMediumScreen ? 55 : 60,
+    networkIconWidth: isSmallScreen ? (screenWidth - 64) / 4 - 8 : isMediumScreen ? 73 : 79,
+    networkIconHeight: isSmallScreen ? 40 : isMediumScreen ? 48 : 53,
+    
+    // Quick pick cards
+    quickPickCardWidth: isSmallScreen ? '31%' : '30%',
+    quickPickPadding: isSmallScreen ? 12 : 16,
+    
+    // Profile icon
+    profileIconWidth: isSmallScreen ? 48 : isMediumScreen ? 56 : 64,
+    profileIconHeight: isSmallScreen ? 36 : isMediumScreen ? 42 : 46,
+    
+    // General spacing
+    checkmarkSize: isSmallScreen ? 16 : 20,
+    horizontalPadding: isSmallScreen ? 12 : 16,
+    networkGap: isSmallScreen ? 8 : 12,
+    quickPickGap: isSmallScreen ? 8 : 12,
+  };
+};
+
+const responsiveDims = getResponsiveDimensions();
 
 // Type definitions
 interface ErrorAction {
@@ -81,7 +115,6 @@ interface TransactionData {
 
 const BuyAirtimeScreen: React.FC = () => {
   const router = useRouter();
-  const { dailyLimit } = useDashboard();
   const {
     loading,
     error,
@@ -102,6 +135,7 @@ const BuyAirtimeScreen: React.FC = () => {
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
   const [showTwoFactorModal, setShowTwoFactorModal] = useState<boolean>(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState<boolean>(false);
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   
   // Error display state
   const [showErrorDisplay, setShowErrorDisplay] = useState<boolean>(false);
@@ -209,7 +243,6 @@ const BuyAirtimeScreen: React.FC = () => {
       return false;
     }
 
-    // Validate Nigerian phone number format (starts with 0 and is 11 digits)
     if (mobileNumber.length !== 11 || !mobileNumber.startsWith('0')) {
       showErrorMessage({
         type: 'validation',
@@ -233,11 +266,11 @@ const BuyAirtimeScreen: React.FC = () => {
       return false;
     }
     
-    if (amount < 100) {
+    if (amount < 50) {
       showErrorMessage({
         type: 'validation',
         title: 'Amount Too Low',
-        message: 'Minimum airtime purchase is ₦100',
+        message: 'Minimum airtime purchase is ₦50',
         autoHide: true,
         duration: 3000
       });
@@ -251,17 +284,6 @@ const BuyAirtimeScreen: React.FC = () => {
         message: 'Maximum airtime purchase is ₦50,000',
         autoHide: true,
         duration: 3000
-      });
-      return false;
-    }
-
-    if (amount > dailyLimit) {
-      showErrorMessage({
-        type: 'limit',
-        title: 'Daily Limit Exceeded',
-        message: `This amount exceeds your daily limit of ₦${dailyLimit.toLocaleString()}`,
-        autoHide: true,
-        duration: 4000
       });
       return false;
     }
@@ -309,35 +331,30 @@ const BuyAirtimeScreen: React.FC = () => {
         passwordpin: passwordPin
       };
 
+      console.log('Processing airtime purchase:', {
+        ...purchaseData,
+        passwordpin: '[REDACTED]'
+      });
+
       const result = await purchaseAirtime(purchaseData);
 
       if (result.success) {
-        // Close all modals and reset state
         setShowTwoFactorModal(false);
         setShowPinModal(false);
         setShowConfirmationModal(false);
         setPasswordPin('');
         setTwoFactorCode('');
         
-        if (result.data?.status === 'completed-api') {
-          Alert.alert(
-            'Success!', 
-            'Airtime purchase completed successfully',
-            [{ text: 'OK', onPress: () => router.back() }]
-          );
-        } else {
-          Alert.alert(
-            'Processing', 
-            'Your airtime purchase is being processed. You will receive a notification when completed.',
-            [{ text: 'OK', onPress: () => router.back() }]
-          );
-        }
+        setShowSuccessModal(true);
       } else {
-        // Handle errors
         setShowTwoFactorModal(false);
         
+        console.log('Airtime purchase failed, checking for error action...');
         const errorAction = getErrorAction?.(result.requiresAction);
         const errorType = getErrorType(result.error || 'GENERAL_ERROR');
+        
+        console.log('Error action found:', errorAction);
+        console.log('Error type:', errorType);
         
         if (errorAction) {
           showErrorMessage({
@@ -346,10 +363,10 @@ const BuyAirtimeScreen: React.FC = () => {
             message: errorAction.message,
             errorAction: errorAction,
             onActionPress: () => {
+              console.log('Error action pressed, route:', errorAction.route);
               if (errorAction.route) {
                 router.push(errorAction.route);
               } else {
-                // Handle retry scenarios
                 if (result.requiresAction === 'RETRY_PIN') {
                   setPasswordPin('');
                   setShowPinModal(true);
@@ -363,6 +380,7 @@ const BuyAirtimeScreen: React.FC = () => {
             dismissible: true
           });
         } else {
+          console.log('No error action found, showing generic error');
           showErrorMessage({
             type: errorType,
             title: 'Purchase Failed',
@@ -388,6 +406,10 @@ const BuyAirtimeScreen: React.FC = () => {
     setShowTwoFactorModal(false);
     setTwoFactorCode('');
     setShowPinModal(true);
+  };
+
+  const handleSuccessModalClose = (): void => {
+    setShowSuccessModal(false);
   };
 
   // Form validation
@@ -431,11 +453,11 @@ const BuyAirtimeScreen: React.FC = () => {
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
         >
           {/* Header Section */}
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
-              {/* Back Button */}
               <TouchableOpacity 
                 style={styles.backButton} 
                 onPress={handleGoBack}
@@ -444,10 +466,8 @@ const BuyAirtimeScreen: React.FC = () => {
                 <Text style={styles.backButtonText}>←</Text>
               </TouchableOpacity>
 
-              {/* Title */}
               <Text style={styles.headerTitle}>Buy Airtime</Text>
 
-              {/* History Link */}
               <TouchableOpacity onPress={() => router.push('/history')}>
                 <Text style={styles.historyLink}>History</Text>
               </TouchableOpacity>
@@ -457,26 +477,33 @@ const BuyAirtimeScreen: React.FC = () => {
           {/* Network Provider Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Select Network Provider</Text>
-            <View style={styles.networkGrid}>
-              {networkProviders.map((network) => (
-                <TouchableOpacity
-                  key={network.id}
-                  style={[
-                    styles.networkCard,
-                    selectedNetwork?.id === network.id && styles.networkCardSelected
-                  ]}
-                  onPress={() => handleNetworkSelect(network)}
-                  activeOpacity={0.8}
-                >
-                  <Image source={network.iconSrc} style={styles.networkIcon} />
-                  {selectedNetwork?.id === network.id && (
-                    <View style={styles.checkmarkContainer}>
-                      <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.networkScrollContainer}
+              style={styles.networkScrollView}
+            >
+              <View style={styles.networkGrid}>
+                {networkProviders.map((network) => (
+                  <TouchableOpacity
+                    key={network.id}
+                    style={[
+                      styles.networkCard,
+                      selectedNetwork?.id === network.id && styles.networkCardSelected
+                    ]}
+                    onPress={() => handleNetworkSelect(network)}
+                    activeOpacity={0.8}
+                  >
+                    <Image source={network.iconSrc} style={styles.networkIcon} />
+                    {selectedNetwork?.id === network.id && (
+                      <View style={styles.checkmarkContainer}>
+                        <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
           </View>
 
           {/* Mobile Number Section */}
@@ -542,12 +569,12 @@ const BuyAirtimeScreen: React.FC = () => {
               autoComplete="off"
             />
             <Text style={styles.maxAmountText}>
-              Max daily amount - ₦{dailyLimit?.toLocaleString('en-NG', { 
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 2 
-              }) || '0.00'}
+              Maximum airtime purchase is ₦50,000
             </Text>
           </View>
+
+          {/* Bottom spacing */}
+          <View style={styles.bottomSpacer} />
         </ScrollView>
 
         {/* Continue Button */}
@@ -598,10 +625,21 @@ const BuyAirtimeScreen: React.FC = () => {
         loading={loading}
         transactionData={transactionData}
       />
+
+      {/* Success Modal */}
+      <UtilityPurchaseSuccessModal
+        visible={showSuccessModal}
+        utilityType="Airtime"
+        amount={`₦${customAmount}`}
+        phoneNumber={mobileNumber}
+        network={selectedNetwork?.name || ''}
+        onContinue={handleSuccessModalClose}
+      />
     </View>
   );
 };
 
+// Responsive styles
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
@@ -613,10 +651,13 @@ const styles = StyleSheet.create({
   scrollView: { 
     flex: 1 
   },
+  scrollContent: {
+    paddingBottom: 20,
+  },
 
   // Header styles
   headerSection: {
-    paddingHorizontal: 16,
+    paddingHorizontal: responsiveDims.horizontalPadding,
     paddingTop: 12,
     paddingBottom: 24,
   },
@@ -655,7 +696,7 @@ const styles = StyleSheet.create({
 
   // Section styles
   section: {
-    paddingHorizontal: 16,
+    paddingHorizontal: responsiveDims.horizontalPadding,
     marginBottom: 24,
   },
   sectionTitle: {
@@ -666,45 +707,60 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  // Network provider styles
+  // Network selection styles - Responsive and scrollable
+  networkScrollView: {
+    flexGrow: 0,
+  },
+  networkScrollContainer: {
+    paddingHorizontal: 4,
+    minWidth: screenWidth - (responsiveDims.horizontalPadding * 2),
+  },
   networkGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
+    alignItems: 'center',
+    gap: responsiveDims.networkGap,
+    paddingVertical: 4,
   },
   networkCard: {
-    width: 80,
-    height: 60,
+    width: responsiveDims.networkCardWidth,
+    height: responsiveDims.networkCardHeight,
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   networkCardSelected: {
-    // No border highlighting for network cards
+    borderColor: '#35297F',
+    backgroundColor: '#F8F7FF',
   },
   networkIcon: {
-    width: 79,
-    height: 53,
+    width: responsiveDims.networkIconWidth,
+    height: responsiveDims.networkIconHeight,
     resizeMode: 'contain',
   },
   checkmarkContainer: {
     position: 'absolute',
-    top: -8,
-    right: -8,
+    top: -6,
+    right: -6,
     zIndex: 1,
+    backgroundColor: 'white',
+    borderRadius: responsiveDims.checkmarkSize / 2,
+    padding: 1,
   },
   checkmarkIcon: {
-    width: 20,
-    height: 20,
+    width: responsiveDims.checkmarkSize,
+    height: responsiveDims.checkmarkSize,
     resizeMode: 'contain',
   },
 
-  // Mobile input styles
+  // Mobile input styles - Responsive
   mobileNumberSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: screenWidth < 350 ? 8 : 12,
   },
   mobileInputContainer: {
     flex: 1,
@@ -714,6 +770,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    minHeight: 48,
   },
   mobileInput: {
     color: Colors.text?.primary || '#111827',
@@ -721,14 +778,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '400',
     paddingVertical: 4,
+    minHeight: 24,
   },
   profileIconContainer: {
     justifyContent: 'center',
     alignItems: 'center',
+    minWidth: responsiveDims.profileIconWidth,
+    minHeight: responsiveDims.profileIconHeight,
   },
   profileIcon: {
-    width: 64,
-    height: 46,
+    width: responsiveDims.profileIconWidth,
+    height: responsiveDims.profileIconHeight,
     resizeMode: 'contain',
   },
 
@@ -740,23 +800,26 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginTop: 6,
     fontStyle: 'italic',
+    lineHeight: 16,
   },
 
-  // Quick pick styles
+  // Quick pick styles - Responsive
   quickPickGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: responsiveDims.quickPickGap,
+    justifyContent: 'space-between',
   },
   quickPickCard: {
-    width: '30%',
-    paddingVertical: 16,
+    width: responsiveDims.quickPickCardWidth,
+    paddingVertical: responsiveDims.quickPickPadding,
     borderRadius: 8,
     backgroundColor: Colors.surface || '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
+    minHeight: 48,
   },
   quickPickCardSelected: {
     borderColor: '#35297F',
@@ -766,8 +829,9 @@ const styles = StyleSheet.create({
   quickPickText: {
     color: Colors.text?.primary || '#111827',
     fontFamily: Typography.regular || 'System',
-    fontSize: 14,
+    fontSize: screenWidth < 350 ? 12 : 14,
     fontWeight: '400',
+    textAlign: 'center',
   },
   quickPickTextSelected: {
     color: '#35297F',
@@ -787,17 +851,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '400',
     marginBottom: 8,
+    minHeight: 56,
   },
   maxAmountText: {
     color: Colors.text?.secondary || '#6B7280',
     fontFamily: Typography.regular || 'System',
     fontSize: 12,
     fontWeight: '400',
+    lineHeight: 16,
   },
 
   // Button styles
   buttonContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: responsiveDims.horizontalPadding,
     paddingVertical: 24,
     backgroundColor: Colors.background || '#F8F9FA',
   },
@@ -812,6 +878,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    minHeight: 56,
   },
   continueButtonDisabled: {
     backgroundColor: '#9CA3AF',
@@ -823,6 +890,11 @@ const styles = StyleSheet.create({
     fontFamily: Typography.medium || 'System',
     fontSize: 16,
     fontWeight: '600',
+  },
+
+  // Bottom spacer
+  bottomSpacer: {
+    height: 20,
   },
 });
 

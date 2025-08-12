@@ -34,7 +34,6 @@ const bnbIcon = require('../../components/icons/bnb-icon.png');
 const swapIcon = require('../../components/icons/swap-icon.png');
 const maticIcon = require('../../components/icons/matic-icon.png');
 
-
 interface SwapScreenProps {
   onBack?: () => void;
   onSelectToken?: () => void;
@@ -118,28 +117,30 @@ export default function SwapScreen({
     if (isNGNZOperation()) return getNGNZCryptoBalance(symbol);
     return getCryptoTokenBalance(symbol);
   };
+  
   const getTokenPrice = (symbol: string) => {
     if (symbol === 'NGNZ') return getNGNZRate();
     if (isNGNZOperation()) return getNGNZCryptoPrice(symbol);
     return getCryptoTokenPrice(symbol);
   };
+  
   const hasSufficientBalance = (symbol: string, amount: number) => isNGNZOperation()
     ? hasNGNZSufficientBalance(symbol, amount)
     : hasCryptoSufficientBalance(symbol, amount);
 
   const clearQuote = () => (isNGNZOperation() ? clearNGNZQuote() : clearCryptoQuote());
+  
   const getTokenIcon = (id: string) => ({
-  btc: btcIcon,
-  eth: ethIcon,
-  sol: solIcon,
-  usdt: usdtIcon,
-  usdc: usdcIcon,
-  ngnz: ngnzIcon,
-  avax: avaxIcon,
-  bnb: bnbIcon,
-  matic: maticIcon
-}[id] || btcIcon);
-
+    btc: btcIcon,
+    eth: ethIcon,
+    sol: solIcon,
+    usdt: usdtIcon,
+    usdc: usdcIcon,
+    ngnz: ngnzIcon,
+    avax: avaxIcon,
+    bnb: bnbIcon,
+    matic: maticIcon
+  }[id] || btcIcon);
 
   // Set default token based on navigation param
   useEffect(() => {
@@ -154,8 +155,8 @@ export default function SwapScreen({
         AVAX: { id: 'avax', name: 'Avalanche', symbol: 'AVAX', icon: avaxIcon, price: 0, balance: 0 },
         BNB: { id: 'bnb', name: 'Binance Coin', symbol: 'BNB', icon: bnbIcon, price: 0, balance: 0 },
         MATIC: { id: 'matic', name: 'Polygon', symbol: 'MATIC', icon: maticIcon, price: 0, balance: 0 },
-
       };
+      
       if (defaultToken && tokenMap[defaultToken]) {
         setSelectedFromToken(tokenMap[defaultToken]);
       } else if (btcPrice > 0) {
@@ -173,6 +174,7 @@ export default function SwapScreen({
     const formattedInt = Number(integer).toLocaleString('en-US');
     return decimal !== undefined ? `${formattedInt}.${decimal}` : formattedInt;
   };
+  
   const unformat = (value: string): string => value.replace(/,/g, '');
 
   const formatDisplayAmount = (amount: string | number): string => {
@@ -259,15 +261,24 @@ export default function SwapScreen({
   };
 
   const handleSuccessScreenContinue = () => {
-    setFromAmount('0'); setToAmount('0'); setSelectedToToken(null);
+    setFromAmount('0'); 
+    setToAmount('0'); 
+    setSelectedToToken(null);
     setShowSuccessScreen(false);
   };
 
-  const handleTokenSelectorPress = (type: TokenSelectorType) => { setTokenSelectorType(type); setShowTokenModal(true); onSelectToken?.(); };
+  const handleTokenSelectorPress = (type: TokenSelectorType) => { 
+    setTokenSelectorType(type); 
+    setShowTokenModal(true); 
+    onSelectToken?.(); 
+  };
+  
   const handleTokenSelect = (token: TokenOption) => {
     const updated = { ...token, balance: getTokenBalance(token.symbol), price: getTokenPrice(token.symbol) };
     tokenSelectorType === 'from' ? setSelectedFromToken(updated) : setSelectedToToken(updated);
-    setToAmount('0'); clearQuote(); setShowTokenModal(false);
+    setToAmount('0'); 
+    clearQuote(); 
+    setShowTokenModal(false);
   };
 
   const { quoteLoading, acceptLoading } = getLoadingStates();
@@ -276,7 +287,11 @@ export default function SwapScreen({
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollViewContent}>
+        <ScrollView 
+          style={styles.scrollView} 
+          showsVerticalScrollIndicator={false} 
+          contentContainerStyle={styles.scrollViewContent}
+        >
           <View style={styles.tabContainer}>
             <Text style={styles.activeTabText}>Buy/Sell</Text>
           </View>
@@ -300,18 +315,27 @@ export default function SwapScreen({
               </View>
               <View style={styles.inputRight}>
                 <TouchableOpacity style={styles.tokenSelector} onPress={() => handleTokenSelectorPress('from')}>
-                  {selectedFromToken && (<><Image source={getTokenIcon(selectedFromToken.id)} style={styles.tokenIcon} /><Text style={styles.tokenText}>{selectedFromToken.symbol}</Text></>)}
+                  {selectedFromToken && (
+                    <>
+                      <Image source={getTokenIcon(selectedFromToken.id)} style={styles.tokenIcon} />
+                      <Text style={styles.tokenText}>{selectedFromToken.symbol}</Text>
+                    </>
+                  )}
                 </TouchableOpacity>
                 <View style={styles.balanceInfo}>
                   <Text style={styles.balanceText} numberOfLines={1}>{getMaxBalance(selectedFromToken)}</Text>
-                  <TouchableOpacity onPress={handleMax}><Text style={styles.maxText}>Max</Text></TouchableOpacity>
+                  <TouchableOpacity onPress={handleMax}>
+                    <Text style={styles.maxText}>Max</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
           </View>
 
           {/* Swap Icon */}
-          <View style={styles.swapIconContainer}><Image source={swapIcon} style={styles.swapIconImage} /></View>
+          <View style={styles.swapIconContainer}>
+            <Image source={swapIcon} style={styles.swapIconImage} />
+          </View>
 
           {/* Buy Token */}
           <View style={styles.inputContainer}>
@@ -330,7 +354,14 @@ export default function SwapScreen({
               </View>
               <View style={styles.inputRight}>
                 <TouchableOpacity style={styles.tokenSelector} onPress={() => handleTokenSelectorPress('to')}>
-                  {selectedToToken ? (<><Image source={getTokenIcon(selectedToToken.id)} style={styles.tokenIcon} /><Text style={styles.tokenText}>{selectedToToken.symbol}</Text></>) : (<Text style={styles.tokenText}>Select token</Text>)}
+                  {selectedToToken ? (
+                    <>
+                      <Image source={getTokenIcon(selectedToToken.id)} style={styles.tokenIcon} />
+                      <Text style={styles.tokenText}>{selectedToToken.symbol}</Text>
+                    </>
+                  ) : (
+                    <Text style={styles.tokenText}>Select token</Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
@@ -338,8 +369,14 @@ export default function SwapScreen({
 
           {/* Button */}
           <View style={styles.swapContainer}>
-            <TouchableOpacity style={[styles.swapActionButton, isSwapDisabled && styles.swapActionButtonDisabled]} onPress={handleCreateQuote} disabled={isSwapDisabled}>
-              <Text style={[styles.swapActionButtonText, isSwapDisabled && styles.swapActionButtonTextDisabled]}>{quoteLoading ? 'Creating Quote...' : 'Create Quote'}</Text>
+            <TouchableOpacity 
+              style={[styles.swapActionButton, isSwapDisabled && styles.swapActionButtonDisabled]} 
+              onPress={handleCreateQuote} 
+              disabled={isSwapDisabled}
+            >
+              <Text style={[styles.swapActionButtonText, isSwapDisabled && styles.swapActionButtonTextDisabled]}>
+                {quoteLoading ? 'Creating Quote...' : 'Create Quote'}
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -348,42 +385,175 @@ export default function SwapScreen({
       <BottomTabNavigator activeTab="swap" />
 
       {/* Token Modal */}
-      <ChooseTokenModal visible={showTokenModal} onClose={() => setShowTokenModal(false)} onTokenSelect={handleTokenSelect} selectedTokenId={tokenSelectorType === 'from' ? selectedFromToken?.id : selectedToToken?.id} title="Choose token" showBalances={true} />
+      <ChooseTokenModal 
+        visible={showTokenModal} 
+        onClose={() => setShowTokenModal(false)} 
+        onTokenSelect={handleTokenSelect} 
+        selectedTokenId={tokenSelectorType === 'from' ? selectedFromToken?.id : selectedToToken?.id} 
+        title="Choose token" 
+        showBalances={true} 
+      />
 
       {/* Preview Modal */}
-      <SwapPreviewModal visible={showPreviewModal} onClose={() => setShowPreviewModal(false)} onConfirm={handleAcceptQuote} fromAmount={formatDisplayAmount(unformat(fromAmount))} fromToken={selectedFromToken?.symbol || ''} toAmount={formatDisplayAmount(unformat(toAmount))} toToken={selectedToToken?.symbol || ''} rate={`1 ${selectedFromToken?.symbol} = ${(parseFloat(unformat(toAmount))/parseFloat(unformat(fromAmount)) || 0).toFixed(6)} ${selectedToToken?.symbol}`} />
+      <SwapPreviewModal 
+        visible={showPreviewModal} 
+        onClose={() => setShowPreviewModal(false)} 
+        onConfirm={handleAcceptQuote} 
+        fromAmount={formatDisplayAmount(unformat(fromAmount))} 
+        fromToken={selectedFromToken?.symbol || ''} 
+        toAmount={formatDisplayAmount(unformat(toAmount))} 
+        toToken={selectedToToken?.symbol || ''} 
+        rate={`1 ${selectedFromToken?.symbol} = ${(parseFloat(unformat(toAmount))/parseFloat(unformat(fromAmount)) || 0).toFixed(6)} ${selectedToToken?.symbol}`} 
+      />
 
-      {/* Success Screen */}
-      <SwapSuccessfulScreen visible={showSuccessScreen} fromAmount={formatDisplayAmount(unformat(fromAmount))} fromToken={selectedFromToken?.symbol || ''} toToken={selectedToToken?.symbol || ''} onContinue={handleSuccessScreenContinue} />
+      {/* Success Screen - Now renders as popup modal */}
+      <SwapSuccessfulScreen 
+        visible={showSuccessScreen} 
+        fromAmount={formatDisplayAmount(unformat(fromAmount))} 
+        fromToken={selectedFromToken?.symbol || ''} 
+        toToken={selectedToToken?.symbol || ''} 
+        onContinue={handleSuccessScreenContinue} 
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  safeArea: { flex: 1 },
-  scrollView: { flex: 1 },
-  scrollViewContent: { paddingHorizontal: Layout.spacing.lg, paddingBottom: 120, paddingTop: Layout.spacing.xxl },
-  tabContainer: { alignItems: 'center', marginBottom: Layout.spacing.lg },
-  activeTabText: { fontFamily: Typography.medium, fontSize: 18, color: Colors.text.primary },
-  inputContainer: { marginBottom: Layout.spacing.sm },
-  inputLabel: { fontFamily: Typography.medium, fontSize: 16, color: Colors.text.primary, marginBottom: Layout.spacing.xs },
-  inputCard: { backgroundColor: '#F8F9FA', borderRadius: Layout.borderRadius.lg, padding: Layout.spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB', minHeight: 80, width: '100%' },
-  inputLeft: { flex: 1, justifyContent: 'center', minWidth: 0 },
-  inputRight: { alignItems: 'flex-end', justifyContent: 'center', maxWidth: '50%' },
-  amountInput: { fontFamily: Typography.medium, fontSize: 24, color: Colors.text.primary, fontWeight: '600', padding: 0, margin: 0, flexShrink: 1 },
-  usdValue: { fontFamily: Typography.regular, fontSize: 13, color: Colors.text.secondary, marginTop: 3 },
-  tokenSelector: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E5E7EB', borderRadius: Layout.borderRadius.md, paddingHorizontal: Layout.spacing.sm, paddingVertical: Layout.spacing.xs, marginBottom: Layout.spacing.sm },
-  tokenIcon: { width: 18, height: 18, resizeMode: 'cover', marginRight: Layout.spacing.sm },
-  tokenText: { fontFamily: Typography.medium, fontSize: 12, color: Colors.text.primary, fontWeight: '600' },
-  balanceInfo: { flexDirection: 'row', alignItems: 'center', gap: Layout.spacing.xs },
-  balanceText: { fontFamily: Typography.regular, fontSize: 10, color: Colors.text.secondary },
-  maxText: { fontFamily: Typography.medium, fontSize: 10, color: Colors.primary, fontWeight: '600' },
-  swapIconContainer: { alignItems: 'center', marginVertical: Layout.spacing.md },
-  swapIconImage: { width: 48, height: 48, resizeMode: 'contain' },
-  swapContainer: { marginTop: Layout.spacing.lg },
-  swapActionButton: { backgroundColor: Colors.primary, borderRadius: Layout.borderRadius.lg, paddingVertical: Layout.spacing.md, alignItems: 'center' },
-  swapActionButtonDisabled: { backgroundColor: '#E5E7EB' },
-  swapActionButtonText: { fontFamily: Typography.medium, fontSize: 16, color: Colors.surface, fontWeight: '600' },
-  swapActionButtonTextDisabled: { color: Colors.text.secondary },
+  container: { 
+    flex: 1, 
+    backgroundColor: Colors.background 
+  },
+  safeArea: { 
+    flex: 1 
+  },
+  scrollView: { 
+    flex: 1 
+  },
+  scrollViewContent: { 
+    paddingHorizontal: Layout.spacing.lg, 
+    paddingBottom: 120, 
+    paddingTop: Layout.spacing.xxl 
+  },
+  tabContainer: { 
+    alignItems: 'center', 
+    marginBottom: Layout.spacing.lg 
+  },
+  activeTabText: { 
+    fontFamily: Typography.medium, 
+    fontSize: 18, 
+    color: Colors.text.primary 
+  },
+  inputContainer: { 
+    marginBottom: Layout.spacing.sm 
+  },
+  inputLabel: { 
+    fontFamily: Typography.medium, 
+    fontSize: 16, 
+    color: Colors.text.primary, 
+    marginBottom: Layout.spacing.xs 
+  },
+  inputCard: { 
+    backgroundColor: '#F8F9FA', 
+    borderRadius: Layout.borderRadius.lg, 
+    padding: Layout.spacing.md, 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB', 
+    minHeight: 80, 
+    width: '100%' 
+  },
+  inputLeft: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    minWidth: 0 
+  },
+  inputRight: { 
+    alignItems: 'flex-end', 
+    justifyContent: 'center', 
+    maxWidth: '50%' 
+  },
+  amountInput: { 
+    fontFamily: Typography.medium, 
+    fontSize: 24, 
+    color: Colors.text.primary, 
+    fontWeight: '600', 
+    padding: 0, 
+    margin: 0, 
+    flexShrink: 1 
+  },
+  usdValue: { 
+    fontFamily: Typography.regular, 
+    fontSize: 13, 
+    color: Colors.text.secondary, 
+    marginTop: 3 
+  },
+  tokenSelector: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#E5E7EB', 
+    borderRadius: Layout.borderRadius.md, 
+    paddingHorizontal: Layout.spacing.sm, 
+    paddingVertical: Layout.spacing.xs, 
+    marginBottom: Layout.spacing.sm 
+  },
+  tokenIcon: { 
+    width: 18, 
+    height: 18, 
+    resizeMode: 'cover', 
+    marginRight: Layout.spacing.sm 
+  },
+  tokenText: { 
+    fontFamily: Typography.medium, 
+    fontSize: 12, 
+    color: Colors.text.primary, 
+    fontWeight: '600' 
+  },
+  balanceInfo: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: Layout.spacing.xs 
+  },
+  balanceText: { 
+    fontFamily: Typography.regular, 
+    fontSize: 10, 
+    color: Colors.text.secondary 
+  },
+  maxText: { 
+    fontFamily: Typography.medium, 
+    fontSize: 10, 
+    color: Colors.primary, 
+    fontWeight: '600' 
+  },
+  swapIconContainer: { 
+    alignItems: 'center', 
+    marginVertical: Layout.spacing.md 
+  },
+  swapIconImage: { 
+    width: 48, 
+    height: 48, 
+    resizeMode: 'contain' 
+  },
+  swapContainer: { 
+    marginTop: Layout.spacing.lg 
+  },
+  swapActionButton: { 
+    backgroundColor: Colors.primary, 
+    borderRadius: Layout.borderRadius.lg, 
+    paddingVertical: Layout.spacing.md, 
+    alignItems: 'center' 
+  },
+  swapActionButtonDisabled: { 
+    backgroundColor: '#E5E7EB' 
+  },
+  swapActionButtonText: { 
+    fontFamily: Typography.medium, 
+    fontSize: 16, 
+    color: Colors.surface, 
+    fontWeight: '600' 
+  },
+  swapActionButtonTextDisabled: { 
+    color: Colors.text.secondary 
+  },
 });

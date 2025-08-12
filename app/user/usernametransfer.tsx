@@ -1,61 +1,84 @@
 // app/user/UsernameSearchScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar, ScrollView, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar, ScrollView, TextInput, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import TransferBottomSheet from '../../components/UsernameTransfer';
 import lensIcon from '../../components/icons/lens-icon.png';
+import { useUsernameSearch } from '../../hooks/useUsernameQuery';
 
 interface User {
-  id: string;
+  _id: string;
   username: string;
-  fullName: string;
-  avatar?: string | null;
+  firstname: string;
+  lastname: string;
+  avatarUrl?: string | null;
 }
 
 const UsernameSearchScreen = () => {
   const router = useRouter();
   const { tokenId, tokenName, tokenSymbol } = useLocalSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isBottomSheetVisible, setIsBottomSheetVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const mockUsers: User[] = [
-    { id: '1', username: 'john_doe', fullName: 'John Doe', avatar: null },
-    { id: '2', username: 'jane_smith', fullName: 'Jane Smith', avatar: null },
-    { id: '3', username: 'mike_wilson', fullName: 'Mike Wilson', avatar: null },
-    { id: '4', username: 'sarah_jones', fullName: 'Sarah Jones', avatar: null },
-  ];
+  // Use the username search hook
+  const {
+    searchResults,
+    isLoading,
+    error,
+    hasSearched,
+    searchUsername,
+    clearResults,
+    clearError,
+    hasResults,
+    isEmpty
+  } = useUsernameSearch();
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    if (query.trim().length > 0) {
-      setIsLoading(true);
-      setTimeout(() => {
-        const filtered = mockUsers.filter(user =>
-          user.username.toLowerCase().includes(query.toLowerCase()) ||
-          user.fullName.toLowerCase().includes(query.toLowerCase())
-        );
-        setSearchResults(filtered);
-        setIsLoading(false);
-      }, 500);
+  const handleSearch = async () => {
+    if (searchQuery.trim().length > 0) {
+      console.log('🔍 Starting search for:', searchQuery);
+      const result = await searchUsername(searchQuery.trim());
+      
+      if (!result.success && result.error) {
+        // Show error alert if search fails
+        Alert.alert('Search Error', result.error);
+      }
     } else {
-      setSearchResults([]);
+      clearResults();
     }
   };
 
   const handleUserPress = (user: User) => {
-    setSelectedUser(user);
+    // Format user for the bottom sheet (convert to expected format)
+    const formattedUser = {
+      ...user,
+      id: user._id, // Convert _id to id for compatibility
+      fullName: `${user.firstname} ${user.lastname}`.trim()
+    };
+    setSelectedUser(formattedUser as any);
     setIsBottomSheetVisible(true);
   };
 
   const handleCloseBottomSheet = () => {
     setIsBottomSheetVisible(false);
     setSelectedUser(null);
+  };
+
+  const getFullName = (user: User) => {
+    return `${user.firstname} ${user.lastname}`.trim();
+  };
+
+  const getUserInitials = (user: User) => {
+    const firstname = user.firstname?.charAt(0)?.toUpperCase() || '';
+    const lastname = user.lastname?.charAt(0)?.toUpperCase() || '';
+    return `${firstname}${lastname}`;
+  };
+
+  const handleClearError = () => {
+    clearError();
   };
 
   return (
@@ -76,47 +99,86 @@ const UsernameSearchScreen = () => {
           </View>
           <View style={styles.searchSection}>
             <View style={styles.searchContainer}>
-              <View style={styles.searchIcon}>
-                <Image source={lensIcon} style={styles.searchIconImage} />
-              </View>
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search by Username"
                 placeholderTextColor={Colors.text.secondary}
                 value={searchQuery}
-                onChangeText={handleSearch}
+                onChangeText={setSearchQuery}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
+              <TouchableOpacity style={styles.searchButton} onPress={handleSearch} activeOpacity={0.7}>
+                <Image source={lensIcon} style={styles.searchButtonIcon} />
+              </TouchableOpacity>
             </View>
           </View>
+
+          {/* Error Display */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity onPress={handleClearError} style={styles.errorCloseButton}>
+                <Text style={styles.errorCloseText}>×</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           <View style={styles.resultsSection}>
-            {isLoading && <View style={styles.loadingContainer}><Text style={styles.loadingText}>Searching...</Text></View>}
-            {!isLoading && searchQuery.length > 0 && searchResults.length === 0 && (
+            {/* Loading State */}
+            {isLoading && (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>Searching...</Text>
+              </View>
+            )}
+
+            {/* Empty Results */}
+            {isEmpty && (
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>No users found</Text>
                 <Text style={styles.emptySubtext}>Try searching with a different username</Text>
               </View>
             )}
-            {!isLoading && searchResults.length > 0 && (
+
+            {/* Search Results */}
+            {hasResults && !isLoading && (
               <View style={styles.usersList}>
-                {searchResults.map((user) => (
-                  <TouchableOpacity key={user.id} style={styles.userItem} onPress={() => handleUserPress(user)} activeOpacity={0.7}>
+                <Text style={styles.resultsHeader}>
+                  Found {searchResults.length} user{searchResults.length !== 1 ? 's' : ''}
+                </Text>
+                {searchResults.map((user: User) => (
+                  <TouchableOpacity 
+                    key={user._id} 
+                    style={styles.userItem} 
+                    onPress={() => handleUserPress(user)} 
+                    activeOpacity={0.7}
+                  >
                     <View style={styles.avatarContainer}>
                       <View style={styles.userAvatar}>
-                        <Text style={styles.userInitials}>
-                          {user.fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </Text>
+                        {user.avatarUrl ? (
+                          <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
+                        ) : (
+                          <Text style={styles.userInitials}>
+                            {getUserInitials(user)}
+                          </Text>
+                        )}
                       </View>
                     </View>
                     <View style={styles.textContainer}>
                       <View style={styles.userInfo}>
-                        <Text style={styles.userName}>{user.fullName}</Text>
+                        <Text style={styles.userName}>{getFullName(user)}</Text>
                         <Text style={styles.userUsername}>@{user.username}</Text>
                       </View>
                     </View>
                   </TouchableOpacity>
                 ))}
+              </View>
+            )}
+
+            {/* No Search Yet */}
+            {!hasSearched && !isLoading && (
+              <View style={styles.instructionContainer}>
+                <Text style={styles.instructionText}>Enter a username to search</Text>
               </View>
             )}
           </View>
@@ -147,23 +209,88 @@ const styles = StyleSheet.create({
   subtitleSection: { paddingHorizontal: 16, paddingVertical: 8 },
   subtitleText: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14, fontWeight: '400', textAlign: 'left' },
   searchSection: { paddingHorizontal: 16, paddingVertical: 12 },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: 8, borderWidth: 1, borderColor: '#e0e0e0', paddingHorizontal: 16, paddingVertical: 16 },
-  searchIcon: { marginRight: 8 },
-  searchIconImage: { width: 16, height: 16, resizeMode: 'contain' },
-  searchInput: { flex: 1, color: Colors.text.primary, fontFamily: Typography.regular, fontSize: 14, fontWeight: '400' },
+  searchContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#F8F9FA', 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB', 
+    paddingHorizontal: 16, 
+    paddingVertical: 12 
+  },
+  searchInput: { 
+    flex: 1, 
+    color: Colors.text.primary, 
+    fontFamily: Typography.regular, 
+    fontSize: 16, 
+    fontWeight: '400',
+    marginRight: 12,
+    paddingVertical: 4
+  },
+  searchButton: {
+    padding: 8,
+    borderRadius: 6,
+    backgroundColor: '#35297F',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  searchButtonIcon: { 
+    width: 16, 
+    height: 16, 
+    resizeMode: 'contain',
+    tintColor: '#FFFFFF'
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFE6E6',
+    borderColor: '#FF6B6B',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginBottom: 12
+  },
+  errorText: {
+    flex: 1,
+    color: '#D63031',
+    fontFamily: Typography.regular,
+    fontSize: 14
+  },
+  errorCloseButton: {
+    padding: 4
+  },
+  errorCloseText: {
+    color: '#D63031',
+    fontSize: 18,
+    fontWeight: 'bold'
+  },
   resultsSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24, flex: 1 },
   loadingContainer: { alignItems: 'center', paddingVertical: 40 },
   loadingText: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14 },
   emptyContainer: { alignItems: 'center', paddingVertical: 40 },
   emptyText: { color: Colors.text.primary, fontFamily: Typography.medium, fontSize: 16, marginBottom: 8 },
   emptySubtext: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14, textAlign: 'center' },
+  instructionContainer: { alignItems: 'center', paddingVertical: 40 },
+  instructionText: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14 },
+  resultsHeader: {
+    color: Colors.text.secondary,
+    fontFamily: Typography.medium,
+    fontSize: 12,
+    marginBottom: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5
+  },
   usersList: { gap: 20 },
   userItem: { flexDirection: 'row', alignItems: 'center', padding: 10, justifyContent: 'flex-start', alignSelf: 'flex-start', gap: 10 },
   avatarContainer: { alignItems: 'center', justifyContent: 'center' },
-  userAvatar: { width: 17, height: 17, borderRadius: 30.59, backgroundColor: '#8075FF', alignItems: 'center', justifyContent: 'center' },
-  userInitials: { color: '#FFFFFF', fontFamily: 'Bricolage Grotesque', fontSize: 8, fontWeight: '600' },
+  userAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#35297F', alignItems: 'center', justifyContent: 'center' },
+  avatarImage: { width: 40, height: 40, borderRadius: 20 },
+  userInitials: { color: '#FFFFFF', fontFamily: 'Bricolage Grotesque', fontSize: 16, fontWeight: '600' },
   textContainer: { alignItems: 'flex-start', justifyContent: 'center' },
-  userInfo: { width: 152, height: 34, alignItems: 'flex-start', justifyContent: 'center' },
+  userInfo: { alignItems: 'flex-start', justifyContent: 'center' },
   userName: { color: Colors.text.primary, fontFamily: 'Bricolage Grotesque', fontSize: 14, fontWeight: '700', lineHeight: 16, letterSpacing: 0, textAlign: 'left', marginBottom: 2 },
   userUsername: { color: Colors.text.secondary, fontFamily: 'Bricolage Grotesque', fontSize: 10, fontWeight: '500', lineHeight: 16, letterSpacing: 0, textAlign: 'left' },
 });

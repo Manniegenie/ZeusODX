@@ -4,33 +4,52 @@ import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
 import { useRouter } from 'expo-router';
 
-interface SwapSuccessfulScreenProps {
-  fromAmount: string;
-  fromToken: string;
-  toToken: string;
+interface UtilityPurchaseSuccessModalProps {
+  utilityType: string; // "Airtime", "Data", "Cable TV", etc.
+  amount: string; // "₦500", "1GB", etc.
+  phoneNumber: string; // "08012345678"
+  network: string; // "MTN", "Glo", etc.
   visible?: boolean;
-  onContinue?: () => void; // Added to allow parent to close modal
+  onContinue?: () => void;
+  additionalInfo?: string; // Optional extra info like data validity
 }
 
-export default function SwapSuccessfulScreen({ 
-  fromAmount, 
-  fromToken, 
-  toToken, 
+export default function UtilityPurchaseSuccessModal({ 
+  utilityType,
+  amount,
+  phoneNumber,
+  network,
   visible = true,
-  onContinue
-}: SwapSuccessfulScreenProps) {
+  onContinue,
+  additionalInfo
+}: UtilityPurchaseSuccessModalProps) {
   const router = useRouter();
 
   const handleContinue = () => {
     if (onContinue) onContinue(); // Close modal in parent
     setTimeout(() => {
-      router.push('/user/wallet'); // Navigate after modal closes
+      router.push('/user/utility'); // Navigate after modal closes
     }, 150);
   };
 
   const handleOverlayPress = () => {
     // Optional: Allow closing modal by tapping overlay
     // if (onContinue) onContinue();
+  };
+
+  // Format the success message based on utility type
+  const getSuccessMessage = () => {
+    const baseMessage = `You have successfully purchased ${amount} ${utilityType.toLowerCase()} for ${phoneNumber} on ${network}.`;
+    
+    if (additionalInfo) {
+      return `${baseMessage}\n\n${additionalInfo}`;
+    }
+    
+    return baseMessage;
+  };
+
+  const getTitle = () => {
+    return `${utilityType} Purchase Successful`;
   };
 
   return (
@@ -56,9 +75,9 @@ export default function SwapSuccessfulScreen({
                 />
               </View>
 
-              <Text style={styles.title}>Swap successful</Text>
+              <Text style={styles.title}>{getTitle()}</Text>
               <Text style={styles.subtitle}>
-                You have successfully swapped {fromAmount}{fromToken}{'\n'}to {toToken}.
+                {getSuccessMessage()}
               </Text>
 
               <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>

@@ -10,7 +10,8 @@ import {
   ScrollView,
   TextInput,
   Alert,
-  ImageSourcePropType
+  ImageSourcePropType,
+  Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
@@ -19,9 +20,9 @@ import DataPlansModal from '../../components/DataPlanModal';
 import PinEntryModal from '../../components/PinEntry';
 import TwoFactorAuthModal from '../../components/2FA';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
-import { useDashboard } from '../../hooks/useDashboard';
 import { useData } from '../../hooks/useData';
 
 // Icons
@@ -32,7 +33,30 @@ import nineMobileIcon from '../../components/icons/9mobile.png';
 import profileIcon from '../../components/icons/profile.png';
 import checkmarkIcon from '../../components/icons/green-checkmark.png';
 
-// Interfaces
+// Get screen dimensions for responsive design
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+// Calculate responsive dimensions
+const getResponsiveDimensions = () => {
+  const isSmallScreen = screenWidth < 350;
+  const isMediumScreen = screenWidth >= 350 && screenWidth < 400;
+  
+  return {
+    networkCardWidth: isSmallScreen ? (screenWidth - 64) / 4 - 6 : isMediumScreen ? 75 : 80,
+    networkCardHeight: isSmallScreen ? 45 : isMediumScreen ? 55 : 60,
+    networkIconWidth: isSmallScreen ? (screenWidth - 64) / 4 - 8 : isMediumScreen ? 73 : 79,
+    networkIconHeight: isSmallScreen ? 40 : isMediumScreen ? 48 : 53,
+    profileIconWidth: isSmallScreen ? 48 : isMediumScreen ? 56 : 64,
+    profileIconHeight: isSmallScreen ? 36 : isMediumScreen ? 42 : 46,
+    checkmarkSize: isSmallScreen ? 16 : 20,
+    horizontalPadding: isSmallScreen ? 12 : 16,
+    networkGap: isSmallScreen ? 8 : 12,
+  };
+};
+
+const responsiveDims = getResponsiveDimensions();
+
+// Interfaces (keeping existing interfaces)
 interface ErrorAction { title: string; message: string; actionText: string; route?: string; priority?: 'high' | 'medium' | 'low'; }
 interface ErrorDisplayData { type?: string; title?: string; message?: string; errorAction?: ErrorAction; onActionPress?: () => void; autoHide?: boolean; duration?: number; dismissible?: boolean; }
 interface NetworkProvider { id: string; name: string; iconSrc: ImageSourcePropType; color: string; }
@@ -42,7 +66,6 @@ interface TransactionData { network: NetworkProvider | null; amount: string; pho
 
 const BuyDataScreen: React.FC = () => {
   const router = useRouter();
-  const { dailyLimit } = useDashboard();
   const {
     loading, error, selectedPlan, purchaseData, selectDataPlan, clearSelectedPlan, clearErrors,
     formatPhoneNumber, getNetworkDisplayName, getErrorAction
@@ -57,6 +80,7 @@ const BuyDataScreen: React.FC = () => {
   const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [showDataPlanModal, setShowDataPlanModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Error display
   const [showErrorDisplay, setShowErrorDisplay] = useState(false);
@@ -121,7 +145,7 @@ const BuyDataScreen: React.FC = () => {
 
   // Improved handleDataPlanSelect with better error handling
   const handleDataPlanSelect = (plan: any): void => {
-    console.log('Received plan data:', plan); // Debug log
+    console.log('Received plan data:', plan);
     
     if (!plan) { 
       console.error("Plan is undefined"); 
@@ -136,7 +160,6 @@ const BuyDataScreen: React.FC = () => {
     }
     
     try {
-      // Safely extract plan data with more robust fallbacks
       const extractSafeValue = (value: any, fallback: any = ''): any => {
         return value !== null && value !== undefined ? value : fallback;
       };
@@ -152,7 +175,6 @@ const BuyDataScreen: React.FC = () => {
         return isNaN(num) ? fallback : num;
       };
 
-      // Create normalized plan with safer extraction
       const normalizedPlan: DataPlan = {
         variationId: extractSafeString(
           plan.originalPlan?.variationId || 
@@ -207,7 +229,6 @@ const BuyDataScreen: React.FC = () => {
         ),
       };
 
-      // Validate required fields
       if (!normalizedPlan.variationId) {
         throw new Error('Plan variation ID is missing');
       }
@@ -218,9 +239,9 @@ const BuyDataScreen: React.FC = () => {
         throw new Error('Plan price is invalid');
       }
 
-      console.log('Normalized plan:', normalizedPlan); // Debug log
+      console.log('Normalized plan:', normalizedPlan);
       selectDataPlan(normalizedPlan);
-      setShowDataPlanModal(false); // Close modal on successful selection
+      setShowDataPlanModal(false);
       
     } catch (err) { 
       console.error("Error selecting plan:", err);
@@ -281,17 +302,6 @@ const BuyDataScreen: React.FC = () => {
       return false; 
     }
     
-    if (selectedPlan.price > dailyLimit) { 
-      showErrorMessage({ 
-        type: 'limit', 
-        title: 'Daily Limit Exceeded', 
-        message: `Exceeds daily limit of ₦${dailyLimit.toLocaleString()}`, 
-        autoHide: true, 
-        duration: 4000 
-      }); 
-      return false; 
-    }
-    
     return true;
   };
 
@@ -299,7 +309,6 @@ const BuyDataScreen: React.FC = () => {
     if (validateForm()) setShowConfirmationModal(true); 
   };
 
-  // Improved handleDataPlanSelectorPress with better error handling
   const handleDataPlanSelectorPress = () => { 
     if (!selectedNetwork) {
       showErrorMessage({ 
@@ -369,13 +378,7 @@ const BuyDataScreen: React.FC = () => {
         setPasswordPin(''); 
         setTwoFactorCode('');
         
-        Alert.alert(
-          result.data?.status === 'completed-api' ? 'Success!' : 'Processing', 
-          result.data?.status === 'completed-api'
-            ? `Data purchase successful: ${selectedPlan!.formattedData} added to ${mobileNumber}`
-            : 'Your data purchase is processing.', 
-          [{ text: 'OK', onPress: () => router.back() }]
-        );
+        setShowSuccessModal(true);
       } else {
         setShowTwoFactorModal(false);
         const errorAction = getErrorAction?.(result.requiresAction);
@@ -424,13 +427,16 @@ const BuyDataScreen: React.FC = () => {
     }
   };
 
-  // Safe modal close handlers
   const handleDataPlanModalClose = () => {
     try {
       setShowDataPlanModal(false);
     } catch (error) {
       console.error('Error closing data plan modal:', error);
     }
+  };
+
+  const handleSuccessModalClose = (): void => {
+    setShowSuccessModal(false);
   };
 
   // Form validity
@@ -457,6 +463,7 @@ const BuyDataScreen: React.FC = () => {
           style={styles.scrollView} 
           showsVerticalScrollIndicator={false} 
           keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
         >
           {/* Header */}
           <View style={styles.headerSection}>
@@ -471,31 +478,38 @@ const BuyDataScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Network */}
+          {/* Network Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Select Network Provider</Text>
-            <View style={styles.networkGrid}>
-              {networkProviders.map((n) => (
-                <TouchableOpacity 
-                  key={n.id} 
-                  style={[
-                    styles.networkCard, 
-                    selectedNetwork?.id === n.id && styles.networkCardSelected
-                  ]} 
-                  onPress={() => handleNetworkSelect(n)}
-                >
-                  <Image source={n.iconSrc} style={styles.networkIcon} />
-                  {selectedNetwork?.id === n.id && (
-                    <View style={styles.checkmarkContainer}>
-                      <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.networkScrollContainer}
+              style={styles.networkScrollView}
+            >
+              <View style={styles.networkGrid}>
+                {networkProviders.map((n) => (
+                  <TouchableOpacity 
+                    key={n.id} 
+                    style={[
+                      styles.networkCard, 
+                      selectedNetwork?.id === n.id && styles.networkCardSelected
+                    ]} 
+                    onPress={() => handleNetworkSelect(n)}
+                  >
+                    <Image source={n.iconSrc} style={styles.networkIcon} />
+                    {selectedNetwork?.id === n.id && (
+                      <View style={styles.checkmarkContainer}>
+                        <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
           </View>
 
-          {/* Phone */}
+          {/* Phone Number */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Mobile Number</Text>
             <View style={styles.mobileNumberSection}>
@@ -519,7 +533,7 @@ const BuyDataScreen: React.FC = () => {
             </Text>
           </View>
 
-          {/* Plan */}
+          {/* Data Plan */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Data Plan</Text>
             <TouchableOpacity 
@@ -559,9 +573,12 @@ const BuyDataScreen: React.FC = () => {
               <Text style={styles.summaryValidity}>Valid for {selectedPlan.validity}</Text>
             </View>
           )}
+
+          {/* Bottom spacing */}
+          <View style={styles.bottomSpacer} />
         </ScrollView>
 
-        {/* Continue */}
+        {/* Continue Button */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity 
             style={[
@@ -615,7 +632,6 @@ const BuyDataScreen: React.FC = () => {
         transactionData={transactionData} 
       />
       
-      {/* Fixed DataPlansModal with safer props */}
       <DataPlansModal 
         visible={showDataPlanModal} 
         onClose={handleDataPlanModalClose} 
@@ -625,49 +641,289 @@ const BuyDataScreen: React.FC = () => {
         networkName={selectedNetwork?.id ? getSafeNetworkDisplayName(selectedNetwork.id) : ''} 
         loading={loading} 
       />
+
+      <UtilityPurchaseSuccessModal
+        visible={showSuccessModal}
+        utilityType="Data"
+        amount={selectedPlan?.formattedData || ''}
+        phoneNumber={mobileNumber}
+        network={selectedNetwork?.name || ''}
+        onContinue={handleSuccessModalClose}
+        additionalInfo={selectedPlan ? `Valid for ${selectedPlan.validity}` : undefined}
+      />
     </View>
   );
 };
 
+// Responsive styles
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
-  safeArea: { flex: 1 },
-  scrollView: { flex: 1 },
-  headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
-  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backButtonText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
-  headerTitle: { color: '#35297F', fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center', marginHorizontal: 16 },
-  historyLink: { color: '#35297F', fontFamily: Typography.medium, fontSize: 14, fontWeight: '500' },
-  section: { paddingHorizontal: 16, marginBottom: 24 },
-  sectionTitle: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular, fontSize: 14, fontWeight: '400', marginBottom: 16 },
-  networkGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  networkCard: { width: 80, height: 60, borderRadius: 8, justifyContent: 'center', alignItems: 'center', position: 'relative' },
-  networkCardSelected: {},
-  networkIcon: { width: 79, height: 53, resizeMode: 'contain' },
-  checkmarkContainer: { position: 'absolute', top: -8, right: -8, zIndex: 1 },
-  checkmarkIcon: { width: 20, height: 20, resizeMode: 'contain' },
-  mobileNumberSection: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  mobileInputContainer: { flex: 1, backgroundColor: Colors.surface, borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 12 },
-  mobileInput: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular, fontSize: 16, fontWeight: '400', paddingVertical: 4 },
-  profileIconContainer: { justifyContent: 'center', alignItems: 'center' },
-  profileIcon: { width: 64, height: 46, resizeMode: 'contain' },
-  helperText: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular, fontSize: 11, fontWeight: '400', marginTop: 6, fontStyle: 'italic' },
-  dataPlanSelector: { backgroundColor: Colors.surface, borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dataPlanSelectorDisabled: { backgroundColor: '#F9FAFB', borderColor: '#E5E7EB' },
-  dataPlanSelectorText: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular, fontSize: 16, fontWeight: '400', flex: 1 },
-  dataPlanSelectorPlaceholder: { color: Colors.text?.secondary || '#6B7280' },
-  dropdownArrow: { color: Colors.text?.secondary || '#6B7280', fontSize: 16, fontWeight: '500' },
-  summarySection: { backgroundColor: '#F3F4F6', borderRadius: 8, padding: 16, marginHorizontal: 16, marginBottom: 24 },
-  summaryTitle: { color: Colors.text?.primary || '#111827', fontFamily: Typography.medium, fontSize: 14, fontWeight: '600', marginBottom: 8 },
-  summaryContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  summaryData: { color: Colors.text?.primary || '#111827', fontFamily: Typography.medium, fontSize: 16, fontWeight: '600' },
-  summaryPrice: { color: '#35297F', fontFamily: Typography.medium, fontSize: 16, fontWeight: '600' },
-  summaryValidity: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular, fontSize: 12, fontWeight: '400' },
-  buttonContainer: { paddingHorizontal: 16, paddingVertical: 24, backgroundColor: Colors.background },
-  continueButton: { backgroundColor: '#35297F', borderRadius: 8, paddingVertical: 16, justifyContent: 'center', alignItems: 'center' },
-  continueButtonDisabled: { backgroundColor: '#9CA3AF' },
-  continueButtonText: { color: '#FFFFFF', fontFamily: Typography.medium, fontSize: 16, fontWeight: '600' },
+  container: { 
+    flex: 1, 
+    backgroundColor: Colors.background || '#F8F9FA' 
+  },
+  safeArea: { 
+    flex: 1 
+  },
+  scrollView: { 
+    flex: 1 
+  },
+  scrollContent: {
+    paddingBottom: 20,
+  },
+  
+  // Header styles
+  headerSection: { 
+    paddingHorizontal: responsiveDims.horizontalPadding, 
+    paddingTop: 12, 
+    paddingBottom: 24 
+  },
+  headerContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between' 
+  },
+  backButton: { 
+    width: 40, 
+    height: 40, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderRadius: 20 
+  },
+  backButtonText: { 
+    fontSize: 20, 
+    color: Colors.text?.primary || '#111827', 
+    fontWeight: '500' 
+  },
+  headerTitle: { 
+    color: '#35297F', 
+    fontFamily: Typography.medium, 
+    fontSize: 18, 
+    fontWeight: '600', 
+    flex: 1, 
+    textAlign: 'center', 
+    marginHorizontal: 16 
+  },
+  historyLink: { 
+    color: '#35297F', 
+    fontFamily: Typography.medium, 
+    fontSize: 14, 
+    fontWeight: '500' 
+  },
+  
+  // Section styles
+  section: { 
+    paddingHorizontal: responsiveDims.horizontalPadding, 
+    marginBottom: 24 
+  },
+  sectionTitle: { 
+    color: Colors.text?.secondary || '#6B7280', 
+    fontFamily: Typography.regular, 
+    fontSize: 14, 
+    fontWeight: '400', 
+    marginBottom: 16 
+  },
+  
+  // Network selection styles - Responsive and scrollable
+  networkScrollView: {
+    flexGrow: 0,
+  },
+  networkScrollContainer: {
+    paddingHorizontal: 4,
+    minWidth: screenWidth - (responsiveDims.horizontalPadding * 2),
+  },
+  networkGrid: { 
+    flexDirection: 'row', 
+    alignItems: 'center',
+    gap: responsiveDims.networkGap,
+    paddingVertical: 4,
+  },
+  networkCard: { 
+    width: responsiveDims.networkCardWidth, 
+    height: responsiveDims.networkCardHeight, 
+    borderRadius: 8, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    position: 'relative',
+    backgroundColor: 'transparent',
+    // Add subtle border for better visibility
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  networkCardSelected: {
+    borderColor: '#35297F',
+    backgroundColor: '#F8F7FF',
+  },
+  networkIcon: { 
+    width: responsiveDims.networkIconWidth, 
+    height: responsiveDims.networkIconHeight, 
+    resizeMode: 'contain' 
+  },
+  checkmarkContainer: { 
+    position: 'absolute', 
+    top: -6, 
+    right: -6, 
+    zIndex: 1,
+    backgroundColor: 'white',
+    borderRadius: responsiveDims.checkmarkSize / 2,
+    padding: 1,
+  },
+  checkmarkIcon: { 
+    width: responsiveDims.checkmarkSize, 
+    height: responsiveDims.checkmarkSize, 
+    resizeMode: 'contain' 
+  },
+  
+  // Mobile number styles - Responsive
+  mobileNumberSection: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: screenWidth < 350 ? 8 : 12 
+  },
+  mobileInputContainer: { 
+    flex: 1, 
+    backgroundColor: Colors.surface, 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB', 
+    paddingHorizontal: 16, 
+    paddingVertical: 12,
+    minHeight: 48,
+  },
+  mobileInput: { 
+    color: Colors.text?.primary || '#111827', 
+    fontFamily: Typography.regular, 
+    fontSize: 16, 
+    fontWeight: '400', 
+    paddingVertical: 4,
+    minHeight: 24,
+  },
+  profileIconContainer: { 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    minWidth: responsiveDims.profileIconWidth,
+    minHeight: responsiveDims.profileIconHeight,
+  },
+  profileIcon: { 
+    width: responsiveDims.profileIconWidth, 
+    height: responsiveDims.profileIconHeight, 
+    resizeMode: 'contain' 
+  },
+  helperText: { 
+    color: Colors.text?.secondary || '#6B7280', 
+    fontFamily: Typography.regular, 
+    fontSize: 11, 
+    fontWeight: '400', 
+    marginTop: 6, 
+    fontStyle: 'italic',
+    lineHeight: 16,
+  },
+  
+  // Data plan selector
+  dataPlanSelector: { 
+    backgroundColor: Colors.surface, 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB', 
+    paddingHorizontal: 16, 
+    paddingVertical: 16, 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center',
+    minHeight: 56,
+  },
+  dataPlanSelectorDisabled: { 
+    backgroundColor: '#F9FAFB', 
+    borderColor: '#E5E7EB' 
+  },
+  dataPlanSelectorText: { 
+    color: Colors.text?.primary || '#111827', 
+    fontFamily: Typography.regular, 
+    fontSize: 16, 
+    fontWeight: '400', 
+    flex: 1,
+    lineHeight: 20,
+  },
+  dataPlanSelectorPlaceholder: { 
+    color: Colors.text?.secondary || '#6B7280' 
+  },
+  dropdownArrow: { 
+    color: Colors.text?.secondary || '#6B7280', 
+    fontSize: 16, 
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  
+  // Summary section
+  summarySection: { 
+    backgroundColor: '#F3F4F6', 
+    borderRadius: 8, 
+    padding: 16, 
+    marginHorizontal: responsiveDims.horizontalPadding, 
+    marginBottom: 24 
+  },
+  summaryTitle: { 
+    color: Colors.text?.primary || '#111827', 
+    fontFamily: Typography.medium, 
+    fontSize: 14, 
+    fontWeight: '600', 
+    marginBottom: 8 
+  },
+  summaryContent: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 4,
+    flexWrap: 'wrap',
+  },
+  summaryData: { 
+    color: Colors.text?.primary || '#111827', 
+    fontFamily: Typography.medium, 
+    fontSize: 16, 
+    fontWeight: '600',
+    flex: 1,
+  },
+  summaryPrice: { 
+    color: '#35297F', 
+    fontFamily: Typography.medium, 
+    fontSize: 16, 
+    fontWeight: '600',
+    textAlign: 'right',
+  },
+  summaryValidity: { 
+    color: Colors.text?.secondary || '#6B7280', 
+    fontFamily: Typography.regular, 
+    fontSize: 12, 
+    fontWeight: '400' 
+  },
+  
+  // Button styles
+  buttonContainer: { 
+    paddingHorizontal: responsiveDims.horizontalPadding, 
+    paddingVertical: 24, 
+    backgroundColor: Colors.background 
+  },
+  continueButton: { 
+    backgroundColor: '#35297F', 
+    borderRadius: 8, 
+    paddingVertical: 16, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    minHeight: 56,
+  },
+  continueButtonDisabled: { 
+    backgroundColor: '#9CA3AF' 
+  },
+  continueButtonText: { 
+    color: '#FFFFFF', 
+    fontFamily: Typography.medium, 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
+  
+  // Bottom spacer
+  bottomSpacer: {
+    height: 20,
+  },
 });
 
 export default BuyDataScreen;

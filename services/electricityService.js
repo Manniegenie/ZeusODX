@@ -4,106 +4,51 @@ import { apiClient } from './apiClient';
 export const electricityService = {
   /**
    * Purchase electricity
-   * @param {Object} purchaseData - Electricity purchase data
-   * @param {string} purchaseData.meterNumber - Meter/account number
-   * @param {string} purchaseData.service_id - Electricity provider
-   * @param {string} purchaseData.variation_id - Meter type (prepaid/postpaid)
-   * @param {number} purchaseData.amount - Amount to purchase
-   * @param {string} purchaseData.twoFactorCode - 2FA code
-   * @param {string} purchaseData.passwordpin - 6-digit password PIN
-   * @returns {Promise<Object>} Purchase response
+   * Returns the RAW backend body (eBills shape): { code, message, data }
+   * On backend/validation error, returns backend error body if present.
+   * On pure network failure, returns a minimal fallback with same keys.
    */
   async purchaseElectricity(purchaseData) {
     try {
-      console.log('⚡ Starting electricity purchase:', {
+      const body = {
         customer_id: purchaseData.meterNumber,
-        service_id: purchaseData.service_id,
-        variation_id: purchaseData.variation_id,
-        amount: purchaseData.amount,
+        service_id: purchaseData.service_id?.toLowerCase(),
+        variation_id: purchaseData.variation_id?.toLowerCase(),
+        amount: parseFloat(purchaseData.amount),
+        payment_currency: 'NGNZ', // align with backend
+        twoFactorCode: purchaseData.twoFactorCode,
+        passwordpin: purchaseData.passwordpin
+      };
+
+      console.log('⚡ Starting electricity purchase:', {
+        customer_id: body.customer_id,
+        service_id: body.service_id,
+        variation_id: body.variation_id,
+        amount: body.amount,
         provider: this.getProviderDisplayName(purchaseData.service_id)
       });
 
-      const response = await apiClient.post('/electricity/purchase', {
-        customer_id: purchaseData.meterNumber,
-        service_id: purchaseData.service_id.toLowerCase(),
-        variation_id: purchaseData.variation_id.toLowerCase(),
-        amount: parseFloat(purchaseData.amount),
-        payment_currency: 'NGNB',
-        twoFactorCode: purchaseData.twoFactorCode,
-        passwordpin: purchaseData.passwordpin
+      const raw = await apiClient.post('/electricity/purchase', body);
+
+      // If using axios, raw.data is the server body. If a custom client, raw may already be body.
+      return raw?.data ?? raw;
+    } catch (error) {
+      console.error('❌ Electricity service error:', {
+        error: error?.message,
+        type: error?.response?.data ? 'BACKEND_ERROR' : 'NETWORK_OR_UNKNOWN',
+        backend: error?.response?.data
       });
 
-      // Handle successful response
-      if (response.success && response.data) {
-        console.log('✅ Electricity purchase successful:', {
-          order_id: response.data.order_id,
-          status: response.data.status,
-          customer_id: response.data.customer_id,
-          customer_name: response.data.customer_name,
-          amount: response.data.amount,
-          service_name: response.data.service_name,
-          token: response.data.token,
-          units: response.data.units
-        });
-
-        return {
-          success: true,
-          data: {
-            orderId: response.data.order_id,
-            status: response.data.status,
-            customerId: response.data.customer_id,
-            customerName: response.data.customer_name,
-            customerAddress: response.data.customer_address,
-            amount: response.data.amount,
-            amountCharged: response.data.amount_charged,
-            serviceName: response.data.service_name,
-            token: response.data.token,
-            units: response.data.units,
-            band: response.data.band,
-            discount: response.data.discount,
-            requestId: response.data.request_id,
-            balanceAction: response.data.balance_action,
-            paymentDetails: response.data.payment_details,
-            securityInfo: response.data.security_info,
-            message: response.message || 'Electricity purchase successful'
-          }
-        };
-      } 
-      
-      // Handle error response - apiClient puts backend message in response.error
-      else {
-        // The actual backend error message is in response.error
-        const backendMessage = response.error || 'Electricity purchase failed';
-        const statusCode = response.status || 400;
-        const errorCode = this.generateErrorCode(backendMessage);
-        const requiresAction = this.getRequiredAction(errorCode, backendMessage);
-        
-        console.log('❌ Electricity purchase failed:', {
-          backend_message: backendMessage,
-          error_code: errorCode,
-          requires_action: requiresAction,
-          status: statusCode
-        });
-
-        return {
-          success: false,
-          error: errorCode,
-          message: backendMessage,
-          status: statusCode,
-          requiresAction: requiresAction
-        };
+      // If backend responded with a body, return it exactly as-is
+      if (error?.response?.data) {
+        return error.response.data;
       }
 
-    } catch (error) {
-      console.error('❌ Electricity service network error:', {
-        error: error.message,
-        type: 'NETWORK_ERROR'
-      });
-      
+      // Fallback for network errors (keep eBills-like keys)
       return {
-        success: false,
-        error: 'NETWORK_ERROR',
-        message: 'Network connection failed. Please check your internet connection and try again.'
+        code: 'error',
+        message: 'Network connection failed. Please try again.',
+        data: null
       };
     }
   },
@@ -149,9 +94,9 @@ export const electricityService = {
     if (!errorMessage || typeof errorMessage !== 'string') {
       return 'PURCHASE_FAILED';
     }
-    
+
     const message = errorMessage.toLowerCase().trim();
-    
+
     // 2FA related errors
     if (message.includes('two-factor authentication')) {
       if (message.includes('not set up') || message.includes('not enabled')) {
@@ -161,7 +106,7 @@ export const electricityService = {
         return 'INVALID_2FA_CODE';
       }
     }
-    
+
     // PIN related errors
     if (message.includes('password pin') || message.includes('passwordpin')) {
       if (message.includes('not set up') || message.includes('not enabled')) {
@@ -171,82 +116,96 @@ export const electricityService = {
         return 'INVALID_PASSWORDPIN';
       }
     }
-    
+
     // Balance related errors
-    if (message.includes('insufficient balance') || 
-        message.includes('not enough funds') || 
-        message.includes('balance too low')) {
+    if (
+      message.includes('insufficient balance') ||
+      message.includes('not enough funds') ||
+      message.includes('balance too low')
+    ) {
       return 'INSUFFICIENT_BALANCE';
     }
-    
+
     // KYC and limit related errors
-    if (message.includes('kyc limit') || 
-        message.includes('transaction limit') || 
-        message.includes('limit exceeded') ||
-        message.includes('exceeds') && message.includes('limit')) {
+    if (
+      message.includes('kyc limit') ||
+      message.includes('transaction limit') ||
+      message.includes('limit exceeded') ||
+      (message.includes('exceeds') && message.includes('limit'))
+    ) {
       return 'KYC_LIMIT_EXCEEDED';
     }
-    
+
     // Meter number specific errors
-    if (message.includes('customer_id') || 
-        message.includes('meter number') ||
-        message.includes('account number') ||
-        message.includes('invalid meter') ||
-        message.includes('invalid customer')) {
+    if (
+      message.includes('customer_id') ||
+      message.includes('meter number') ||
+      message.includes('account number') ||
+      message.includes('invalid meter') ||
+      message.includes('invalid customer')
+    ) {
       return 'INVALID_METER_NUMBER';
     }
-    
+
     // Provider specific errors
-    if (message.includes('service_id') || 
-        message.includes('invalid service') ||
-        message.includes('provider not found') ||
-        message.includes('invalid provider')) {
+    if (
+      message.includes('service_id') ||
+      message.includes('invalid service') ||
+      message.includes('provider not found') ||
+      message.includes('invalid provider')
+    ) {
       return 'INVALID_PROVIDER';
     }
-    
+
     // Meter type errors
-    if (message.includes('variation_id') || 
-        message.includes('meter type') ||
-        message.includes('invalid variation') ||
-        message.includes('prepaid') || 
-        message.includes('postpaid')) {
+    if (
+      message.includes('variation_id') ||
+      message.includes('meter type') ||
+      message.includes('invalid variation') ||
+      message.includes('prepaid') ||
+      message.includes('postpaid')
+    ) {
       return 'INVALID_METER_TYPE';
     }
-    
+
     // Amount related errors
-    if (message.includes('amount below minimum') || 
-        message.includes('minimum is')) {
+    if (message.includes('amount below minimum') || message.includes('minimum is')) {
       return 'AMOUNT_TOO_LOW';
     }
-    
-    if (message.includes('amount above maximum') || 
-        message.includes('maximum is')) {
+
+    if (message.includes('amount above maximum') || message.includes('maximum is')) {
       return 'AMOUNT_TOO_HIGH';
     }
-    
+
     // Pending transaction errors
-    if (message.includes('pending transaction') || 
-        message.includes('already have a pending') ||
-        message.includes('transaction is being processed')) {
+    if (
+      message.includes('pending transaction') ||
+      message.includes('already have a pending') ||
+      message.includes('transaction is being processed')
+    ) {
       return 'PENDING_TRANSACTION_EXISTS';
     }
-    
+
     // Validation related errors
-    if (message.includes('validation failed') || 
-        message.includes('invalid amount') ||
-        message.includes('invalid service') ||
-        message.includes('required field')) {
+    if (
+      message.includes('validation failed') ||
+      message.includes('invalid amount') ||
+      message.includes('invalid service') ||
+      message.includes('required field')
+    ) {
       return 'VALIDATION_ERROR';
     }
-    
+
     // Service/API related errors
-    if (message.includes('ebills') || 
-        message.includes('service unavailable') ||
-        message.includes('temporarily unavailable') ||
-        message.includes('api error')) {
+    if (
+      message.includes('ebills') ||
+      message.includes('service unavailable') ||
+      message.includes('temporarily unavailable') ||
+      message.includes('api error')
+    ) {
       return 'SERVICE_ERROR';
     }
-    
+
     // Default fallback
     return 'PURCHASE_FAILED';
   },
@@ -259,21 +218,21 @@ export const electricityService = {
    */
   getRequiredAction(errorCode, errorMessage) {
     const actionMap = {
-      'SETUP_2FA_REQUIRED': 'SETUP_2FA',
-      'SETUP_PIN_REQUIRED': 'SETUP_PIN',
-      'INVALID_2FA_CODE': 'RETRY_2FA',
-      'INVALID_PASSWORDPIN': 'RETRY_PIN',
-      'KYC_LIMIT_EXCEEDED': 'UPGRADE_KYC',
-      'INSUFFICIENT_BALANCE': 'ADD_FUNDS',
-      'INVALID_METER_NUMBER': 'CHECK_METER',
-      'INVALID_PROVIDER': 'SELECT_PROVIDER',
-      'INVALID_METER_TYPE': 'SELECT_METER_TYPE',
-      'AMOUNT_TOO_LOW': 'INCREASE_AMOUNT',
-      'AMOUNT_TOO_HIGH': 'REDUCE_AMOUNT',
-      'PENDING_TRANSACTION_EXISTS': 'WAIT_PENDING',
-      'VALIDATION_ERROR': 'FIX_INPUT',
-      'SERVICE_ERROR': 'RETRY_LATER',
-      'PURCHASE_FAILED': 'CONTACT_SUPPORT'
+      SETUP_2FA_REQUIRED: 'SETUP_2FA',
+      SETUP_PIN_REQUIRED: 'SETUP_PIN',
+      INVALID_2FA_CODE: 'RETRY_2FA',
+      INVALID_PASSWORDPIN: 'RETRY_PIN',
+      KYC_LIMIT_EXCEEDED: 'UPGRADE_KYC',
+      INSUFFICIENT_BALANCE: 'ADD_FUNDS',
+      INVALID_METER_NUMBER: 'CHECK_METER',
+      INVALID_PROVIDER: 'SELECT_PROVIDER',
+      INVALID_METER_TYPE: 'SELECT_METER_TYPE',
+      AMOUNT_TOO_LOW: 'INCREASE_AMOUNT',
+      AMOUNT_TOO_HIGH: 'REDUCE_AMOUNT',
+      PENDING_TRANSACTION_EXISTS: 'WAIT_PENDING',
+      VALIDATION_ERROR: 'FIX_INPUT',
+      SERVICE_ERROR: 'RETRY_LATER',
+      PURCHASE_FAILED: 'CONTACT_SUPPORT'
     };
 
     return actionMap[errorCode] || null;
@@ -287,28 +246,28 @@ export const electricityService = {
    */
   getUserFriendlyMessage(errorCode, originalMessage) {
     const friendlyMessages = {
-      'SETUP_2FA_REQUIRED': 'Two-factor authentication is required for transactions. Please set it up in your security settings.',
-      'SETUP_PIN_REQUIRED': 'A password PIN is required for transactions. Please set it up in your security settings.',
-      'INVALID_2FA_CODE': 'The 2FA code you entered is incorrect. Please check your authenticator app and try again.',
-      'INVALID_PASSWORDPIN': 'The password PIN you entered is incorrect. Please try again.',
-      'KYC_LIMIT_EXCEEDED': 'This transaction exceeds your account limit. Please upgrade your verification level.',
-      'INSUFFICIENT_BALANCE': 'You don\'t have enough NGNB balance for this transaction. Please add funds to your account.',
-      'INVALID_METER_NUMBER': 'The meter/account number you entered is invalid. Please check and try again.',
-      'INVALID_PROVIDER': 'Please select a valid electricity provider.',
-      'INVALID_METER_TYPE': 'Please select a valid meter type (Prepaid or Postpaid).',
-      'AMOUNT_TOO_LOW': 'Minimum electricity purchase amount is ₦1,000.',
-      'AMOUNT_TOO_HIGH': 'Maximum electricity purchase amount is ₦100,000.',
-      'PENDING_TRANSACTION_EXISTS': 'You have a pending electricity transaction. Please wait for it to complete.',
-      'VALIDATION_ERROR': 'Please check your input and try again.',
-      'SERVICE_ERROR': 'The electricity service is temporarily unavailable. Please try again later.',
-      'NETWORK_ERROR': 'Network connection failed. Please check your internet connection and try again.',
-      'PURCHASE_FAILED': 'Electricity purchase failed. Please try again.'
+      SETUP_2FA_REQUIRED: 'Two-factor authentication is required for transactions. Please set it up in your security settings.',
+      SETUP_PIN_REQUIRED: 'A password PIN is required for transactions. Please set it up in your security settings.',
+      INVALID_2FA_CODE: 'The 2FA code you entered is incorrect. Please check your authenticator app and try again.',
+      INVALID_PASSWORDPIN: 'The password PIN you entered is incorrect. Please try again.',
+      KYC_LIMIT_EXCEEDED: 'This transaction exceeds your account limit. Please upgrade your verification level.',
+      INSUFFICIENT_BALANCE: "You don't have enough NGNZ balance for this transaction. Please add funds to your account.",
+      INVALID_METER_NUMBER: 'The meter/account number you entered is invalid. Please check and try again.',
+      INVALID_PROVIDER: 'Please select a valid electricity provider.',
+      INVALID_METER_TYPE: 'Please select a valid meter type (Prepaid or Postpaid).',
+      AMOUNT_TOO_LOW: 'Minimum electricity purchase amount is ₦1,000.',
+      AMOUNT_TOO_HIGH: 'Maximum electricity purchase amount is ₦100,000.',
+      PENDING_TRANSACTION_EXISTS: 'You have a pending electricity transaction. Please wait for it to complete.',
+      VALIDATION_ERROR: 'Please check your input and try again.',
+      SERVICE_ERROR: 'The electricity service is temporarily unavailable. Please try again later.',
+      NETWORK_ERROR: 'Network connection failed. Please check your internet connection and try again.',
+      PURCHASE_FAILED: 'Electricity purchase failed. Please try again.'
     };
 
-    // Return friendly message or fall back to original if it's informative
-    return friendlyMessages[errorCode] || 
-           (originalMessage && originalMessage.length > 10 ? originalMessage : 
-            'Something went wrong with your electricity purchase. Please try again.');
+    return (
+      friendlyMessages[errorCode] ||
+      (originalMessage && originalMessage.length > 10 ? originalMessage : 'Something went wrong with your electricity purchase. Please try again.')
+    );
   },
 
   /**
@@ -337,7 +296,7 @@ export const electricityService = {
     if (!data.service_id?.trim()) {
       errors.push('Electricity provider is required');
     } else {
-      const validProviders = this.getElectricityProviders().map(p => p.id);
+      const validProviders = this.getElectricityProviders().map((p) => p.id);
       if (!validProviders.includes(data.service_id.toLowerCase())) {
         errors.push('Please select a valid electricity provider');
       }
@@ -387,7 +346,7 @@ export const electricityService = {
 
     return {
       isValid: errors.length === 0,
-      errors: errors
+      errors
     };
   },
 
@@ -398,13 +357,13 @@ export const electricityService = {
    */
   validateMeterNumber(meterNumber) {
     if (!meterNumber || typeof meterNumber !== 'string') return false;
-    
+
     const cleaned = meterNumber.trim();
-    
+
     // Basic validation: 10-20 characters, alphanumeric
     if (cleaned.length < 10 || cleaned.length > 20) return false;
     if (!/^[a-zA-Z0-9]+$/.test(cleaned)) return false;
-    
+
     return true;
   },
 
@@ -415,9 +374,9 @@ export const electricityService = {
    */
   formatMeterNumber(meterNumber) {
     if (!meterNumber) return '';
-    
+
     const cleaned = meterNumber.toString().trim().replace(/[^a-zA-Z0-9]/g, '');
-    
+
     // Add spaces every 4 characters for readability
     return cleaned.replace(/(.{4})/g, '$1 ').trim();
   },
@@ -429,10 +388,10 @@ export const electricityService = {
    */
   getProviderDisplayName(providerId) {
     const provider = this.getElectricityProviders().find(
-      p => p.id.toLowerCase() === providerId?.toLowerCase()
+      (p) => p.id.toLowerCase() === providerId?.toLowerCase()
     );
-    
-    return provider?.name || (providerId || 'Unknown Provider');
+
+    return provider?.name || providerId || 'Unknown Provider';
   },
 
   /**
@@ -442,9 +401,9 @@ export const electricityService = {
    */
   getProviderRegion(providerId) {
     const provider = this.getElectricityProviders().find(
-      p => p.id.toLowerCase() === providerId?.toLowerCase()
+      (p) => p.id.toLowerCase() === providerId?.toLowerCase()
     );
-    
+
     return provider?.region || '';
   },
 
@@ -455,10 +414,10 @@ export const electricityService = {
    */
   getMeterTypeDisplayName(meterTypeId) {
     const meterType = this.getMeterTypes().find(
-      t => t.id.toLowerCase() === meterTypeId?.toLowerCase()
+      (t) => t.id.toLowerCase() === meterTypeId?.toLowerCase()
     );
-    
-    return meterType?.name || (meterTypeId || 'Unknown');
+
+    return meterType?.name || meterTypeId || 'Unknown';
   },
 
   /**
@@ -469,7 +428,7 @@ export const electricityService = {
   formatAmount(amount) {
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount)) return '₦0.00';
-    
+
     return `₦${numAmount.toLocaleString('en-NG', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
@@ -484,7 +443,7 @@ export const electricityService = {
     return {
       minimum: 1000,
       maximum: 100000,
-      currency: 'NGNB',
+      currency: 'NGNZ',
       formattedMinimum: this.formatAmount(1000),
       formattedMaximum: this.formatAmount(100000)
     };
@@ -512,10 +471,10 @@ export const electricityService = {
    */
   formatElectricityUnits(units) {
     if (!units) return '';
-    
+
     const numUnits = parseFloat(units);
     if (isNaN(numUnits)) return units.toString();
-    
+
     return `${numUnits.toFixed(2)} kWh`;
   },
 
@@ -526,9 +485,9 @@ export const electricityService = {
    */
   formatElectricityToken(token) {
     if (!token) return '';
-    
+
     const cleaned = token.toString().replace(/[^0-9]/g, '');
-    
+
     // Format as groups of 4 digits
     return cleaned.replace(/(.{4})/g, '$1 ').trim();
   }

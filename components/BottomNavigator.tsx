@@ -145,7 +145,7 @@ const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({ activeTab }) =>
     { id: 'giftcard',  label: 'Giftcard', icon: giftcardIcon, route: '/user/Giftcard' },
     { id: 'swap',      label: 'Buy/Sell', icon: tradeIcon,    route: '../user/Swap' },
     { id: 'wallet',  label: 'Wallet', icon: activityIcon, route: '../user/wallet' },
-    { id: 'profile',   label: 'Profile',  icon: profileIcon,  route: '/user/come-soon' },
+    { id: 'profile',   label: 'Profile',  icon: profileIcon,  route: '/user/profile' },
   ];
 
   const getCurrentTab = (): string => {

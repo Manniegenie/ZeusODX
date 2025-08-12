@@ -15,9 +15,12 @@ import {
 import { useRouter } from 'expo-router';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import BettingProviderSelectionModal from '../../components/BettingProviderModal';
+import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
+import BettingConfirmationModal from '../../components/BettingConfirmation';
+import PinEntryModal from '../../components/PinEntry';
+import TwoFactorAuthModal from '../../components/2FA';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
-import { useDashboard } from '../../hooks/useDashboard';
 import { useBetting } from '../../hooks/useBetting';
 import { useCustomer } from '../../hooks/useCustomer';
 
@@ -29,7 +32,6 @@ interface BettingProvider {
 
 const BettingScreen: React.FC = () => {
   const router = useRouter();
-  const { dailyLimit } = useDashboard();
   const { loading, fundBettingAccount, clearErrors, getErrorAction } = useBetting();
   const { 
     verifyBettingCustomer, 
@@ -48,10 +50,17 @@ const BettingScreen: React.FC = () => {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState<string>('');
   const [showProviderModal, setShowProviderModal] = useState<boolean>(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState<boolean>(false);
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [showErrorDisplay, setShowErrorDisplay] = useState<boolean>(false);
   const [errorDisplayData, setErrorDisplayData] = useState<any>(null);
+  const [showPinModal, setShowPinModal] = useState<boolean>(false);
+  const [showTwoFactorModal, setShowTwoFactorModal] = useState<boolean>(false);
+  
+  const [passwordPin, setPasswordPin] = useState<string>('');
+  const [twoFactorCode, setTwoFactorCode] = useState<string>('');
 
-  const predefinedAmounts = [500, 1000, 2000, 5000, 10000, 20000];
+  const predefinedAmounts = [1000, 2000, 5000, 10000, 20000];
 
   const handleGoBack = (): void => router.back();
   const handleHistoryPress = (): void => router.push('/history');
@@ -60,12 +69,12 @@ const BettingScreen: React.FC = () => {
     setErrorDisplayData(errorData);
     setShowErrorDisplay(true);
   };
+
   const hideErrorDisplay = (): void => {
     setShowErrorDisplay(false);
     setErrorDisplayData(null);
   };
 
-  /** Normalize provider ID casing for backend */
   const normalizeProviderId = (id: string): string => {
     const validProviders = [
       '1xBet', 'BangBet', 'Bet9ja', 'BetKing', 'BetLand', 'BetLion',
@@ -131,15 +140,18 @@ const BettingScreen: React.FC = () => {
   };
 
   const handleProviderSelect = (provider: BettingProvider): void => setSelectedProvider(provider);
+  
   const handleAmountSelect = (amount: number): void => {
     setSelectedAmount(amount);
     setCustomAmount(amount.toString());
   };
+  
   const handleCustomAmountChange = (value: string): void => {
     const numericValue = value.replace(/[^0-9.]/g, '');
     setCustomAmount(numericValue);
     if (numericValue.trim()) setSelectedAmount(null);
   };
+  
   const handleUserIdChange = (value: string): void => {
     setUserId(value);
     if (customerData) {
@@ -180,58 +192,78 @@ const BettingScreen: React.FC = () => {
       });
       return false;
     }
-    const currentAmount = getCurrentAmount();
-    if (currentAmount < 500) {
-      showErrorMessage({
-        type: 'validation',
-        title: 'Amount Too Low',
-        message: `Minimum amount is ₦500.00`,
-        autoHide: true,
-        duration: 3000
-      });
-      return false;
-    }
-    if (currentAmount > dailyLimit) {
-      showErrorMessage({
-        type: 'limit',
-        title: 'Daily Limit Exceeded',
-        message: `This amount exceeds your daily limit of ₦${dailyLimit.toLocaleString()}`,
-        autoHide: true,
-        duration: 4000
-      });
-      return false;
-    }
     return true;
   };
 
-  const handleContinue = async (): Promise<void> => {
+  const handleContinue = (): void => {
     if (!validateForm()) return;
+    setShowConfirmationModal(true);
+  };
+
+  const handleConfirmationModalClose = (): void => {
+    setShowConfirmationModal(false);
+  };
+
+  const handleConfirmPurchase = (): void => {
+    setShowConfirmationModal(false);
+    setShowPinModal(true);
+  };
+
+  const handlePinSubmit = (pin: string): void => {
+    setPasswordPin(pin);
+    setShowPinModal(false);
+    setShowTwoFactorModal(true);
+  };
+
+  const handlePinModalClose = (): void => {
+    setShowPinModal(false);
+    setPasswordPin('');
+    setShowConfirmationModal(true);
+  };
+
+  const handleTwoFactorSubmit = async (code: string): Promise<void> => {
+    setTwoFactorCode(code);
+    
     try {
       const fundingData = {
         userId: userId,
-        service_id: normalizeProviderId(selectedProvider.id),
+        service_id: normalizeProviderId(selectedProvider!.id),
         amount: getCurrentAmount(),
-        passwordpin: '',
-        twoFactorCode: ''
+        passwordpin: passwordPin,
+        twoFactorCode: code
       };
+      
       const result = await fundBettingAccount(fundingData);
       if (result.success) {
-        Alert.alert(
-          'Success!',
-          `Betting wallet funded successfully with ₦${getCurrentAmount().toLocaleString()}`,
-          [{ text: 'OK', onPress: () => router.back() }]
-        );
+        setShowTwoFactorModal(false);
+        setShowPinModal(false);
+        setPasswordPin('');
+        setTwoFactorCode('');
+        setShowSuccessModal(true);
       } else {
+        setShowTwoFactorModal(false);
+        
         const errorAction = getErrorAction?.(result.requiresAction);
-        showErrorMessage({
-          type: 'server',
-          title: errorAction?.title || 'Funding Failed',
-          message: errorAction?.message || result.message || 'Something went wrong. Please try again.',
-          autoHide: !errorAction,
-          duration: errorAction ? undefined : 4000
-        });
+        if (errorAction) {
+          showErrorMessage({
+            type: 'server',
+            title: errorAction.title,
+            message: errorAction.message,
+            autoHide: false,
+            duration: undefined
+          });
+        } else {
+          showErrorMessage({
+            type: 'server',
+            title: 'Funding Failed',
+            message: result.message || 'Something went wrong. Please try again.',
+            autoHide: true,
+            duration: 4000
+          });
+        }
       }
     } catch (error) {
+      setShowTwoFactorModal(false);
       showErrorMessage({
         type: 'server',
         title: 'Unexpected Error',
@@ -242,10 +274,20 @@ const BettingScreen: React.FC = () => {
     }
   };
 
+  const handleTwoFactorModalClose = (): void => {
+    setShowTwoFactorModal(false);
+    setTwoFactorCode('');
+    setShowPinModal(true);
+  };
+
+  const handleSuccessModalClose = (): void => {
+    setShowSuccessModal(false);
+  };
+
   const isFormValid: boolean = !!(
     selectedProvider && 
     userId.trim() &&
-    getCurrentAmount() >= 500 &&
+    getCurrentAmount() > 0 &&
     customerData
   );
 
@@ -257,7 +299,6 @@ const BettingScreen: React.FC = () => {
           <ErrorDisplay {...errorDisplayData} onDismiss={hideErrorDisplay} />
         )}
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          {/* HEADER */}
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
               <TouchableOpacity style={styles.backButton} onPress={handleGoBack} activeOpacity={0.7}>
@@ -270,7 +311,6 @@ const BettingScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Provider Selection */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Select Betting provider</Text>
             <TouchableOpacity
@@ -295,7 +335,6 @@ const BettingScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {/* User ID */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>User ID</Text>
             <View style={styles.userIdInputContainer}>
@@ -325,7 +364,6 @@ const BettingScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Account Name */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account Name</Text>
             <View style={styles.inputContainer}>
@@ -339,7 +377,6 @@ const BettingScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Amount Options */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Select amount</Text>
             <View style={styles.amountGrid}>
@@ -358,7 +395,6 @@ const BettingScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Custom Amount */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Amount</Text>
             <View style={styles.inputContainer}>
@@ -371,33 +407,65 @@ const BettingScreen: React.FC = () => {
                 keyboardType="numeric"
               />
             </View>
-            <Text style={styles.helperText}>Minimum amount - ₦500.00</Text>
           </View>
         </ScrollView>
 
-        {/* Continue Button */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.continueButton, !isFormValid && styles.continueButtonDisabled]}
             onPress={handleContinue}
-            disabled={!isFormValid || loading}
+            disabled={!isFormValid}
             activeOpacity={0.8}
           >
-            {loading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.continueButtonText}>Continue</Text>
-            )}
+            <Text style={styles.continueButtonText}>Continue</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
 
-      {/* Provider Modal */}
       <BettingProviderSelectionModal
         visible={showProviderModal}
         onClose={() => setShowProviderModal(false)}
         onSelectProvider={handleProviderSelect}
         selectedProvider={selectedProvider}
+      />
+
+      <BettingConfirmationModal
+        visible={showConfirmationModal}
+        onClose={handleConfirmationModalClose}
+        onConfirm={handleConfirmPurchase}
+        loading={loading}
+        provider={selectedProvider}
+        userId={userId}
+        customerData={customerData}
+        amount={getCurrentAmount()}
+      />
+
+      <PinEntryModal
+        visible={showPinModal}
+        onClose={handlePinModalClose}
+        onSubmit={handlePinSubmit}
+        loading={false}
+        title="Enter Password PIN"
+        subtitle="Please enter your 6-digit password PIN to continue"
+      />
+
+      <TwoFactorAuthModal
+        visible={showTwoFactorModal}
+        onClose={handleTwoFactorModalClose}
+        onSubmit={handleTwoFactorSubmit}
+        loading={loading}
+        title="Two-Factor Authentication"
+        subtitle="Please enter the 6-digit code from your authenticator app"
+      />
+
+      <UtilityPurchaseSuccessModal
+        visible={showSuccessModal}
+        utilityType="Betting"
+        amount={`₦${getCurrentAmount().toLocaleString()}`}
+        phoneNumber={userId}
+        network={selectedProvider?.name || ''}
+        onContinue={handleSuccessModalClose}
+        additionalInfo="Account funded successfully"
       />
     </View>
   );
