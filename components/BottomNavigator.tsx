@@ -145,7 +145,7 @@ const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({ activeTab }) =>
     { id: 'giftcard',  label: 'Giftcard', icon: giftcardIcon, route: '/user/Giftcard' },
     { id: 'swap',      label: 'Buy/Sell', icon: tradeIcon,    route: '../user/Swap' },
     { id: 'wallet',  label: 'Wallet', icon: activityIcon, route: '../user/wallet' },
-    { id: 'profile',   label: 'Profile',  icon: profileIcon,  route: '/user/profile' },
+    { id: 'profile',   label: 'Profile',  icon: profileIcon,  route: '/profile/profile' },
   ];
 
   const getCurrentTab = (): string => {
@@ -217,7 +217,7 @@ const styles = StyleSheet.create<Styles>({
     justifyContent: 'space-around',
     alignItems: 'center',
     paddingHorizontal: Layout.spacing.md,
-    height: 56,
+    height: 40,
   },
   tabItem: {
     flex: 1,

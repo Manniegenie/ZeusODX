@@ -1,5 +1,4 @@
-// app/wallet-screens/bnb-wallet.tsx
-
+// app/wallet-screens/bnb-wallet.tsx - Updated to match SolanaWalletScreen styling
 import React, { useCallback, useState, useEffect } from 'react';
 import {
   View,
@@ -11,7 +10,8 @@ import {
   StatusBar,
   ScrollView,
   RefreshControl,
-  ActivityIndicator
+  ActivityIndicator,
+  ImageBackground
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
@@ -20,13 +20,16 @@ import NetworkSelectionModal from '../../components/Network';
 import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
+import { Layout } from '../../constants/Layout';
 import { useBalance } from '../../hooks/useWallet';
+import { useHistory } from '../../hooks/useHistory';
 
 import bnbIcon from '../../components/icons/bnb-icon.png';
 import transferIcon from '../../components/icons/transfer-icon.png';
 import swapIcon from '../../components/icons/swap-icon.png';
 import depositIcon from '../../components/icons/deposit-icon.png';
 import emptyStateIcon from '../../components/icons/empty-state.png';
+import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
 
 const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const router = useRouter();
@@ -45,6 +48,13 @@ const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     refreshBalances
   } = useBalance();
 
+  const {
+    transactions,
+    loading: transactionsLoading,
+    hasTransactions,
+    refreshTransactions
+  } = useHistory('BNB', { defaultPageSize: 5 });
+
   useEffect(() => {
     if (openNetworkModal === 'true') {
       setShowNetworkModal(true);
@@ -54,8 +64,8 @@ const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const handleGoBack = () => router.back();
 
   const onRefresh = useCallback(async () => {
-    await refreshBalances();
-  }, [refreshBalances]);
+    await Promise.all([refreshBalances(), refreshTransactions()]);
+  }, [refreshBalances, refreshTransactions]);
 
   const handleNetworkSelect = (network) => {
     if (network.id === 'ethereum') {
@@ -95,6 +105,87 @@ const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     setShowTransferMethodModal(false);
   };
 
+  const handleViewAllTransactions = () => {
+    router.push({
+      pathname: '/user/transactionhistory',
+      params: {
+        currency: 'BNB',
+        tokenName: 'BNB',
+        tokenSymbol: 'BNB'
+      }
+    });
+  };
+
+  const getTransactionPrefix = (type, formattedAmount) => {
+    if (type === 'DEPOSIT') return '+';
+    if (type === 'WITHDRAWAL') return '-';
+    if (type === 'SWAP') {
+      if (formattedAmount && formattedAmount.startsWith('+-')) return '-';
+      if (formattedAmount && formattedAmount.startsWith('+')) return '+';
+      if (formattedAmount && formattedAmount.startsWith('-')) return '-';
+      return '';
+    }
+    return '';
+  };
+
+  const getStatusColor = (status) => {
+    if (status === 'SUCCESSFUL') return '#10B981';
+    if (status === 'FAILED') return '#EF4444';
+    return '#F59E0B';
+  };
+
+  const getStatusBackgroundColor = (status) => {
+    if (status === 'SUCCESSFUL') return '#E8F5E8';
+    if (status === 'FAILED') return '#FFE8E8';
+    return '#FFF3E0';
+  };
+
+  const formatTransactionType = (type) => {
+    switch (type) {
+      case 'DEPOSIT': return 'Deposit';
+      case 'WITHDRAWAL': return 'Withdrawal';
+      case 'SWAP': return 'Swap';
+      default: return type || 'Unknown';
+    }
+  };
+
+  const formatTransactionStatus = (status) => {
+    switch (status) {
+      case 'SUCCESSFUL': return 'Successful';
+      case 'FAILED': return 'Failed';
+      case 'PENDING': return 'Pending';
+      default: return status || 'Unknown';
+    }
+  };
+
+  const formatAmountForDisplay = (value, symbol) => {
+    if (!symbol) return value.toString();
+    switch (symbol) {
+      case 'NGNZ':
+        return value.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      case 'BTC':
+        return Number(value.toFixed(8)).toString();
+      case 'ETH':
+        return Number(value.toFixed(6)).toString();
+      case 'USDT':
+      case 'USDC':
+        return value.toFixed(2);
+      default:
+        if (value >= 1000) return value.toFixed(2);
+        if (value >= 1) return Number(value.toFixed(4)).toString();
+        if (value >= 0.01) return Number(value.toFixed(4)).toString();
+        if (value >= 0.001) return Number(value.toFixed(6)).toString();
+        return Number(value.toPrecision(3)).toString();
+    }
+  };
+
+  const extractAmountValue = (transaction) => {
+    const amountString = transaction.formattedAmount || '0';
+    const cleanAmount = amountString.replace(/[+\-₦,\s]/g, '').replace(/[A-Z]/g, '').trim();
+    const numericValue = parseFloat(cleanAmount) || 0;
+    return numericValue;
+  };
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -105,7 +196,7 @@ const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={loading}
+              refreshing={loading || transactionsLoading}
               onRefresh={onRefresh}
               colors={[Colors.primary]}
               tintColor={Colors.primary}
@@ -128,19 +219,28 @@ const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
             </View>
           </View>
 
-          {/* Balance */}
+          {/* Updated Balance Section with Portfolio Style */}
           <View style={styles.balanceSection}>
             <View style={styles.balanceCard}>
-              {loading && !bnbBalance ? (
-                <ActivityIndicator size="small" color={Colors.primary} />
-              ) : error ? (
-                <Text style={styles.errorText}>Unable to load balance</Text>
-              ) : (
-                <>
-                  <Text style={styles.balanceAmount}>BNB {formattedBnbBalance || '0.00000000'}</Text>
-                  <Text style={styles.balanceUsd}>{formattedBnbBalanceUSD || '$0.00'}</Text>
-                </>
-              )}
+              <ImageBackground
+                source={portfolioBg}
+                style={styles.balanceBackground}
+                imageStyle={styles.balanceBackgroundImage}
+              >
+                <View style={styles.balanceContent}>
+                  {loading && !bnbBalance ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : error ? (
+                    <Text style={styles.errorText}>Unable to load balance</Text>
+                  ) : (
+                    <>
+                      <Text style={styles.balanceLabel}></Text>
+                      <Text style={styles.balanceAmount}>BNB {formattedBnbBalance || '0.00000000'}</Text>
+                      <Text style={styles.balanceUsd}>{formattedBnbBalanceUSD || '$0.00'}</Text>
+                    </>
+                  )}
+                </View>
+              </ImageBackground>
             </View>
           </View>
 
@@ -168,11 +268,49 @@ const BnbWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
           {/* History */}
           <View style={styles.recentHistorySection}>
-            <Text style={styles.recentHistoryTitle}>Recent History</Text>
-            <View style={styles.emptyState}>
-              <Image source={emptyStateIcon} style={styles.emptyStateImage} />
-              <Text style={styles.emptyText}>No transaction yet</Text>
+            <View style={styles.recentHistoryHeader}>
+              <Text style={styles.recentHistoryTitle}>Recent History</Text>
+              <TouchableOpacity onPress={handleViewAllTransactions}>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
             </View>
+            {!hasTransactions && !transactionsLoading ? (
+              <View style={styles.emptyState}>
+                <Image source={emptyStateIcon} style={styles.emptyStateImage} />
+                <Text style={styles.emptyText}>No transaction yet</Text>
+              </View>
+            ) : (
+              <View style={styles.transactionsList}>
+                {transactions.slice(0, 5).map((transaction, index) => {
+                  const amountValue = extractAmountValue(transaction);
+                  const formattedAmount = formatAmountForDisplay(amountValue, transaction.currency);
+                  const prefix = getTransactionPrefix(transaction.type, transaction.formattedAmount);
+
+                  return (
+                    <View key={transaction.id || index} style={styles.transactionItem}>
+                      <View style={styles.transactionLeft}>
+                        <Text style={styles.transactionType}>
+                          {formatTransactionType(transaction.type)}
+                        </Text>
+                        <Text style={styles.transactionDate}>
+                          {transaction.formattedDate || 'N/A'}
+                        </Text>
+                      </View>
+                      <View style={styles.transactionRight}>
+                        <Text style={styles.transactionAmount}>
+                          {prefix}{formattedAmount} {transaction.currency}
+                        </Text>
+                        <View style={[styles.statusContainer, { backgroundColor: getStatusBackgroundColor(transaction.status) }]}>
+                          <Text style={[styles.transactionStatus, { color: getStatusColor(transaction.status) }]}>
+                            {formatTransactionStatus(transaction.status)}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -214,22 +352,145 @@ const styles = StyleSheet.create({
   iconWrapper: { width: 28, height: 28, borderRadius: 14, overflow: 'hidden' },
   iconImage: { width: 28, height: 28, resizeMode: 'cover' },
   headerTitle: { fontSize: 16, fontWeight: '600', color: Colors.text.primary },
-  balanceSection: { paddingHorizontal: 16, paddingVertical: 12 },
-  balanceCard: { height: 120, justifyContent: 'center', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#ddd' },
-  balanceAmount: { fontSize: 24, fontWeight: '500', color: Colors.primary },
-  balanceUsd: { fontSize: 14, color: Colors.primary },
-  quickActionsSection: { paddingHorizontal: 16, paddingVertical: 12 },
+
+  // Updated Balance Section Styles (Portfolio Style)
+  balanceSection: { 
+    paddingHorizontal: 16,
+    paddingBottom: 16
+  },
+  balanceCard: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: '#DDDDDD',
+  },
+  balanceBackground: { 
+    height: 120, 
+    justifyContent: 'center', 
+    backgroundColor: '#4A3FAD' 
+  },
+  balanceBackgroundImage: { 
+    borderRadius: 12 
+  },
+  balanceContent: { 
+    padding: 16, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '100%' 
+  },
+  balanceLabel: { 
+    fontFamily: Typography.regular, 
+    fontSize: 14, 
+    color: Colors.surface, 
+    marginBottom: 8, 
+    textAlign: 'center' 
+  },
+  balanceAmount: { 
+    fontFamily: Typography.medium, 
+    fontSize: 24, 
+    color: Colors.surface, 
+    fontWeight: '500', 
+    textAlign: 'center',
+    marginBottom: 4
+  },
+  balanceUsd: { 
+    fontFamily: Typography.regular,
+    fontSize: 14, 
+    color: Colors.surface,
+    textAlign: 'center'
+  },
+  errorText: { 
+    color: Colors.surface,
+    fontSize: 14,
+    textAlign: 'center'
+  },
+
+  // Updated section padding for consistent alignment
+  quickActionsSection: { 
+    paddingHorizontal: 16, 
+    paddingVertical: 16 
+  },
   quickActionsTitle: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
   quickActionsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   actionItem: { alignItems: 'center', flex: 1 },
   actionIconImage: { width: 44, height: 44, resizeMode: 'cover' },
   actionLabel: { fontSize: 10, color: '#292d32', marginTop: 4 },
-  recentHistorySection: { padding: 16 },
-  recentHistoryTitle: { fontSize: 14, fontWeight: '600' },
+  recentHistorySection: { 
+    paddingHorizontal: Layout.spacing.lg, 
+    paddingBottom: Layout.spacing.xl 
+  },
+  recentHistoryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Layout.spacing.lg },
+  recentHistoryTitle: { 
+    fontFamily: Typography.medium,
+    fontSize: 14, 
+    fontWeight: '600',
+    color: Colors.text.primary
+  },
+  viewAllText: { 
+    fontFamily: Typography.medium,
+    fontSize: 14, 
+    fontWeight: 'bold', 
+    color: '#35297F' 
+  },
   emptyState: { alignItems: 'center', marginTop: 16 },
   emptyStateImage: { width: 160, height: 156 },
   emptyText: { fontSize: 12, color: Colors.text.secondary },
-  errorText: { color: Colors.text.secondary },
+  transactionsList: { 
+    flex: 1
+  },
+  
+  // Updated transaction item styles to match TokensSection formatting
+  transactionItem: { 
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Layout.spacing.lg,
+    paddingHorizontal: Layout.spacing.lg,
+    backgroundColor: '#F0EFFF',
+    marginBottom: Layout.spacing.sm,
+    borderRadius: Layout.borderRadius.md,
+    minHeight: 64,
+  },
+  transactionLeft: { 
+    flex: 1,
+    justifyContent: 'center'
+  },
+  transactionType: { 
+    fontFamily: Typography.medium,
+    fontSize: 14, 
+    color: Colors.text.primary, 
+    fontWeight: '600',
+    marginBottom: 3 
+  },
+  transactionDate: { 
+    fontFamily: Typography.regular,
+    fontSize: 12, 
+    color: Colors.text.secondary 
+  },
+  transactionRight: { 
+    alignItems: 'flex-end',
+    justifyContent: 'center'
+  },
+  transactionAmount: { 
+    fontFamily: Typography.medium,
+    fontSize: 13, 
+    color: Colors.text.primary,
+    fontWeight: '600',
+    marginBottom: 4
+  },
+  statusContainer: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 50,
+  },
+  transactionStatus: { 
+    fontFamily: Typography.medium,
+    fontSize: 12, 
+    fontWeight: '600' 
+  },
 });
 
 export default BnbWalletScreen;

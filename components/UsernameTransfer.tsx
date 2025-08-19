@@ -277,7 +277,10 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
   useEffect(() => {
     if (transferResult) {
       setShowTwoFactorModal(false);
-      setShowSuccess(true);
+      // Small delay to ensure proper modal transition on Android
+      setTimeout(() => {
+        setShowSuccess(true);
+      }, 100);
     }
   }, [transferResult]);
 
@@ -490,7 +493,15 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
   // Loading
   if (loading) {
     return (
-      <Modal visible={visible} transparent statusBarTranslucent onRequestClose={handleClose}>
+      <Modal 
+        visible={visible} 
+        transparent 
+        statusBarTranslucent 
+        animationType="none"
+        presentationStyle="overFullScreen"
+        hardwareAccelerated={true}
+        onRequestClose={handleClose}
+      >
         <View style={styles.overlay}>
           <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
           <Animated.View style={[styles.bottomSheet, { transform: [{ translateY }] }]}>
@@ -507,7 +518,15 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
   // Error
   if (error) {
     return (
-      <Modal visible={visible} transparent statusBarTranslucent onRequestClose={handleClose}>
+      <Modal 
+        visible={visible} 
+        transparent 
+        statusBarTranslucent 
+        animationType="none"
+        presentationStyle="overFullScreen"
+        hardwareAccelerated={true}
+        onRequestClose={handleClose}
+      >
         <View style={styles.overlay}>
           <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
           <Animated.View style={[styles.bottomSheet, { transform: [{ translateY }] }]}>
@@ -541,51 +560,69 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
         />
       )}
 
-      {/* PIN */}
-      {showPinModal && (
-        <PinEntryModal
-          visible={showPinModal}
-          onClose={handlePinModalClose}
-          onSubmit={handlePinSubmit}
-          loading={false}
-          title="Enter Password PIN"
-          subtitle="Please enter your 6-digit password PIN to continue"
-        />
-      )}
+      {/* PIN Modal */}
+      <PinEntryModal
+        visible={showPinModal}
+        onClose={handlePinModalClose}
+        onSubmit={handlePinSubmit}
+        loading={false}
+        title="Enter Password PIN"
+        subtitle="Please enter your 6-digit password PIN to continue"
+      />
 
-      {/* 2FA */}
-      {showTwoFactorModal && (
-        <TwoFactorAuthModal
-          visible={showTwoFactorModal}
-          onClose={handleTwoFactorModalClose}
-          onSubmit={handleTwoFactorSubmit}
-          loading={isTransferring}
-          title="Two-Factor Authentication"
-          subtitle="Please enter the 6-digit code from your authenticator app"
-        />
-      )}
+      {/* 2FA Modal */}
+      <TwoFactorAuthModal
+        visible={showTwoFactorModal}
+        onClose={handleTwoFactorModalClose}
+        onSubmit={handleTwoFactorSubmit}
+        loading={isTransferring}
+        title="Two-Factor Authentication"
+        subtitle="Please enter the 6-digit code from your authenticator app"
+      />
 
       {/* Success Modal */}
       {showSuccess && transferResult && (
-        <TransferSuccessModal
+        <Modal
           visible={showSuccess}
-          onContinue={() => {
+          transparent
+          statusBarTranslucent
+          animationType="fade"
+          presentationStyle="overFullScreen"
+          hardwareAccelerated={true}
+          onRequestClose={() => {
             setShowSuccess(false);
             clearResult();
             handleClose();
           }}
-          amount={transferResult.amount}
-          currency={transferResult.currency}
-          recipientUsername={transferResult.recipient?.username || selectedUser?.username || ''}
-          transactionRef={transferResult.reference || transferResult.transactionRef}
-          transferDate={transferResult.createdAt || transferResult.date}
-          transferType="Username Transfer"
-        />
+        >
+          <TransferSuccessModal
+            visible={showSuccess}
+            onContinue={() => {
+              setShowSuccess(false);
+              clearResult();
+              handleClose();
+            }}
+            amount={transferResult.amount}
+            currency={transferResult.currency}
+            recipientUsername={transferResult.recipient?.username || selectedUser?.username || ''}
+            transactionRef={transferResult.reference || transferResult.transactionRef}
+            transferDate={transferResult.createdAt || transferResult.date}
+            transferType="Username Transfer"
+          />
+        </Modal>
       )}
 
       {/* Main Modal */}
-      {!showPinModal && !showTwoFactorModal && (
-        <Modal visible={visible} transparent statusBarTranslucent onRequestClose={handleClose}>
+      {!showPinModal && !showTwoFactorModal && !showSuccess && (
+        <Modal 
+          visible={visible} 
+          transparent 
+          statusBarTranslucent 
+          animationType="none"
+          presentationStyle="overFullScreen"
+          hardwareAccelerated={true}
+          onRequestClose={handleClose}
+        >
           <View style={styles.overlay}>
             <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
             <Animated.View style={[styles.bottomSheet, { transform: [{ translateY }] }]} {...panResponder.panHandlers}>
@@ -692,9 +729,32 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
 };
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },
-  backdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  bottomSheet: { backgroundColor: Colors.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, minHeight: BOTTOM_SHEET_MIN_HEIGHT, maxHeight: BOTTOM_SHEET_MAX_HEIGHT, paddingTop: 8 },
+  overlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', 
+    justifyContent: 'flex-end',
+    zIndex: 1000,
+    elevation: 1000,
+  },
+  backdrop: { 
+    position: 'absolute', 
+    top: 0, 
+    left: 0, 
+    right: 0, 
+    bottom: 0,
+    zIndex: 1001,
+    elevation: 1001,
+  },
+  bottomSheet: { 
+    backgroundColor: Colors.background, 
+    borderTopLeftRadius: 20, 
+    borderTopRightRadius: 20, 
+    minHeight: BOTTOM_SHEET_MIN_HEIGHT, 
+    maxHeight: BOTTOM_SHEET_MAX_HEIGHT, 
+    paddingTop: 8,
+    zIndex: 1002,
+    elevation: 1002,
+  },
   dragHandle: { width: 40, height: 4, backgroundColor: '#D1D5DB', borderRadius: 2, alignSelf: 'center', marginBottom: 8 },
   scrollView: { flex: 1 },
   headerSection: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Layout.spacing.md, paddingTop: Layout.spacing.sm, paddingBottom: Layout.spacing.lg },
@@ -737,5 +797,6 @@ const styles = StyleSheet.create({
   retryButton: { backgroundColor: Colors.primary, borderRadius: Layout.borderRadius.md, paddingVertical: Layout.spacing.sm, paddingHorizontal: Layout.spacing.lg },
   retryButtonText: { fontFamily: Typography.medium, fontSize: 14, color: Colors.surface, fontWeight: '600' },
 });
+
 
 export default TransferBottomSheet;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'expo-router';
 import { 
   View, 
   Text, 
@@ -16,7 +17,7 @@ const bellIcon = require('../../components/icons/bell-icon.png');
 const activityIcon = require('../../components/icons/activity-icon.png');
 
 interface DashboardHeaderProps {
-  onNotificationPress: () => void;
+  onNotificationPress?: () => void;
   onActivityPress?: () => void;
 }
 
@@ -24,6 +25,7 @@ export default function DashboardHeader({
   onNotificationPress,
   onActivityPress
 }: DashboardHeaderProps) {
+  const router = useRouter();
   const [username, setUsername] = useState<string>('');
 
   useEffect(() => {
@@ -42,7 +44,11 @@ export default function DashboardHeader({
   };
 
   const handleActivityPress = () => {
-    onActivityPress?.();
+    router.push('/user/generalhistory');
+  };
+
+  const handleNotificationPress = () => {
+    router.push('/user/notificationpage');
   };
 
   return (
@@ -66,7 +72,7 @@ export default function DashboardHeader({
             <Image source={activityIcon} style={styles.activityIcon} />
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.iconButton} onPress={onNotificationPress}>
+          <TouchableOpacity style={styles.iconButton} onPress={handleNotificationPress}>
             <Image source={bellIcon} style={styles.bellIcon} />
           </TouchableOpacity>
         </View>

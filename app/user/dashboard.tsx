@@ -1,8 +1,7 @@
 // app/user/DashboardScreen.tsx
 import { useRouter } from 'expo-router';
 import React, { useState, useCallback } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, View, RefreshControl, TouchableOpacity, Text } from 'react-native';
-import { useZendesk } from 'react-native-zendesk-unified';
+import { SafeAreaView, ScrollView, StyleSheet, View, RefreshControl } from 'react-native';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import SelectTokenModal, { WalletOption } from '../../components/SelectToken';
 import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
@@ -16,7 +15,8 @@ import TokensSection from './TokensSection';
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const zendesk = useZendesk(); // ← Add Zendesk hook
+  
+  // State management
   const [activeTab, setActiveTab] = useState('All tokens');
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
@@ -25,24 +25,16 @@ export default function DashboardScreen() {
   const [selectedToken, setSelectedToken] = useState<WalletOption | null>(null);
   const [balanceVisible, setBalanceVisible] = useState(true);
 
+  // Dashboard data
   const { refreshDashboard, loading, kyc } = useDashboard();
 
-  // ← Add Zendesk support function
-  const handleSupportPress = async () => {
-    try {
-      await zendesk.openHelpCenter();
-    } catch (error) {
-      console.log('Error opening support:', error);
-      // Fallback: could navigate to a contact screen
-      // router.push('/user/contact-support');
-    }
-  };
-
+  // KYC initiation handler
   const handleKYCInitiate = async (level: number, documentType: string) => {
     console.log(`🚀 KYC Level ${level} with ${documentType} - Navigation to KYC flow`);
     router.push('/user/kyc-flow');
   };
 
+  // Quick link navigation handler
   const handleQuickLinkPress = (link: any) => {
     if (link.id === 'deposit') {
       setShowWalletModal(true);
@@ -53,11 +45,13 @@ export default function DashboardScreen() {
     }
   };
 
+  // Token selection for transfer
   const handleSelectTokenForTransfer = (token: WalletOption) => {
     setSelectedToken(token);
     setShowTransferMethodModal(true);
   };
 
+  // Transfer method selection handler
   const handleTransferMethodSelect = (method: TransferMethod) => {
     if (!selectedToken) return;
 
@@ -86,11 +80,13 @@ export default function DashboardScreen() {
     setSelectedToken(null);
   };
 
+  // Close transfer method modal
   const handleCloseTransferMethodModal = () => {
     setShowTransferMethodModal(false);
     setSelectedToken(null);
   };
 
+  // Pull to refresh handler
   const onRefresh = useCallback(async () => {
     try {
       await refreshDashboard();
@@ -102,11 +98,13 @@ export default function DashboardScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        {/* Header */}
         <DashboardHeader
-          onNotificationPress={() => router.push('/user/come-soon')}
-          onSetupPress={() => router.push('/user/settings')}
+          onNotificationPress={() => router.push('/user/notificationpage')}
+          onSetupPress={() => router.push('/kyc/kyc-upgrade')}
         />
 
+        {/* Main Content */}
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -123,6 +121,7 @@ export default function DashboardScreen() {
             />
           }
         >
+          {/* Portfolio Section */}
           <PortfolioSection
             balanceVisible={balanceVisible}
             onQuickLinkPress={handleQuickLinkPress}
@@ -132,6 +131,8 @@ export default function DashboardScreen() {
             kycLoading={false}
             kycData={kyc}
           />
+
+          {/* Tokens Section */}
           <TokensSection
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -140,6 +141,7 @@ export default function DashboardScreen() {
         </ScrollView>
       </SafeAreaView>
 
+      {/* Modals */}
       <DashboardModals
         showTransferModal={showTransferModal}
         showWalletModal={showWalletModal}
@@ -151,6 +153,7 @@ export default function DashboardScreen() {
         onWalletTabPress={() => router.push('/user/come-soon')}
       />
 
+      {/* Token Selection Modal */}
       <SelectTokenModal
         visible={showSelectTokenModal}
         onClose={() => setShowSelectTokenModal(false)}
@@ -158,6 +161,7 @@ export default function DashboardScreen() {
         title="Select Token to Transfer"
       />
 
+      {/* Transfer Method Modal */}
       <TransferMethodModal
         visible={showTransferMethodModal}
         onClose={handleCloseTransferMethodModal}
@@ -165,47 +169,24 @@ export default function DashboardScreen() {
         title={`Send ${selectedToken?.name || 'Token'}`}
       />
 
-      {/* ← Zendesk Support Widget - Floating Button */}
-      <TouchableOpacity 
-        style={styles.supportButton} 
-        onPress={handleSupportPress}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.supportIcon}>?</Text>
-      </TouchableOpacity>
-
+      {/* Bottom Navigation */}
       <BottomTabNavigator activeTab="home" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  safeArea: { flex: 1 },
-  scrollView: { flex: 1 },
-  scrollViewContent: { paddingBottom: Layout.spacing.xl },
-  
-  // ← Zendesk Support Button Styles
-  supportButton: {
-    position: 'absolute',
-    bottom: 100, // Above bottom navigation (adjust as needed)
-    right: 20,   // 20px from right edge
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary, // Use your brand color
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8, // Android shadow
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    zIndex: 1000, // Ensure it stays on top
+  container: { 
+    flex: 1, 
+    backgroundColor: Colors.background 
   },
-  supportIcon: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+  safeArea: { 
+    flex: 1 
+  },
+  scrollView: { 
+    flex: 1 
+  },
+  scrollViewContent: { 
+    paddingBottom: Layout.spacing.xl 
   },
 });
