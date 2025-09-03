@@ -18,6 +18,7 @@ import {
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import AddressCopied from '../../components/AddressCopied';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useDeposit } from '../../hooks/useDeposit';
@@ -65,6 +66,7 @@ export default function UsdcEthDepositScreen() {
   const [showError, setShowError] = useState<boolean>(false);
   const [errorType, setErrorType] = useState<'network' | 'server' | 'notFound' | 'general'>('general');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [showCopied, setShowCopied] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchUSDCAddress = async (): Promise<void> => {
@@ -131,7 +133,7 @@ export default function UsdcEthDepositScreen() {
     }
     try {
       await Clipboard.setString(depositData.address);
-      Alert.alert('Copied!', 'USDC (Ethereum) wallet address copied to clipboard');
+      setShowCopied(true);
     } catch (error) {
       showErrorMessage('Failed to copy address to clipboard');
     }
@@ -153,6 +155,9 @@ export default function UsdcEthDepositScreen() {
         {showError && (
           <ErrorDisplay type={errorType} message={errorMessage} onDismiss={hideError} autoHide={false} />
         )}
+
+        {/* Address Copied banner */}
+        {showCopied && <AddressCopied onDismiss={() => setShowCopied(false)} />}
 
         <ScrollView
           style={styles.scrollView}
@@ -247,8 +252,6 @@ export default function UsdcEthDepositScreen() {
               </Text>
             </View>
           </View>
-
-
 
           <View style={styles.shareSection}>
             <TouchableOpacity style={styles.shareButton}>

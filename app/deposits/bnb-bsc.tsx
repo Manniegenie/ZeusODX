@@ -1,3 +1,4 @@
+// app/deposits/bnb-bsc.tsx
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -11,12 +12,12 @@ import {
   RefreshControl,
   ActivityIndicator,
   Clipboard,
-  Alert,
   Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import AddressCopied from '../../components/AddressCopied';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useDeposit } from '../../hooks/useDeposit';
@@ -64,6 +65,7 @@ export default function BnbBscDepositScreen() {
   const [showError, setShowError] = useState<boolean>(false);
   const [errorType, setErrorType] = useState<'network' | 'server' | 'notFound' | 'general'>('general');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [showCopied, setShowCopied] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchBNBAddress = async (): Promise<void> => {
@@ -130,7 +132,7 @@ export default function BnbBscDepositScreen() {
     }
     try {
       await Clipboard.setString(depositData.address);
-      Alert.alert('Copied!', 'BNB (BSC) wallet address copied to clipboard');
+      setShowCopied(true); // show green "Address Copied" banner
     } catch (error) {
       showErrorMessage('Failed to copy address to clipboard');
     }
@@ -151,6 +153,10 @@ export default function BnbBscDepositScreen() {
 
         {showError && (
           <ErrorDisplay type={errorType} message={errorMessage} onDismiss={hideError} autoHide={false} />
+        )}
+
+        {showCopied && (
+          <AddressCopied onDismiss={() => setShowCopied(false)} />
         )}
 
         <ScrollView
@@ -259,7 +265,7 @@ export default function BnbBscDepositScreen() {
   );
 }
 
-// ... styles remain the same as previous screens
+// styles unchanged
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 

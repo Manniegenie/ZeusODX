@@ -7,14 +7,18 @@
     "icon": "./assets/images/app-icon.png",
     "scheme": "zeusodx",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "splash": {
       "backgroundColor": "#35297F"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.manniegenie.zeusodx",
-      "icon": "./assets/images/app-icon.png"
+      "icon": "./assets/images/app-icon.png",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "ZeusODX uses the camera to verify your identity with Smile ID.",
+        "NSFaceIDUsageDescription": "Face ID is used to improve selfie liveness and identity verification."
+      }
     },
     "android": {
       "package": "com.manniegenie.zeusodx",
@@ -22,7 +26,12 @@
         "foregroundImage": "./assets/images/app-icon.png",
         "backgroundColor": "#35297F"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "INTERNET",
+        "CAMERA",
+        "ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -32,7 +41,22 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 23,
+            "kotlinVersion": "1.9.24",
+            "extraProguardRules": "-keep class zendesk.** { *; }\n-keep class com.zendesk.** { *; }\n-dontwarn okhttp3.**\n-dontwarn okio.**\n-dontwarn retrofit2.**\n"
+          },
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -41,6 +65,13 @@
       "router": {},
       "eas": {
         "projectId": "53868df3-1f0b-40e0-9c85-903a42b22c92"
+      },
+      "smileId": {
+        "partnerId": "YOUR_PARTNER_ID",
+        "authToken": "YOUR_AUTH_TOKEN",
+        "prodLambda": "https://your-prod-lambda-url",
+        "sandboxLambda": "https://your-sandbox-lambda-url",
+        "useSandbox": true
       }
     },
     "owner": "manuelwurld"

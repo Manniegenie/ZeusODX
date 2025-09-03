@@ -34,12 +34,14 @@ interface WalletPortfolioSectionProps {
   balanceVisible: boolean;
   onSetupPress: () => void;
   onToggleBalanceVisibility: () => void;
+  onQuickLinkPress?: (link: QuickLink) => void; // New callback prop
 }
 
 export default function WalletPortfolioSection({ 
   balanceVisible, 
   onSetupPress,
   onToggleBalanceVisibility,
+  onQuickLinkPress, // New prop
 }: WalletPortfolioSectionProps) {
   const router = useRouter();
   const { totalPortfolioBalance, completionPercentage } = useDashboard();
@@ -52,7 +54,9 @@ export default function WalletPortfolioSection({
   // Modals state
   const [showSelectTokenModal, setShowSelectTokenModal] = useState(false);
   const [showTransferMethodModal, setShowTransferMethodModal] = useState(false);
+  const [showDepositTokenModal, setShowDepositTokenModal] = useState(false); // New deposit modal state
   const [selectedToken, setSelectedToken] = useState<WalletOption | null>(null);
+  const [modalType, setModalType] = useState<'deposit' | 'transfer'>('transfer'); // Track modal type
 
   // Only 3 quick links for wallet
   const quickLinks: QuickLink[] = [
@@ -62,15 +66,41 @@ export default function WalletPortfolioSection({
   ];
 
   const handleQuickLinkPress = (link: QuickLink) => {
+    // If parent provided callback, use it first
+    if (onQuickLinkPress) {
+      onQuickLinkPress(link);
+      return;
+    }
+
+    // Default behavior if no callback provided
     if (link.id === 'deposit') {
-      router.push(link.route);
+      setModalType('deposit');
+      setShowDepositTokenModal(true);
     } else if (link.id === 'transfer') {
+      setModalType('transfer');
       setShowSelectTokenModal(true);
     } else {
       router.push(link.route);
     }
   };
 
+  // Handle deposit token selection
+  const handleSelectTokenForDeposit = (token: WalletOption) => {
+    setSelectedToken(token);
+    setShowDepositTokenModal(false);
+    
+    // Navigate to deposit screen with selected token
+    router.push({
+      pathname: '/wallet/deposit',
+      params: { 
+        tokenId: token.id, 
+        tokenName: token.name,
+        tokenSymbol: token.symbol,
+      }
+    });
+  };
+
+  // Handle transfer token selection
   const handleSelectTokenForTransfer = (token: WalletOption) => {
     setSelectedToken(token);
     setShowTransferMethodModal(true);
@@ -106,6 +136,16 @@ export default function WalletPortfolioSection({
 
   const handleCloseTransferMethodModal = () => {
     setShowTransferMethodModal(false);
+    setSelectedToken(null);
+  };
+
+  const handleCloseDepositModal = () => {
+    setShowDepositTokenModal(false);
+    setSelectedToken(null);
+  };
+
+  const handleCloseSelectModal = () => {
+    setShowSelectTokenModal(false);
     setSelectedToken(null);
   };
 
@@ -206,10 +246,18 @@ export default function WalletPortfolioSection({
         </TouchableOpacity>
       )}
 
+      {/* Modals for Deposit Flow */}
+      <SelectTokenModal
+        visible={showDepositTokenModal}
+        onClose={handleCloseDepositModal}
+        onSelectToken={handleSelectTokenForDeposit}
+        title="Select Token to Deposit"
+      />
+
       {/* Modals for Transfer Flow */}
       <SelectTokenModal
-        visible={showSelectTokenModal}
-        onClose={() => setShowSelectTokenModal(false)}
+        visible={showSelectTokenModal && modalType === 'transfer'}
+        onClose={handleCloseSelectModal}
         onSelectToken={handleSelectTokenForTransfer}
         title="Select Token to Transfer"
       />

@@ -1,3 +1,4 @@
+// screens/history/TransactionHistoryScreen.tsx
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar,
@@ -9,99 +10,153 @@ import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
 import emptyStateIcon from '../../components/icons/empty-black.png';
 
+type TokenDetails = {
+  transactionId?: string;
+  currency?: string;
+  network?: string;
+  address?: string;
+  hash?: string;
+  fee?: number | string;
+  narration?: string;
+  category?: 'token';
+};
+type UtilityDetails = {
+  orderId?: string;
+  requestId?: string;
+  productName?: string;
+  quantity?: number | string;
+  network?: string;
+  customerInfo?: string;
+  billType?: string;
+  paymentCurrency?: string;
+  category?: 'utility';
+};
+type APIDetail =
+  | TokenDetails
+  | UtilityDetails
+  | (Record<string, any> & { category?: 'token' | 'utility' });
+
+type APITransaction = {
+  id: string;
+  type: string;
+  status: string;
+  amount: string;
+  date: string;
+  createdAt?: string;
+  details?: APIDetail;
+};
+
 const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const BILL_CATEGORIES = ['Airtime','Data','Cable','Electricity'];
 
 const TransactionHistoryScreen = () => {
   const router = useRouter();
   const { currency, tokenName } = useLocalSearchParams();
 
-  // Generate available months (last 12 months)
-  const generateAvailableMonths = () => {
-    const months = [];
+  // Months (last 12)
+  const availableMonths = (() => {
+    const months: { id: string; label: string; year: number; monthIndex: number }[] = [];
     const now = new Date();
     for (let i = 0; i < 12; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const label = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-      months.push({
-        id: label.toLowerCase().replace(' ', '_'),
-        label,
-        year: d.getFullYear(),
-        monthIndex: d.getMonth(),
-      });
+      months.push({ id: label.toLowerCase().replace(' ', '_'), label, year: d.getFullYear(), monthIndex: d.getMonth() });
     }
     return months;
-  };
+  })();
 
-  const availableMonths = generateAvailableMonths();
+  // UI filters
+  const [selectedMonth, setSelectedMonth] = useState(availableMonths[0]?.label || '');
+  const [selectedCategory, setSelectedCategory] = useState<
+    'All Categories' | 'Deposit' | 'Transfer' | 'Swap' | 'Airtime' | 'Data' | 'Cable' | 'Electricity'
+  >('All Categories');
+  const [selectedStatus, setSelectedStatus] = useState<'All Status' | 'Successful' | 'Pending' | 'Failed'>('All Status');
+  const [modalType, setModalType] = useState<null | 'category' | 'status' | 'month'>(null);
 
-  // Default to MOST RECENT month
-  const [selectedMonth, setSelectedMonth] = useState(
-    availableMonths[0]?.label || ''
-  );
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
-  const [selectedStatus, setSelectedStatus] = useState('All Status');
-  const [modalType, setModalType] = useState(null); // 'category' | 'status' | 'month' | null
-
+  // Data
   const {
-    transactions, loading, error, refreshTransactions, hasTransactions
-  } = useHistory(currency || 'AVAX', { defaultPageSize: 50 });
+    transactions,
+    loading,
+    error,
+    refreshTransactions,
+    hasTransactions,
+    mapCategoryToType,
+  } = useHistory((currency as string) || 'AVAX', { defaultPageSize: 50 });
 
-  // Convert "Aug 2025" -> { startDate: '2025-08-01', endDate: '2025-08-31' }
-  const getMonthRange = (label) => {
+  // Month range → ISO
+  const getMonthRange = (label: string) => {
     if (!label) return { startDate: null, endDate: null };
     const [m, y] = label.split(' ');
     const year = parseInt(y, 10);
     const monthIndex = monthNames.indexOf(m);
     if (isNaN(year) || monthIndex < 0) return { startDate: null, endDate: null };
-
-    // Use UTC to avoid timezone edge cases
     const start = new Date(Date.UTC(year, monthIndex, 1));
     const end = new Date(Date.UTC(year, monthIndex + 1, 0));
-    const pad = (n) => String(n).padStart(2, '0');
-
+    const pad = (n: number) => String(n).padStart(2, '0');
     return {
       startDate: `${start.getUTCFullYear()}-${pad(start.getUTCMonth() + 1)}-${pad(start.getUTCDate())}`,
       endDate: `${end.getUTCFullYear()}-${pad(end.getUTCMonth() + 1)}-${pad(end.getUTCDate())}`,
     };
   };
 
-  // Fetch whenever the month changes
+  // Initial & month-change refetch
   useEffect(() => {
     const { startDate, endDate } = getMonthRange(selectedMonth);
-    refreshTransactions({ startDate, endDate });
+    const serverFilters = toServerFilters();
+    refreshTransactions({ startDate, endDate, ...serverFilters });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth, refreshTransactions]);
 
+  // Also refetch when Category/Status change
+  useEffect(() => {
+    const { startDate, endDate } = getMonthRange(selectedMonth);
+    const serverFilters = toServerFilters();
+    refreshTransactions({ startDate, endDate, ...serverFilters });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory, selectedStatus]);
+
+  const toServerFilters = () => {
+    const type = mapCategoryToType(selectedCategory) || undefined;
+    const statusMap: Record<string, string | undefined> = {
+      Successful: 'SUCCESSFUL',
+      Pending: 'PENDING',
+      Failed: 'FAILED',
+      'All Status': undefined
+    };
+    const status = statusMap[selectedStatus];
+    // If bill category, send it so the hook routes to bills endpoint
+    const category = BILL_CATEGORIES.includes(selectedCategory) ? selectedCategory : (type ? undefined : 'All Categories');
+    return { type, status, category };
+  };
+
+  // UI events
   const handleGoBack = () => router.back();
   const handleMonthSelect = () => setModalType('month');
   const handleCategorySelect = () => setModalType('category');
   const handleStatusSelect = () => setModalType('status');
 
-  const handleMonthSelection = (month) => {
-    setSelectedMonth(month.label);
-    setModalType(null);
-  };
-  const handleCategorySelection = (category) => {
-    setSelectedCategory(category.label);
-    setModalType(null);
-  };
-  const handleStatusSelection = (status) => {
-    setSelectedStatus(status.label);
-    setModalType(null);
-  };
+  const handleMonthSelection = (m: any) => { setSelectedMonth(m.label); setModalType(null); };
+  const handleCategorySelection = (c: any) => { setSelectedCategory(c.label); setModalType(null); };
+  const handleStatusSelection = (s: any) => { setSelectedStatus(s.label); setModalType(null); };
 
   const onRefresh = useCallback(async () => {
     const { startDate, endDate } = getMonthRange(selectedMonth);
-    await refreshTransactions({ startDate, endDate });
-  }, [refreshTransactions, selectedMonth]);
+    const serverFilters = toServerFilters();
+    await refreshTransactions({ startDate, endDate, ...serverFilters });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshTransactions, selectedMonth, selectedCategory, selectedStatus]);
 
-  // Keep UI text as "Transfer"; map to WITHDRAWAL for filtering
+  // Options
   const categories = [
     { id: 'all', label: 'All Categories' },
     { id: 'deposit', label: 'Deposit' },
-    { id: 'transfer', label: 'Transfer' }, // UI label unchanged
+    { id: 'transfer', label: 'Transfer' },
     { id: 'swap', label: 'Swap' },
+    { id: 'airtime', label: 'Airtime' },
+    { id: 'data', label: 'Data' },
+    { id: 'cable', label: 'Cable' },
+    { id: 'electricity', label: 'Electricity' },
   ];
-
   const statuses = [
     { id: 'all', label: 'All Status' },
     { id: 'successful', label: 'Successful' },
@@ -109,85 +164,54 @@ const TransactionHistoryScreen = () => {
     { id: 'failed', label: 'Failed' },
   ];
 
-  // Client-side filtering for category/status
-  const getFilteredTransactions = () => {
-    let filtered = [...transactions];
-
-    if (selectedCategory !== 'All Categories') {
-      const categoryMap = {
-        'Deposit': 'DEPOSIT',
-        'Transfer': 'WITHDRAWAL', // map UI "Transfer" to type expected by API/hook
-        'Swap': 'SWAP'
-      };
-      const filterType = categoryMap[selectedCategory];
-      if (filterType) filtered = filtered.filter(tx => tx.type === filterType);
+  // ----- Helpers for list + receipt mapping -----
+  const mapServiceTypeToUI = (t: string) => {
+    switch (t) {
+      case 'DEPOSIT': return 'Deposit';
+      case 'WITHDRAWAL': return 'Withdrawal';
+      case 'SWAP': return 'Swap';
+      case 'BILL_PAYMENT': return 'Bill Payment';
+      default: return t || 'Unknown';
     }
-
-    if (selectedStatus !== 'All Status') {
-      const statusMap = {
-        'Successful': 'SUCCESSFUL',
-        'Pending': 'PENDING',
-        'Failed': 'FAILED'
-      };
-      const filterStatus = statusMap[selectedStatus];
-      if (filterStatus) filtered = filtered.filter(tx => tx.status === filterStatus);
-    }
-
-    return filtered;
   };
 
-  const filteredTransactions = getFilteredTransactions();
+  const mapServiceStatusToUI = (s: string) => {
+    switch (s) {
+      case 'SUCCESSFUL': return 'Successful';
+      case 'FAILED': return 'Failed';
+      case 'PENDING': return 'Pending';
+      default: return s || 'Unknown';
+    }
+  };
 
-  const getTransactionPrefix = (type, formattedAmount) => {
+  const getTransactionPrefix = (type: string, formattedAmount?: string) => {
     if (type === 'DEPOSIT') return '+';
     if (type === 'WITHDRAWAL') return '-';
     if (type === 'SWAP') {
-      if (formattedAmount && formattedAmount.startsWith('+-')) return '-';
-      if (formattedAmount && formattedAmount.startsWith('+')) return '+';
-      if (formattedAmount && formattedAmount.startsWith('-')) return '-';
+      if (formattedAmount?.startsWith('+-')) return '-';
+      if (formattedAmount?.startsWith('+')) return '+';
+      if (formattedAmount?.startsWith('-')) return '-';
       return '';
     }
     return '';
   };
 
-  const getStatusColor = (status) => {
-    if (status === 'SUCCESSFUL') return '#10B981';
-    if (status === 'FAILED') return '#EF4444';
-    return '#F59E0B';
-  };
-  const getStatusBackgroundColor = (status) => {
-    if (status === 'SUCCESSFUL') return '#E8F5E8';
-    if (status === 'FAILED') return '#FFE8E8';
-    return '#FFF3E0';
-  };
-  const formatTransactionType = (type) => {
-    switch (type) {
-      case 'DEPOSIT': return 'Deposit';
-      case 'WITHDRAWAL': return 'Withdrawal';
-      case 'SWAP': return 'Swap';
-      default: return type || 'Unknown';
-    }
-  };
-  const formatTransactionStatus = (status) => {
-    switch (status) {
-      case 'SUCCESSFUL': return 'Successful';
-      case 'FAILED': return 'Failed';
-      case 'PENDING': return 'Pending';
-      default: return status || 'Unknown';
-    }
-  };
-  const formatAmountForDisplay = (value, symbol) => {
+  const getStatusColor = (status: string) =>
+    status === 'SUCCESSFUL' ? '#10B981' : status === 'FAILED' ? '#EF4444' : '#F59E0B';
+  const getStatusBackgroundColor = (status: string) =>
+    status === 'SUCCESSFUL' ? '#E8F5E8' : status === 'FAILED' ? '#FFE8E8' : '#FFF3E0';
+
+  const formatAmountForDisplay = (value: number, symbol: string) => {
     if (!symbol) return value.toString();
-    switch (symbol) {
+    switch (String(symbol).toUpperCase()) {
+      case 'NGN':
       case 'NGNZ':
+      case 'NGNB':
         return value.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      case 'BTC':
-        return Number(value.toFixed(8)).toString();
-      case 'ETH':
-        return Number(value.toFixed(6)).toString();
+      case 'BTC':  return Number(value.toFixed(8)).toString();
+      case 'ETH':  return Number(value.toFixed(6)).toString();
       case 'USDT':
-      case 'USDC':
-        return value.toFixed(2);
+      case 'USDC': return value.toFixed(2);
       default:
         if (value >= 1000) return value.toFixed(2);
         if (value >= 1) return Number(value.toFixed(4)).toString();
@@ -196,13 +220,129 @@ const TransactionHistoryScreen = () => {
         return Number(value.toPrecision(3)).toString();
     }
   };
-  const extractAmountValue = (transaction) => {
-    const amountString = transaction.formattedAmount || '0';
-    const cleanAmount = amountString.replace(/[+\-₦,\s]/g, '').replace(/[A-Z]/g, '').trim();
-    return parseFloat(cleanAmount) || 0;
+
+  const extractAmountValue = (tx: any) => {
+    if (tx?.formattedAmount) {
+      const clean = tx.formattedAmount.replace(/[+\-₦,\s]/g, '').replace(/[A-Z]/g, '').trim();
+      const n = parseFloat(clean);
+      if (!isNaN(n)) return n;
+    }
+    const candidates = [tx?.amount, tx?.amountNaira, tx?.amountNGNB, tx?.amountNGNZ];
+    for (const c of candidates) {
+      if (typeof c === 'number' && !isNaN(c)) return c;
+      if (typeof c === 'string') {
+        const n = parseFloat(c);
+        if (!isNaN(n)) return n;
+      }
+    }
+    return 0;
   };
 
-  const FilterModal = ({ visible, title, options, selectedValue, onSelect, onClose }) => (
+  const displayBillType = (tx: any): string | undefined => {
+    const d = tx?.details || {};
+    const raw =
+      tx?.billType ||
+      tx?.utilityType ||
+      d.billCategory ||
+      d.billType ||
+      d.productName ||
+      tx?.category ||
+      '';
+    if (!raw) return undefined;
+    const v = String(raw).toLowerCase();
+    if (v.includes('airtime')) return 'Airtime';
+    if (v.includes('data')) return 'Data';
+    if (v.includes('cable') || v.includes('tv') || v.includes('dstv') || v.includes('gotv') || v.includes('startimes')) return 'Cable';
+    if (v.includes('electric')) return 'Electricity';
+    return String(raw).charAt(0).toUpperCase() + String(raw).slice(1);
+  };
+
+  const toAPITransaction = (tx: any): APITransaction => {
+    const serviceType = String(tx?.type || '');
+    const serviceStatus = String(tx?.status || '');
+    const amountNum = extractAmountValue(tx);
+    const symbol = tx?.currency || tx?.symbol || tx?.asset || 'NGN';
+    const prettyAmt = formatAmountForDisplay(amountNum, symbol);
+    const sign = getTransactionPrefix(serviceType, tx?.formattedAmount);
+
+    const isNaira = ['NGN','NGNB','NGNZ'].includes(String(symbol).toUpperCase());
+    const amountStr = isNaira ? `${sign}₦${prettyAmt}` : `${sign}${prettyAmt} ${symbol}`;
+    const dateText = tx?.formattedDate || (tx?.createdAt ? new Date(tx.createdAt).toLocaleString('en-NG') : '—');
+
+    let details: APIDetail = {};
+    let uiType = mapServiceTypeToUI(serviceType);
+
+    if (serviceType === 'BILL_PAYMENT') {
+      const d = tx?.details || {};
+      uiType = displayBillType(tx) || 'Bill Payment';
+      details = {
+        category: 'utility',
+        orderId: d.orderId || d.order_id || tx?.orderId,
+        requestId: d.requestId || d.request_id || tx?.requestId,
+        productName: d.productName || d.product || tx?.productName,
+        quantity: d.quantity || d.units || tx?.quantity,
+        network: d.network || d.provider || tx?.network || tx?.provider,
+        customerInfo: d.customerInfo || d.customerPhone || d.phone || d.meterNo || d.account,
+        billType: d.billType || d.type || displayBillType(tx),
+        paymentCurrency: d.paymentCurrency || tx?.paymentCurrency || symbol,
+      } as UtilityDetails;
+    } else {
+      const d = tx?.details || {};
+      details = {
+        category: 'token',
+        transactionId: d.transactionId || tx?.transactionId || tx?.txId || tx?.externalId || tx?.reference || tx?.id || tx?._id,
+        currency: symbol,
+        network: d.network || tx?.network || tx?.chain || tx?.blockchain,
+        address: d.address || tx?.address || tx?.walletAddress || tx?.to || tx?.toAddress || tx?.receivingAddress,
+        hash: d.hash || tx?.hash || tx?.txHash || tx?.transactionHash,
+        fee: d.fee || tx?.fee || tx?.networkFee || tx?.gasFee || tx?.txFee,
+        narration: d.narration || tx?.narration || tx?.note || tx?.description || tx?.memo || tx?.reason,
+      } as TokenDetails;
+      if (serviceType === 'SWAP') uiType = 'Swap';
+    }
+
+    return {
+      id: (tx?.id || tx?._id || tx?.transactionId || tx?.reference || tx?.externalId || '') + '',
+      type: uiType,
+      status: mapServiceStatusToUI(serviceStatus),
+      amount: amountStr,
+      date: dateText,
+      createdAt: tx?.createdAt,
+      details,
+    };
+  };
+
+  const getFilteredTransactions = () => {
+    let filtered = [...transactions];
+
+    if (selectedCategory !== 'All Categories') {
+      const type = mapCategoryToType(selectedCategory);
+      if (type) {
+        filtered = filtered.filter((tx: any) => tx.type === type);
+      } else if (BILL_CATEGORIES.includes(selectedCategory)) {
+        filtered = filtered.filter((tx: any) => {
+          if (tx.type !== 'BILL_PAYMENT') return false;
+          const label = (displayBillType(tx) || '').toLowerCase();
+          return label === selectedCategory.toLowerCase();
+        });
+      }
+    }
+
+    if (selectedStatus !== 'All Status') {
+      const svc = { Successful: 'SUCCESSFUL', Pending: 'PENDING', Failed: 'FAILED' }[selectedStatus];
+      if (svc) filtered = filtered.filter((tx: any) => tx.status === svc);
+    }
+
+    return filtered;
+  };
+
+  // Filter sheet component
+  const FilterModal = ({
+    visible, title, options, selectedValue, onSelect, onClose
+  }: {
+    visible: boolean; title: string; options: any[]; selectedValue: string;
+    onSelect: (opt: any) => void; onClose: () => void;
+  }) => (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
@@ -267,6 +407,7 @@ const TransactionHistoryScreen = () => {
         </View>
       );
     }
+
     const list = getFilteredTransactions();
     if (list.length === 0) {
       return (
@@ -276,27 +417,43 @@ const TransactionHistoryScreen = () => {
         </View>
       );
     }
+
     return (
       <View style={styles.transactionsList}>
-        {list.map((tx, idx) => {
-          const amountValue = extractAmountValue(tx);
-          const formattedAmount = formatAmountForDisplay(amountValue, tx.currency);
+        {list.map((tx: any, idx: number) => {
+          const amountNum = extractAmountValue(tx);
+          const symbol = tx?.currency || tx?.symbol || tx?.asset || 'NGN';
+          const formattedAmount = formatAmountForDisplay(amountNum, symbol);
           const prefix = getTransactionPrefix(tx.type, tx.formattedAmount);
+          const humanType = tx.type === 'BILL_PAYMENT' ? (displayBillType(tx) || 'Bill Payment') : mapServiceTypeToUI(tx.type);
+
           return (
-            <View key={tx.id || idx} style={styles.transactionItem}>
+            <TouchableOpacity
+              key={(tx.id ?? tx._id ?? idx) as React.Key}
+              style={styles.transactionItem}
+              activeOpacity={0.85}
+              onPress={() => {
+                const apiTx = toAPITransaction(tx);
+                router.push({
+                  pathname: '/history/TransactionReceipt', // ensure app/history/receipt.tsx exists (re-exports TransactionReceiptScreen)
+                  params: {
+                    tx: encodeURIComponent(JSON.stringify(apiTx)),
+                    raw: encodeURIComponent(JSON.stringify(tx)),
+                  },
+                });
+              }}
+            >
               <View style={styles.transactionLeft}>
-                <Text style={styles.transactionType}>{formatTransactionType(tx.type)}</Text>
+                <Text style={styles.transactionType}>{humanType}</Text>
                 <Text style={styles.transactionDate}>{tx.formattedDate || 'N/A'}</Text>
               </View>
               <View style={styles.transactionRight}>
-                <Text style={styles.transactionAmount}>{prefix}{formattedAmount} {tx.currency}</Text>
+                <Text style={styles.transactionAmount}>{prefix}{formattedAmount} {symbol}</Text>
                 <View style={[styles.statusContainer, { backgroundColor: getStatusBackgroundColor(tx.status) }]}>
-                  <Text style={[styles.transactionStatus, { color: getStatusColor(tx.status) }]}>
-                    {formatTransactionStatus(tx.status)}
-                  </Text>
+                  <Text style={[styles.transactionStatus, { color: getStatusColor(tx.status) }]}>{mapServiceStatusToUI(tx.status)}</Text>
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
       </View>
@@ -349,9 +506,7 @@ const TransactionHistoryScreen = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.transactionsContainer}>
-            {renderTransactionsList()}
-          </View>
+          <View style={styles.transactionsContainer}>{renderTransactionsList()}</View>
         </ScrollView>
 
         {modalConfig && (
@@ -373,21 +528,34 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F0FF' },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#F3F0FF' },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#F3F0FF',
+  },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   backButtonText: { fontSize: 24, color: '#1F2937', fontWeight: '400' },
   headerTitle: { fontSize: 18, fontWeight: '600', color: '#1F2937', flex: 1, textAlign: 'center', marginRight: 40 },
   headerRight: { width: 0 },
+
   dateSelector: { alignItems: 'center', paddingVertical: 20 },
   monthSelector: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
   monthText: { fontSize: 16, fontWeight: '600', color: '#1F2937', marginRight: 8 },
   dropdownIcon: { fontSize: 12, color: '#6B7280', fontWeight: '500' },
+
   filterSection: { flexDirection: 'row', paddingHorizontal: 16, gap: 12, marginBottom: 20 },
-  filterButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  filterButton: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12,
+    borderWidth: 1, borderColor: '#E5E7EB',
+  },
   filterText: { fontSize: 14, color: '#6B7280', fontWeight: '400' },
+
   transactionsContainer: { paddingHorizontal: 16, paddingBottom: 20 },
   transactionsList: { borderRadius: 12, paddingHorizontal: 16 },
-  transactionItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  transactionItem: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
+    paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+  },
   transactionLeft: { flex: 1 },
   transactionType: { fontSize: 14, color: '#1F2937', fontWeight: '500', marginBottom: 4 },
   transactionDate: { fontSize: 12, color: '#6B7280' },
@@ -395,18 +563,27 @@ const styles = StyleSheet.create({
   transactionAmount: { fontSize: 14, color: '#1F2937', fontWeight: '500', marginBottom: 4 },
   statusContainer: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   transactionStatus: { fontSize: 12, fontWeight: '500' },
+
   loadingContainer: { alignItems: 'center', paddingVertical: 60 },
   loadingText: { fontSize: 16, color: '#6B7280', marginTop: 12 },
+
   errorContainer: { alignItems: 'center', paddingVertical: 60 },
   errorText: { fontSize: 16, color: '#EF4444', marginBottom: 16, textAlign: 'center' },
   retryButton: { backgroundColor: '#35297F', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
   retryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+
   emptyStateContainer: { alignItems: 'center', paddingVertical: 60 },
   emptyStateImage: { width: 160, height: 156, marginBottom: 24, resizeMode: 'contain' },
   emptyStateText: { fontSize: 16, color: '#6B7280', fontWeight: '400', textAlign: 'center' },
+
   overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },
-  modalContainer: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '50%', minHeight: 300 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, backgroundColor: '#FFFFFF' },
+  modalContainer: {
+    backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '50%', minHeight: 300,
+  },
+  modalHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, backgroundColor: '#FFFFFF',
+  },
   modalTitle: { color: '#111827', fontFamily: Typography?.medium || 'System', fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center' },
   closeButton: { padding: 4 },
   closeButtonText: { color: '#6B7280', fontSize: 18, fontWeight: '500' },
@@ -414,8 +591,14 @@ const styles = StyleSheet.create({
   optionsContent: { paddingBottom: 20 },
   optionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'flex-start' },
   monthsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-start' },
-  optionCard: { backgroundColor: '#F9FAFB', borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', paddingVertical: 16, paddingHorizontal: 20, minWidth: '45%', alignItems: 'center', justifyContent: 'center' },
-  monthCard: { backgroundColor: '#F9FAFB', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB', paddingVertical: 12, paddingHorizontal: 16, width: '31%', alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  optionCard: {
+    backgroundColor: '#F9FAFB', borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB',
+    paddingVertical: 16, paddingHorizontal: 20, minWidth: '45%', alignItems: 'center', justifyContent: 'center',
+  },
+  monthCard: {
+    backgroundColor: '#F9FAFB', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB',
+    paddingVertical: 12, paddingHorizontal: 16, width: '31%', alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+  },
   optionCardSelected: { backgroundColor: '#F8F7FF', borderColor: '#35297F', borderWidth: 2 },
   monthCardSelected: { backgroundColor: '#F8F7FF', borderColor: '#35297F', borderWidth: 2 },
   optionText: { color: '#6B7280', fontFamily: Typography?.medium || 'System', fontSize: 14, fontWeight: '500', textAlign: 'center' },

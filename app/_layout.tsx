@@ -1,4 +1,3 @@
-// app/_layout.tsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { Stack } from 'expo-router';
 import {
@@ -14,6 +13,13 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthProvider, AuthContext } from '../hooks/useAuth';
 import ProfessionalSplashScreen from '../components/ProfessionalSplashScreen';
+
+// Optional: warm up Tawk chat on app start
+import { TawkPrefetcher } from '../components/TawkSupport';
+
+const TAWK_DIRECT_LINK =
+  process.env.EXPO_PUBLIC_TAWK_DIRECT_LINK ||
+  'https://tawk.to/chat/68b186eb517e5918ffb583a8/1j3qne2kl';
 
 // Auth Provider Component
 function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -42,13 +48,11 @@ export default function RootLayout() {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Simulate auth initialization delay
         await new Promise(resolve => setTimeout(resolve, 1000));
       } finally {
         setIsAuthReady(true);
       }
     };
-
     initializeAuth();
   }, []);
 
@@ -66,32 +70,22 @@ export default function RootLayout() {
 
   // Show splash screen until everything is ready
   if (!isAppReady || !isSplashAnimationComplete) {
-    return (
-      <ProfessionalSplashScreen 
-        onAnimationComplete={handleSplashAnimationComplete} 
-      />
-    );
+    return <ProfessionalSplashScreen onAnimationComplete={handleSplashAnimationComplete} />;
   }
 
   // Main app layout
   return (
     <SafeAreaProvider>
-      <SafeAreaView 
-        edges={['top']} 
-        style={{ 
-          flex: 1, 
-          backgroundColor: '#F4F2FF' 
-        }}
-      >
+      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#F4F2FF' }}>
         <AuthProvider>
           <Stack
             screenOptions={{
               headerShown: false,
-              contentStyle: { 
-                backgroundColor: 'transparent' 
-              },
+              contentStyle: { backgroundColor: 'transparent' },
             }}
           />
+          {/* Optional: hidden prefetcher that warms up Tawk for instant open */}
+          <TawkPrefetcher directLink={TAWK_DIRECT_LINK} />
         </AuthProvider>
       </SafeAreaView>
     </SafeAreaProvider>

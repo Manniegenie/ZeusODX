@@ -1,5 +1,5 @@
-// app/user/NGNZWalletScreen.tsx - Updated to match SolanaWalletScreen styling
-import React, { useCallback, useState, useEffect } from 'react';
+// app/user/NGNZWalletScreen.tsx
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -30,6 +30,45 @@ import swapIcon from '../../components/icons/swap-icon.png';
 import depositIcon from '../../components/icons/deposit-icon.png';
 import emptyStateIcon from '../../components/icons/empty-state.png';
 import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
+
+type TokenDetails = {
+  transactionId?: string;
+  currency?: string;
+  network?: string;
+  address?: string;
+  hash?: string;
+  fee?: number | string;
+  narration?: string;
+  createdAt?: string;
+  category?: 'token';
+};
+
+type UtilityDetails = {
+  orderId?: string;
+  requestId?: string;
+  productName?: string;
+  quantity?: number | string;
+  network?: string;
+  customerInfo?: string;
+  billType?: string;
+  paymentCurrency?: string;
+  category?: 'utility';
+};
+
+type APIDetail =
+  | TokenDetails
+  | UtilityDetails
+  | (Record<string, any> & { category?: 'token' | 'utility' });
+
+type APITransaction = {
+  id: string;
+  type: string;      // "Deposit" | "Withdrawal" | "Swap" | bill label
+  status: string;    // "Successful" | "Failed" | "Pending"
+  amount: string;    // "+₦10,000" | "-0.1 BTC"
+  date: string;      // human-readable
+  createdAt?: string;
+  details?: APIDetail;
+};
 
 const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   const router = useRouter();
@@ -138,6 +177,26 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     });
   };
 
+  // ===== Helpers for receipt navigation (match TransactionHistoryScreen) =====
+  const mapServiceTypeToUI = (t: string) => {
+    switch (t) {
+      case 'DEPOSIT': return 'Deposit';
+      case 'WITHDRAWAL': return 'Withdrawal';
+      case 'SWAP': return 'Swap';
+      case 'BILL_PAYMENT': return 'Bill Payment';
+      default: return t || 'Unknown';
+    }
+  };
+
+  const mapServiceStatusToUI = (s: string) => {
+    switch (s) {
+      case 'SUCCESSFUL': return 'Successful';
+      case 'FAILED': return 'Failed';
+      case 'PENDING': return 'Pending';
+      default: return s || 'Unknown';
+    }
+  };
+
   const getTransactionPrefix = (type, formattedAmount) => {
     if (type === 'DEPOSIT') return '+';
     if (type === 'WITHDRAWAL') return '-';
@@ -162,36 +221,21 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     return '#FFF3E0';
   };
 
-  const formatTransactionType = (type) => {
-    switch (type) {
-      case 'DEPOSIT': return 'Deposit';
-      case 'WITHDRAWAL': return 'Withdrawal';
-      case 'SWAP': return 'Swap';
-      default: return type || 'Unknown';
-    }
-  };
+  const formatTransactionType = (type) => mapServiceTypeToUI(type);
 
-  const formatTransactionStatus = (status) => {
-    switch (status) {
-      case 'SUCCESSFUL': return 'Successful';
-      case 'FAILED': return 'Failed';
-      case 'PENDING': return 'Pending';
-      default: return status || 'Unknown';
-    }
-  };
+  const formatTransactionStatus = (status) => mapServiceStatusToUI(status);
 
   const formatAmountForDisplay = (value, symbol) => {
     if (!symbol) return value.toString();
-    switch (symbol) {
+    switch (String(symbol).toUpperCase()) {
+      case 'NGN':
       case 'NGNZ':
+      case 'NGNB':
         return value.toLocaleString('en-NG', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-      case 'BTC':
-        return Number(value.toFixed(8)).toString();
-      case 'ETH':
-        return Number(value.toFixed(6)).toString();
+      case 'BTC':  return Number(value.toFixed(8)).toString();
+      case 'ETH':  return Number(value.toFixed(6)).toString();
       case 'USDT':
-      case 'USDC':
-        return value.toFixed(2);
+      case 'USDC': return value.toFixed(2);
       default:
         if (value >= 1000) return value.toFixed(2);
         if (value >= 1) return Number(value.toFixed(4)).toString();
@@ -201,12 +245,97 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     }
   };
 
-  const extractAmountValue = (transaction) => {
-    const amountString = transaction.formattedAmount || '0';
-    const cleanAmount = amountString.replace(/[+\-₦,\s]/g, '').replace(/[A-Z]/g, '').trim();
-    const numericValue = parseFloat(cleanAmount) || 0;
-    return numericValue;
+  const extractAmountValue = (tx: any) => {
+    if (tx?.formattedAmount) {
+      const clean = tx.formattedAmount.replace(/[+\-₦,\s]/g, '').replace(/[A-Z]/g, '').trim();
+      const n = parseFloat(clean);
+      if (!isNaN(n)) return n;
+    }
+    const candidates = [tx?.amount, tx?.amountNaira, tx?.amountNGNB, tx?.amountNGNZ];
+    for (const c of candidates) {
+      if (typeof c === 'number' && !isNaN(c)) return c;
+      if (typeof c === 'string') {
+        const n = parseFloat(c);
+        if (!isNaN(n)) return n;
+      }
+    }
+    return 0;
   };
+
+  const displayBillType = (tx: any): string | undefined => {
+    const d = tx?.details || {};
+    const raw =
+      tx?.billType ||
+      tx?.utilityType ||
+      d.billCategory ||
+      d.billType ||
+      d.productName ||
+      tx?.category ||
+      '';
+    if (!raw) return undefined;
+    const v = String(raw).toLowerCase();
+    if (v.includes('airtime')) return 'Airtime';
+    if (v.includes('data')) return 'Data';
+    if (v.includes('cable') || v.includes('tv') || v.includes('dstv') || v.includes('gotv') || v.includes('startimes')) return 'Cable';
+    if (v.includes('electric')) return 'Electricity';
+    return String(raw).charAt(0).toUpperCase() + String(raw).slice(1);
+  };
+
+  // Build the object TransactionReceipt expects (same as in TransactionHistoryScreen)
+  const toAPITransaction = useCallback((tx: any): APITransaction => {
+    const serviceType = String(tx?.type || '');
+    const serviceStatus = String(tx?.status || '');
+    const amountNum = extractAmountValue(tx);
+    const symbol = tx?.currency || tx?.symbol || tx?.asset || 'NGN';
+    const prettyAmt = formatAmountForDisplay(amountNum, symbol);
+    const sign = getTransactionPrefix(serviceType, tx?.formattedAmount);
+
+    const isNaira = ['NGN','NGNB','NGNZ'].includes(String(symbol).toUpperCase());
+    const amountStr = isNaira ? `${sign}₦${prettyAmt}` : `${sign}${prettyAmt} ${symbol}`;
+    const dateText = tx?.formattedDate || (tx?.createdAt ? new Date(tx.createdAt).toLocaleString('en-NG') : '—');
+
+    let details: APIDetail = {};
+    let uiType = mapServiceTypeToUI(serviceType);
+
+    if (serviceType === 'BILL_PAYMENT') {
+      const d = tx?.details || {};
+      uiType = displayBillType(tx) || 'Bill Payment';
+      details = {
+        category: 'utility',
+        orderId: d.orderId || d.order_id || tx?.orderId,
+        requestId: d.requestId || d.request_id || tx?.requestId,
+        productName: d.productName || d.product || tx?.productName,
+        quantity: d.quantity || d.units || tx?.quantity,
+        network: d.network || d.provider || tx?.network || tx?.provider,
+        customerInfo: d.customerInfo || d.customerPhone || d.phone || d.meterNo || d.account,
+        billType: d.billType || d.type || displayBillType(tx),
+        paymentCurrency: d.paymentCurrency || tx?.paymentCurrency || symbol,
+      } as UtilityDetails;
+    } else {
+      const d = tx?.details || {};
+      details = {
+        category: 'token',
+        transactionId: d.transactionId || tx?.transactionId || tx?.txId || tx?.externalId || tx?.reference || tx?.id || tx?._id,
+        currency: symbol,
+        network: d.network || tx?.network || tx?.chain || tx?.blockchain,
+        address: d.address || tx?.address || tx?.walletAddress || tx?.to || tx?.toAddress || tx?.receivingAddress,
+        hash: d.hash || tx?.hash || tx?.txHash || tx?.transactionHash,
+        fee: d.fee || tx?.fee || tx?.networkFee || tx?.gasFee || tx?.txFee,
+        narration: d.narration || tx?.narration || tx?.note || tx?.description || tx?.memo || tx?.reason,
+      } as TokenDetails;
+      if (serviceType === 'SWAP') uiType = 'Swap';
+    }
+
+    return {
+      id: (tx?.id || tx?._id || tx?.transactionId || tx?.reference || tx?.externalId || '') + '',
+      type: uiType,
+      status: mapServiceStatusToUI(serviceStatus),
+      amount: amountStr,
+      date: dateText,
+      createdAt: tx?.createdAt,
+      details,
+    };
+  }, []);
 
   const displayNgnzBalance = formattedNgnzBalance || '0.00';
   const displayUsdBalance = formattedNgnzBalanceUSD || '$0.00';
@@ -290,32 +419,48 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
               </View>
             ) : (
               <View style={styles.transactionsList}>
-                {transactions.slice(0, 5).map((transaction, index) => {
-                  const amountValue = extractAmountValue(transaction);
-                  const formattedAmount = formatAmountForDisplay(amountValue, transaction.currency);
-                  const prefix = getTransactionPrefix(transaction.type, transaction.formattedAmount);
+                {transactions.slice(0, 5).map((tx, index) => {
+                  const amountValue = extractAmountValue(tx);
+                  const symbol = tx?.currency || tx?.symbol || tx?.asset || 'NGNZ';
+                  const formattedAmount = formatAmountForDisplay(amountValue, symbol);
+                  const prefix = getTransactionPrefix(tx.type, tx.formattedAmount);
 
                   return (
-                    <View key={transaction.id || index} style={styles.transactionItem}>
+                    <TouchableOpacity
+                      key={(tx.id ?? index) as React.Key}
+                      style={styles.transactionItem}
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        // EXACTLY like TransactionHistoryScreen
+                        const apiTx = toAPITransaction(tx);
+                        router.push({
+                          pathname: '/history/TransactionReceipt',
+                          params: {
+                            tx: encodeURIComponent(JSON.stringify(apiTx)),
+                            raw: encodeURIComponent(JSON.stringify(tx)),
+                          },
+                        });
+                      }}
+                    >
                       <View style={styles.transactionLeft}>
                         <Text style={styles.transactionType}>
-                          {formatTransactionType(transaction.type)}
+                          {formatTransactionType(tx.type)}
                         </Text>
                         <Text style={styles.transactionDate}>
-                          {transaction.formattedDate || 'N/A'}
+                          {tx.formattedDate || 'N/A'}
                         </Text>
                       </View>
                       <View style={styles.transactionRight}>
                         <Text style={styles.transactionAmount}>
-                          {prefix}{formattedAmount} {transaction.currency}
+                          {prefix}{formattedAmount} {symbol}
                         </Text>
-                        <View style={[styles.statusContainer, { backgroundColor: getStatusBackgroundColor(transaction.status) }]}>
-                          <Text style={[styles.transactionStatus, { color: getStatusColor(transaction.status) }]}>
-                            {formatTransactionStatus(transaction.status)}
+                        <View style={[styles.statusContainer, { backgroundColor: getStatusBackgroundColor(tx.status) }]}>
+                          <Text style={[styles.transactionStatus, { color: getStatusColor(tx.status) }]}>
+                            {formatTransactionStatus(tx.status)}
                           </Text>
                         </View>
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   );
                 })}
               </View>

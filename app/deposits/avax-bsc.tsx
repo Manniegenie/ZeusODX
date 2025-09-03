@@ -12,12 +12,12 @@ import {
   RefreshControl,
   ActivityIndicator,
   Clipboard,
-  Alert,
   Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import AddressCopied from '../../components/AddressCopied';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useDeposit } from '../../hooks/useDeposit';
@@ -65,6 +65,7 @@ export default function AvaxBscDepositScreen() {
   const [showError, setShowError] = useState<boolean>(false);
   const [errorType, setErrorType] = useState<'network' | 'server' | 'notFound' | 'general'>('general');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [showCopied, setShowCopied] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchAVAXAddress = async (): Promise<void> => {
@@ -131,7 +132,7 @@ export default function AvaxBscDepositScreen() {
     }
     try {
       await Clipboard.setString(depositData.address);
-      Alert.alert('Copied!', 'AVAX (BSC) wallet address copied to clipboard');
+      setShowCopied(true); // show green "Address Copied" banner
     } catch (error) {
       showErrorMessage('Failed to copy address to clipboard');
     }
@@ -152,6 +153,10 @@ export default function AvaxBscDepositScreen() {
 
         {showError && (
           <ErrorDisplay type={errorType} message={errorMessage} onDismiss={hideError} autoHide={false} />
+        )}
+
+        {showCopied && (
+          <AddressCopied onDismiss={() => setShowCopied(false)} />
         )}
 
         <ScrollView

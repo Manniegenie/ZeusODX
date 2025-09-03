@@ -30,13 +30,17 @@ export const withdrawalService = {
         network: network?.toUpperCase()
       };
 
-      // Make API request to initiate endpoint
+      // Make API request to initiate endpoint (fee preview)
       const response = await apiClient.post('/withdraw/initiate', payload);
 
       if (response.success) {
-        // FIX: Access the nested data properly
-        const feeData = response.data.data;
-        
+        // Access the nested data properly
+        const feeData = (response.data && response.data.data) || response.data;
+        const respMessage =
+          (response.data && response.data.message) ||
+          response.message ||
+          'Fee calculated successfully';
+
         console.log('✅ Fee calculation successful:', {
           currency: feeData.currency,
           network: feeData.network,
@@ -48,6 +52,7 @@ export const withdrawalService = {
 
         return {
           success: true,
+          message: respMessage, // exact server message if present
           data: {
             ...feeData,
             feeFormatted: this.formatWithdrawalAmount(feeData.fee, currency),
@@ -57,7 +62,7 @@ export const withdrawalService = {
           }
         };
       } else {
-        console.log('❌ Fee calculation API error:', response.error);
+        console.log('❌ Fee calculation API error:', response.error || response.message);
         return this.handleWithdrawalError(response);
       }
     } catch (error) {
@@ -119,34 +124,38 @@ export const withdrawalService = {
       const response = await apiClient.post('/withdraw/crypto', payload);
 
       if (response.success) {
-        // FIX: Access the nested data properly
-        const withdrawalData = response.data.data || response.data;
-        
+        // Access the nested data properly
+        const wdData = (response.data && response.data.data) || response.data;
+        const respMessage =
+          (response.data && response.data.message) ||
+          response.message ||
+          'Crypto withdrawal initiated successfully';
+
         // Track active withdrawal
-        this.trackActiveWithdrawal(withdrawalData.transactionId, {
-          ...withdrawalData,
+        this.trackActiveWithdrawal(wdData.transactionId, {
+          ...wdData,
           initiatedAt: new Date().toISOString()
         });
 
         console.log('✅ Crypto withdrawal initiated successfully:', {
-          transactionId: withdrawalData.transactionId,
-          obiexTransactionId: withdrawalData.obiexTransactionId,
-          currency: withdrawalData.currency,
-          network: withdrawalData.network,
-          amount: withdrawalData.amount,
-          fee: withdrawalData.fee,
-          totalAmount: withdrawalData.totalAmount
+          transactionId: wdData.transactionId,
+          obiexTransactionId: wdData.obiexTransactionId,
+          currency: wdData.currency,
+          network: wdData.network,
+          amount: wdData.amount,
+          fee: wdData.fee,
+          totalAmount: wdData.totalAmount
         });
 
         return {
           success: true,
+          message: respMessage, // exact server message if present
           data: {
-            ...withdrawalData,
-            message: 'Crypto withdrawal initiated successfully'
+            ...wdData
           }
         };
       } else {
-        console.log('❌ Withdrawal API error:', response.error);
+        console.log('❌ Withdrawal API error:', response.error || response.message);
         return this.handleWithdrawalError(response);
       }
     } catch (error) {
@@ -173,9 +182,13 @@ export const withdrawalService = {
       const response = await apiClient.get(`/withdraw/status/${transactionId}`);
 
       if (response.success) {
-        // FIX: Access the nested data properly
-        const statusData = response.data.data || response.data;
-        
+        // Access the nested data properly
+        const statusData = (response.data && response.data.data) || response.data;
+        const respMessage =
+          (response.data && response.data.message) ||
+          response.message ||
+          'Withdrawal status retrieved';
+
         // Update tracked withdrawal if exists
         if (this.activeWithdrawals.has(transactionId)) {
           const existing = this.activeWithdrawals.get(transactionId);
@@ -197,6 +210,7 @@ export const withdrawalService = {
 
         return {
           success: true,
+          message: respMessage, // exact server message if present
           data: {
             ...statusData,
             statusDescription: this.getStatusDescription(statusData.status),
@@ -208,20 +222,12 @@ export const withdrawalService = {
           }
         };
       } else {
-        console.log('❌ Failed to fetch withdrawal status:', response.error);
-        return {
-          success: false,
-          error: response.error || 'STATUS_FETCH_ERROR',
-          message: 'Failed to fetch withdrawal status'
-        };
+        console.log('❌ Failed to fetch withdrawal status:', response.error || response.message);
+        return this.handleWithdrawalError(response);
       }
     } catch (error) {
       console.log('❌ Error fetching withdrawal status:', error);
-      return {
-        success: false,
-        error: 'NETWORK_ERROR',
-        message: 'Network error occurred while fetching status'
-      };
+      return this.handleWithdrawalError(error);
     }
   },
 
@@ -331,33 +337,69 @@ export const withdrawalService = {
   },
 
   /**
-   * Handle withdrawal errors with user-friendly messages
+   * Handle withdrawal errors — preserve exact server message,
+   * provide a friendly fallback, and pass through details.
    */
   handleWithdrawalError(errorResponse) {
-    const error = errorResponse.error || errorResponse.message || 'Unknown error';
+    // HTTP status
     const statusCode = errorResponse.status || errorResponse.statusCode || 500;
 
+    // Prefer server-provided human text as "raw"
+    const raw =
+      (typeof errorResponse.message === 'string' && errorResponse.message) ||
+      (typeof errorResponse.error === 'string' && errorResponse.error) ||
+      null;
+
+    // Try to find a machine-readable code
+    const codeFromResponse =
+      errorResponse.code ||
+      (typeof errorResponse.error === 'string' && /^[A-Z0-9_]+$/.test(errorResponse.error)
+        ? errorResponse.error
+        : null);
+
+    const errorCode = codeFromResponse || 'SERVICE_ERROR';
+
     const errorMessages = {
-      'VALIDATION_ERROR': 'Please check your input and try again',
-      'INSUFFICIENT_BALANCE': 'Insufficient balance for this withdrawal',
-      'KYC_LIMIT_EXCEEDED': 'Withdrawal exceeds your KYC limits',
-      'DUPLICATE_WITHDRAWAL': 'Similar withdrawal is already pending',
-      'FEE_CALCULATION_ERROR': 'Unable to calculate withdrawal fee',
-      'PRICE_DATA_ERROR': 'Unable to fetch current price data',
-      'OBIEX_API_ERROR': 'Withdrawal service temporarily unavailable',
-      'BALANCE_RESERVATION_ERROR': 'Failed to reserve balance for withdrawal',
-      'INTERNAL_SERVER_ERROR': 'Withdrawal service temporarily unavailable'
+      VALIDATION_ERROR: 'Please check your input and try again',
+      INSUFFICIENT_BALANCE: 'Insufficient balance for this withdrawal',
+      KYC_LIMIT_EXCEEDED: 'Withdrawal exceeds your KYC limits',
+      DUPLICATE_WITHDRAWAL: 'Similar withdrawal is already pending',
+      FEE_CALCULATION_ERROR: 'Unable to calculate withdrawal fee',
+      PRICE_DATA_ERROR: 'Unable to fetch current price data',
+      OBIEX_API_ERROR: 'Withdrawal service temporarily unavailable',
+      BALANCE_RESERVATION_ERROR: 'Failed to reserve balance for withdrawal',
+      INTERNAL_SERVER_ERROR: 'Withdrawal service temporarily unavailable',
+      STATUS_FETCH_ERROR: 'Failed to fetch withdrawal status',
+      SERVICE_ERROR: 'Withdrawal failed. Please try again.'
     };
 
-    const userMessage = errorMessages[error] || 'Withdrawal failed. Please try again.';
+    // message shows the EXACT server message when present; friendlyMessage is your UI-safe fallback
+    const friendlyMessage = errorMessages[errorCode] || errorMessages.SERVICE_ERROR;
+    const message = raw || friendlyMessage;
 
-    console.log('❌ Handling withdrawal error:', { error, statusCode, userMessage });
+    // Pass through any structured details (e.g., KYC)
+    const details =
+      errorResponse.details ||
+      errorResponse.kycDetails ||
+      (errorResponse.data && errorResponse.data.kycDetails) ||
+      null;
+
+    console.log('❌ Handling withdrawal error:', {
+      errorCode,
+      statusCode,
+      rawMessage: raw,
+      friendlyMessage,
+      details
+    });
 
     return {
       success: false,
-      error,
-      message: userMessage,
-      statusCode
+      error: errorCode,     // machine-readable code
+      message,              // exact server text when available
+      friendlyMessage,      // fallback copy
+      rawMessage: raw,      // exact text for UI/debug
+      statusCode,
+      details               // e.g., { kycLevel, limitType, upgradeRecommendation, ... }
     };
   },
 
@@ -366,13 +408,13 @@ export const withdrawalService = {
    */
   getStatusDescription(status) {
     const descriptions = {
-      'PENDING': 'Withdrawal is being processed',
-      'PROCESSING': 'Withdrawal in progress',
-      'COMPLETED': 'Withdrawal completed successfully',
-      'SUCCESS': 'Withdrawal completed successfully',
-      'FAILED': 'Withdrawal failed',
-      'CANCELLED': 'Withdrawal was cancelled',
-      'REJECTED': 'Withdrawal was rejected'
+      PENDING: 'Withdrawal is being processed',
+      PROCESSING: 'Withdrawal in progress',
+      COMPLETED: 'Withdrawal completed successfully',
+      SUCCESS: 'Withdrawal completed successfully',
+      FAILED: 'Withdrawal failed',
+      CANCELLED: 'Withdrawal was cancelled',
+      REJECTED: 'Withdrawal was rejected'
     };
     return descriptions[status] || 'Unknown status';
   },
@@ -386,7 +428,7 @@ export const withdrawalService = {
       trackedAt: new Date().toISOString()
     });
 
-    const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
     for (const [id, withdrawal] of this.activeWithdrawals.entries()) {
       if (new Date(withdrawal.trackedAt).getTime() < oneDayAgo) {
         this.activeWithdrawals.delete(id);
@@ -409,14 +451,14 @@ export const withdrawalService = {
    */
   formatWithdrawalAmount(amount, currency) {
     const formatters = {
-      'BTC': (amt) => amt.toFixed(8),
-      'ETH': (amt) => amt.toFixed(6),
-      'SOL': (amt) => amt.toFixed(6),
-      'USDT': (amt) => amt.toFixed(2),
-      'USDC': (amt) => amt.toFixed(2),
-      'BNB': (amt) => amt.toFixed(4),
-      'MATIC': (amt) => amt.toFixed(4),
-      'AVAX': (amt) => amt.toFixed(4)
+      BTC: (amt) => amt.toFixed(8),
+      ETH: (amt) => amt.toFixed(6),
+      SOL: (amt) => amt.toFixed(6),
+      USDT: (amt) => amt.toFixed(2),
+      USDC: (amt) => amt.toFixed(2),
+      BNB: (amt) => amt.toFixed(4),
+      MATIC: (amt) => amt.toFixed(4),
+      AVAX: (amt) => amt.toFixed(4)
     };
 
     const formatter = formatters[currency?.toUpperCase()];

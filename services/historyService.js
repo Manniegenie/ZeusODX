@@ -1,6 +1,9 @@
 // services/historyService.js
 import { apiClient } from './apiClient';
 
+const DEBUG_HISTORY = true;
+const dbg = (...args) => { if (DEBUG_HISTORY) console.log('[historyService]', ...args); };
+
 export const transactionService = {
   /**
    * Fetch transaction history for a specific currency using /token-specific endpoint
@@ -51,15 +54,20 @@ export const transactionService = {
       if (params.startDate) requestBody.dateFrom = params.startDate.split('T')[0];
       if (params.endDate) requestBody.dateTo = params.endDate.split('T')[0];
 
+      dbg('getTransactionHistory → POST /history/token-specific', { requestBody });
       const response = await apiClient.post('/history/token-specific', requestBody);
+      dbg('getTransactionHistory ← response', { status: response.status, data: response.data });
 
       if (response.data?.success && response.data?.data) {
         const { transactions, pagination } = response.data.data;
 
+        const mapped = transactions.map(tx => this.formatTransaction(tx, currency));
+        dbg('getTransactionHistory → mapped sample', mapped?.[0]);
+
         return {
           success: true,
           data: {
-            transactions: transactions.map(tx => this.formatTransaction(tx, currency)),
+            transactions: mapped,
             pagination: {
               currentPage: pagination.currentPage,
               totalPages: pagination.totalPages,
@@ -91,6 +99,7 @@ export const transactionService = {
         status: response.status || 400
       };
     } catch (error) {
+      console.warn('getTransactionHistory error:', error?.message || error);
       return {
         success: false,
         error: 'NETWORK_ERROR',
@@ -130,15 +139,19 @@ export const transactionService = {
       if (params.startDate) requestBody.dateFrom = params.startDate.split('T')[0];
       if (params.endDate) requestBody.dateTo = params.endDate.split('T')[0];
 
+      dbg('getAllTokenTransactions → POST /history/all-tokens', { requestBody });
       const response = await apiClient.post('/history/all-tokens', requestBody);
+      dbg('getAllTokenTransactions ← response', { status: response.status, data: response.data });
 
       if (response.data?.success && response.data?.data) {
         const { transactions, pagination } = response.data.data;
+        const mapped = transactions.map(tx => this.formatTransaction(tx));
+        dbg('getAllTokenTransactions → mapped sample', mapped?.[0]);
 
         return {
           success: true,
           data: {
-            transactions: transactions.map(tx => this.formatTransaction(tx)),
+            transactions: mapped,
             pagination: {
               currentPage: pagination.currentPage,
               totalPages: pagination.totalPages,
@@ -158,6 +171,7 @@ export const transactionService = {
         message: response.data?.error || 'Failed to fetch all token transactions'
       };
     } catch (error) {
+      console.warn('getAllTokenTransactions error:', error?.message || error);
       return {
         success: false,
         error: 'NETWORK_ERROR',
@@ -194,15 +208,19 @@ export const transactionService = {
       if (params.startDate) requestBody.dateFrom = params.startDate.split('T')[0];
       if (params.endDate) requestBody.dateTo = params.endDate.split('T')[0];
 
+      dbg('getCompleteTransactionHistory → POST /history/complete-history', { requestBody });
       const response = await apiClient.post('/history/complete-history', requestBody);
+      dbg('getCompleteTransactionHistory ← response', { status: response.status, data: response.data });
 
       if (response.data?.success && response.data?.data) {
         const { transactions, pagination } = response.data.data;
+        const mapped = transactions.map(tx => this.formatMixedTransaction(tx));
+        dbg('getCompleteTransactionHistory → mapped sample', mapped?.[0]);
 
         return {
           success: true,
           data: {
-            transactions: transactions.map(tx => this.formatMixedTransaction(tx)),
+            transactions: mapped,
             pagination: {
               currentPage: pagination.currentPage,
               totalPages: pagination.totalPages,
@@ -222,6 +240,7 @@ export const transactionService = {
         message: response.data?.error || 'Failed to fetch complete transaction history'
       };
     } catch (error) {
+      console.warn('getCompleteTransactionHistory error:', error?.message || error);
       return {
         success: false,
         error: 'NETWORK_ERROR',
@@ -267,15 +286,19 @@ export const transactionService = {
       if (params.startDate) requestBody.dateFrom = params.startDate.split('T')[0];
       if (params.endDate) requestBody.dateTo = params.endDate.split('T')[0];
 
+      dbg('getBillTransactions → POST /history/all-utilities', { requestBody });
       const response = await apiClient.post('/history/all-utilities', requestBody);
+      dbg('getBillTransactions ← response', { status: response.status, data: response.data });
 
       if (response.data?.success && response.data?.data) {
         const { transactions, pagination } = response.data.data;
+        const mapped = transactions.map(tx => this.formatBillTransaction(tx));
+        dbg('getBillTransactions → mapped sample', mapped?.[0]);
 
         return {
           success: true,
           data: {
-            transactions: transactions.map(tx => this.formatBillTransaction(tx)),
+            transactions: mapped,
             pagination: {
               currentPage: pagination.currentPage,
               totalPages: pagination.totalPages,
@@ -295,6 +318,7 @@ export const transactionService = {
         message: response.data?.error || 'Failed to fetch utility transactions'
       };
     } catch (error) {
+      console.warn('getBillTransactions error:', error?.message || error);
       return {
         success: false,
         error: 'NETWORK_ERROR',
@@ -324,19 +348,16 @@ export const transactionService = {
     };
     const mappedType = typeMap[transaction.type] || transaction.type;
 
-    // Prefer raw createdAt if backend provides it (some endpoints remove it)
     const createdAtRaw =
       transaction.details?.createdAt ||
-      transaction.createdAt ||        // if backend included it
+      transaction.createdAt ||
       null;
 
-    // Attempt to parse raw first; if unavailable, fall back to the formatted `date` string
     const parsedISO =
       this.tryParseToISO(createdAtRaw) ||
-      this.tryParseToISO(transaction.date) || // parse if backend formatted string is parseable
-      null;                                   // IMPORTANT: do NOT default to "now"
+      this.tryParseToISO(transaction.date) ||
+      null;
 
-    // For display, prefer server-provided formatted date; otherwise format parsed ISO
     const formattedDate =
       transaction.date ||
       (parsedISO ? this.formatDate(parsedISO) : 'N/A');
@@ -346,21 +367,18 @@ export const transactionService = {
       type: mappedType,
       status: mappedStatus,
 
-      // numeric/raws
       amount: this.extractAmountFromString(transaction.amount, txCurrency),
       fee: 0,
       obiexFee: 0,
       currency: txCurrency,
 
-      // timing (no "now" fallback)
-      createdAt: parsedISO,     // ISO or null
-      updatedAt: parsedISO,     // ISO or null
+      createdAt: parsedISO,
+      updatedAt: parsedISO,
       completedAt: null,
 
-      // formatted
       formattedAmount: transaction.amount,
       formattedFee: this.formatAmount(0, txCurrency),
-      formattedDate,            // 👈 use this on the UI
+      formattedDate,
       formattedStatus: this.formatTransactionStatus(mappedStatus),
 
       netAmount: this.extractAmountFromString(transaction.amount, txCurrency),
@@ -377,7 +395,6 @@ export const transactionService = {
     };
   },
 
-  // NEW: Format bill transactions
   formatBillTransaction(transaction) {
     if (!transaction) return null;
 
@@ -397,7 +414,7 @@ export const transactionService = {
       formattedDate: transaction.date,
       formattedStatus: this.formatTransactionStatus(this.mapBillStatus(transaction.status)),
       
-      billType: transaction.type, // This contains "Airtime", "Data", etc.
+      billType: transaction.type,
       utilityType: transaction.details?.billType,
       
       details: {
@@ -408,13 +425,11 @@ export const transactionService = {
     };
   },
 
-  // NEW: Format mixed transactions from complete-history
   formatMixedTransaction(transaction) {
     if (!transaction) return null;
 
     const parsedISO = this.tryParseToISO(transaction.createdAt);
     
-    // Check if it's a utility transaction
     if (transaction.details?.category === 'utility') {
       return {
         id: transaction.id,
@@ -435,11 +450,9 @@ export const transactionService = {
       };
     }
     
-    // It's a token transaction - use existing formatting
     return this.formatTransaction(transaction);
   },
 
-  // NEW: Map bill statuses
   mapBillStatus(status) {
     const statusMap = {
       'Successful': 'SUCCESSFUL',

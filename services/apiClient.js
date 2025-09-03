@@ -46,10 +46,14 @@ class ApiClient {
     try {
       const token = await this.getAuthToken();
       
+      // CRITICAL FIX: Handle FormData properly
+      const isFormData = options.body instanceof FormData;
+      
       const config = {
         ...options,
         headers: {
-          ...this.headers,
+          // CRITICAL FIX: Don't set Content-Type for FormData
+          ...(isFormData ? {} : this.headers),
           ...(token && { Authorization: `Bearer ${token}` }),
           ...options.headers,
         },
@@ -58,7 +62,7 @@ class ApiClient {
       console.log(`🌐 API Request: ${this.baseURL}${endpoint}`);
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
       
-      // 🔥 Better error handling - get the response body even for errors
+      // Better error handling - get the response body even for errors
       const responseText = await response.text();
       let data;
       
@@ -95,17 +99,25 @@ class ApiClient {
     return this.request(endpoint, { method: 'GET' });
   }
 
-  async post(endpoint, data) {
+  async post(endpoint, data, options = {}) {
+    // CRITICAL FIX: Handle FormData vs JSON properly
+    const isFormData = data instanceof FormData;
+    
     return this.request(endpoint, {
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+      ...options,
     });
   }
 
-  async put(endpoint, data) {
+  async put(endpoint, data, options = {}) {
+    // CRITICAL FIX: Handle FormData vs JSON properly
+    const isFormData = data instanceof FormData;
+    
     return this.request(endpoint, {
       method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
+      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+      ...options,
     });
   }
 
