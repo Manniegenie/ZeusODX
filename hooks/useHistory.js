@@ -2,13 +2,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import { transactionService } from '../services/historyService';
 
+const BILL_CATEGORIES = ['Airtime', 'Data', 'Cable', 'Electricity'];
+
 export const useHistory = (currency, options = {}) => {
   const { autoFetch = true, defaultPageSize = 20 } = options;
-
   if (!currency || typeof currency !== 'string') {
     throw new Error('useHistory: currency parameter is required and must be a string');
   }
-
   const normalizedCurrency = currency.toUpperCase();
 
   const [loading, setLoading] = useState(false);
@@ -17,105 +17,63 @@ export const useHistory = (currency, options = {}) => {
   const [pagination, setPagination] = useState(null);
   const [summary, setSummary] = useState(null);
 
-  // Helper function to convert month selection to startDate/endDate for service
   const getMonthDateRange = (monthYear) => {
     if (!monthYear) return { startDate: null, endDate: null };
-    
-    // Parse month and year from string like "Jul 2025"
     const [monthName, year] = monthYear.split(' ');
-    const monthMap = {
-      'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
-      'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
-    };
-    
-    const monthIndex = monthMap[monthName];
-    const yearNum = parseInt(year);
-    
-    if (monthIndex === undefined || isNaN(yearNum)) {
-      // Fallback to current month
+    const monthMap = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+    const mi = monthMap[monthName];
+    const y = parseInt(year, 10);
+    if (mi === undefined || Number.isNaN(y)) {
       const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth();
-      const startDate = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
-      const endDate = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
-      return { startDate, endDate };
+      const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      return { startDate: start, endDate: end };
+    }
+    const start = new Date(y, mi, 1).toISOString().split('T')[0];
+    const end = new Date(y, mi + 1, 0).toISOString().split('T')[0];
+    return { startDate: start, endDate: end };
+  };
+
+  const mapCategoryToType = (category) => {
+    const map = { Deposit: 'DEPOSIT', Transfer: 'WITHDRAWAL', Swap: 'SWAP' };
+    return map[category] || null;
+  };
+
+  const mapStatusToService = (status) => {
+    const map = { Successful: 'SUCCESSFUL', Pending: 'PENDING', Failed: 'FAILED' };
+    return map[status] || null;
+  };
+
+  const buildBillApiParams = (filterParams = {}) => {
+    const { category, status, startDate: customStartDate, endDate: customEndDate, month, page, limit, ...otherFilters } = filterParams;
+    const apiParams = { page: page || 1, limit: limit || defaultPageSize, ...otherFilters };
+
+    if (customStartDate && customEndDate) {
+      apiParams.startDate = customStartDate;
+      apiParams.endDate = customEndDate;
+    } else if (month) {
+      const r = getMonthDateRange(month);
+      apiParams.startDate = r.startDate;
+      apiParams.endDate = r.endDate;
     }
 
-    const startDate = new Date(yearNum, monthIndex, 1).toISOString().split('T')[0];
-    const endDate = new Date(yearNum, monthIndex + 1, 0).toISOString().split('T')[0];
-    
-    return { startDate, endDate };
+    if (category && category !== 'All Categories' && BILL_CATEGORIES.includes(category)) {
+      apiParams.billType = category;
+    }
+
+    if (status && status !== 'All Status') {
+      const mapped = mapStatusToService(status);
+      if (mapped) apiParams.status = mapped;
+    }
+    return apiParams;
   };
 
-  // Map UI categories to service transaction types
-  const mapCategoryToType = (category) => {
-    const categoryMap = {
-      'Deposit': 'DEPOSIT',
-      'Transfer': 'WITHDRAWAL',
-      'Swap': 'SWAP'
-    };
-    return categoryMap[category] || null;
-  };
-
-  // Map UI status to service status format
-  const mapStatusToService = (status) => {
-    const statusMap = {
-      'Successful': 'SUCCESSFUL',
-      'Pending': 'PENDING',
-      'Failed': 'FAILED'
-    };
-    return statusMap[status] || null;
-  };
-
-  // NEW: Function to fetch bill payments
   const fetchBillPayments = useCallback(async (filterParams = {}) => {
     setLoading(true);
     setError(null);
-
     try {
-      const { 
-        category,
-        status,
-        startDate: customStartDate,
-        endDate: customEndDate,
-        month,
-        ...otherFilters 
-      } = filterParams;
-      
-      let apiParams = {
-        page: 1,
-        limit: defaultPageSize,
-        ...otherFilters
-      };
-      
-      // Handle date range
-      if (customStartDate && customEndDate) {
-        apiParams.startDate = customStartDate;
-        apiParams.endDate = customEndDate;
-      } else if (month) {
-        const dateRange = getMonthDateRange(month);
-        apiParams.startDate = dateRange.startDate;
-        apiParams.endDate = dateRange.endDate;
-      }
-
-      // Map category to bill type
-      if (category && category !== 'All Categories') {
-        const billCategories = ['Airtime', 'Data', 'Cable', 'Electricity'];
-        if (billCategories.includes(category)) {
-          apiParams.billType = category;
-        }
-      }
-
-      // Map status
-      if (status && status !== 'All Status') {
-        const mappedStatus = mapStatusToService(status);
-        if (mappedStatus) {
-          apiParams.status = mappedStatus;
-        }
-      }
-
+      const apiParams = buildBillApiParams(filterParams);
       const result = await transactionService.getBillTransactions(apiParams);
-
       if (result.success && result.data) {
         setTransactions(result.data.transactions || []);
         setPagination(result.data.pagination || null);
@@ -125,15 +83,14 @@ export const useHistory = (currency, options = {}) => {
         setTransactions([]);
         setPagination(null);
       }
-
       return result;
     } catch (e) {
       console.error('Bill payment fetch error:', e);
-      const errorMessage = 'Failed to fetch bill payment transactions.';
-      setError(errorMessage);
+      const msg = 'Failed to fetch bill payment transactions.';
+      setError(msg);
       setTransactions([]);
       setPagination(null);
-      return { success: false, error: 'NETWORK_ERROR', message: errorMessage };
+      return { success: false, error: 'NETWORK_ERROR', message: msg };
     } finally {
       setLoading(false);
     }
@@ -142,52 +99,35 @@ export const useHistory = (currency, options = {}) => {
   const fetchTransactions = useCallback(async (filterParams = {}) => {
     setLoading(true);
     setError(null);
-
     try {
-      // Check if this is a bill payment request
       const { category } = filterParams;
-      const billCategories = ['Airtime', 'Data', 'Cable', 'Electricity'];
-      
-      if (category && billCategories.includes(category)) {
+      if (category && BILL_CATEGORIES.includes(category)) {
         return fetchBillPayments(filterParams);
       }
 
-      // Extract month filter and convert to date range
-      const { month, status, startDate: customStartDate, endDate: customEndDate, ...otherFilters } = filterParams;
-      let apiParams = {
-        page: 1,
-        limit: defaultPageSize,
-        ...otherFilters
-      };
-      
-      // Handle date range - prefer custom dates over month selection
+      const { month, status, startDate: customStartDate, endDate: customEndDate, page, limit, ...otherFilters } = filterParams;
+      const apiParams = { page: page || 1, limit: limit || defaultPageSize, ...otherFilters };
+
       if (customStartDate && customEndDate) {
         apiParams.startDate = customStartDate;
         apiParams.endDate = customEndDate;
       } else if (month) {
-        const dateRange = getMonthDateRange(month);
-        apiParams.startDate = dateRange.startDate;
-        apiParams.endDate = dateRange.endDate;
+        const r = getMonthDateRange(month);
+        apiParams.startDate = r.startDate;
+        apiParams.endDate = r.endDate;
       }
 
-      // Map category to transaction type
-      if (category && category !== 'All Categories') {
-        const mappedType = mapCategoryToType(category);
-        if (mappedType) {
-          apiParams.type = mappedType;
-        }
+      if (filterParams.category && filterParams.category !== 'All Categories') {
+        const t = mapCategoryToType(filterParams.category);
+        if (t) apiParams.type = t;
       }
 
-      // Map status
       if (status && status !== 'All Status') {
-        const mappedStatus = mapStatusToService(status);
-        if (mappedStatus) {
-          apiParams.status = mappedStatus;
-        }
+        const mapped = mapStatusToService(status);
+        if (mapped) apiParams.status = mapped;
       }
 
       const result = await transactionService.getTransactionHistory(normalizedCurrency, apiParams);
-
       if (result.success && result.data) {
         setTransactions(result.data.transactions || []);
         setPagination(result.data.pagination || null);
@@ -199,54 +139,61 @@ export const useHistory = (currency, options = {}) => {
         setPagination(null);
         setSummary(null);
       }
-
       return result;
     } catch (e) {
       console.error('Transaction fetch error:', e);
-      const errorMessage = `Failed to fetch ${normalizedCurrency} transactions.`;
-      setError(errorMessage);
+      const msg = `Failed to fetch ${normalizedCurrency} transactions.`;
+      setError(msg);
       setTransactions([]);
       setPagination(null);
       setSummary(null);
-      return { success: false, error: 'NETWORK_ERROR', message: errorMessage };
+      return { success: false, error: 'NETWORK_ERROR', message: msg };
     } finally {
       setLoading(false);
     }
   }, [normalizedCurrency, defaultPageSize, fetchBillPayments]);
 
-  const refreshTransactions = useCallback((filterParams = {}) => {
-    return fetchTransactions(filterParams);
-  }, [fetchTransactions]);
+  const refreshTransactions = useCallback((filterParams = {}) => fetchTransactions(filterParams), [fetchTransactions]);
 
-  // Load more transactions for pagination
   const loadMoreTransactions = useCallback(async (filterParams = {}) => {
     if (!pagination?.hasNextPage || loading) return;
-
     setLoading(true);
     try {
-      const nextPageParams = {
-        ...filterParams,
-        page: pagination.currentPage + 1
-      };
+      const isBill = filterParams?.category && BILL_CATEGORIES.includes(filterParams.category);
+      const nextPage = (pagination.currentPage || 1) + 1;
 
-      // Handle date range
-      const { month, startDate: customStartDate, endDate: customEndDate } = filterParams;
-      if (customStartDate && customEndDate) {
-        nextPageParams.startDate = customStartDate;
-        nextPageParams.endDate = customEndDate;
-      } else if (month) {
-        const dateRange = getMonthDateRange(month);
-        nextPageParams.startDate = dateRange.startDate;
-        nextPageParams.endDate = dateRange.endDate;
+      if (isBill) {
+        const baseParams = buildBillApiParams(filterParams);
+        const result = await transactionService.getBillTransactions({ ...baseParams, page: nextPage, limit: defaultPageSize });
+        if (result.success && result.data) {
+          setTransactions(prev => [...prev, ...(result.data.transactions || [])]);
+          setPagination(result.data.pagination || null);
+        }
+        return result;
       }
 
-      const result = await transactionService.getTransactionHistory(normalizedCurrency, nextPageParams);
+      const { month, startDate: customStartDate, endDate: customEndDate, status } = filterParams;
+      const nextParams = { ...filterParams, page: nextPage, limit: defaultPageSize };
 
+      if (customStartDate && customEndDate) {
+        nextParams.startDate = customStartDate;
+        nextParams.endDate = customEndDate;
+      } else if (month) {
+        const r = getMonthDateRange(month);
+        nextParams.startDate = r.startDate;
+        nextParams.endDate = r.endDate;
+      }
+
+      if (status && status !== 'All Status') {
+        const mapped = mapStatusToService(status);
+        if (mapped) nextParams.status = mapped;
+      }
+
+      const result = await transactionService.getTransactionHistory(normalizedCurrency, nextParams);
       if (result.success && result.data) {
         setTransactions(prev => [...prev, ...(result.data.transactions || [])]);
         setPagination(result.data.pagination || null);
       }
-
       return result;
     } catch (e) {
       console.error('Load more transactions error:', e);
@@ -254,58 +201,29 @@ export const useHistory = (currency, options = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [normalizedCurrency, pagination, loading]);
+  }, [normalizedCurrency, pagination, loading, defaultPageSize]);
 
-  // Get filtered transactions for specific bill payment types
   const getFilteredByBillType = useCallback((billType) => {
     if (!billType || billType === 'All Categories') return transactions;
-    
-    // For bill payment categories, we need to filter by additional metadata
-    // since they all map to BILL_PAYMENT type
-    const billCategories = ['Airtime', 'Data', 'Cable', 'Electricity'];
-    if (!billCategories.includes(billType)) return transactions;
+    if (!BILL_CATEGORIES.includes(billType)) return transactions;
 
-    // Filter bill payment transactions by their details or category
     return transactions.filter(tx => {
       if (tx.type !== 'BILL_PAYMENT') return false;
-      
-      // Check if transaction details contain the bill type
-      const details = tx.details || {};
-      const category = details.category || details.billType || '';
-      
-      return category.toLowerCase().includes(billType.toLowerCase());
+      const d = tx.details || {};
+      const candidates = [d.billCategory, d.billType, tx.billType, tx.utilityType]
+        .filter(Boolean).map(String);
+      return candidates.some(v => v.toLowerCase().includes(String(billType).toLowerCase()));
     });
   }, [transactions]);
 
-  useEffect(() => {
-    if (autoFetch) {
-      fetchTransactions();
-    }
-  }, [autoFetch, fetchTransactions]);
+  useEffect(() => { if (autoFetch) fetchTransactions(); }, [autoFetch, fetchTransactions]);
 
   return {
-    // State
-    loading,
-    error,
-    transactions,
-    pagination,
-    summary,
-    
-    // Computed
+    loading, error, transactions, pagination, summary,
     hasTransactions: transactions.length > 0,
     hasNextPage: pagination?.hasNextPage || false,
     totalTransactions: pagination?.totalCount || 0,
-    
-    // Actions
-    refreshTransactions,
-    fetchTransactions,
-    fetchBillPayments, // NEW: For bills only
-    loadMoreTransactions,
-    getFilteredByBillType,
-    
-    // Utilities
-    getMonthDateRange,
-    mapCategoryToType,
-    mapStatusToService
+    refreshTransactions, fetchTransactions, fetchBillPayments, loadMoreTransactions, getFilteredByBillType,
+    getMonthDateRange, mapCategoryToType, mapStatusToService,
   };
 };

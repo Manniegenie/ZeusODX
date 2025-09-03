@@ -8,11 +8,13 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
+import { useVerificationStatus } from '../../hooks/useVerification';
 
 // Icons
 import checkmarkIcon from '../../components/icons/green-checkmark.png';
@@ -20,7 +22,15 @@ import checkmarkIcon from '../../components/icons/green-checkmark.png';
 const FiatScreen: React.FC = () => {
   const router = useRouter();
 
-  // Navigation handler
+  // Pull live fiat progress via the hook
+  const { loading, error, fiat } = useVerificationStatus({
+    autoFetch: true,
+    pollMs: 15000, // optional polling; remove if you don’t want it
+  });
+
+  const fiatPct = Math.max(0, Math.min(100, fiat?.percentage ?? 0));
+  const fiatComplete = (fiat?.completedSteps ?? 0) >= (fiat?.totalSteps ?? 2);
+
   const handleGoBack = (): void => {
     router.back();
   };
@@ -65,15 +75,31 @@ const FiatScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Progress Section */}
+          {/* Progress Section (hook-driven) */}
           <View style={styles.section}>
             <View style={styles.progressCard}>
               <Text style={styles.progressTitle}>Overall Progress</Text>
               <View style={styles.progressBarContainer}>
-                <View style={styles.progressBar}>
-                  <View style={styles.progressFill} />
+                <View
+                  style={styles.progressBar}
+                  accessibilityRole="progressbar"
+                  accessibilityValue={{ now: fiatPct, min: 0, max: 100 }}
+                >
+                  <View style={[styles.progressFill, { width: `${fiatPct}%` }]} />
                 </View>
-                <Text style={styles.progressText}>100% complete</Text>
+
+                {loading ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <ActivityIndicator size="small" />
+                    <Text style={styles.progressText}>Loading progress…</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.progressText}>{fiatPct}% complete</Text>
+                )}
+
+                {!!error && !loading && (
+                  <Text style={styles.progressErrorText}>Unable to refresh progress</Text>
+                )}
               </View>
             </View>
           </View>
@@ -81,34 +107,50 @@ const FiatScreen: React.FC = () => {
           {/* Verification Steps Section */}
           <View style={styles.section}>
             {/* BVN Verification */}
-            <View style={styles.verificationCard}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.verificationCard}
+              onPress={() => router.push('/fiat/bvn')} // adjust route to your app
+            >
               <View style={styles.verificationContent}>
                 <View style={styles.verificationInfo}>
                   <Text style={styles.verificationTitle}>BVN Verification</Text>
                   <Text style={styles.verificationSubtitle}>
-                    Your BVN has been successfully verified.
+                    {fiatComplete ? 'Your BVN has been successfully verified.' : 'Verify your BVN to enable Naira withdrawals & deposits.'}
                   </Text>
                 </View>
                 <View style={styles.checkmarkContainer}>
-                  <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
+                  {fiatComplete ? (
+                    <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
+                  ) : (
+                    <Text style={{ fontSize: 18, color: '#35297F' }}>›</Text>
+                  )}
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
 
             {/* Add Account Number */}
-            <View style={styles.verificationCard}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.verificationCard}
+              onPress={() => router.push('/bank/add')} // adjust route to your app
+            >
               <View style={styles.verificationContent}>
                 <View style={styles.verificationInfo}>
                   <Text style={styles.verificationTitle}>Add Account Number</Text>
                   <Text style={styles.verificationSubtitle}>
-                    Your bank account has been successfully added.
+                    {fiatComplete ? 'Your bank account has been successfully added.' : 'Add a verified bank account to receive withdrawals.'}
                   </Text>
                 </View>
                 <View style={styles.checkmarkContainer}>
-                  <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
+                  {fiatComplete ? (
+                    <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
+                  ) : (
+                    <Text style={{ fontSize: 18, color: '#35297F' }}>›</Text>
+                  )}
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -190,25 +232,25 @@ const styles = StyleSheet.create({
     flex: 1,
     color: Colors.text?.primary || '#111827',
     fontFamily: Typography.regular || 'System',
-    fontSize: 13, // Reduced by 20%
+    fontSize: 13,
     fontWeight: '400',
     lineHeight: 18,
   },
 
   // Progress section styles
   progressCard: {
-    backgroundColor: '#F0FDF4', // Light green background
+    backgroundColor: '#F0FDF4',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#D1FAE5', // Light green border
-    padding: 12, // More minimal padding
+    borderColor: '#D1FAE5',
+    padding: 12,
   },
   progressTitle: {
-    color: '#065F46', // Dark green text
+    color: '#065F46',
     fontFamily: Typography.medium || 'System',
-    fontSize: 12, // Smaller, more subtle
-    fontWeight: '500', // Less bold
-    marginBottom: 8, // Reduced margin
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 8,
     textAlign: 'center',
   },
   progressBarContainer: {
@@ -216,23 +258,28 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     width: '100%',
-    height: 6, // Thinner progress bar
-    backgroundColor: '#D1FAE5', // Light green background
+    height: 6,
+    backgroundColor: '#D1FAE5',
     borderRadius: 3,
-    marginBottom: 6, // Reduced margin
+    marginBottom: 6,
     overflow: 'hidden',
   },
   progressFill: {
-    width: '100%', // 100% complete
     height: '100%',
-    backgroundColor: '#10B981', // Green fill
+    backgroundColor: '#10B981',
     borderRadius: 3,
   },
   progressText: {
-    color: '#065F46', // Dark green text
+    color: '#065F46',
     fontFamily: Typography.medium || 'System',
-    fontSize: 10, // Smaller, more subtle
-    fontWeight: '500', // Less bold
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  progressErrorText: {
+    marginTop: 4,
+    color: '#B45309',
+    fontFamily: Typography.regular || 'System',
+    fontSize: 10,
   },
 
   // Verification card styles
@@ -261,14 +308,14 @@ const styles = StyleSheet.create({
   verificationTitle: {
     color: Colors.text?.primary || '#111827',
     fontFamily: Typography.medium || 'System',
-    fontSize: 14, // Reduced by 20%
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
   },
   verificationSubtitle: {
     color: Colors.text?.secondary || '#6B7280',
     fontFamily: Typography.regular || 'System',
-    fontSize: 11, // Reduced by 20%
+    fontSize: 11,
     fontWeight: '400',
     lineHeight: 16,
   },

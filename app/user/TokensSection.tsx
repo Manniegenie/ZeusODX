@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
   FlatList,
-  Image
+  Image,
 } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
@@ -28,18 +28,16 @@ interface TokensSectionProps {
   onAssetPress: (asset: Token) => void;
 }
 
-export default function TokensSection({ 
-  activeTab, 
-  onTabChange, 
-  onAssetPress 
+export default function TokensSection({
+  activeTab,
+  onTabChange,
+  onAssetPress,
 }: TokensSectionProps) {
-  
-  // Use the new useTokens hook instead of manually processing dashboard data
-  const { 
-    tokens: allTokens, 
+  const {
+    tokens: allTokens,
     favoriteTokens,
-    loading, 
-    error 
+    loading,
+    error,
   } = useTokens();
 
   // Debug logging
@@ -49,19 +47,14 @@ export default function TokensSection({
     loading,
     error,
     tokenSymbols: allTokens.map(t => t.symbol),
-    hasNGNZ: allTokens.some(t => t.symbol === 'NGNZ')
+    hasNGNZ: allTokens.some(t => t.symbol === 'NGNZ'),
   });
 
   // Transform useTokens data to match the component's expected Token interface
   const transformedTokens: Token[] = useMemo(() => {
     return allTokens.map(token => {
-      // Format price display
-      let priceDisplay = '';
-      if (token.symbol === 'NGNZ') {
-        priceDisplay = token.formattedPrice.naira;
-      } else {
-        priceDisplay = token.formattedPrice.usd;
-      }
+      const priceDisplay =
+        token.symbol === 'NGNZ' ? token.formattedPrice.naira : token.formattedPrice.usd;
 
       return {
         id: token.id,
@@ -70,7 +63,7 @@ export default function TokensSection({
         price: priceDisplay,
         change: token.changeFormatted,
         changePercent: `${Math.abs(token.change24h).toFixed(2)}%`,
-        isPositive: token.isPositive
+        isPositive: token.isPositive,
       };
     });
   }, [allTokens]);
@@ -78,12 +71,8 @@ export default function TokensSection({
   // Transform favorites for consistency
   const transformedFavorites: Token[] = useMemo(() => {
     return favoriteTokens.map(token => {
-      let priceDisplay = '';
-      if (token.symbol === 'NGNZ') {
-        priceDisplay = token.formattedPrice.naira;
-      } else {
-        priceDisplay = token.formattedPrice.usd;
-      }
+      const priceDisplay =
+        token.symbol === 'NGNZ' ? token.formattedPrice.naira : token.formattedPrice.usd;
 
       return {
         id: token.id,
@@ -92,7 +81,7 @@ export default function TokensSection({
         price: priceDisplay,
         change: token.changeFormatted,
         changePercent: `${Math.abs(token.change24h).toFixed(2)}%`,
-        isPositive: token.isPositive
+        isPositive: token.isPositive,
       };
     });
   }, [favoriteTokens]);
@@ -116,8 +105,18 @@ export default function TokensSection({
       </View>
       <View style={styles.tokenRight}>
         <Text style={styles.tokenPrice}>{item.price}</Text>
-        <View style={[styles.changeContainer, { backgroundColor: item.isPositive ? '#E8F5E8' : '#FFE8E8' }]}>
-          <Text style={[styles.changeText, { color: item.isPositive ? '#4CAF50' : '#F44336' }]}>
+        <View
+          style={[
+            styles.changeContainer,
+            { backgroundColor: item.isPositive ? '#E8F5E8' : '#FFE8E8' },
+          ]}
+        >
+          <Text
+            style={[
+              styles.changeText,
+              { color: item.isPositive ? '#4CAF50' : '#F44336' },
+            ]}
+          >
             {item.change}
           </Text>
         </View>
@@ -127,10 +126,7 @@ export default function TokensSection({
 
   // Get tokens based on active tab
   const displayTokens = useMemo(() => {
-    if (activeTab === 'Favorites') {
-      return transformedFavorites;
-    }
-    return transformedTokens;
+    return activeTab === 'Favorites' ? transformedFavorites : transformedTokens;
   }, [activeTab, transformedTokens, transformedFavorites]);
 
   // Debug filtered tokens
@@ -138,10 +134,10 @@ export default function TokensSection({
     activeTab,
     displayCount: displayTokens.length,
     displayIds: displayTokens.map(t => t.id),
-    hasNGNZ: displayTokens.some(t => t.id === 'ngnz')
+    hasNGNZ: displayTokens.some(t => t.id === 'ngnz'),
   });
 
-  // Show loading state
+  // Loading
   if (loading) {
     return (
       <View style={styles.tokensContainer}>
@@ -150,9 +146,9 @@ export default function TokensSection({
         </View>
       </View>
     );
-  }
+    }
 
-  // Show error state
+  // Error
   if (error) {
     return (
       <View style={styles.tokensContainer}>
@@ -167,19 +163,29 @@ export default function TokensSection({
     <View style={styles.tokensContainer}>
       {/* Token Tabs */}
       <View style={styles.tokenTabs}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.tokenTab, activeTab === 'All tokens' && styles.activeTokenTab]}
           onPress={() => onTabChange('All tokens')}
         >
-          <Text style={[styles.tokenTabText, activeTab === 'All tokens' && styles.activeTokenTabText]}>
+          <Text
+            style={[
+              styles.tokenTabText,
+              activeTab === 'All tokens' && styles.activeTokenTabText,
+            ]}
+          >
             All tokens
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.tokenTab, activeTab === 'Favorites' && styles.activeTokenTab]}
           onPress={() => onTabChange('Favorites')}
         >
-          <Text style={[styles.tokenTabText, activeTab === 'Favorites' && styles.activeTokenTabText]}>
+          <Text
+            style={[
+              styles.tokenTabText,
+              activeTab === 'Favorites' && styles.activeTokenTabText,
+            ]}
+          >
             Favorites
           </Text>
         </TouchableOpacity>
@@ -191,7 +197,7 @@ export default function TokensSection({
         renderItem={renderToken}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        scrollEnabled={false} 
+        scrollEnabled={false}
         contentContainerStyle={styles.tokenListContent}
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
@@ -209,6 +215,7 @@ const styles = StyleSheet.create({
   tokensContainer: {
     paddingHorizontal: Layout.spacing.lg,
     flex: 1,
+    position: 'relative',
   },
   tokenTabs: {
     flexDirection: 'row',

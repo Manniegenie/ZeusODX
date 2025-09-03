@@ -188,7 +188,7 @@ export default function TwoFASetupScreen() {
           [
             {
               text: 'Continue',
-              onPress: () => router.replace('/user/profile')
+              onPress: () => router.replace('/profile/profile')
             }
           ]
         );

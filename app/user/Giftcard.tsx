@@ -15,14 +15,25 @@ import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 
-// Gift card icons - replace with actual paths
+// Gift card icons - keeping existing import routes
 import amazonIcon from '../../components/icons/azn.png';
 import amexIcon from '../../components/icons/amex.png';
 import googlePlayIcon from '../../components/icons/google-play.png';
 import itunesIcon from '../../components/icons/iTunes.png';
 import ebayIcon from '../../components/icons/ebay.png';
-import adidasIcon from '../../components/icons/adiddas.png';
 import lensIcon from '../../components/icons/lens-icon.png';
+
+// New gift card icons
+import steamIcon from '../../components/icons/steam.png';
+import nordstromIcon from '../../components/icons/nordstrom.png';
+import macyIcon from '../../components/icons/macy.png';
+import nikeIcon from '../../components/icons/nike.png';
+import visaIcon from '../../components/icons/visa.png';
+import vanillaIcon from '../../components/icons/vanilla.png';
+import razorGoldIcon from '../../components/icons/razor-gold.png';
+import sephoraIcon from '../../components/icons/sephora.png';
+import footlockerIcon from '../../components/icons/footlocker.png';
+import xboxIcon from '../../components/icons/xbox.png';
 
 const GiftCardScreen = ({ onGiftCardSelect }) => {
   const router = useRouter();
@@ -34,11 +45,20 @@ const GiftCardScreen = ({ onGiftCardSelect }) => {
 
   const giftCards = [
     { id: 'amazon', name: 'Amazon', iconSrc: amazonIcon },
-    { id: 'amex-serve', name: 'American Express Serve', iconSrc: amexIcon },
-    { id: 'google-play', name: 'Google Play', iconSrc: googlePlayIcon },
-    { id: 'itunes', name: 'iTunes', iconSrc: itunesIcon },
-    { id: 'ebay', name: 'Ebay', iconSrc: ebayIcon },
-    { id: 'adidas', name: 'Adidas', iconSrc: adidasIcon },
+    { id: 'itunes', name: 'Apple/iTunes', iconSrc: itunesIcon },
+    { id: 'steam', name: 'Steam Card', iconSrc: steamIcon },
+    { id: 'nordstrom', name: 'Nordstrom', iconSrc: nordstromIcon },
+    { id: 'macy', name: 'Macy', iconSrc: macyIcon },
+    { id: 'nike', name: 'Nike Gift Card', iconSrc: nikeIcon },
+    { id: 'google-play', name: 'Google Play Store', iconSrc: googlePlayIcon },
+    { id: 'visa', name: 'Visa Card', iconSrc: visaIcon },
+    { id: 'vanilla', name: 'Vanilla Cards', iconSrc: vanillaIcon },
+    { id: 'razor-gold', name: 'Razor Gold Gift Card', iconSrc: razorGoldIcon },
+    { id: 'amex', name: 'American Express', iconSrc: amexIcon },
+    { id: 'sephora', name: 'Sephora', iconSrc: sephoraIcon },
+    { id: 'footlocker', name: 'Footlocker', iconSrc: footlockerIcon },
+    { id: 'xbox', name: 'Xbox Card', iconSrc: xboxIcon },
+    { id: 'ebay', name: 'eBay', iconSrc: ebayIcon },
   ];
 
   const filteredGiftCards = giftCards.filter(card =>
@@ -46,7 +66,14 @@ const GiftCardScreen = ({ onGiftCardSelect }) => {
   );
 
   const handleGiftCardPress = (giftCard) => {
+    // Optional callback for analytics/side effects
     onGiftCardSelect?.(giftCard);
+
+    // Navigate to trade screen, passing brand + id as params
+    router.push({
+      pathname: '/Giftcard/Giftcardtrade',
+      params: { brand: giftCard.name, id: giftCard.id },
+    });
   };
 
   return (
@@ -87,7 +114,7 @@ const GiftCardScreen = ({ onGiftCardSelect }) => {
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search for giftcard"
-                placeholderTextColor={Colors.text.secondary}
+                placeholderTextColor={Colors.text?.secondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
@@ -156,10 +183,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  emptySpace: {
-    width: 40,
-  },
+  emptySpace: { width: 40 },
 
+  // Search
   searchSection: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -174,22 +200,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchIconImage: {
-    width: 16,
-    height: 16,
-    resizeMode: 'contain',
-  },
+  searchIcon: { marginRight: 8 },
+  searchIconImage: { width: 16, height: 16, resizeMode: 'contain' },
   searchInput: {
     flex: 1,
-    color: Colors.text.primary,
+    color: Colors.text?.primary,
     fontFamily: Typography.regular,
     fontSize: 14,
     fontWeight: '400',
   },
 
+  // Grid
   giftCardsSection: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -202,20 +223,16 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   giftCardItem: {
-    width: '47%', // Slightly less than 50% to account for gap
+    width: '47%',
     marginBottom: 16,
   },
   giftCardIconContainer: {
     width: '100%',
-    aspectRatio: 155/142, // Maintain original aspect ratio
+    aspectRatio: 155 / 142,
     borderRadius: 8,
     overflow: 'hidden',
   },
-  giftCardIcon: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
+  giftCardIcon: { width: '100%', height: '100%', resizeMode: 'cover' },
 });
 
 export default GiftCardScreen;

@@ -1,0 +1,62 @@
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Colors } from '../../../constants/Colors';
+import { Typography } from '../../../constants/Typography';
+
+export default function VerifyIndex() {
+  const router = useRouter();
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.headerSection}>
+          <View style={styles.headerContainer}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
+              <Text style={styles.backButtonText}>←</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Identity Verification</Text>
+            <View style={styles.headerSpacer} />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sub}>Choose a method to continue</Text>
+
+          <TouchableOpacity style={styles.card} onPress={() => router.push('/kyc/verify/nin')}>
+            <Text style={styles.cardTitle}>National ID Number (NIN)</Text>
+            <Text style={styles.cardSub}>Authority check + selfie</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.card} onPress={() => router.push('/kyc/verify/doc?type=PASSPORT')}>
+            <Text style={styles.cardTitle}>Passport</Text>
+            <Text style={styles.cardSub}>Document verification + selfie</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.card} onPress={() => router.push('/kyc/verify/doc?type=DRIVERS_LICENSE')}>
+            <Text style={styles.cardTitle}>Driver’s License</Text>
+            <Text style={styles.cardSub}>Document verification + selfie</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: 20 },
+  headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
+  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
+  backButtonText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
+  headerTitle: { color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center', marginHorizontal: 16 },
+  headerSpacer: { width: 40 },
+  section: { paddingHorizontal: 16, marginBottom: 24 },
+  sub: { color: Colors.text?.secondary || '#6B7280', fontSize: 13, marginBottom: 12 },
+  card: { backgroundColor: '#fff', borderColor: '#E5E7EB', borderWidth: 1, borderRadius: 10, padding: 16, marginBottom: 12 },
+  cardTitle: { color: Colors.text?.primary || '#111827', fontSize: 16, fontWeight: '600' },
+  cardSub: { color: Colors.text?.secondary || '#6B7280', marginTop: 4, fontSize: 12 },
+});

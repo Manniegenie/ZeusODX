@@ -12,12 +12,12 @@ import {
   RefreshControl,
   ActivityIndicator,
   Clipboard,
-  Alert,
   Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import AddressCopied from '../../components/AddressCopied';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useDeposit } from '../../hooks/useDeposit';
@@ -65,6 +65,7 @@ export default function EthDepositScreen() {
   const [showError, setShowError] = useState<boolean>(false);
   const [errorType, setErrorType] = useState<'network' | 'server' | 'notFound' | 'general'>('general');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [showCopied, setShowCopied] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchETHAddress = async (): Promise<void> => {
@@ -131,7 +132,7 @@ export default function EthDepositScreen() {
     }
     try {
       await Clipboard.setString(depositData.address);
-      Alert.alert('Copied!', 'ETH wallet address copied to clipboard');
+      setShowCopied(true); // show green "Address Copied"
     } catch (error) {
       showErrorMessage('Failed to copy address to clipboard');
     }
@@ -153,6 +154,9 @@ export default function EthDepositScreen() {
         {showError && (
           <ErrorDisplay type={errorType} message={errorMessage} onDismiss={hideError} autoHide={false} />
         )}
+
+        {/* Address Copied banner */}
+        {showCopied && <AddressCopied onDismiss={() => setShowCopied(false)} />}
 
         <ScrollView
           style={styles.scrollView}

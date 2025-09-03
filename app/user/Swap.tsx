@@ -275,9 +275,9 @@ export default function SwapScreen({
     try {
       const result = isNGNZOperation() ? await acceptNGNZQuote(quoteId) : await acceptCryptoQuote(quoteId);
       if (result.success) {
-        await refreshDashboard();
         setShowPreviewModal(false);
         setShowSuccessScreen(true);
+        refreshDashboard(); // Remove await - let it happen in background
         onSwap?.();
       } else {
         Alert.alert('Swap Failed', result.error || 'Failed to execute swap');
