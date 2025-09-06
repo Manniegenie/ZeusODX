@@ -129,7 +129,7 @@ const AddBankScreen = () => {
 
     if (res?.success) {
       Alert.alert('Success', 'Bank account added successfully.', [
-        { text: 'OK', onPress: () => router.replace('/user/bank-details') },
+        { text: 'OK', onPress: () => router.replace('/profile/bank-details') },
       ]);
     } else {
       // Determine error type based on response

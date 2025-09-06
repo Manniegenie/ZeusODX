@@ -148,7 +148,7 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
       });
     } else if (method.id === 'external') {
       router.push({
-        pathname: '/user/externaltransfer',
+        pathname: '/user/FiatTransfer',
         params: {
           tokenId: token.id,
           tokenName: token.name,

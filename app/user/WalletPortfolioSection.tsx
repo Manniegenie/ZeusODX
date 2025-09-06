@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
+// app/components/WalletPortfolioSection.tsx
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
   Image,
   ImageBackground,
-  Animated
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
@@ -16,91 +16,83 @@ import { useDashboard } from '../../hooks/useDashboard';
 import SelectTokenModal, { WalletOption } from '../../components/SelectToken';
 import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 
-// Asset imports
+// Assets
 const depositIcon    = require('../../components/icons/deposit-icon.png');
 const transferIcon   = require('../../components/icons/transfer-icon.png');
 const swapIcon       = require('../../components/icons/swap-icon.png');
 const portfolioBg    = require('../../assets/images/portfolio-bgg.jpg');
 const eyeIcon        = require('../../components/icons/eye-icon.png');
 
-interface QuickLink {
-  id: string;
+type QuickLink = {
+  id: 'deposit' | 'transfer' | 'buy-sell';
   title: string;
   icon: any;
-  route: string;
-}
+  route?: string;
+};
 
 interface WalletPortfolioSectionProps {
   balanceVisible: boolean;
-  onSetupPress: () => void;
   onToggleBalanceVisibility: () => void;
-  onQuickLinkPress?: (link: QuickLink) => void; // New callback prop
 }
 
-export default function WalletPortfolioSection({ 
-  balanceVisible, 
-  onSetupPress,
+export default function WalletPortfolioSection({
+  balanceVisible,
   onToggleBalanceVisibility,
-  onQuickLinkPress, // New prop
 }: WalletPortfolioSectionProps) {
   const router = useRouter();
-  const { totalPortfolioBalance, completionPercentage } = useDashboard();
+
+  // Dashboard-derived data
+  const { totalPortfolioBalance } = useDashboard();
   const safeBalance = totalPortfolioBalance || 0;
   const formattedUsdBalance = `$${safeBalance.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 
-  // Modals state
+  // Local modal + selection state
   const [showSelectTokenModal, setShowSelectTokenModal] = useState(false);
+  const [showDepositTokenModal, setShowDepositTokenModal] = useState(false);
   const [showTransferMethodModal, setShowTransferMethodModal] = useState(false);
-  const [showDepositTokenModal, setShowDepositTokenModal] = useState(false); // New deposit modal state
   const [selectedToken, setSelectedToken] = useState<WalletOption | null>(null);
-  const [modalType, setModalType] = useState<'deposit' | 'transfer'>('transfer'); // Track modal type
 
-  // Only 3 quick links for wallet
+  // Only three quick actions
   const quickLinks: QuickLink[] = [
-    { id: 'deposit',   title: 'Deposit',   icon: depositIcon,   route: '/wallet/deposit' },
-    { id: 'transfer',  title: 'Transfer',  icon: transferIcon,  route: '/wallet/transfer' },
-    { id: 'buy-sell',  title: 'Buy/Sell',  icon: swapIcon,      route: '/user/Swap' },
+    { id: 'deposit',   title: 'Deposit',   icon: depositIcon },
+    { id: 'transfer',  title: 'Transfer',  icon: transferIcon },
+    { id: 'buy-sell',  title: 'Buy/Sell',  icon: swapIcon, route: '/user/Swap' },
   ];
 
+  // ----- Actions -----
   const handleQuickLinkPress = (link: QuickLink) => {
-    // If parent provided callback, use it first
-    if (onQuickLinkPress) {
-      onQuickLinkPress(link);
-      return;
-    }
-
-    // Default behavior if no callback provided
-    if (link.id === 'deposit') {
-      setModalType('deposit');
-      setShowDepositTokenModal(true);
-    } else if (link.id === 'transfer') {
-      setModalType('transfer');
-      setShowSelectTokenModal(true);
-    } else {
-      router.push(link.route);
+    switch (link.id) {
+      case 'deposit':
+        setShowDepositTokenModal(true);
+        break;
+      case 'transfer':
+        setShowSelectTokenModal(true);
+        break;
+      case 'buy-sell':
+        if (link.route) router.push(link.route);
+        break;
     }
   };
 
-  // Handle deposit token selection
+  // Deposit flow
   const handleSelectTokenForDeposit = (token: WalletOption) => {
     setSelectedToken(token);
     setShowDepositTokenModal(false);
-    
-    // Navigate to deposit screen with selected token
+
     router.push({
       pathname: '/wallet/deposit',
-      params: { 
-        tokenId: token.id, 
+      params: {
+        tokenId: token.id,
         tokenName: token.name,
         tokenSymbol: token.symbol,
-      }
+      },
     });
   };
 
-  // Handle transfer token selection
+  // Transfer flow
   const handleSelectTokenForTransfer = (token: WalletOption) => {
     setSelectedToken(token);
     setShowTransferMethodModal(true);
@@ -112,74 +104,49 @@ export default function WalletPortfolioSection({
     if (method.id === 'zeus') {
       router.push({
         pathname: '/user/usernametransfer',
-        params: { 
-          tokenId: selectedToken.id, 
+        params: {
+          tokenId: selectedToken.id,
           tokenName: selectedToken.name,
           tokenSymbol: selectedToken.symbol,
-          transferMethod: 'zeus'
-        }
+          transferMethod: 'zeus',
+        },
       });
     } else if (method.id === 'external') {
+      const isNGNZ =
+        selectedToken.id?.toLowerCase() === 'ngnz' ||
+        selectedToken.symbol?.toUpperCase() === 'NGNZ';
+
       router.push({
-        pathname: '/user/externaltransfer',
-        params: { 
-          tokenId: selectedToken.id, 
+        pathname: isNGNZ ? '/user/FiatTransfer' : '/user/externaltransfer',
+        params: {
+          tokenId: selectedToken.id,
           tokenName: selectedToken.name,
           tokenSymbol: selectedToken.symbol,
-          transferMethod: 'external'
-        }
+          transferMethod: 'external',
+        },
       });
     }
+
     setSelectedToken(null);
     setShowTransferMethodModal(false);
   };
 
-  const handleCloseTransferMethodModal = () => {
-    setShowTransferMethodModal(false);
-    setSelectedToken(null);
-  };
-
-  const handleCloseDepositModal = () => {
+  // Close helpers
+  const closeDepositModal = () => {
     setShowDepositTokenModal(false);
     setSelectedToken(null);
   };
-
-  const handleCloseSelectModal = () => {
+  const closeSelectTokenModal = () => {
     setShowSelectTokenModal(false);
     setSelectedToken(null);
   };
-
-  // Progress bar animation
-  const progressAnim = useRef(new Animated.Value(completionPercentage)).current;
-  useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: completionPercentage,
-      duration: 500,
-      useNativeDriver: false,
-    }).start();
-  }, [completionPercentage]);
-
-  const progressWidth = progressAnim.interpolate({
-    inputRange: [0, 33, 66, 100],
-    outputRange: ['0%', '40%', '66%', '100%'],
-    extrapolate: 'clamp',
-  });
-  const textTranslateX = progressAnim.interpolate({
-    inputRange: [0, 33, 66, 100],
-    outputRange: [0, -50, 5, 0],
-    extrapolate: 'clamp',
-  });
-  const textOpacity = progressAnim.interpolate({
-    inputRange: [0, 99, 100],
-    outputRange: [1, 1, 0],
-    extrapolate: 'clamp',
-  });
-
-  const showSetup = completionPercentage < 100;
+  const closeTransferMethodModal = () => {
+    setShowTransferMethodModal(false);
+    setSelectedToken(null);
+  };
 
   return (
     <View style={styles.container}>
-
       {/* Balance Card */}
       <View style={styles.balanceCard}>
         <ImageBackground
@@ -201,13 +168,13 @@ export default function WalletPortfolioSection({
         </ImageBackground>
       </View>
 
-      {/* Quick Links */}
+      {/* Quick Actions */}
       <View style={styles.quickLinksContainer}>
         <View style={styles.quickLinksHeader}>
           <Text style={styles.quickLinksTitle}>Quick Actions</Text>
         </View>
         <View style={styles.quickLinksList}>
-          {quickLinks.map(item => (
+          {quickLinks.map((item) => (
             <TouchableOpacity
               key={item.id}
               style={styles.quickLinkItem}
@@ -221,49 +188,22 @@ export default function WalletPortfolioSection({
         </View>
       </View>
 
-      {/* Setup Banner */}
-      {showSetup && (
-        <TouchableOpacity style={styles.setupBanner} onPress={onSetupPress}>
-          <View style={styles.setupContent}>
-            <Text style={styles.setupText}>Finalize your setup</Text>
-            <View style={styles.progressBarContainer}>
-              <View style={styles.progressBar}>
-                <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
-                <Animated.Text
-                  style={[
-                    styles.progressText,
-                    {
-                      transform: [{ translateX: textTranslateX }],
-                      opacity: textOpacity,
-                    },
-                  ]}
-                >
-                  {Math.round(completionPercentage)}%
-                </Animated.Text>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-      )}
-
-      {/* Modals for Deposit Flow */}
+      {/* Modals */}
       <SelectTokenModal
         visible={showDepositTokenModal}
-        onClose={handleCloseDepositModal}
+        onClose={closeDepositModal}
         onSelectToken={handleSelectTokenForDeposit}
         title="Select Token to Deposit"
       />
-
-      {/* Modals for Transfer Flow */}
       <SelectTokenModal
-        visible={showSelectTokenModal && modalType === 'transfer'}
-        onClose={handleCloseSelectModal}
+        visible={showSelectTokenModal}
+        onClose={closeSelectTokenModal}
         onSelectToken={handleSelectTokenForTransfer}
         title="Select Token to Transfer"
       />
       <TransferMethodModal
         visible={showTransferMethodModal}
-        onClose={handleCloseTransferMethodModal}
+        onClose={closeTransferMethodModal}
         onSelectMethod={handleTransferMethodSelect}
         title={`Send ${selectedToken?.name || 'Token'}`}
       />
@@ -272,9 +212,9 @@ export default function WalletPortfolioSection({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: Layout.spacing.lg,
-  },
+  container: { marginBottom: Layout.spacing.lg },
+
+  // Balance card
   balanceCard: {
     marginHorizontal: Layout.spacing.lg,
     marginBottom: Layout.spacing.lg,
@@ -283,14 +223,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#DDDDDD',
   },
-  balanceBackground: {
-    height: 151,
-    justifyContent: 'center',
-    backgroundColor: '#4A3FAD',
-  },
-  balanceBackgroundImage: {
-    borderRadius: Layout.borderRadius.lg,
-  },
+  balanceBackground: { height: 151, justifyContent: 'center', backgroundColor: '#4A3FAD' },
+  balanceBackgroundImage: { borderRadius: Layout.borderRadius.lg },
   balanceContent: {
     padding: Layout.spacing.lg,
     justifyContent: 'center',
@@ -304,11 +238,7 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.sm,
     textAlign: 'center',
   },
-  balanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
+  balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   balanceAmount: {
     fontFamily: Typography.medium,
     fontSize: 32,
@@ -316,93 +246,19 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
   },
-  eyeIcon: {
-    width: 12,
-    height: 12,
-    tintColor: Colors.surface,
-    marginLeft: 6,
-  },
-  quickLinksContainer: {
-    paddingHorizontal: Layout.spacing.lg,
-    marginBottom: Layout.spacing.lg,
-  },
-  quickLinksHeader: {
-    marginBottom: Layout.spacing.md,
-  },
-  quickLinksTitle: {
-    fontFamily: Typography.medium,
-    fontSize: 16,
-    color: Colors.text.primary,
-  },
+  eyeIcon: { width: 12, height: 12, tintColor: Colors.surface, marginLeft: 6 },
+
+  // Quick links
+  quickLinksContainer: { paddingHorizontal: Layout.spacing.lg, marginBottom: Layout.spacing.lg },
+  quickLinksHeader: { marginBottom: Layout.spacing.md },
+  quickLinksTitle: { fontFamily: Typography.medium, fontSize: 16, color: Colors.text.primary },
   quickLinksList: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
     paddingHorizontal: Layout.spacing.xs,
   },
-  quickLinkItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: Layout.spacing.xs,
-  },
-  quickLinkIconImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    resizeMode: 'contain',
-  },
-  quickLinkText: {
-    fontFamily: Typography.regular,
-    fontSize: 10,
-    color: Colors.text.secondary,
-    textAlign: 'center',
-  },
-  setupBanner: {
-    marginHorizontal: Layout.spacing.lg,
-    marginBottom: Layout.spacing.lg,
-    backgroundColor: '#F8F9FA',
-    borderRadius: Layout.borderRadius.md,
-    borderWidth: 0.5,
-    borderColor: '#F0A202',
-    padding: Layout.spacing.md,
-  },
-  setupContent: {
-    alignItems: 'center',
-  },
-  setupText: {
-    fontFamily: Typography.regular,
-    fontSize: 12,
-    color: '#35297F',
-    textAlign: 'center',
-    marginBottom: Layout.spacing.xs,
-  },
-  progressBarContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  progressBar: {
-    width: '100%',
-    height: 14,
-    backgroundColor: '#FFFBDB',
-    borderRadius: 7,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: '#F0A202',
-    borderRadius: 7,
-  },
-  progressText: {
-    position: 'absolute',
-    fontFamily: Typography.medium,
-    fontSize: 10,
-    color: '#F4F2FF',
-    fontWeight: '600',
-    width: '100%',
-    textAlign: 'center',
-    lineHeight: 14,
-  },
+  quickLinkItem: { flex: 1, alignItems: 'center', gap: Layout.spacing.xs },
+  quickLinkIconImage: { width: 44, height: 44, borderRadius: 22, resizeMode: 'contain' },
+  quickLinkText: { fontFamily: Typography.regular, fontSize: 10, color: Colors.text.secondary, textAlign: 'center' },
 });
