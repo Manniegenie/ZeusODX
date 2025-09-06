@@ -1,16 +1,22 @@
 // hooks/useVerificationStatus.js
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-// NOTE: ensure path casing matches your file system
 import { verificationService } from '../services/VerificationService';
 
 /**
+ * Updated hook for granular verification status tracking.
+ * Now includes KYC2-specific progress and overall progress from backend.
+ * 
  * Usage:
  * const {
  *   loading, error,
- *   fiat, kyc, overall,
+ *   fiat, kyc, overall, kyc2Progress,
  *   isFiatComplete, isKycComplete, isFullyVerified,
+ *   // Fiat steps
  *   hasBankAccount, bvnVerified,
- *   level1Approved, level2Approved, level3Approved,
+ *   // KYC granular steps
+ *   emailVerified, identityVerified, addressVerified,
+ *   // KYC level helpers
+ *   level2Approved, level3Approved,
  *   refresh, startPolling, stopPolling
  * } = useVerificationStatus({ autoFetch: true, pollMs: 15000 });
  */
@@ -18,10 +24,10 @@ export const useVerificationStatus = (options = {}) => {
   const { autoFetch = true, pollMs = null } = options;
 
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
-
-  const [fiat, setFiat] = useState(null); // { totalSteps, completedSteps, percentage, steps[], completed[] }
-  const [kyc,  setKyc]  = useState(null); // { totalSteps, completedSteps, percentage, steps[], completed[] }
+  const [error, setError] = useState(null);
+  const [fiat, setFiat] = useState(null);
+  const [kyc, setKyc] = useState(null);
+  const [overall, setOverall] = useState(null);
 
   const intervalRef = useRef(null);
 
@@ -33,12 +39,14 @@ export const useVerificationStatus = (options = {}) => {
       if (result.success) {
         const { data } = result;
         setFiat(data.fiat || { totalSteps: 0, completedSteps: 0, percentage: 0, steps: [], completed: [] });
-        setKyc(data.kyc   || { totalSteps: 0, completedSteps: 0, percentage: 0, steps: [], completed: [] });
+        setKyc(data.kyc || { totalSteps: 0, completedSteps: 0, percentage: 0, steps: [], completed: [] });
+        setOverall(data.overall || { totalSteps: 0, completedSteps: 0, percentage: 0 });
         setError(null);
       } else {
         setError(result.message || 'Failed to fetch verification status');
         setFiat(null);
         setKyc(null);
+        setOverall(null);
       }
       return result;
     } catch (e) {
@@ -46,6 +54,7 @@ export const useVerificationStatus = (options = {}) => {
       setError(msg);
       setFiat(null);
       setKyc(null);
+      setOverall(null);
       return { success: false, error: 'NETWORK_ERROR', message: msg };
     } finally {
       setLoading(false);
@@ -55,7 +64,7 @@ export const useVerificationStatus = (options = {}) => {
   const refresh = useCallback(() => fetchStatus(), [fetchStatus]);
 
   const startPolling = useCallback((intervalMs = (typeof pollMs === 'number' ? pollMs : 10000)) => {
-    if (intervalRef.current) return; // already polling
+    if (intervalRef.current) return;
     intervalRef.current = setInterval(() => { fetchStatus(); }, intervalMs);
   }, [fetchStatus, pollMs]);
 
@@ -77,25 +86,22 @@ export const useVerificationStatus = (options = {}) => {
     return undefined;
   }, [autoFetch, pollMs, startPolling, stopPolling]);
 
-  // -------- Derived values --------
-  const overall = useMemo(() => {
-    const fTot = Number(fiat?.totalSteps || 0);
-    const kTot = Number(kyc?.totalSteps || 0);
-    const fCmp = Number(fiat?.completedSteps || 0);
-    const kCmp = Number(kyc?.completedSteps || 0);
+  // -------- KYC2-specific progress (email + identity only) --------
+  const kyc2Progress = useMemo(() => {
+    return verificationService.getKyc2Progress(kyc);
+  }, [kyc]);
 
-    const totalSteps = fTot + kTot;
-    const completedSteps = fCmp + kCmp;
-    const percentage = totalSteps ? Math.round((completedSteps / totalSteps) * 100) : 0;
+  // -------- KYC3-specific progress (address only) --------
+  const kyc3Progress = useMemo(() => {
+    return verificationService.getKyc3Progress(kyc);
+  }, [kyc]);
 
-    return { totalSteps, completedSteps, percentage };
-  }, [fiat, kyc]);
-
-  const isFiatComplete  = !!fiat && fiat.percentage === 100;
-  const isKycComplete   = !!kyc && kyc.percentage === 100;
+  // -------- Derived completion flags --------
+  const isFiatComplete = !!fiat && fiat.percentage === 100;
+  const isKycComplete = !!kyc && kyc.percentage === 100;
   const isFullyVerified = isFiatComplete && isKycComplete;
 
-  // Step-level helpers (use API’s completed list first; fallback to steps[])
+  // -------- FIAT STEP HELPERS --------
   const hasBankAccount = useMemo(() => {
     if (!fiat) return false;
     if (Array.isArray(fiat.completed) && fiat.completed.includes('bank_account')) return true;
@@ -110,47 +116,91 @@ export const useVerificationStatus = (options = {}) => {
     return !!step?.completed;
   }, [fiat]);
 
-  const level1Approved = useMemo(() => {
+  // -------- KYC GRANULAR STEP HELPERS --------
+  const emailVerified = useMemo(() => {
     if (!kyc) return false;
-    if (Array.isArray(kyc.completed) && kyc.completed.includes('level1')) return true;
-    const step = (kyc.steps || []).find(s => s.id === 'level1');
+    if (Array.isArray(kyc.completed) && kyc.completed.includes('email')) return true;
+    const step = (kyc.steps || []).find(s => s.id === 'email');
     return !!step?.completed;
   }, [kyc]);
 
-  const level2Approved = useMemo(() => {
+  const identityVerified = useMemo(() => {
     if (!kyc) return false;
-    if (Array.isArray(kyc.completed) && kyc.completed.includes('level2')) return true;
-    const step = (kyc.steps || []).find(s => s.id === 'level2');
+    if (Array.isArray(kyc.completed) && kyc.completed.includes('identity')) return true;
+    const step = (kyc.steps || []).find(s => s.id === 'identity');
     return !!step?.completed;
   }, [kyc]);
+
+  const addressVerified = useMemo(() => {
+    if (!kyc) return false;
+    if (Array.isArray(kyc.completed) && kyc.completed.includes('address')) return true;
+    const step = (kyc.steps || []).find(s => s.id === 'address');
+    return !!step?.completed;
+  }, [kyc]);
+
+  // -------- KYC LEVEL HELPERS --------
+  const level2Approved = useMemo(() => {
+    // Level 2 is complete when both email and identity are verified
+    return emailVerified && identityVerified;
+  }, [emailVerified, identityVerified]);
 
   const level3Approved = useMemo(() => {
-    if (!kyc) return false;
-    if (Array.isArray(kyc.completed) && kyc.completed.includes('level3')) return true;
-    const step = (kyc.steps || []).find(s => s.id === 'level3');
-    return !!step?.completed;
-  }, [kyc]);
+    // Level 3 is complete when address is verified
+    return addressVerified;
+  }, [addressVerified]);
+
+  // -------- STEP DETAIL HELPERS --------
+  const getStepDetails = useCallback((stepId) => {
+    // Check KYC steps first
+    const kycStep = (kyc?.steps || []).find(s => s.id === stepId);
+    if (kycStep) return { ...kycStep, category: 'kyc' };
+    
+    // Check fiat steps
+    const fiatStep = (fiat?.steps || []).find(s => s.id === stepId);
+    if (fiatStep) return { ...fiatStep, category: 'fiat' };
+    
+    return null;
+  }, [kyc, fiat]);
+
+  const getStepStatus = useCallback((stepId) => {
+    const step = getStepDetails(stepId);
+    return step?.status || 'not_submitted';
+  }, [getStepDetails]);
 
   return {
     loading,
     error,
 
-    // Raw sections from service (include steps/completed)
+    // Raw sections from service
     fiat,
     kyc,
+    overall, // Overall progress from backend
 
-    // Derived
-    overall,
+    // KYC-specific progress calculations
+    kyc2Progress, // Only email + identity (for KYC2 screen)
+    kyc3Progress, // Only address (for KYC3 screen)
+
+    // Completion flags
     isFiatComplete,
     isKycComplete,
     isFullyVerified,
 
-    // Convenient flags for UI
+    // Fiat step flags
     hasBankAccount,
     bvnVerified,
-    level1Approved,
+
+    // KYC granular step flags
+    emailVerified,
+    identityVerified,
+    addressVerified,
+
+    // KYC level flags
     level2Approved,
     level3Approved,
+
+    // Helper methods
+    getStepDetails,
+    getStepStatus,
 
     // Controls
     refresh,

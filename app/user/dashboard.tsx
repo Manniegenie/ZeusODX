@@ -17,6 +17,7 @@ import TransferMethodModal, { TransferMethod } from '../../components/TransferMe
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { useDashboard } from '../../hooks/useDashboard';
+import { apiClient } from '../../services/apiClient'; // Add this import
 import DashboardHeader from './DashboardHeader';
 import DashboardModals from './DashboardModals';
 import PortfolioSection from './PortfolioSection';
@@ -67,11 +68,12 @@ export default function DashboardScreen() {
     setShowTransferMethodModal(true);
   };
 
-  // Transfer method selection handler
+  // Transfer method selection handler - MODIFIED FOR NGNZ
   const handleTransferMethodSelect = (method: TransferMethod) => {
     if (!selectedToken) return;
 
     if (method.id === 'zeus') {
+      // Username transfer works the same for all tokens including NGNZ
       router.push({
         pathname: '/user/usernametransfer',
         params: {
@@ -82,15 +84,29 @@ export default function DashboardScreen() {
         }
       });
     } else if (method.id === 'external') {
-      router.push({
-        pathname: '/user/externaltransfer',
-        params: {
-          tokenId: selectedToken.id,
-          tokenName: selectedToken.name,
-          tokenSymbol: selectedToken.symbol,
-          transferMethod: 'external'
-        }
-      });
+      // Special handling for NGNZ external transfer
+      if (selectedToken.id === 'ngnz' || selectedToken.symbol === 'NGNZ') {
+        router.push({
+          pathname: '/user/FiatTransfer',
+          params: {
+            tokenId: selectedToken.id,
+            tokenName: selectedToken.name,
+            tokenSymbol: selectedToken.symbol,
+            transferMethod: 'external'
+          }
+        });
+      } else {
+        // All other tokens go to regular external transfer
+        router.push({
+          pathname: '/user/externaltransfer',
+          params: {
+            tokenId: selectedToken.id,
+            tokenName: selectedToken.name,
+            tokenSymbol: selectedToken.symbol,
+            transferMethod: 'external'
+          }
+        });
+      }
     }
 
     setSelectedToken(null);
@@ -102,10 +118,18 @@ export default function DashboardScreen() {
     setSelectedToken(null);
   };
 
-  // Pull to refresh handler
+  // Pull to refresh handler - UPDATED TO CLEAR CACHE
   const onRefresh = useCallback(async () => {
     try {
+      console.log('🔄 Refreshing dashboard and clearing cache...');
+      
+      // Clear API cache first
+      apiClient.clearCache();
+      
+      // Then refresh dashboard data
       await refreshDashboard();
+      
+      console.log('✅ Dashboard refresh completed');
     } catch (error) {
       console.error('❌ Error refreshing dashboard:', error);
     }

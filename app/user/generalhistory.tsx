@@ -1,3 +1,4 @@
+// app/user/TransactionHistoryScreen.tsx
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar,
@@ -190,6 +191,99 @@ const TransactionHistoryScreen = () => {
     return parseFloat(cleanAmount) || 0;
   };
 
+  // ===== Helpers for receipt navigation (mirrors NGNZWalletScreen) =====
+  const mapServiceTypeToUI = (t) => {
+    switch (t) {
+      case 'DEPOSIT': return 'Deposit';
+      case 'WITHDRAWAL': return 'Withdrawal';
+      case 'SWAP': return 'Swap';
+      case 'BILL_PAYMENT': return 'Bill Payment';
+      default: return t || 'Unknown';
+    }
+  };
+  const mapServiceStatusToUI = (s) => {
+    switch (s) {
+      case 'SUCCESSFUL': return 'Successful';
+      case 'FAILED': return 'Failed';
+      case 'PENDING': return 'Pending';
+      default: return s || 'Unknown';
+    }
+  };
+  const displayBillType = (tx) => {
+    const d = tx?.details || {};
+    const raw =
+      tx?.billType ||
+      tx?.utilityType ||
+      d.billCategory ||
+      d.billType ||
+      d.productName ||
+      tx?.category ||
+      '';
+    if (!raw) return undefined;
+    const v = String(raw).toLowerCase();
+    if (v.includes('airtime')) return 'Airtime';
+    if (v.includes('data')) return 'Data';
+    if (v.includes('cable') || v.includes('tv') || v.includes('dstv') || v.includes('gotv') || v.includes('startimes')) return 'Cable';
+    if (v.includes('electric')) return 'Electricity';
+    return String(raw).charAt(0).toUpperCase() + String(raw).slice(1);
+  };
+
+  // Build the object TransactionReceipt expects
+  const toAPITransaction = (tx) => {
+    const serviceType = String(tx?.type || '');
+    const serviceStatus = String(tx?.status || '');
+    const amountNum = extractAmountValue(tx);
+    const symbol = tx?.currency || tx?.symbol || tx?.asset || 'NGN';
+    const prettyAmt = formatAmountForDisplay(amountNum, symbol);
+    const sign = getTransactionPrefix(serviceType, tx?.formattedAmount);
+
+    const isNaira = ['NGN','NGNB','NGNZ'].includes(String(symbol).toUpperCase());
+    const amountStr = isNaira ? `${sign}₦${prettyAmt}` : `${sign}${prettyAmt} ${symbol}`;
+    const dateText = tx?.formattedDate || (tx?.createdAt ? new Date(tx.createdAt).toLocaleString('en-NG') : '—');
+
+    let details = {};
+    let uiType = mapServiceTypeToUI(serviceType);
+
+    if (serviceType === 'BILL_PAYMENT') {
+      const d = tx?.details || {};
+      uiType = displayBillType(tx) || 'Bill Payment';
+      details = {
+        category: 'utility',
+        orderId: d.orderId || d.order_id || tx?.orderId,
+        requestId: d.requestId || d.request_id || tx?.requestId,
+        productName: d.productName || d.product || tx?.productName,
+        quantity: d.quantity || d.units || tx?.quantity,
+        network: d.network || d.provider || tx?.network || tx?.provider,
+        customerInfo: d.customerInfo || d.customerPhone || d.phone || d.meterNo || d.account,
+        billType: d.billType || d.type || displayBillType(tx),
+        paymentCurrency: d.paymentCurrency || tx?.paymentCurrency || symbol,
+      };
+    } else {
+      const d = tx?.details || {};
+      details = {
+        category: 'token',
+        transactionId: d.transactionId || tx?.transactionId || tx?.txId || tx?.externalId || tx?.reference || tx?.id || tx?._id,
+        currency: symbol,
+        network: d.network || tx?.network || tx?.chain || tx?.blockchain,
+        address: d.address || tx?.address || tx?.walletAddress || tx?.to || tx?.toAddress || tx?.receivingAddress,
+        hash: d.hash || tx?.hash || tx?.txHash || tx?.transactionHash,
+        fee: d.fee || tx?.fee || tx?.networkFee || tx?.gasFee || tx?.txFee,
+        narration: d.narration || tx?.narration || tx?.note || tx?.description || tx?.memo || tx?.reason,
+      };
+      if (serviceType === 'SWAP') uiType = 'Swap';
+    }
+
+    return {
+      id: (tx?.id || tx?._id || tx?.transactionId || tx?.reference || tx?.externalId || '') + '',
+      type: uiType,
+      status: mapServiceStatusToUI(serviceStatus),
+      amount: amountStr,
+      date: dateText,
+      createdAt: tx?.createdAt,
+      details,
+    };
+  };
+
   const FilterModal = ({ visible, title, options, selectedValue, onSelect, onClose }) => (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <TouchableWithoutFeedback onPress={onClose}>
@@ -272,7 +366,22 @@ const TransactionHistoryScreen = () => {
           const formattedAmount = formatAmountForDisplay(amountValue, tx.currency);
           const prefix = getTransactionPrefix(tx.type, tx.formattedAmount);
           return (
-            <View key={tx.id || idx} style={styles.transactionItem}>
+            <TouchableOpacity
+              key={tx.id || idx}
+              style={styles.transactionItem}
+              activeOpacity={0.85}
+              onPress={() => {
+                // Route exactly like NGNZWalletScreen
+                const apiTx = toAPITransaction(tx);
+                router.push({
+                  pathname: '/history/TransactionReceipt',
+                  params: {
+                    tx: encodeURIComponent(JSON.stringify(apiTx)),
+                    raw: encodeURIComponent(JSON.stringify(tx)),
+                  },
+                });
+              }}
+            >
               <View style={styles.transactionLeft}>
                 <Text style={styles.transactionType}>{formatTransactionType(tx.type, tx.billType)}</Text>
                 <Text style={styles.transactionDate}>{tx.formattedDate || 'N/A'}</Text>
@@ -285,7 +394,7 @@ const TransactionHistoryScreen = () => {
                   </Text>
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
       </View>

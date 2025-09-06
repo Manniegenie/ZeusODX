@@ -22,15 +22,18 @@ import checkmarkIcon from '../../components/icons/green-checkmark.png';
 const KYCLevel3Screen: React.FC = () => {
   const router = useRouter();
 
-  // Fetch live verification status
-  const { loading, error, overall, kyc } = useVerificationStatus({
+  // Use updated hook with KYC3-specific progress
+  const { 
+    loading, 
+    error, 
+    kyc3Progress,
+    addressVerified
+  } = useVerificationStatus({
     autoFetch: true,
-    pollMs: 15000, // optional polling
+    pollMs: 15000,
   });
 
-  // Swap to kyc?.percentage if you want KYC-only % instead of combined
-  const overallPct = Math.max(0, Math.min(100, overall?.percentage ?? 0));
-  const level3Complete = (kyc?.completedSteps ?? 0) >= 3;
+  const kyc3Pct = Math.max(0, Math.min(100, kyc3Progress?.percentage ?? 0));
 
   const handleGoBack = (): void => {
     router.back();
@@ -90,13 +93,13 @@ const KYCLevel3Screen: React.FC = () => {
             </View>
           </View>
 
-          {/* Progress Section (hook-driven) */}
+          {/* Progress Section - Shows KYC3-specific progress */}
           <View style={styles.section}>
             <View style={styles.progressCard}>
-              <Text style={styles.progressTitle}>Overall Progress</Text>
+              <Text style={styles.progressTitle}>Level 3 Progress</Text>
               <View style={styles.progressBarContainer}>
-                <View style={styles.progressBar} accessibilityRole="progressbar" accessibilityValue={{ now: overallPct, min: 0, max: 100 }}>
-                  <View style={[styles.progressFill, { width: `${overallPct}%` }]} />
+                <View style={styles.progressBar} accessibilityRole="progressbar" accessibilityValue={{ now: kyc3Pct, min: 0, max: 100 }}>
+                  <View style={[styles.progressFill, { width: `${kyc3Pct}%` }]} />
                 </View>
 
                 {loading ? (
@@ -105,7 +108,7 @@ const KYCLevel3Screen: React.FC = () => {
                     <Text style={styles.progressText}>Loading progress…</Text>
                   </View>
                 ) : (
-                  <Text style={styles.progressText}>{overallPct}% complete</Text>
+                  <Text style={styles.progressText}>{kyc3Pct}% complete</Text>
                 )}
 
                 {!!error && !loading && (
@@ -118,25 +121,29 @@ const KYCLevel3Screen: React.FC = () => {
           {/* Verification Steps Section */}
           <View style={styles.section}>
             {/* Address Verification */}
-            <View style={styles.verificationCard}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={[styles.verificationCard, { borderColor: '#C7D2FE' }]}
+              onPress={() => router.push('/kyc/address-verify')}
+            >
               <View style={styles.verificationContent}>
                 <View style={styles.verificationInfo}>
                   <Text style={styles.verificationTitle}>Address Verification</Text>
                   <Text style={styles.verificationSubtitle}>
-                    {level3Complete
+                    {addressVerified
                       ? 'Your address has been successfully verified.'
-                      : 'Provide proof of address to complete Level 3.'}
+                      : 'Tap to verify your address (Utility bill / Bank statement)'}
                   </Text>
                 </View>
                 <View style={styles.checkmarkContainer}>
-                  {level3Complete ? (
+                  {addressVerified ? (
                     <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
                   ) : (
                     <Text style={{ fontSize: 18, color: '#35297F' }}>›</Text>
                   )}
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -158,7 +165,7 @@ const styles = StyleSheet.create({
     flex: 1 
   },
 
-  // Header styles (matching previous screens)
+  // Header styles
   headerSection: {
     paddingHorizontal: 16,
     paddingTop: 12,

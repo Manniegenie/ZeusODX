@@ -22,14 +22,19 @@ import checkmarkIcon from '../../components/icons/green-checkmark.png';
 const FiatScreen: React.FC = () => {
   const router = useRouter();
 
-  // Pull live fiat progress via the hook
-  const { loading, error, fiat } = useVerificationStatus({
+  // Use updated hook with individual fiat step helpers
+  const { 
+    loading, 
+    error, 
+    fiat,
+    bvnVerified,
+    hasBankAccount 
+  } = useVerificationStatus({
     autoFetch: true,
-    pollMs: 15000, // optional polling; remove if you don’t want it
+    pollMs: 15000,
   });
 
   const fiatPct = Math.max(0, Math.min(100, fiat?.percentage ?? 0));
-  const fiatComplete = (fiat?.completedSteps ?? 0) >= (fiat?.totalSteps ?? 2);
 
   const handleGoBack = (): void => {
     router.back();
@@ -48,7 +53,6 @@ const FiatScreen: React.FC = () => {
           {/* Header Section */}
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
-              {/* Back Button */}
               <TouchableOpacity 
                 style={styles.backButton} 
                 onPress={handleGoBack}
@@ -57,10 +61,7 @@ const FiatScreen: React.FC = () => {
                 <Text style={styles.backButtonText}>←</Text>
               </TouchableOpacity>
 
-              {/* Title */}
               <Text style={styles.headerTitle}>Fiat Verification</Text>
-
-              {/* Spacer to center title */}
               <View style={styles.headerSpacer} />
             </View>
           </View>
@@ -75,10 +76,10 @@ const FiatScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Progress Section (hook-driven) */}
+          {/* Progress Section */}
           <View style={styles.section}>
             <View style={styles.progressCard}>
-              <Text style={styles.progressTitle}>Overall Progress</Text>
+              <Text style={styles.progressTitle}>Fiat Progress</Text>
               <View style={styles.progressBarContainer}>
                 <View
                   style={styles.progressBar}
@@ -109,44 +110,60 @@ const FiatScreen: React.FC = () => {
             {/* BVN Verification */}
             <TouchableOpacity
               activeOpacity={0.8}
-              style={styles.verificationCard}
-              onPress={() => router.push('/fiat/bvn')} // adjust route to your app
+              style={[styles.verificationCard, !bvnVerified && styles.incompleteCard]}
+              onPress={() => router.push('/fiat/bvn')}
             >
               <View style={styles.verificationContent}>
                 <View style={styles.verificationInfo}>
                   <Text style={styles.verificationTitle}>BVN Verification</Text>
-                  <Text style={styles.verificationSubtitle}>
-                    {fiatComplete ? 'Your BVN has been successfully verified.' : 'Verify your BVN to enable Naira withdrawals & deposits.'}
+                  <Text style={[
+                    styles.verificationSubtitle,
+                    !bvnVerified && styles.incompleteText
+                  ]}>
+                    {bvnVerified 
+                      ? 'Your BVN has been successfully verified.' 
+                      : 'Verify your BVN to enable Naira withdrawals & deposits.'
+                    }
                   </Text>
                 </View>
                 <View style={styles.checkmarkContainer}>
-                  {fiatComplete ? (
+                  {bvnVerified ? (
                     <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
                   ) : (
-                    <Text style={{ fontSize: 18, color: '#35297F' }}>›</Text>
+                    <View style={styles.pendingIcon}>
+                      <Text style={styles.pendingText}>!</Text>
+                    </View>
                   )}
                 </View>
               </View>
             </TouchableOpacity>
 
-            {/* Add Account Number */}
+            {/* Add Bank Account */}
             <TouchableOpacity
               activeOpacity={0.8}
-              style={styles.verificationCard}
-              onPress={() => router.push('/bank/add')} // adjust route to your app
+              style={[styles.verificationCard, !hasBankAccount && styles.incompleteCard]}
+              onPress={() => router.push('/profile/add-bank')}
             >
               <View style={styles.verificationContent}>
                 <View style={styles.verificationInfo}>
-                  <Text style={styles.verificationTitle}>Add Account Number</Text>
-                  <Text style={styles.verificationSubtitle}>
-                    {fiatComplete ? 'Your bank account has been successfully added.' : 'Add a verified bank account to receive withdrawals.'}
+                  <Text style={styles.verificationTitle}>Add Bank Account</Text>
+                  <Text style={[
+                    styles.verificationSubtitle,
+                    !hasBankAccount && styles.incompleteText
+                  ]}>
+                    {hasBankAccount 
+                      ? 'Your bank account has been successfully added.' 
+                      : 'Add a verified bank account to receive withdrawals.'
+                    }
                   </Text>
                 </View>
                 <View style={styles.checkmarkContainer}>
-                  {fiatComplete ? (
+                  {hasBankAccount ? (
                     <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
                   ) : (
-                    <Text style={{ fontSize: 18, color: '#35297F' }}>›</Text>
+                    <View style={styles.pendingIcon}>
+                      <Text style={styles.pendingText}>!</Text>
+                    </View>
                   )}
                 </View>
               </View>
@@ -172,7 +189,7 @@ const styles = StyleSheet.create({
     flex: 1 
   },
 
-  // Header styles (matching previous screens)
+  // Header styles
   headerSection: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -296,6 +313,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
   },
+  incompleteCard: {
+    borderColor: '#FEF3C7',
+    backgroundColor: '#FFFBEB',
+  },
   verificationContent: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -319,6 +340,9 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 16,
   },
+  incompleteText: {
+    color: '#92400E',
+  },
   checkmarkContainer: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -327,6 +351,19 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     resizeMode: 'contain',
+  },
+  pendingIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#F59E0B',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pendingText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 
