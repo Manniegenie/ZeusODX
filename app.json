@@ -49,7 +49,7 @@
             "compileSdkVersion": 34,
             "targetSdkVersion": 34,
             "minSdkVersion": 23,
-            "kotlinVersion": "1.9.24",
+            "kotlinVersion": "1.9.25",
             "extraProguardRules": "-keep class zendesk.** { *; }\n-keep class com.zendesk.** { *; }\n-dontwarn okhttp3.**\n-dontwarn okio.**\n-dontwarn retrofit2.**\n"
           },
           "ios": {
