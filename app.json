@@ -49,8 +49,6 @@
             "compileSdkVersion": 36,
             "targetSdkVersion": 36,
             "minSdkVersion": 24,
-            "kotlinVersion": "2.2.0",
-            "kspVersion": "2.2.0-1.0.28",
             "gradleProperties": {
               "android.suppressUnsupportedCompileSdk": "36"
             },
