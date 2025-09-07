@@ -23,27 +23,36 @@ import checkmarkIcon from '../../components/icons/green-checkmark.png';
 const KYCLevel2Screen: React.FC = () => {
   const router = useRouter();
 
-  // Use updated hook with KYC2-specific progress
+  // Fetch once on mount: disable polling + refetch-on-focus/reconnect
   const {
     loading,
     error,
     kyc2Progress,
     emailVerified,
-    identityVerified
+    identityVerified,
   } = useVerificationStatus({
     autoFetch: true,
-    pollMs: 15000,
+    pollMs: 0,                 // <- no polling
+    refetchOnFocus: false,     // <- if the hook supports these flags
+    refetchOnReconnect: false, // <- if the hook supports these flags
   });
 
   const kyc2Pct = Math.max(0, Math.min(100, kyc2Progress?.percentage ?? 0));
+  const canStartIdentity = !!emailVerified;
+  const emailClickable = !emailVerified; // <- make email step unclickable when already verified
 
   const handleGoBack = (): void => {
     router.back();
   };
 
   const handleEmailPress = (): void => {
-    // Always allow navigation so user can re-trigger/see status screen
+    if (!emailClickable) return;
     router.push('/kyc/verify-email');
+  };
+
+  const handleIdentityPress = (): void => {
+    if (!canStartIdentity) return;
+    router.push('/kyc/verify');
   };
 
   return (
@@ -101,8 +110,8 @@ const KYCLevel2Screen: React.FC = () => {
             </View>
           </View>
 
-          {/* Progress Section - Shows KYC2-specific progress */}
-          <View style={styles.section}>
+          {/* Progress Section */}
+          <View className="section" style={styles.section}>
             <View style={styles.progressCard}>
               <Text style={styles.progressTitle}>Level 2 Progress</Text>
 
@@ -133,11 +142,17 @@ const KYCLevel2Screen: React.FC = () => {
 
           {/* Verification Steps Section */}
           <View style={styles.section}>
-            {/* Email Verification (PRESSABLE) */}
+            {/* Email Verification (unclickable when already verified) */}
             <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleEmailPress}
-              style={[styles.verificationCard, !emailVerified && styles.incompleteCard]}
+              activeOpacity={emailClickable ? 0.8 : 1}
+              onPress={emailClickable ? handleEmailPress : undefined}
+              style={[
+                styles.verificationCard,
+                !emailVerified && styles.incompleteCard,
+                !emailClickable && styles.disabledCard, // dim when verified
+              ]}
+              disabled={!emailClickable}
+              accessibilityState={{ disabled: !emailClickable }}
               testID="emailVerificationCard"
             >
               <View style={styles.verificationContent}>
@@ -146,12 +161,12 @@ const KYCLevel2Screen: React.FC = () => {
                   <Text
                     style={[
                       styles.verificationSubtitle,
-                      !emailVerified && styles.incompleteText
+                      !emailVerified && styles.incompleteText,
                     ]}
                   >
                     {emailVerified
-                      ? "Your email address has been successfully verified."
-                      : "Tap to verify your email address."}
+                      ? 'Your email address has been successfully verified.'
+                      : 'Tap to verify your email address.'}
                   </Text>
                 </View>
 
@@ -165,27 +180,41 @@ const KYCLevel2Screen: React.FC = () => {
               </View>
             </TouchableOpacity>
 
-            {/* Identity Verification */}
+            {/* Identity Verification (only clickable if email is verified) */}
             <TouchableOpacity
-              activeOpacity={0.8}
-              style={[styles.verificationCard, { borderColor: '#C7D2FE' }]}
-              onPress={() => router.push('/kyc/verify')}
+              activeOpacity={canStartIdentity ? 0.8 : 1}
+              style={[
+                styles.verificationCard,
+                { borderColor: '#C7D2FE' },
+                !canStartIdentity && styles.disabledCard,
+              ]}
+              onPress={handleIdentityPress}
+              disabled={!canStartIdentity}
+              accessibilityState={{ disabled: !canStartIdentity }}
               testID="identityVerificationCard"
             >
               <View style={styles.verificationContent}>
                 <View style={styles.verificationInfo}>
                   <Text style={styles.verificationTitle}>Identity Verification</Text>
-                  <Text style={styles.verificationSubtitle}>
+                  <Text
+                    style={[
+                      styles.verificationSubtitle,
+                      !canStartIdentity && styles.disabledText,
+                    ]}
+                  >
                     {identityVerified
-                      ? "Your identity has been successfully verified."
-                      : "Tap to verify your identity (NIN / Passport / Driver's License + selfie)"}
+                      ? 'Your identity has been successfully verified.'
+                      : canStartIdentity
+                        ? "Tap to verify your identity (NIN / Passport / Driver's License + selfie)"
+                        : 'Verify your email to unlock identity verification'}
                   </Text>
                 </View>
+
                 <View style={styles.checkmarkContainer}>
                   {identityVerified ? (
                     <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
                   ) : (
-                    <Text style={{ fontSize: 18, color: '#35297F' }}>›</Text>
+                    <Text style={{ fontSize: 18, color: canStartIdentity ? '#35297F' : '#9CA3AF' }}>›</Text>
                   )}
                 </View>
               </View>
@@ -200,18 +229,10 @@ const KYCLevel2Screen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background || '#F8F9FA'
-  },
-  safeArea: {
-    flex: 1
-  },
-  scrollView: {
-    flex: 1
-  },
+  container: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
+  safeArea: { flex: 1 },
+  scrollView: { flex: 1 },
 
-  // Header styles
   headerSection: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -243,17 +264,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  headerSpacer: {
-    width: 40,
-  },
+  headerSpacer: { width: 40 },
 
-  // Section styles
   section: {
     paddingHorizontal: 16,
     marginBottom: 24,
   },
 
-  // Benefits section styles
   benefitItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -276,7 +293,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // Progress section styles
   progressCard: {
     backgroundColor: '#F0FDF4',
     borderRadius: 8,
@@ -292,9 +308,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
-  progressBarContainer: {
-    alignItems: 'center',
-  },
+  progressBarContainer: { alignItems: 'center' },
   progressBar: {
     width: '100%',
     height: 6,
@@ -321,7 +335,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
 
-  // Verification card styles
   verificationCard: {
     backgroundColor: Colors.surface || '#FFFFFF',
     borderRadius: 8,
@@ -338,6 +351,11 @@ const styles = StyleSheet.create({
   incompleteCard: {
     borderColor: '#FEF3C7',
     backgroundColor: '#FFFBEB',
+  },
+  disabledCard: {
+    opacity: 0.55,
+    backgroundColor: '#F9FAFB',
+    borderColor: '#E5E7EB',
   },
   verificationContent: {
     flexDirection: 'row',
@@ -362,18 +380,10 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 16,
   },
-  incompleteText: {
-    color: '#92400E',
-  },
-  checkmarkContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkmarkIcon: {
-    width: 20,
-    height: 20,
-    resizeMode: 'contain',
-  },
+  disabledText: { color: '#9CA3AF' },
+  incompleteText: { color: '#92400E' },
+  checkmarkContainer: { justifyContent: 'center', alignItems: 'center' },
+  checkmarkIcon: { width: 20, height: 20, resizeMode: 'contain' },
   pendingIcon: {
     width: 20,
     height: 20,
@@ -382,11 +392,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pendingText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
+  pendingText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
 });
 
 export default KYCLevel2Screen;

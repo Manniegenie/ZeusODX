@@ -1,3 +1,4 @@
+// app/kyc/level3.tsx (KYCLevel3Screen)
 import React from 'react';
 import {
   View,
@@ -22,7 +23,7 @@ import checkmarkIcon from '../../components/icons/green-checkmark.png';
 const KYCLevel3Screen: React.FC = () => {
   const router = useRouter();
 
-  // Use updated hook with KYC3-specific progress
+  // Fetch once on mount; no polling, no refetch on focus/reconnect
   const { 
     loading, 
     error, 
@@ -30,13 +31,21 @@ const KYCLevel3Screen: React.FC = () => {
     addressVerified
   } = useVerificationStatus({
     autoFetch: true,
-    pollMs: 15000,
+    pollMs: 0,
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
   });
 
   const kyc3Pct = Math.max(0, Math.min(100, kyc3Progress?.percentage ?? 0));
+  const addressClickable = !addressVerified;
 
   const handleGoBack = (): void => {
     router.back();
+  };
+
+  const handleAddressPress = (): void => {
+    if (!addressClickable) return;
+    router.push('/kyc/address-verify');
   };
 
   return (
@@ -48,6 +57,7 @@ const KYCLevel3Screen: React.FC = () => {
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 24 }}
         >
           {/* Header Section */}
           <View style={styles.headerSection}>
@@ -93,12 +103,16 @@ const KYCLevel3Screen: React.FC = () => {
             </View>
           </View>
 
-          {/* Progress Section - Shows KYC3-specific progress */}
+          {/* Progress Section */}
           <View style={styles.section}>
             <View style={styles.progressCard}>
               <Text style={styles.progressTitle}>Level 3 Progress</Text>
               <View style={styles.progressBarContainer}>
-                <View style={styles.progressBar} accessibilityRole="progressbar" accessibilityValue={{ now: kyc3Pct, min: 0, max: 100 }}>
+                <View
+                  style={styles.progressBar}
+                  accessibilityRole="progressbar"
+                  accessibilityValue={{ now: kyc3Pct, min: 0, max: 100 }}
+                >
                   <View style={[styles.progressFill, { width: `${kyc3Pct}%` }]} />
                 </View>
 
@@ -120,16 +134,28 @@ const KYCLevel3Screen: React.FC = () => {
 
           {/* Verification Steps Section */}
           <View style={styles.section}>
-            {/* Address Verification */}
+            {/* Address Verification (unclickable when already verified) */}
             <TouchableOpacity
-              activeOpacity={0.8}
-              style={[styles.verificationCard, { borderColor: '#C7D2FE' }]}
-              onPress={() => router.push('/kyc/address-verify')}
+              activeOpacity={addressClickable ? 0.8 : 1}
+              style={[
+                styles.verificationCard,
+                { borderColor: '#C7D2FE' },
+                !addressClickable && styles.disabledCard,
+              ]}
+              onPress={addressClickable ? handleAddressPress : undefined}
+              disabled={!addressClickable}
+              accessibilityState={{ disabled: !addressClickable }}
+              testID="addressVerificationCard"
             >
               <View style={styles.verificationContent}>
                 <View style={styles.verificationInfo}>
                   <Text style={styles.verificationTitle}>Address Verification</Text>
-                  <Text style={styles.verificationSubtitle}>
+                  <Text
+                    style={[
+                      styles.verificationSubtitle,
+                      !addressClickable && styles.disabledText
+                    ]}
+                  >
                     {addressVerified
                       ? 'Your address has been successfully verified.'
                       : 'Tap to verify your address (Utility bill / Bank statement)'}
@@ -158,14 +184,9 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: Colors.background || '#F8F9FA' 
   },
-  safeArea: { 
-    flex: 1 
-  },
-  scrollView: { 
-    flex: 1 
-  },
+  safeArea: { flex: 1 },
+  scrollView: { flex: 1 },
 
-  // Header styles
   headerSection: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -197,17 +218,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  headerSpacer: {
-    width: 40,
-  },
+  headerSpacer: { width: 40 },
 
-  // Section styles
   section: {
     paddingHorizontal: 16,
     marginBottom: 24,
   },
 
-  // Benefits section styles
   benefitItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -230,7 +247,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // Progress section styles
   progressCard: {
     backgroundColor: '#F0FDF4',
     borderRadius: 8,
@@ -246,9 +262,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'center',
   },
-  progressBarContainer: {
-    alignItems: 'center',
-  },
+  progressBarContainer: { alignItems: 'center' },
   progressBar: {
     width: '100%',
     height: 6,
@@ -275,7 +289,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
 
-  // Verification card styles
   verificationCard: {
     backgroundColor: Colors.surface || '#FFFFFF',
     borderRadius: 8,
@@ -288,6 +301,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
+  },
+  disabledCard: {
+    opacity: 0.55,
+    backgroundColor: '#F9FAFB',
+    borderColor: '#E5E7EB',
   },
   verificationContent: {
     flexDirection: 'row',
@@ -312,15 +330,10 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 16,
   },
-  checkmarkContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkmarkIcon: {
-    width: 20,
-    height: 20,
-    resizeMode: 'contain',
-  },
+  disabledText: { color: '#9CA3AF' },
+
+  checkmarkContainer: { justifyContent: 'center', alignItems: 'center' },
+  checkmarkIcon: { width: 20, height: 20, resizeMode: 'contain' },
 });
 
 export default KYCLevel3Screen;
