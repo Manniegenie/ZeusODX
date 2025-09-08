@@ -45,9 +45,11 @@
             "compileSdkVersion": 36,
             "targetSdkVersion": 36,
             "minSdkVersion": 24,
-            "kotlinVersion": "2.0.21",
             "gradleProperties": {
-              "android.suppressUnsupportedCompileSdk": "36"
+              "android.suppressUnsupportedCompileSdk": "36",
+              "android.useAndroidX": "true",
+              "android.enableJetifier": "true",
+              "org.gradle.jvmargs": "-Xmx4096m -XX:MaxMetaspaceSize=512m"
             },
             "extraProguardRules": "-keep class zendesk.** { *; }\n-keep class com.zendesk.** { *; }\n-dontwarn okhttp3.**\n-dontwarn okio.**\n-dontwarn retrofit2.**\n"
           },
@@ -57,10 +59,14 @@
         }
       ]
     ],
-    "experiments": { "typedRoutes": true },
+    "experiments": {
+      "typedRoutes": true
+    },
     "extra": {
       "router": {},
-      "eas": { "projectId": "53868df3-1f0b-40e0-9c85-903a42b22c92" },
+      "eas": {
+        "projectId": "53868df3-1f0b-40e0-9c85-903a42b22c92"
+      },
       "smileId": {
         "partnerId": "YOUR_PARTNER_ID",
         "authToken": "YOUR_AUTH_TOKEN",
@@ -69,6 +75,12 @@
         "useSandbox": true
       }
     },
-    "owner": "manuelwurld"
+    "owner": "manuelwurld",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/53868df3-1f0b-40e0-9c85-903a42b22c92"
+    }
   }
 }
