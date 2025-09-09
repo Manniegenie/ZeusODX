@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ZeusODX",
-    "slug": "ZeusODX",
+    "slug": "zeusodx",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/app-icon.png",
@@ -27,7 +27,11 @@
         "backgroundColor": "#35297F"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["INTERNET", "CAMERA", "ACCESS_NETWORK_STATE"]
+      "permissions": [
+        "INTERNET",
+        "CAMERA",
+        "ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -59,13 +63,21 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "53868df3-1f0b-40e0-9c85-903a42b22c92"
+        "projectId": "7cc7ad65-2b13-42f3-9865-62b4e1d55984"
       }
     },
     "owner": "manuelwurld",
-    "runtimeVersion": { "policy": "appVersion" },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "updates": {
-      "url": "https://u.expo.dev/53868df3-1f0b-40e0-9c85-903a42b22c92"
-    }
+      "url": "https://u.expo.dev/7cc7ad65-2b13-42f3-9865-62b4e1d55984"
+    },
+    "sdkVersion": "53.0.0",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ]
   }
 }
