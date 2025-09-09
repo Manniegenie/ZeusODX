@@ -1,10 +1,9 @@
 // app/kyc/verify/doc.tsx
-import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar,
   Modal, ScrollView, Animated, Dimensions, TouchableWithoutFeedback
 } from 'react-native';
-import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../../constants/Colors';
@@ -12,16 +11,6 @@ import { Typography } from '../../../constants/Typography';
 import ErrorDisplay from '../../../components/ErrorDisplay';
 
 type ErrorType = 'network' | 'server' | 'notFound' | 'general';
-interface ErrorDisplayData {
-  type?: ErrorType;
-  title?: string;
-  message?: string;
-  errorAction?: { title: string; message: string; actionText: string; route?: string; priority?: 'high' | 'medium' | 'low' };
-  onActionPress?: () => void;
-  autoHide?: boolean;
-  duration?: number;
-  dismissible?: boolean;
-}
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 const MODAL_HEIGHT = Math.min(0.9 * SCREEN_HEIGHT, 640);
@@ -35,105 +24,11 @@ export default function DocVerify() {
   const [showError, setShowError] = useState(false);
   const [errorType, setErrorType] = useState<ErrorType>('general');
   const [errorMessage, setErrorMessage] = useState<string>('');
-  const [errorDisplayData, setErrorDisplayData] = useState<ErrorDisplayData | null>(null);
-
-  const getErrorType = (codeOrMsg?: string): ErrorType => {
-    const s = (codeOrMsg || '').toLowerCase();
-    if (s.includes('network') || s.includes('connection')) return 'network';
-    if (s.includes('not found')) return 'notFound';
-    if (s.includes('server') || s.includes('500')) return 'server';
-    return 'general';
-  };
-
-  const showErrorMessage = useCallback((messageOrData: string | ErrorDisplayData) => {
-    if (typeof messageOrData === 'string') {
-      setErrorType(getErrorType(messageOrData));
-      setErrorMessage(messageOrData);
-      setErrorDisplayData(null);
-      setShowError(true);
-    } else {
-      setErrorDisplayData(messageOrData);
-      setErrorType(messageOrData.type || 'general');
-      setErrorMessage(messageOrData.message || '');
-      setShowError(true);
-    }
-  }, []);
-  const hideError = useCallback(() => { setShowError(false); setErrorDisplayData(null); }, []);
 
   const docType: 'PASSPORT' | 'DRIVERS_LICENSE' =
     type === 'DRIVERS_LICENSE' || type === 'PASSPORT' ? type : 'PASSPORT';
-  const captureBothSides = docType !== 'PASSPORT';
 
-  // Build the HTML for the web component
-  const html = useMemo(() => {
-    // You can pin a version (e.g. v2.0.0) or use major (v2)
-    const cdnSrc = 'https://cdn.smileidentity.com/js/v2/smart-camera-web.js';
-    // Attributes: theme color, instructions toggle, capture-id etc.
-    const themeColor = '#35297F';
-    const hideBackAttr = captureBothSides ? '' : 'hide-back-of-id'; // passport => front only (hide back)
-    const captureIdAttr = 'capture-id'; // includes selfie + doc when present
-
-    // The component raises custom events; we forward them to RN via postMessage.
-    // If you want to POST to your backend now, do it inside handlePublish().
-    return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-  />
-  <script src="${cdnSrc}"></script>
-  <style>
-    html, body { margin:0; padding:0; background:#FFFFFF; height:100%; }
-    .container { height:100vh; display:flex; }
-    smart-camera-web, selfie-capture-screens, document-capture-screens { flex:1; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <smart-camera-web
-      theme-color="${themeColor}"
-      ${captureIdAttr}
-      ${hideBackAttr}
-      ${docType === 'PASSPORT' ? 'hide-instructions' : ''}
-    >
-    </smart-camera-web>
-  </div>
-
-  <script>
-    (function() {
-      const app = document.querySelector('smart-camera-web');
-
-      function post(type, payload) {
-        const msg = JSON.stringify({ type, payload });
-        if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-          window.ReactNativeWebView.postMessage(msg);
-        }
-      }
-
-      // Publish => images + meta
-      app.addEventListener('smart-camera-web.publish', function (e) {
-        post('publish', e.detail);
-      });
-
-      // Optional extra events you may care about
-      app.addEventListener('smart-camera-web.cancelled', function (e) {
-        post('cancelled', e.detail || {});
-      });
-      app.addEventListener('smart-camera-web.back', function (e) {
-        post('back', e.detail || {});
-      });
-
-      // Provide a little ready signal
-      post('ready', { ok: true, version: 'v2' });
-    })();
-  </script>
-</body>
-</html>
-    `;
-  }, [captureBothSides, docType]);
+  const hideError = useCallback(() => { setShowError(false); }, []);
 
   const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
   useEffect(() => {
@@ -146,26 +41,6 @@ export default function DocVerify() {
 
   const handleBackdropPress = () => setShow(false);
 
-  const onMessage = (event: WebViewMessageEvent) => {
-    try {
-      const data = JSON.parse(event.nativeEvent.data);
-      if (data?.type === 'publish') {
-        // You'll POST data.payload to your backend later (images + meta)
-        setShow(false);
-        if (showError) hideError();
-        router.back();
-      } else if (data?.type === 'cancelled') {
-        setShow(false);
-      } else if (data?.type === 'back') {
-        // ignore or handle
-      } else if (data?.type === 'ready') {
-        // ready signal
-      }
-    } catch (e: any) {
-      showErrorMessage('Verification failed. Try again.');
-    }
-  };
-
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
@@ -173,13 +48,7 @@ export default function DocVerify() {
       {showError && (
         <ErrorDisplay
           type={errorType}
-          title={errorDisplayData?.title}
-          message={errorMessage || errorDisplayData?.message}
-          errorAction={errorDisplayData?.errorAction}
-          onActionPress={errorDisplayData?.onActionPress}
-          autoHide={errorDisplayData?.autoHide !== false}
-          duration={errorDisplayData?.duration || 4000}
-          dismissible={errorDisplayData?.dismissible !== false}
+          message={errorMessage}
           onDismiss={hideError}
         />
       )}
@@ -198,9 +67,9 @@ export default function DocVerify() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sub}>We’ll scan your document and capture a selfie.</Text>
+          <Text style={styles.sub}>Verification is temporarily unavailable.</Text>
           <TouchableOpacity style={styles.cta} onPress={() => setShow(true)} activeOpacity={0.8}>
-            <Text style={styles.ctaText}>Start</Text>
+            <Text style={styles.ctaText}>Open Placeholder</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -220,20 +89,13 @@ export default function DocVerify() {
                     </Text>
                   </View>
 
-                  <View style={styles.smileWrapper}>
-                    <WebView
-                      originWhitelist={['*']}
-                      source={{ html }}
-                      // Camera in WebView:
-                      // iOS: make sure NSCameraUsageDescription is present (you already have it)
-                      // Android: CAMERA permission already in app.json
-                      javaScriptEnabled
-                      domStorageEnabled
-                      allowsInlineMediaPlayback
-                      onMessage={onMessage}
-                      // Helpful on some OEMs:
-                      mediaPlaybackRequiresUserAction={false}
-                    />
+                  <View style={styles.placeholderBox}>
+                    <Text style={styles.placeholderText}>
+                      KYC capture has been removed.{"\n"}We’ll re-enable this flow later.
+                    </Text>
+                    <TouchableOpacity style={[styles.cta, { marginTop: 16 }]} onPress={() => setShow(false)}>
+                      <Text style={styles.ctaText}>Close</Text>
+                    </TouchableOpacity>
                   </View>
                 </Animated.View>
 
@@ -274,5 +136,6 @@ const styles = StyleSheet.create({
   handleBar: { width: 40, height: 4, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 12 },
   sheetHeader: { paddingHorizontal: 16, paddingBottom: 8, alignItems: 'center' },
   sheetTitle: { color: Colors.text?.primary || '#111827', fontFamily: Typography.medium || 'System', fontSize: 16, fontWeight: '600' },
-  smileWrapper: { flex: 1, backgroundColor: '#FFFFFF' },
+  placeholderBox: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  placeholderText: { textAlign: 'center', color: Colors.text?.secondary || '#6B7280' },
 });
