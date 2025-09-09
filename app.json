@@ -16,8 +16,8 @@
       "icon": "./assets/images/app-icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "ZeusODX uses the camera to verify your identity with Smile ID.",
-        "NSFaceIDUsageDescription": "Face ID is used to improve selfie liveness and identity verification."
+        "NSCameraUsageDescription": "ZeusODX uses the camera to verify your identity.",
+        "NSFaceIDUsageDescription": "Face ID may be used for identity verification."
       }
     },
     "android": {
@@ -42,16 +42,10 @@
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 36,
-            "targetSdkVersion": 36,
-            "minSdkVersion": 24,
-            "gradleProperties": {
-              "android.suppressUnsupportedCompileSdk": "36",
-              "android.useAndroidX": "true",
-              "android.enableJetifier": "true",
-              "org.gradle.jvmargs": "-Xmx4096m -XX:MaxMetaspaceSize=512m"
-            },
-            "extraProguardRules": "-keep class zendesk.** { *; }\n-keep class com.zendesk.** { *; }\n-dontwarn okhttp3.**\n-dontwarn okio.**\n-dontwarn retrofit2.**\n"
+            "kotlinVersion": "1.9.24",
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "minSdkVersion": 24
           },
           "ios": {
             "deploymentTarget": "15.1"
@@ -66,19 +60,10 @@
       "router": {},
       "eas": {
         "projectId": "53868df3-1f0b-40e0-9c85-903a42b22c92"
-      },
-      "smileId": {
-        "partnerId": "YOUR_PARTNER_ID",
-        "authToken": "YOUR_AUTH_TOKEN",
-        "prodLambda": "https://your-prod-lambda-url",
-        "sandboxLambda": "https://your-sandbox-lambda-url",
-        "useSandbox": true
       }
     },
     "owner": "manuelwurld",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
+    "runtimeVersion": { "policy": "appVersion" },
     "updates": {
       "url": "https://u.expo.dev/53868df3-1f0b-40e0-9c85-903a42b22c92"
     }
