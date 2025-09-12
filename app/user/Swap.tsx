@@ -7,8 +7,7 @@ import {
   Image,
   SafeAreaView,
   ScrollView,
-  TextInput,
-  Alert
+  TextInput
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Typography } from '../../constants/Typography';
@@ -21,6 +20,7 @@ import BottomTabNavigator from '../../components/BottomNavigator';
 import ChooseTokenModal from '../../components/ChooseTokenModal';
 import SwapSuccessfulScreen from '../../components/SwapSuccess';
 import SwapPreviewModal from '../../components/SwapPreview';
+import ErrorDisplay from '../../components/ErrorDisplay';
 
 // Asset imports
 const btcIcon = require('../../components/icons/btc-icon.png');
@@ -51,6 +51,7 @@ interface TokenOption {
 
 type SwapTab = 'buy-sell';
 type TokenSelectorType = 'from' | 'to';
+type MessageType = 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' | 'setup' | 'limit' | 'balance' | 'success';
 
 export default function SwapScreen({ 
   onBack, 
@@ -69,6 +70,12 @@ export default function SwapScreen({
 
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [tokenSelectorType, setTokenSelectorType] = useState<TokenSelectorType>('from');
+
+  // Message state for ErrorDisplay
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<MessageType>('general');
+  const [showMessage, setShowMessage] = useState(false);
+  const [messageTitle, setMessageTitle] = useState<string | undefined>(undefined);
 
   const { 
     btcBalance, btcPrice,
@@ -105,6 +112,27 @@ export default function SwapScreen({
     getNGNZRate,
     hasSufficientBalance: hasNGNZSufficientBalance,
   } = useNGNZ();
+
+  // Message handling functions
+  const clearMessage = () => {
+    setMessage(null);
+    setShowMessage(false);
+    setMessageTitle(undefined);
+  };
+
+  const showError = (message: string, type: MessageType = 'general', title?: string) => {
+    setMessage(message);
+    setMessageType(type);
+    setMessageTitle(title);
+    setShowMessage(true);
+  };
+
+  const showSuccess = (message: string, title?: string) => {
+    setMessage(message);
+    setMessageType('success');
+    setMessageTitle(title);
+    setShowMessage(true);
+  };
 
   const isNGNZOperation = () => selectedFromToken?.symbol === 'NGNZ' || selectedToToken?.symbol === 'NGNZ';
   const getCurrentQuote = () => (isNGNZOperation() ? ngnzQuote : cryptoQuote);
@@ -232,12 +260,18 @@ export default function SwapScreen({
 
   const handleCreateQuote = async () => {
     const rawAmount = parseFloat(unformat(fromAmount));
+    
     if (!selectedFromToken || !selectedToToken || rawAmount <= 0) {
-      Alert.alert('Invalid Input', 'Please select tokens and enter a valid amount');
+      showError('Please select tokens and enter a valid amount', 'validation', 'Invalid Input');
       return;
     }
+    
     if (!hasSufficientBalance(selectedFromToken.symbol, rawAmount)) {
-      Alert.alert('Insufficient Balance', `You don't have enough ${selectedFromToken.symbol}. Available: ${getMaxBalance(selectedFromToken)}`);
+      showError(
+        `You don't have enough ${selectedFromToken.symbol}. Available: ${getMaxBalance(selectedFromToken)}`, 
+        'balance', 
+        'Insufficient Balance'
+      );
       return;
     }
 
@@ -247,7 +281,19 @@ export default function SwapScreen({
         : await createCryptoQuote(selectedFromToken.symbol, selectedToToken.symbol, rawAmount, 'SELL');
 
       if (!quoteResult.success) {
-        Alert.alert('Quote Failed', quoteResult.error || 'Failed to create quote');
+        const errorMessage = quoteResult.error || 'Failed to create quote';
+        
+        // Determine error type based on error message
+        let type: MessageType = 'server';
+        if (errorMessage.includes('network') || errorMessage.includes('connection')) {
+          type = 'network';
+        } else if (errorMessage.includes('balance') || errorMessage.includes('insufficient')) {
+          type = 'balance';
+        } else if (errorMessage.includes('invalid') || errorMessage.includes('validation')) {
+          type = 'validation';
+        }
+        
+        showError(errorMessage, type, 'Quote Failed');
         return;
       }
 
@@ -256,19 +302,20 @@ export default function SwapScreen({
 
       setShowPreviewModal(true);
     } catch (error) {
-      Alert.alert('Error', 'An error occurred while creating the quote');
+      showError('An error occurred while creating the quote', 'server', 'Error');
     }
   };
 
   const handleAcceptQuote = async () => {
     const currentQuote = getCurrentQuote();
     if (!currentQuote) {
-      Alert.alert('No Quote', 'Please create a quote first');
+      showError('Please create a quote first', 'validation', 'No Quote');
       return;
     }
+    
     const quoteId = currentQuote.data?.data?.id || currentQuote.data?.id || currentQuote.id;
     if (!quoteId) {
-      Alert.alert('Invalid Quote', 'Quote ID not found.');
+      showError('Quote ID not found.', 'validation', 'Invalid Quote');
       return;
     }
 
@@ -279,11 +326,27 @@ export default function SwapScreen({
         setShowSuccessScreen(true);
         refreshDashboard(); // Remove await - let it happen in background
         onSwap?.();
+        
+        // Show success message
+        showSuccess(
+          `Successfully swapped ${formatDisplayAmount(unformat(fromAmount))} ${selectedFromToken?.symbol} to ${formatDisplayAmount(unformat(toAmount))} ${selectedToToken?.symbol}`,
+          'Swap Successful!'
+        );
       } else {
-        Alert.alert('Swap Failed', result.error || 'Failed to execute swap');
+        const errorMessage = result.error || 'Failed to execute swap';
+        
+        // Determine error type
+        let type: MessageType = 'server';
+        if (errorMessage.includes('balance') || errorMessage.includes('insufficient')) {
+          type = 'balance';
+        } else if (errorMessage.includes('network') || errorMessage.includes('connection')) {
+          type = 'network';
+        }
+        
+        showError(errorMessage, type, 'Swap Failed');
       }
     } catch (error) {
-      Alert.alert('Error', 'An error occurred while executing the swap');
+      showError('An error occurred while executing the swap', 'server', 'Error');
     }
   };
 
@@ -292,6 +355,7 @@ export default function SwapScreen({
     setToAmount('0'); 
     setSelectedToToken(null);
     setShowSuccessScreen(false);
+    clearMessage(); // Clear any lingering messages
   };
 
   const handleTokenSelectorPress = (type: TokenSelectorType) => { 
@@ -306,6 +370,7 @@ export default function SwapScreen({
     setToAmount('0'); 
     clearQuote(); 
     setShowTokenModal(false);
+    clearMessage(); // Clear any error messages when selecting new tokens
   };
 
   const { quoteLoading, acceptLoading } = getLoadingStates();
@@ -313,6 +378,18 @@ export default function SwapScreen({
 
   return (
     <View style={styles.container}>
+      {/* Message Display */}
+      {message && showMessage && (
+        <ErrorDisplay
+          type={messageType}
+          title={messageTitle}
+          message={message}
+          onDismiss={clearMessage}
+          autoHide={true}
+          duration={messageType === 'success' ? 3000 : 4000}
+        />
+      )}
+      
       <SafeAreaView style={styles.safeArea}>
         <ScrollView 
           style={styles.scrollView} 
@@ -331,9 +408,15 @@ export default function SwapScreen({
                 <TextInput 
                   style={styles.amountInput} 
                   value={fromAmount}
-                  onFocus={() => { if (fromAmount === '0') setFromAmount(''); }}
+                  onFocus={() => { 
+                    if (fromAmount === '0') setFromAmount(''); 
+                    clearMessage(); // Clear messages when user starts typing
+                  }}
                   onBlur={() => { if (!fromAmount) setFromAmount('0'); }}
-                  onChangeText={(text) => setFromAmount(formatWithCommas(text))}
+                  onChangeText={(text) => {
+                    setFromAmount(formatWithCommas(text));
+                    clearMessage(); // Clear messages when user types
+                  }}
                   placeholder="0" 
                   keyboardType="decimal-pad" 
                   placeholderTextColor={Colors.text.secondary} 
