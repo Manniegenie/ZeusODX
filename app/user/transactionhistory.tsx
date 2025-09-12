@@ -476,7 +476,13 @@ const TransactionHistoryScreen = () => {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar backgroundColor="#F3F0FF" barStyle="dark-content" />
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleGoBack}
+            activeOpacity={0.7}
+            delayPressIn={0}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          >
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{displayTitle}</Text>
@@ -532,9 +538,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#F3F0FF',
   },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  backButton: { 
+    width: 48,  // Increased from 40
+    height: 48, // Increased from 40
+    justifyContent: 'center', 
+    alignItems: 'center',
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Very subtle background instead of transparent
+    overflow: 'hidden', // Better Android performance
+  },
   backButtonText: { fontSize: 24, color: '#1F2937', fontWeight: '400' },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#1F2937', flex: 1, textAlign: 'center', marginRight: 40 },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#1F2937', flex: 1, textAlign: 'center', marginRight: 48 }, // Updated marginRight
   headerRight: { width: 0 },
 
   dateSelector: { alignItems: 'center', paddingVertical: 20 },

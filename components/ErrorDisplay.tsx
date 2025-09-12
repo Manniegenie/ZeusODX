@@ -4,7 +4,7 @@ import { Typography } from '../constants/Typography';
 import { Colors } from '../constants/Colors';
 
 interface ErrorDisplayProps {
-  type?: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' | 'setup' | 'limit' | 'balance';
+  type?: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' | 'setup' | 'limit' | 'balance' | 'success';
   title?: string;
   message?: string;
   onDismiss?: () => void;
@@ -50,6 +50,8 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
         return { defaultTitle: 'Insufficient Balance', defaultMessage: "You don't have enough funds for this transaction", color: '#EF4444', bgColor: '#FEF2F2' };
       case 'notFound':
         return { defaultTitle: 'Not Found', defaultMessage: 'The requested information could not be found', color: '#6B7280', bgColor: '#F9FAFB' };
+      case 'success':
+        return { defaultTitle: 'Success', defaultMessage: 'Operation completed successfully', color: '#10B981', bgColor: '#ECFDF5' };
       default:
         return { defaultTitle: 'Error', defaultMessage: 'Something went wrong. Please try again', color: '#35297F', bgColor: '#F8F7FF' };
     }

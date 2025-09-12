@@ -12,7 +12,6 @@ import {
   RefreshControl,
   ActivityIndicator,
   Clipboard,
-  Alert,
   Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -38,7 +37,7 @@ interface TwoFAData {
 }
 
 interface ErrorDisplayData {
-  type?: 'network' | 'server' | 'notFound' | 'general';
+  type?: 'network' | 'server' | 'notFound' | 'general' | 'success';
   title?: string;
   message?: string;
   errorAction?: {
@@ -80,7 +79,7 @@ export default function TwoFASetupScreen() {
   const [twoFAData, setTwoFAData] = useState<TwoFAData | null>(null);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [showError, setShowError] = useState<boolean>(false);
-  const [errorType, setErrorType] = useState<'network' | 'server' | 'notFound' | 'general'>('general');
+  const [errorType, setErrorType] = useState<'network' | 'server' | 'notFound' | 'general' | 'success'>('general');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [errorDisplayData, setErrorDisplayData] = useState<ErrorDisplayData | null>(null);
   const [showVerificationModal, setShowVerificationModal] = useState<boolean>(false);
@@ -114,7 +113,7 @@ export default function TwoFASetupScreen() {
   const showErrorMessage = (messageOrData: string | ErrorDisplayData): void => {
     if (typeof messageOrData === 'string') {
       // Handle simple string messages
-      let type: 'network' | 'server' | 'notFound' | 'general' = 'general';
+      let type: 'network' | 'server' | 'notFound' | 'general' | 'success' = 'general';
       if (messageOrData.includes('not found') || messageOrData.includes('not set up')) type = 'notFound';
       else if (messageOrData.includes('Network') || messageOrData.includes('connection')) type = 'network';
       else if (messageOrData.includes('Server') || messageOrData.includes('500')) type = 'server';
@@ -129,6 +128,24 @@ export default function TwoFASetupScreen() {
       setErrorType(messageOrData.type || 'general');
       setErrorMessage(messageOrData.message || '');
       setShowError(true);
+    }
+  };
+
+  const showSuccess = (message: string, title?: string, onComplete?: () => void): void => {
+    showErrorMessage({
+      type: 'success',
+      title: title || 'Success!',
+      message,
+      autoHide: true,
+      duration: 2500,
+      dismissible: true
+    });
+
+    // Execute completion callback after success message duration
+    if (onComplete) {
+      setTimeout(() => {
+        onComplete();
+      }, 2500);
     }
   };
 
@@ -156,14 +173,27 @@ export default function TwoFASetupScreen() {
 
   const copySecretToClipboard = async (): Promise<void> => {
     if (!twoFAData?.secretKey) {
-      showErrorMessage('2FA secret key is not yet available');
+      showErrorMessage({
+        type: 'general',
+        title: 'Secret Not Available',
+        message: '2FA secret key is not yet available',
+        autoHide: true,
+        duration: 3000
+      });
       return;
     }
+    
     try {
       await Clipboard.setString(twoFAData.secretKey);
-      Alert.alert('Copied!', '2FA secret key copied to clipboard');
+      showSuccess('2FA secret key copied to clipboard', 'Copied!');
     } catch (error) {
-      showErrorMessage('Failed to copy secret key to clipboard');
+      showErrorMessage({
+        type: 'general',
+        title: 'Copy Failed',
+        message: 'Failed to copy secret key to clipboard',
+        autoHide: true,
+        duration: 3000
+      });
     }
   };
 
@@ -180,17 +210,16 @@ export default function TwoFASetupScreen() {
       const result = await verify2FAToken(code);
 
       if (result.success) {
-        // Close verification modal and show success
+        // Close verification modal first
         setShowVerificationModal(false);
-        Alert.alert(
-          'Success!',
+        
+        // Show success message and navigate after delay
+        showSuccess(
           '2FA has been enabled successfully. Your account is now more secure.',
-          [
-            {
-              text: 'Continue',
-              onPress: () => router.replace('/profile/profile')
-            }
-          ]
+          'Setup Complete!',
+          () => {
+            router.replace('/profile/profile');
+          }
         );
       } else {
         // Handle errors
@@ -295,11 +324,14 @@ export default function TwoFASetupScreen() {
           }
         >
           <View style={styles.headerSection}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <View style={styles.backArrow}>
-                <View style={styles.arrowLine} />
-                <View style={styles.arrowHead} />
-              </View>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+              delayPressIn={0}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
+              <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
             <View style={styles.headerGroup}>
               <Text style={styles.headerTitle}>2FA Setup</Text>
@@ -346,7 +378,7 @@ export default function TwoFASetupScreen() {
             </Text>
           </View>
 
-          {/* Continue Button - Moved up here */}
+          {/* Continue Button */}
           <View style={styles.actionSection}>
             <TouchableOpacity
               style={[
@@ -379,8 +411,6 @@ export default function TwoFASetupScreen() {
             </View>
           </View>
         </ScrollView>
-
-        {/* Remove the separate button container */}
       </SafeAreaView>
       <BottomTabNavigator activeTab="profile" />
 
@@ -420,45 +450,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    overflow: 'hidden',
   },
-  backArrow: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  arrowLine: {
-    width: 16,
-    height: 2,
-    backgroundColor: Colors.text.primary,
-    position: 'absolute',
-  },
-  arrowHead: {
-    width: 8,
-    height: 8,
-    borderLeftWidth: 2,
-    borderTopWidth: 2,
-    borderLeftColor: Colors.text.primary,
-    borderTopColor: Colors.text.primary,
-    backgroundColor: 'transparent',
-    transform: [{ rotate: '-45deg' }],
-    position: 'absolute',
-    left: 0,
+  backButtonText: {
+    fontSize: 20,
+    color: Colors.text.primary,
+    fontWeight: '500',
   },
   headerGroup: {
     flex: 1,
     alignItems: 'center',
   },
   headerSpacer: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
   },
   headerTitle: {
     color: Colors.text.primary,

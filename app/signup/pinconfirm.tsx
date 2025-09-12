@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Vibration, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Vibration } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
@@ -14,34 +14,49 @@ export default function ConfirmPinScreen() {
   const [pin, setPin] = useState('');
   const [isError, setIsError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [errorType, setErrorType] = useState<'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general'>('general');
+  const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' | 'success'>('general');
+  const [showMessage, setShowMessage] = useState(false);
   
   const PIN_LENGTH = 6;
 
-  const clearError = () => {
-    setError(null);
+  const clearMessage = () => {
+    setMessage(null);
+    setShowMessage(false);
     setIsError(false);
   };
 
   const showError = (message: string, type: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' = 'general') => {
-    setError(message);
-    setErrorType(type);
+    setMessage(message);
+    setMessageType(type);
+    setShowMessage(true);
     setIsError(true);
+  };
+
+  const showSuccess = (message: string, title?: string) => {
+    setMessage(message);
+    setMessageType('success');
+    setShowMessage(true);
+    setIsError(false);
+    
+    // Auto-navigate after success message shows for 2 seconds
+    setTimeout(() => {
+      router.replace('/signup/username'); // Update this to your main app route
+    }, 2000);
   };
 
   const handleNumberPress = (number: string) => {
     if (pin.length < PIN_LENGTH && !isLoading) {
       const newPin = pin + number;
       setPin(newPin);
-      clearError();
+      clearMessage();
     }
   };
 
   const handleBackspace = () => {
     if (!isLoading) {
       setPin(pin.slice(0, -1));
-      clearError();
+      clearMessage();
     }
   };
 
@@ -61,7 +76,7 @@ export default function ConfirmPinScreen() {
 
     // PIN matches - create account using quickSetupPin (no pendingUserId needed)
     setIsLoading(true);
-    clearError();
+    clearMessage();
 
     try {
       console.log('🔐 Creating account with confirmed PIN...');
@@ -75,19 +90,8 @@ export default function ConfirmPinScreen() {
       if (result.success) {
         console.log('✅ Pin created successfully');
         
-        Alert.alert(
-          'Pin Created!',
-          'Your Pin has been created successfully.',
-          [
-            {
-              text: 'Continue',
-              onPress: () => {
-                // Navigate to dashboard or main app
-                router.replace('/signup/username'); // Update this to your main app route
-              }
-            }
-          ]
-        );
+        // Show success message using ErrorDisplay
+        showSuccess('Your PIN has been created successfully and your account is ready!', 'PIN Created!');
       } else {
         // Handle error case - result.success is false, so error should exist
         const errorMessage = 'error' in result ? result.error : 'Failed to create account';
@@ -181,14 +185,15 @@ export default function ConfirmPinScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Error Display */}
-      {error && (
+      {/* Message Display */}
+      {message && showMessage && (
         <ErrorDisplay
-          type={errorType}
-          message={error}
-          onDismiss={clearError}
-          autoHide={true}
-          duration={3000}
+          type={messageType}
+          title={messageType === 'success' ? 'PIN Created!' : undefined}
+          message={message}
+          onDismiss={clearMessage}
+          autoHide={messageType !== 'success'} // Success messages don't auto-hide, we control navigation
+          duration={messageType === 'success' ? 2000 : 4000}
         />
       )}
       

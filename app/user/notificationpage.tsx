@@ -72,6 +72,8 @@ const NotificationScreen = () => {
             style={styles.backButton} 
             onPress={() => router.back()} 
             activeOpacity={0.7}
+            delayPressIn={0}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
@@ -111,11 +113,13 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 48,  // Increased from 40
+    height: 48, // Increased from 40
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Very subtle background instead of transparent
+    overflow: 'hidden', // Better Android performance
   },
   backButtonText: {
     fontSize: 20,
@@ -133,8 +137,8 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   headerSpacer: {
-    width: 40,
-    height: 40,
+    width: 48, // Updated to match new back button width
+    height: 48, // Updated to match new back button height
   },
   content: {
     flex: 1,
