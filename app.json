@@ -16,8 +16,8 @@
       "icon": "./assets/images/app-icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "ZeusODX uses the camera to verify your identity.",
-        "NSFaceIDUsageDescription": "Face ID may be used for identity verification."
+        "NSCameraUsageDescription": "ZeusODX uses the camera for identity verification and biometric authentication.",
+        "NSFaceIDUsageDescription": "Face ID may be used for secure authentication."
       }
     },
     "android": {
@@ -42,6 +42,13 @@
       "expo-router",
       "expo-font",
       "expo-secure-store",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "ZeusODX uses the camera for identity verification and biometric authentication.",
+          "enableMicrophonePermission": false
+        }
+      ],
       [
         "expo-build-properties",
         {

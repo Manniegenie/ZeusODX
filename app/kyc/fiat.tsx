@@ -49,20 +49,29 @@ const FiatScreen: React.FC = () => {
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 24 }}
         >
-          {/* Header Section */}
+          {/* Header Section (mirrored format) */}
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
               <TouchableOpacity 
                 style={styles.backButton} 
                 onPress={handleGoBack}
                 activeOpacity={0.7}
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
                 <Text style={styles.backButtonText}>←</Text>
               </TouchableOpacity>
 
               <Text style={styles.headerTitle}>Fiat Verification</Text>
               <View style={styles.headerSpacer} />
+            </View>
+
+            <View style={styles.subtitleContainer}>
+              <Text style={styles.subtitle}>
+                Complete BVN and add a verified bank account to enable Naira deposits and withdrawals.
+              </Text>
             </View>
           </View>
 
@@ -201,11 +210,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    overflow: 'hidden',
   },
   backButtonText: {
     fontSize: 20,
@@ -222,7 +233,18 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   headerSpacer: {
-    width: 40,
+    width: 48,
+  },
+  subtitleContainer: {
+    paddingHorizontal: 0,
+  },
+  subtitle: {
+    color: Colors.text?.secondary || '#6B7280',
+    fontFamily: Typography.regular || 'System',
+    fontSize: 13,
+    fontWeight: '400',
+    lineHeight: 18,
+    textAlign: 'left',
   },
 
   // Section styles

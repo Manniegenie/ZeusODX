@@ -1,4 +1,3 @@
-// app/kyc/level3.tsx (KYCLevel3Screen)
 import React from 'react';
 import {
   View,
@@ -10,6 +9,7 @@ import {
   StatusBar,
   ScrollView,
   ActivityIndicator,
+  ImageSourcePropType,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
@@ -19,6 +19,20 @@ import { useVerificationStatus } from '../../hooks/useVerification';
 
 // Icons
 import checkmarkIcon from '../../components/icons/green-checkmark.png';
+import verifiedIcon from '../../components/icons/verified.png';
+import currentIcon from '../../components/icons/current.png';
+import upNextIcon from '../../components/icons/up-next.png';
+
+interface KYCLevel {
+  id: string;
+  level?: number;
+  title: string;
+  status: 'verified' | 'current' | 'up-next';
+  statusText: string;
+  iconSrc: ImageSourcePropType;
+  description?: string;
+  clickable: boolean;
+}
 
 const KYCLevel3Screen: React.FC = () => {
   const router = useRouter();
@@ -59,19 +73,27 @@ const KYCLevel3Screen: React.FC = () => {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 24 }}
         >
-          {/* Header Section */}
+          {/* Header Section (mirrors other screens) */}
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
               <TouchableOpacity 
                 style={styles.backButton} 
                 onPress={handleGoBack}
                 activeOpacity={0.7}
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
                 <Text style={styles.backButtonText}>←</Text>
               </TouchableOpacity>
 
               <Text style={styles.headerTitle}>Level 3 Verification</Text>
               <View style={styles.headerSpacer} />
+            </View>
+
+            <View style={styles.subtitleContainer}>
+              <Text style={styles.subtitle}>
+                Complete address verification to unlock the highest limits and full platform privileges.
+              </Text>
             </View>
           </View>
 
@@ -153,7 +175,7 @@ const KYCLevel3Screen: React.FC = () => {
                   <Text
                     style={[
                       styles.verificationSubtitle,
-                      !addressClickable && styles.disabledText
+                      !addressClickable && styles.disabledText,
                     ]}
                   >
                     {addressVerified
@@ -187,6 +209,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
 
+  // Header styles (matching the other screens)
   headerSection: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -196,13 +219,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 12,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    overflow: 'hidden',
   },
   backButtonText: {
     fontSize: 20,
@@ -218,7 +244,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  headerSpacer: { width: 40 },
+  headerSpacer: {
+    width: 48,
+    height: 48,
+  },
+  subtitleContainer: {
+    paddingHorizontal: 0,
+  },
+  subtitle: {
+    color: Colors.text?.secondary || '#6B7280',
+    fontFamily: Typography.regular || 'System',
+    fontSize: 13,
+    fontWeight: '400',
+    lineHeight: 18,
+    textAlign: 'left',
+  },
 
   section: {
     paddingHorizontal: 16,

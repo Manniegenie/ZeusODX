@@ -24,7 +24,6 @@ import { useBiometricVerification } from '../../../hooks/useKYC';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-// Camera preview constants
 const PREVIEW_SIZE = 280;
 const PREVIEW_RECT = {
   minX: (screenWidth - PREVIEW_SIZE) / 2,
@@ -36,7 +35,6 @@ const PREVIEW_RECT = {
 type Step = 'input' | 'camera' | 'preview' | 'processing' | 'success' | 'error';
 type ErrorType = 'network' | 'server' | 'notFound' | 'general';
 
-// Camera overlay component
 const CameraOverlay = () => (
   <Svg height="100%" width="100%" style={StyleSheet.absoluteFillObject}>
     <Defs>
@@ -59,9 +57,9 @@ const CameraOverlay = () => (
   </Svg>
 );
 
-export default function NINVerify() {
+export default function BVNVerify() {
   const router = useRouter();
-  const [nin, setNin] = useState('');
+  const [bvn, setBvn] = useState('');
   const [step, setStep] = useState<Step>('input');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [verificationResult, setVerificationResult] = useState<any>(null);
@@ -70,24 +68,20 @@ export default function NINVerify() {
   
   const cameraRef = useRef<Camera>(null);
   
-  // React Native Vision Camera hooks
   const { hasPermission, requestPermission } = useCameraPermission();
   const devices = useCameraDevices();
   const frontCamera = devices.front;
 
-  // Use the biometric verification hook
   const { 
     isVerifying, 
     submitBiometricVerification, 
-    validateNIN 
+    validateBVN 
   } = useBiometricVerification();
 
-  // Error banner state
   const [showError, setShowError] = useState(false);
   const [errorType, setErrorType] = useState<ErrorType>('general');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Helper functions
   const classifyError = (msg?: string): ErrorType => {
     const m = (msg || '').toLowerCase();
     if (m.includes('network') || m.includes('connection')) return 'network';
@@ -106,18 +100,15 @@ export default function NINVerify() {
     setShowError(false);
   }, []);
 
-  // Validation
-  const validation = useMemo(() => validateNIN(nin), [nin, validateNIN]);
+  const validation = useMemo(() => validateBVN(bvn), [bvn, validateBVN]);
   const isValidFormat = validation?.valid === true;
 
-  // Request camera permission on mount
   useEffect(() => {
     if (!hasPermission) {
       requestPermission();
     }
   }, [hasPermission, requestPermission]);
 
-  // Countdown timer for selfie capture
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isCountingDown && countdown > 0) {
@@ -131,7 +122,6 @@ export default function NINVerify() {
     return () => clearTimeout(timer);
   }, [isCountingDown, countdown]);
 
-  // Capture photo function
   const capturePhoto = async () => {
     if (!cameraRef.current) {
       openError('Camera not ready');
@@ -144,7 +134,6 @@ export default function NINVerify() {
         skipMetadata: true,
       });
       
-      // Convert to base64 for API
       const base64 = `data:image/jpeg;base64,${photo.base64 || ''}`;
       setCapturedImage(base64);
       setStep('preview');
@@ -153,13 +142,11 @@ export default function NINVerify() {
     }
   };
 
-  // Start countdown for selfie
   const startSelfieCapture = () => {
     setCountdown(3);
     setIsCountingDown(true);
   };
 
-  // Submit to backend
   const handleBiometricSubmit = async () => {
     if (!capturedImage) {
       openError('No selfie captured');
@@ -170,8 +157,8 @@ export default function NINVerify() {
 
     try {
       const result = await submitBiometricVerification({
-        idType: 'national_id', // NIN maps to national_id
-        idNumber: nin,
+        idType: 'bvn',
+        idNumber: bvn,
         selfieImage: capturedImage
       });
 
@@ -187,10 +174,9 @@ export default function NINVerify() {
     }
   };
 
-  // Handle NIN input submission
-  const handleNINSubmit = async () => {
+  const handleBVNSubmit = async () => {
     if (!isValidFormat) {
-      openError(validation?.message || 'NIN must be 11 digits.');
+      openError(validation?.message || 'BVN must be 11 digits.');
       return;
     }
 
@@ -214,7 +200,6 @@ export default function NINVerify() {
     setStep('camera');
   };
 
-  // Reset to start over
   const resetVerification = () => {
     setStep('input');
     setCapturedImage(null);
@@ -223,7 +208,6 @@ export default function NINVerify() {
     setIsCountingDown(false);
   };
 
-  // Render different steps
   const renderInputStep = () => (
     <ScrollView
       style={styles.scroll}
@@ -239,35 +223,42 @@ export default function NINVerify() {
           >
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>NIN Verification</Text>
+          <Text style={styles.headerTitle}>BVN Verification</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sub}>Enter your 11-digit NIN for identity verification.</Text>
+        <Text style={styles.sub}>Enter your 11-digit Bank Verification Number (BVN) for identity verification.</Text>
+        <Text style={styles.formatHint}>Your BVN links all your bank accounts in Nigeria</Text>
+        
+        <View style={styles.noticeContainer}>
+          <Text style={styles.noticeText}>
+            🏦 Your BVN is used to verify your identity across Nigerian banks. This verification is secure and your banking information remains private.
+          </Text>
+        </View>
 
         <View style={styles.inputContainer}>
           <TextInput
-            value={nin}
-            onChangeText={setNin}
+            value={bvn}
+            onChangeText={(text) => setBvn(text.replace(/\D/g, ''))}
             inputMode="numeric"
             keyboardType="number-pad"
             maxLength={11}
-            placeholder="11-digit NIN"
+            placeholder="12345678901"
             style={[
               styles.input,
-              !isValidFormat && nin.length > 0 && styles.inputError,
+              !isValidFormat && bvn.length > 0 && styles.inputError,
             ]}
             editable={!isVerifying}
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="done"
-            testID="ninInput"
+            testID="bvnInput"
           />
-          {!isValidFormat && nin.length > 0 && (
+          {!isValidFormat && bvn.length > 0 && (
             <Text style={styles.errorText}>
-              {validation?.message || 'NIN must be exactly 11 digits.'}
+              {validation?.message || 'BVN must be exactly 11 digits.'}
             </Text>
           )}
         </View>
@@ -278,9 +269,9 @@ export default function NINVerify() {
             { opacity: isValidFormat && !isVerifying ? 1 : 0.5 },
           ]}
           disabled={!isValidFormat || isVerifying}
-          onPress={handleNINSubmit}
+          onPress={handleBVNSubmit}
           activeOpacity={0.7}
-          testID="submitNinButton"
+          testID="submitBvnButton"
         >
           <Text style={styles.ctaText}>Continue to Face Verification</Text>
         </TouchableOpacity>
@@ -401,7 +392,7 @@ export default function NINVerify() {
   const renderProcessingStep = () => (
     <View style={styles.centerContainer}>
       <ActivityIndicator size="large" color="#35297F" />
-      <Text style={styles.processingText}>Verifying your identity...</Text>
+      <Text style={styles.processingText}>Verifying your BVN...</Text>
       <Text style={styles.processingSubtext}>This may take a few moments</Text>
     </View>
   );
@@ -411,7 +402,7 @@ export default function NINVerify() {
       <Text style={styles.successIcon}>✅</Text>
       <Text style={styles.successTitle}>Verification Successful!</Text>
       <Text style={styles.successText}>
-        Your NIN has been successfully verified.
+        Your BVN has been successfully verified.
       </Text>
       {verificationResult && (
         <Text style={styles.resultText}>
@@ -433,7 +424,7 @@ export default function NINVerify() {
       <Text style={styles.errorIcon}>❌</Text>
       <Text style={styles.errorTitle}>Verification Failed</Text>
       <Text style={styles.errorText}>
-        {verificationResult?.resultText || 'Unable to verify your identity. Please try again.'}
+        {verificationResult?.resultText || 'Unable to verify your BVN. Please ensure your BVN is correct and try again.'}
       </Text>
       <TouchableOpacity
         style={[styles.cta, { backgroundColor: '#EF4444' }]}
@@ -507,7 +498,27 @@ const styles = StyleSheet.create({
   headerSpacer: { width: 40 },
 
   section: { paddingHorizontal: 16, marginBottom: 24 },
-  sub: { color: Colors.text?.secondary || '#6B7280', fontSize: 14, marginBottom: 12 },
+  sub: { color: Colors.text?.secondary || '#6B7280', fontSize: 14, marginBottom: 8 },
+  formatHint: { 
+    color: '#9CA3AF', 
+    fontSize: 12, 
+    marginBottom: 12,
+    fontStyle: 'italic' 
+  },
+
+  noticeContainer: {
+    backgroundColor: '#EEF2FF',
+    borderLeftWidth: 4,
+    borderLeftColor: '#35297F',
+    padding: 12,
+    marginBottom: 16,
+    borderRadius: 8,
+  },
+  noticeText: {
+    fontSize: 13,
+    color: '#4338CA',
+    lineHeight: 18,
+  },
 
   inputContainer: { marginBottom: 12 },
   input: {
@@ -533,7 +544,6 @@ const styles = StyleSheet.create({
   },
   ctaText: { color: '#fff', fontWeight: '600', fontSize: 16 },
 
-  // Camera styles
   cameraContainer: {
     flex: 1,
     backgroundColor: '#000',
@@ -593,7 +603,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Preview styles
   previewContainer: {
     flex: 1,
     backgroundColor: '#F8F9FA',
@@ -622,7 +631,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  // Result screens
   centerContainer: {
     flex: 1,
     justifyContent: 'center',

@@ -29,14 +29,14 @@ export default function VerifyIndex() {
             <Text style={styles.cardSub}>Authority check + selfie</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.card} onPress={() => router.push('/kyc/verify/doc?type=PASSPORT')}>
+          <TouchableOpacity style={styles.card} onPress={() => router.push('/kyc/verify/passport')}>
             <Text style={styles.cardTitle}>Passport</Text>
-            <Text style={styles.cardSub}>Document verification + selfie</Text>
+            <Text style={styles.cardSub}>Authority check + selfie</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.card} onPress={() => router.push('/kyc/verify/doc?type=DRIVERS_LICENSE')}>
+          <TouchableOpacity style={styles.card} onPress={() => router.push('/kyc/verify/drivers-license')}>
             <Text style={styles.cardTitle}>Driver’s License</Text>
-            <Text style={styles.cardSub}>Document verification + selfie</Text>
+            <Text style={styles.cardSub}>Authority Check + selfie</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

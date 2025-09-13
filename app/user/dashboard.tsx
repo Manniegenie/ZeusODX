@@ -230,7 +230,7 @@ export default function DashboardScreen() {
       <TawkChatSheet
         visible={supportOpen}
         onClose={() => setSupportOpen(false)}
-        title="Support • ZeusODX"
+        title="Support"
         // Optional: override via env if you ever change the link without code changes
         // directLink={process.env.EXPO_PUBLIC_TAWK_DIRECT_LINK}
       />
