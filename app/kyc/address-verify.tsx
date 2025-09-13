@@ -1,4 +1,3 @@
-// app/kyc/address-verify.tsx
 import React, { useMemo, useState } from 'react';
 import {
   View,
@@ -64,10 +63,16 @@ export default function AddressVerify() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header (title bold, others normal like Airtime) */}
+        {/* Header (mirrored format: larger tappable back button, centered title) */}
         <View style={styles.headerSection}>
           <View style={styles.headerContainer}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+              delayPressIn={0}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
 
@@ -183,7 +188,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
 
-  // Header (match Airtime)
+  // Header (mirrored format)
   headerSection: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -195,28 +200,30 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    overflow: 'hidden',
   },
   backButtonText: {
     fontSize: 20,
     color: Colors.text?.primary || '#111827',
     fontFamily: Typography.regular || 'System',
-    fontWeight: '400',
+    fontWeight: '500',
   },
   headerTitle: {
     color: '#35297F',
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
-    fontWeight: '600', // bold like Airtime
+    fontWeight: '600',
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  headerSpacer: { width: 40 },
+  headerSpacer: { width: 48 },
 
   // Body
   section: {
@@ -284,7 +291,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // CTA — matches Airtime (bold button text)
+  // CTA — matches other screens
   cta: {
     backgroundColor: '#35297F',
     borderRadius: 10,

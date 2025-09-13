@@ -1,4 +1,3 @@
-// app/kyc/verify-email.tsx
 import React, { useMemo, useState } from 'react';
 import {
   View,
@@ -7,6 +6,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ActivityIndicator,
+  ImageSourcePropType,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
@@ -156,7 +156,13 @@ export default function VerifyEmailSendScreen() {
         {/* Header */}
         <View style={styles.headerSection}>
           <View style={styles.headerContainer}>
-            <TouchableOpacity style={styles.backButton} onPress={handleBackPress} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBackPress}
+              activeOpacity={0.7}
+              delayPressIn={0}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Verify Email</Text>
@@ -224,7 +230,7 @@ const styles = StyleSheet.create({
 
   headerSection: { paddingTop: 12, paddingBottom: 6 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
+  backButton: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center', borderRadius: 24, backgroundColor: 'rgba(0,0,0,0.02)', overflow: 'hidden' },
   backButtonText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
   headerTitle: {
     color: '#35297F',
@@ -235,7 +241,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  emptySpace: { width: 40 },
+  emptySpace: { width: 48 },
 
   header: { paddingTop: Layout.spacing.xl, marginBottom: Layout.spacing.lg, alignItems: 'center' },
   title: {

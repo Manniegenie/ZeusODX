@@ -11,6 +11,7 @@ import {
   Linking,
   Platform,
   useWindowDimensions,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -58,29 +59,42 @@ const Sheet = ({
   }, [visible, translateY, SHEET_HEIGHT]);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <Animated.View
-              style={[
-                styles.sheetContainer,
-                {
-                  transform: [{ translateY }],
-                  height: SHEET_HEIGHT,
-                  paddingBottom: Math.max(12, insets.bottom + 12),
-                },
-              ]}
+    <Modal 
+      visible={visible} 
+      transparent 
+      animationType="fade" 
+      statusBarTranslucent 
+      onRequestClose={onClose}
+      supportedOrientations={['portrait', 'landscape']}
+      presentationStyle="overFullScreen"
+    >
+      <View style={styles.overlay} pointerEvents="box-none">
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={styles.overlayTouchable} />
+        </TouchableWithoutFeedback>
+        
+        <Animated.View
+          style={[
+            styles.sheetContainer,
+            {
+              transform: [{ translateY }],
+              height: SHEET_HEIGHT,
+            },
+          ]}
+        >
+          <View style={styles.handleBar} />
+          {/* Safe area for bottom notch; content fills remaining height */}
+          <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
+            <KeyboardAvoidingView 
+              style={{ flex: 1 }} 
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
-              <View style={styles.handleBar} />
-              {/* Safe area for bottom notch; content fills remaining height */}
-              <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-                {children}
-              </SafeAreaView>
-            </Animated.View>
-          </TouchableWithoutFeedback>
-        </View>
-      </TouchableWithoutFeedback>
+              {children}
+            </KeyboardAvoidingView>
+          </SafeAreaView>
+        </Animated.View>
+      </View>
     </Modal>
   );
 };
@@ -192,7 +206,7 @@ export function TawkChatSheet({
           onLoadEnd={() => setLoading(false)}
           javaScriptEnabled
           domStorageEnabled
-          allowsInlineMediaPlayback
+          allowsInlineMediaPlaybook
           setSupportMultipleWindows={false}
           allowsBackForwardNavigationGestures
           originWhitelist={['*']}
@@ -202,8 +216,25 @@ export function TawkChatSheet({
             Linking.openURL(req.url).catch(() => {});
             return false;
           }}
+          // Android-specific optimizations for touch handling
           androidHardwareAccelerationDisabled={false}
+          nestedScrollEnabled={true}
+          androidLayerType="hardware"
+          mixedContentMode="compatibility"
+          thirdPartyCookiesEnabled={true}
+          sharedCookiesEnabled={true}
+          allowFileAccessFromFileURLs={true}
+          allowUniversalAccessFromFileURLs={true}
+          overScrollMode="never"
+          showsVerticalScrollIndicator={false}
+          keyboardDisplayRequiresUserAction={false}
+          onTouchStart={() => {}} // Prevents touch conflicts
           bounces={false}
+          // KEY FIXES for keyboard/input layer issues
+          hideKeyboardAccessoryView={true}
+          automaticallyAdjustContentInsets={false}
+          contentInsetAdjustmentBehavior="never"
+          scrollEnabled={true}
           userAgent={
             Platform.select({
               android: 'Mozilla/5.0 (Linux; Android 12; rv:109.0) Gecko/109.0 Firefox/109.0',
@@ -259,7 +290,21 @@ export function TawkPrefetcher({
 /* ================= Styles ================= */
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  overlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.45)', 
+    justifyContent: 'flex-end',
+    zIndex: 1000,
+  },
+
+  overlayTouchable: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
 
   // Full-width bottom sheet, 90% height (set in-line), rounded top
   sheetContainer: {
@@ -270,6 +315,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     width: '100%',
     alignSelf: 'stretch',
+    elevation: 10, // Android shadow/elevation
+    shadowColor: '#000', // iOS shadow
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
   },
 
   handleBar: { width: 42, height: 3, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 6 },
@@ -290,6 +340,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#F3F4F6',
     backgroundColor: Colors.background || '#0b0b10',
+    overflow: 'hidden', // Ensure WebView stays contained
   },
 
   loader: {
