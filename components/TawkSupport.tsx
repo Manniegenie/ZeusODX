@@ -27,6 +27,8 @@ const useUserProfile = (opts?: any) =>
 
 /* ================= Bottom Sheet Base (90% height) ================= */
 
+const EXTRA_BOTTOM_PADDING = 20; // tweak this to change the extra gap you want
+
 const Sheet = ({
   visible,
   onClose,
@@ -58,12 +60,15 @@ const Sheet = ({
     }
   }, [visible, translateY, SHEET_HEIGHT]);
 
+  // combined bottom padding: safe-area + extra gap
+  const bottomPadding = insets.bottom + EXTRA_BOTTOM_PADDING;
+
   return (
-    <Modal 
-      visible={visible} 
-      transparent 
-      animationType="fade" 
-      statusBarTranslucent 
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
       onRequestClose={onClose}
       supportedOrientations={['portrait', 'landscape']}
       presentationStyle="overFullScreen"
@@ -72,7 +77,7 @@ const Sheet = ({
         <TouchableWithoutFeedback onPress={onClose}>
           <View style={styles.overlayTouchable} />
         </TouchableWithoutFeedback>
-        
+
         <Animated.View
           style={[
             styles.sheetContainer,
@@ -83,10 +88,11 @@ const Sheet = ({
           ]}
         >
           <View style={styles.handleBar} />
-          {/* Safe area for bottom notch; content fills remaining height */}
-          <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-            <KeyboardAvoidingView 
-              style={{ flex: 1 }} 
+          {/* Safe area for bottom notch; content fills remaining height.
+              We add explicit extra paddingBottom so content won't butt up to bottom */}
+          <SafeAreaView style={{ flex: 1, paddingBottom: bottomPadding }} edges={['bottom']}>
+            <KeyboardAvoidingView
+              style={{ flex: 1, paddingBottom: 0 }}
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
@@ -290,9 +296,9 @@ export function TawkPrefetcher({
 /* ================= Styles ================= */
 
 const styles = StyleSheet.create({
-  overlay: { 
-    flex: 1, 
-    backgroundColor: 'rgba(0,0,0,0.45)', 
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
     zIndex: 1000,
   },
@@ -327,13 +333,13 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 6 },
   sheetTitle: {
     flex: 1,
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 13,              // reduced from 15
+    fontWeight: '600',         // slightly lighter
     color: '#111827',
     textAlign: 'center',
     fontFamily: (Typography?.medium as any) || 'System',
   },
-  closeTxt: { fontSize: 16, color: '#6B7280', fontWeight: '600' },
+  closeTxt: { fontSize: 14, color: '#6B7280', fontWeight: '600' }, // reduced from 16
 
   webContainer: {
     flex: 1,

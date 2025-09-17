@@ -52,7 +52,8 @@ export const useHistory = (currency, options = {}) => {
     const categoryMap = {
       'Deposit': 'DEPOSIT',
       'Transfer': 'WITHDRAWAL',
-      'Swap': 'SWAP'
+      'Swap': 'SWAP',
+      'Giftcard': 'GIFTCARD'
     };
     return categoryMap[category] || null;
   };
@@ -66,6 +67,69 @@ export const useHistory = (currency, options = {}) => {
     };
     return statusMap[status] || null;
   };
+
+  // Function to fetch gift card transactions
+  const fetchGiftCardTransactions = useCallback(async (filterParams = {}) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { 
+        status,
+        startDate: customStartDate,
+        endDate: customEndDate,
+        month,
+        ...otherFilters 
+      } = filterParams;
+      
+      let apiParams = {
+        page: 1,
+        limit: defaultPageSize,
+        ...otherFilters
+      };
+      
+      // Handle date range
+      if (customStartDate && customEndDate) {
+        apiParams.startDate = customStartDate;
+        apiParams.endDate = customEndDate;
+      } else if (month) {
+        const dateRange = getMonthDateRange(month);
+        apiParams.startDate = dateRange.startDate;
+        apiParams.endDate = dateRange.endDate;
+      }
+
+      // Map status
+      if (status && status !== 'All Status') {
+        const mappedStatus = mapStatusToService(status);
+        if (mappedStatus) {
+          apiParams.status = mappedStatus;
+        }
+      }
+
+      const result = await transactionService.getGiftCardTransactions(apiParams);
+
+      if (result.success && result.data) {
+        setTransactions(result.data.transactions || []);
+        setPagination(result.data.pagination || null);
+        setError(null);
+      } else {
+        setError(result.message || 'Failed to fetch gift card transactions');
+        setTransactions([]);
+        setPagination(null);
+      }
+
+      return result;
+    } catch (e) {
+      console.error('Gift card fetch error:', e);
+      const errorMessage = 'Failed to fetch gift card transactions.';
+      setError(errorMessage);
+      setTransactions([]);
+      setPagination(null);
+      return { success: false, error: 'NETWORK_ERROR', message: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, [defaultPageSize]);
 
   // Function to fetch bill payments
   const fetchBillPayments = useCallback(async (filterParams = {}) => {
@@ -139,7 +203,7 @@ export const useHistory = (currency, options = {}) => {
     }
   }, [defaultPageSize]);
 
-  // Function to fetch complete history (tokens + utilities)
+  // Function to fetch complete history (tokens + utilities + gift cards)
   const fetchCompleteHistory = useCallback(async (filterParams = {}) => {
     setLoading(true);
     setError(null);
@@ -156,7 +220,7 @@ export const useHistory = (currency, options = {}) => {
       let apiParams = {
         page: 1,
         limit: defaultPageSize,
-        transactionType: 'all', // This gets both tokens and utilities
+        transactionType: 'all', // This gets tokens, utilities, and gift cards
         ...otherFilters
       };
       
@@ -210,12 +274,17 @@ export const useHistory = (currency, options = {}) => {
     // Check what type of request this is
     const billCategories = ['Airtime', 'Data', 'Cable', 'Electricity'];
     
+    // If gift card category selected → fetch only gift card transactions
+    if (category === 'Giftcard') {
+      return fetchGiftCardTransactions(filterParams);
+    }
+    
     // If specific bill category selected → fetch only that utility type
     if (category && billCategories.includes(category)) {
       return fetchBillPayments(filterParams);
     }
     
-    // If "All Categories" selected → fetch complete history (tokens + utilities)
+    // If "All Categories" selected → fetch complete history (tokens + utilities + gift cards)
     if (category === 'All Categories' || !category) {
       return fetchCompleteHistory(filterParams);
     }
@@ -292,7 +361,7 @@ export const useHistory = (currency, options = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [normalizedCurrency, defaultPageSize, fetchBillPayments, fetchCompleteHistory]);
+  }, [normalizedCurrency, defaultPageSize, fetchBillPayments, fetchCompleteHistory, fetchGiftCardTransactions]);
 
   const refreshTransactions = useCallback((filterParams = {}) => {
     return fetchTransactions(filterParams);
@@ -336,26 +405,46 @@ export const useHistory = (currency, options = {}) => {
     }
   }, [normalizedCurrency, pagination, loading]);
 
-  // Get filtered transactions for specific bill payment types
-  const getFilteredByBillType = useCallback((billType) => {
-    if (!billType || billType === 'All Categories') return transactions;
+  // Get filtered transactions for specific categories
+  const getFilteredByCategory = useCallback((category) => {
+    if (!category || category === 'All Categories') return transactions;
     
-    // For bill payment categories, we need to filter by additional metadata
-    // since they all map to BILL_PAYMENT type
+    // For gift cards
+    if (category === 'Giftcard') {
+      return transactions.filter(tx => tx.type === 'GIFTCARD');
+    }
+    
+    // For bill payment categories
     const billCategories = ['Airtime', 'Data', 'Cable', 'Electricity'];
-    if (!billCategories.includes(billType)) return transactions;
+    if (billCategories.includes(category)) {
+      return transactions.filter(tx => {
+        if (tx.type !== 'BILL_PAYMENT') return false;
+        
+        // Check if transaction details contain the bill type
+        const details = tx.details || {};
+        const billType = details.category || details.billType || '';
+        
+        return billType.toLowerCase().includes(category.toLowerCase());
+      });
+    }
 
-    // Filter bill payment transactions by their details or category
-    return transactions.filter(tx => {
-      if (tx.type !== 'BILL_PAYMENT') return false;
-      
-      // Check if transaction details contain the bill type
-      const details = tx.details || {};
-      const category = details.category || details.billType || '';
-      
-      return category.toLowerCase().includes(billType.toLowerCase());
-    });
+    // For other categories
+    const categoryMap = {
+      'Deposit': 'DEPOSIT',
+      'Transfer': 'WITHDRAWAL', 
+      'Swap': 'SWAP'
+    };
+    
+    const mappedType = categoryMap[category];
+    if (mappedType) {
+      return transactions.filter(tx => tx.type === mappedType);
+    }
+
+    return transactions;
   }, [transactions]);
+
+  // Legacy method name for backward compatibility
+  const getFilteredByBillType = getFilteredByCategory;
 
   useEffect(() => {
     if (autoFetch) {
@@ -380,9 +469,11 @@ export const useHistory = (currency, options = {}) => {
     refreshTransactions,
     fetchTransactions,
     fetchBillPayments, // For bills only
+    fetchGiftCardTransactions, // For gift cards only
     fetchCompleteHistory, // For all transactions
     loadMoreTransactions,
-    getFilteredByBillType,
+    getFilteredByCategory,
+    getFilteredByBillType, // Legacy alias
     
     // Utilities
     getMonthDateRange,

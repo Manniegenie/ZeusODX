@@ -105,12 +105,13 @@ const TransactionHistoryScreen = () => {
     });
   }, [refreshTransactions, selectedMonth, selectedCategory, selectedStatus]);
 
-  // Updated categories with new bill payment options
+  // Updated categories with gift card option
   const categories = [
     { id: 'all', label: 'All Categories' },
     { id: 'deposit', label: 'Deposit' },
     { id: 'transfer', label: 'Transfer' },
     { id: 'swap', label: 'Swap' },
+    { id: 'giftcard', label: 'Giftcard' },
     { id: 'airtime', label: 'Airtime' },
     { id: 'data', label: 'Data' },
     { id: 'cable', label: 'Cable' },
@@ -126,7 +127,7 @@ const TransactionHistoryScreen = () => {
 
   const getTransactionPrefix = (type, formattedAmount) => {
     if (type === 'DEPOSIT') return '+';
-    if (type === 'WITHDRAWAL' || type === 'BILL_PAYMENT') return '-';
+    if (type === 'WITHDRAWAL' || type === 'BILL_PAYMENT' || type === 'GIFTCARD') return '-';
     if (type === 'SWAP') {
       if (formattedAmount && formattedAmount.startsWith('+-')) return '-';
       if (formattedAmount && formattedAmount.startsWith('+')) return '+';
@@ -146,11 +147,13 @@ const TransactionHistoryScreen = () => {
     if (status === 'FAILED') return '#FFE8E8';
     return '#FFF3E0';
   };
-  const formatTransactionType = (type, billType) => {
+  const formatTransactionType = (type, billType, cardType) => {
     switch (type) {
       case 'DEPOSIT': return 'Deposit';
       case 'WITHDRAWAL': return 'Withdrawal';
       case 'SWAP': return 'Swap';
+      case 'GIFTCARD': 
+        return cardType ? `${cardType} Gift Card` : 'Gift Card';
       case 'BILL_PAYMENT': 
         // Return the specific bill type instead of generic "Bill Payment"
         return billType || 'Bill Payment';
@@ -198,6 +201,7 @@ const TransactionHistoryScreen = () => {
       case 'WITHDRAWAL': return 'Withdrawal';
       case 'SWAP': return 'Swap';
       case 'BILL_PAYMENT': return 'Bill Payment';
+      case 'GIFTCARD': return 'Gift Card';
       default: return t || 'Unknown';
     }
   };
@@ -244,7 +248,26 @@ const TransactionHistoryScreen = () => {
     let details = {};
     let uiType = mapServiceTypeToUI(serviceType);
 
-    if (serviceType === 'BILL_PAYMENT') {
+    if (serviceType === 'GIFTCARD') {
+      const d = tx?.details || {};
+      uiType = tx?.cardType ? `${tx.cardType} Gift Card` : 'Gift Card';
+      details = {
+        category: 'giftcard',
+        giftCardId: d.giftCardId || tx?.giftCardId,
+        cardType: d.cardType || tx?.cardType,
+        cardFormat: d.cardFormat || tx?.cardFormat,
+        cardRange: d.cardRange || tx?.cardRange,
+        country: d.country || tx?.country,
+        description: d.description || tx?.description,
+        expectedRate: d.expectedRate || tx?.expectedRate,
+        expectedRateDisplay: d.expectedRateDisplay || tx?.expectedRateDisplay,
+        expectedAmountToReceive: d.expectedAmountToReceive || tx?.expectedAmountToReceive,
+        expectedSourceCurrency: d.expectedSourceCurrency || tx?.expectedSourceCurrency,
+        expectedTargetCurrency: d.expectedTargetCurrency || tx?.expectedTargetCurrency,
+        eCode: d.eCode || tx?.eCode,
+        totalImages: d.totalImages || tx?.totalImages,
+      };
+    } else if (serviceType === 'BILL_PAYMENT') {
       const d = tx?.details || {};
       uiType = displayBillType(tx) || 'Bill Payment';
       details = {
@@ -383,7 +406,7 @@ const TransactionHistoryScreen = () => {
               }}
             >
               <View style={styles.transactionLeft}>
-                <Text style={styles.transactionType}>{formatTransactionType(tx.type, tx.billType)}</Text>
+                <Text style={styles.transactionType}>{formatTransactionType(tx.type, tx.billType, tx.cardType)}</Text>
                 <Text style={styles.transactionDate}>{tx.formattedDate || 'N/A'}</Text>
               </View>
               <View style={styles.transactionRight}>
@@ -475,6 +498,7 @@ const TransactionHistoryScreen = () => {
   );
 };
 
+// Styles remain the same...
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F0FF' },
   safeArea: { flex: 1 },
@@ -488,13 +512,13 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   backButton: {
-    width: 48,  // Increased from 40
-    height: 48, // Increased from 40
+    width: 48,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Very subtle background instead of transparent
-    overflow: 'hidden', // Better Android performance
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    overflow: 'hidden',
   },
   backButtonText: {
     fontSize: 20,
@@ -512,8 +536,8 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   headerSpacer: {
-    width: 48, // Updated to match new back button width
-    height: 48, // Updated to match new back button height
+    width: 48,
+    height: 48,
   },
   dateSelector: { alignItems: 'center', paddingVertical: 20 },
   monthSelector: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },

@@ -30,7 +30,7 @@ export const transactionService = {
       };
 
       // Map type values (only include if valid)
-      if (params.type && ['DEPOSIT', 'WITHDRAWAL', 'SWAP'].includes(params.type.toUpperCase())) {
+      if (params.type && ['DEPOSIT', 'WITHDRAWAL', 'SWAP', 'GIFTCARD'].includes(params.type.toUpperCase())) {
         requestBody.type = params.type.toUpperCase();
       }
 
@@ -117,7 +117,7 @@ export const transactionService = {
         sortOrder: params.sortOrder || 'desc'
       };
 
-      if (params.type && ['DEPOSIT', 'WITHDRAWAL', 'SWAP'].includes(params.type.toUpperCase())) {
+      if (params.type && ['DEPOSIT', 'WITHDRAWAL', 'SWAP', 'GIFTCARD'].includes(params.type.toUpperCase())) {
         requestBody.type = params.type.toUpperCase();
       }
 
@@ -249,7 +249,7 @@ export const transactionService = {
     }
   },
 
-  // NEW: Fetch utility transactions
+  // Fetch utility transactions
   async getBillTransactions(params = {}) {
     try {
       const requestBody = {
@@ -327,6 +327,72 @@ export const transactionService = {
     }
   },
 
+  // NEW: Fetch gift card transactions
+  async getGiftCardTransactions(params = {}) {
+    try {
+      const requestBody = {
+        page: params.page || 1,
+        limit: params.limit || 20,
+        sortBy: params.sortBy || 'createdAt',
+        sortOrder: params.sortOrder || 'desc'
+      };
+
+      // Map status values to backend format
+      if (params.status) {
+        const statusMap = {
+          'PENDING': 'pending',
+          'SUCCESSFUL': 'successful',
+          'FAILED': 'failed'
+        };
+        const mappedStatus = statusMap[params.status.toUpperCase()];
+        if (mappedStatus) requestBody.status = mappedStatus;
+      }
+
+      // Date range
+      if (params.startDate) requestBody.dateFrom = params.startDate.split('T')[0];
+      if (params.endDate) requestBody.dateTo = params.endDate.split('T')[0];
+
+      dbg('getGiftCardTransactions → POST /history/gift-cards', { requestBody });
+      const response = await apiClient.post('/history/gift-cards', requestBody);
+      dbg('getGiftCardTransactions ← response', { status: response.status, data: response.data });
+
+      if (response.data?.success && response.data?.data) {
+        const { transactions, pagination } = response.data.data;
+        const mapped = transactions.map(tx => this.formatGiftCardTransaction(tx));
+        dbg('getGiftCardTransactions → mapped sample', mapped?.[0]);
+
+        return {
+          success: true,
+          data: {
+            transactions: mapped,
+            pagination: {
+              currentPage: pagination.currentPage,
+              totalPages: pagination.totalPages,
+              totalCount: pagination.totalCount,
+              limit: pagination.limit,
+              hasNextPage: pagination.currentPage < pagination.totalPages,
+              hasPrevPage: pagination.currentPage > 1
+            }
+          },
+          message: response.data.message || 'Gift card transactions retrieved successfully'
+        };
+      }
+
+      return {
+        success: false,
+        error: 'FETCH_FAILED',
+        message: response.data?.error || 'Failed to fetch gift card transactions'
+      };
+    } catch (error) {
+      console.warn('getGiftCardTransactions error:', error?.message || error);
+      return {
+        success: false,
+        error: 'NETWORK_ERROR',
+        message: 'Network connection failed. Please check your internet connection and try again.'
+      };
+    }
+  },
+
   // ---------- Helpers (updated) ----------
 
   formatTransaction(transaction, currency) {
@@ -344,7 +410,8 @@ export const transactionService = {
     const typeMap = {
       Deposit: 'DEPOSIT',
       Withdrawal: 'WITHDRAWAL',
-      Swap: 'SWAP'
+      Swap: 'SWAP',
+      'Gift Card': 'GIFTCARD'
     };
     const mappedType = typeMap[transaction.type] || transaction.type;
 
@@ -362,7 +429,7 @@ export const transactionService = {
       transaction.date ||
       (parsedISO ? this.formatDate(parsedISO) : 'N/A');
 
-    return {
+    const baseTransaction = {
       id: transaction.id,
       type: mappedType,
       status: mappedStatus,
@@ -393,6 +460,16 @@ export const transactionService = {
 
       details: transaction.details
     };
+
+    // Add gift card specific fields if it's a gift card transaction
+    if (mappedType === 'GIFTCARD') {
+      baseTransaction.cardType = transaction.cardType;
+      baseTransaction.cardFormat = transaction.cardFormat;
+      baseTransaction.cardRange = transaction.cardRange;
+      baseTransaction.country = transaction.country;
+    }
+
+    return baseTransaction;
   },
 
   formatBillTransaction(transaction) {
@@ -425,6 +502,50 @@ export const transactionService = {
     };
   },
 
+  formatGiftCardTransaction(transaction) {
+    if (!transaction) return null;
+
+    const parsedISO = this.tryParseToISO(transaction.createdAt);
+
+    return {
+      id: transaction.id,
+      type: 'GIFTCARD',
+      status: this.mapGiftCardStatus(transaction.status),
+      amount: this.extractAmountFromString(transaction.amount, transaction.currency),
+      currency: transaction.currency || 'USD',
+      
+      createdAt: parsedISO,
+      updatedAt: parsedISO,
+      
+      formattedAmount: transaction.amount,
+      formattedDate: transaction.date,
+      formattedStatus: this.formatTransactionStatus(this.mapGiftCardStatus(transaction.status)),
+      
+      cardType: transaction.cardType,
+      cardFormat: transaction.cardFormat,
+      cardRange: transaction.cardRange,
+      country: transaction.country,
+      
+      details: {
+        ...transaction.details,
+        category: 'giftcard',
+        giftCardId: transaction.giftCardId,
+        cardType: transaction.cardType,
+        cardFormat: transaction.cardFormat,
+        cardRange: transaction.cardRange,
+        country: transaction.country,
+        description: transaction.description,
+        expectedRate: transaction.expectedRate,
+        expectedRateDisplay: transaction.expectedRateDisplay,
+        expectedAmountToReceive: transaction.expectedAmountToReceive,
+        expectedSourceCurrency: transaction.expectedSourceCurrency,
+        expectedTargetCurrency: transaction.expectedTargetCurrency,
+        eCode: transaction.eCode,
+        totalImages: transaction.totalImages
+      }
+    };
+  },
+
   formatMixedTransaction(transaction) {
     if (!transaction) return null;
 
@@ -450,6 +571,10 @@ export const transactionService = {
       };
     }
     
+    if (transaction.details?.category === 'giftcard') {
+      return this.formatGiftCardTransaction(transaction);
+    }
+    
     return this.formatTransaction(transaction);
   },
 
@@ -459,6 +584,17 @@ export const transactionService = {
       'Failed': 'FAILED', 
       'Pending': 'PENDING',
       'Refunded': 'FAILED'
+    };
+    return statusMap[status] || 'PENDING';
+  },
+
+  mapGiftCardStatus(status) {
+    const statusMap = {
+      'Successful': 'SUCCESSFUL',
+      'Failed': 'FAILED', 
+      'Pending': 'PENDING',
+      'Completed': 'SUCCESSFUL',
+      'Rejected': 'FAILED'
     };
     return statusMap[status] || 'PENDING';
   },

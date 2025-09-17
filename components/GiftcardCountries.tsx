@@ -19,6 +19,7 @@ import { Typography } from '../constants/Typography';
 import { useGiftcardCountries } from '../hooks/usegiftcardCountry';
 
 /* ========= Custom flag PNGs ========= */
+/* kept your original relative paths so bundler resolves same as before */
 import flagUS from '../components/icons/united-states.png';
 import flagGB from '../components/icons/united-kingdom.png';
 import flagCA from '../components/icons/canada.png';
@@ -30,15 +31,15 @@ import flagTR from '../components/icons/turkey.png';
 import flagCH from '../components/icons/switzerland.png';
 
 /* ========= Types ========= */
-export type CountryItem = { 
-  id: string; 
-  name: string; 
+export type CountryItem = {
+  id: string;
+  name: string;
   flag: ImageSourcePropType;
   rate?: number;
   rateDisplay?: string;
 };
 
-/* ========= Flag registry ========= */
+/* ========= Flag registry (keeps many keys for compatibility) ========= */
 const FLAGS: Record<string, ImageSourcePropType> = {
   US: flagUS,
   GB: flagGB,
@@ -48,22 +49,30 @@ const FLAGS: Record<string, ImageSourcePropType> = {
   AU: flagAU,
   AE: flagAE,
   TR: flagTR,
+  CH: flagCH,
+  // alternative keys your backend or fallback might use
   CANADA: flagCA,
   AUSTRALIA: flagAU,
   SWITZERLAND: flagCH,
-  CH: flagCH, // ✅ Added so Switzerland works correctly
+  UNITED_STATES: flagUS,
+  UNITEDSTATES: flagUS,
 };
 
 /* ========= Normalize API country codes ========= */
-const normalizeCountryCode = (code: string): string => {
-  const normalized = code.toUpperCase();
+const normalizeCountryCode = (code = ''): string => {
+  const normalized = String(code || '').toUpperCase().trim();
   const mapping: Record<string, string> = {
-    'CANADA': 'CA',
-    'AUSTRALIA': 'AU', 
-    'SWITZERLAND': 'CH',
-    'US': 'US'
+    CANADA: 'CA',
+    AUSTRALIA: 'AU',
+    SWITZERLAND: 'CH',
+    'UNITED STATES': 'US',
+    'UNITED_STATES': 'US',
+    UNITEDSTATES: 'US',
+    US: 'US',
   };
-  return mapping[normalized] || normalized;
+  if (mapping[normalized]) return mapping[normalized];
+  if (normalized.length === 2) return normalized;
+  return normalized;
 };
 
 /* ========= Local Bottom Sheet ========= */
@@ -140,19 +149,21 @@ export function AvailableCountrySheet({
   onSelect: (country: CountryItem) => void;
   onClose: () => void;
 }) {
+  // keep your original brand -> canonical mapping approach
   const normalizedBrand = useMemo(() => {
     if (!brand) return '';
     const brandMap: Record<string, string> = {
       'Amazon': 'AMAZON',
-      'Steam': 'STEAM', 
+      'Steam': 'STEAM',
       'Apple': 'APPLE',
       'iTunes': 'APPLE',
       'Google Play': 'GOOGLE_PLAY',
       'Nordstrom': 'NORDSTROM',
       'Macy': 'MACY',
+      'Macy\'s': 'MACY',
       'Nike': 'NIKE',
       'Visa': 'VISA',
-      'Vanilla': 'VISA',
+      'Vanilla': 'VANILLA',
       'Razor Gold': 'RAZOR_GOLD',
       'American Express': 'AMERICAN_EXPRESS',
       'Amex': 'AMERICAN_EXPRESS',
@@ -164,6 +175,7 @@ export function AvailableCountrySheet({
     return brandMap[brand] || brand.toUpperCase().replace(/\s+/g, '_');
   }, [brand]);
 
+  // Use your original hook import path
   const {
     countries: apiCountries,
     loading,
@@ -190,7 +202,11 @@ export function AvailableCountrySheet({
       APPLE: [
         { id: 'US', name: 'United States', flag: FLAGS.US },
         { id: 'AUSTRALIA', name: 'Australia', flag: FLAGS.AU },
-      ]
+      ],
+      VANILLA: [
+        { id: 'US', name: 'United States', flag: FLAGS.US },
+        { id: 'CANADA', name: 'Canada', flag: FLAGS.CA },
+      ],
     };
     return brandCountries[normalizedBrand] || [
       { id: 'US', name: 'United States', flag: FLAGS.US },
@@ -206,7 +222,7 @@ export function AvailableCountrySheet({
     }
     return apiCountries.map(country => {
       const flagKey = normalizeCountryCode(country.code);
-      const flag = FLAGS[flagKey] || FLAGS.US;
+      const flag = FLAGS[flagKey] || FLAGS[country.code] || FLAGS.US;
       return {
         id: country.code,
         name: country.name,
@@ -236,14 +252,14 @@ export function AvailableCountrySheet({
       return (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>Failed to load countries</Text>
-          <Text style={styles.errorSubtext}>{error}</Text>
+          <Text style={styles.errorSubtext}>{String(error)}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => fetchCountries()} activeOpacity={0.8}>
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
       );
     }
-    if (!hasCountries) {
+    if (!hasCountries && (!apiCountries || apiCountries.length === 0)) {
       return (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>No countries available for {brand}</Text>
@@ -268,9 +284,17 @@ export function AvailableCountrySheet({
               <View style={styles.pillLeft}>
                 <Image source={c.flag} style={styles.flagSmall} />
               </View>
+
+              {/* Left: Country name; Right: Rate */}
               <View style={styles.pillContent}>
                 <Text style={[styles.pillLabel, selected && styles.pillLabelSelected]} numberOfLines={1}>
                   {c.name}
+                </Text>
+              </View>
+
+              <View style={styles.pillRight}>
+                <Text style={[styles.pillRate, selected && styles.pillRateSelected]}>
+                  {c.rateDisplay ?? (typeof c.rate === 'number' ? `${c.rate}/USD` : '—')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -331,7 +355,8 @@ const styles = StyleSheet.create({
   },
   pillSelected: { borderColor: '#35297F', backgroundColor: '#F6F4FF' },
   pillLeft: { marginRight: 10, justifyContent: 'center', alignItems: 'center', width: 24 },
-  pillContent: { flex: 1 },
+  pillContent: { flex: 1, paddingRight: 12 }, // takes available space
+  pillRight: { minWidth: 80, alignItems: 'flex-end', justifyContent: 'center' }, // right-aligned rate
   flagSmall: { width: 20, height: 20, borderRadius: 10, resizeMode: 'cover' },
   pillLabel: {
     fontSize: 15,
@@ -340,12 +365,12 @@ const styles = StyleSheet.create({
   },
   pillLabelSelected: { color: '#35297F', fontWeight: '700' },
   pillRate: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#6B7280',
     fontFamily: Typography.regular || 'System',
-    marginTop: 2,
+    marginTop: 0,
   },
-  pillRateSelected: { color: '#35297F' },
+  pillRateSelected: { color: '#35297F', fontWeight: '700' },
   loadingContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
   loadingText: { color: '#6B7280', fontSize: 14, fontFamily: Typography.regular || 'System', marginTop: 12 },
   errorContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },

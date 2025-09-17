@@ -30,6 +30,46 @@ import ErrorDisplay from '../../components/ErrorDisplay';
 // Icons - replace with actual paths
 import arrowDownIcon from '../../components/icons/arrow-down.png';
 
+// Type definitions for transaction receipt
+interface TokenDetails {
+  transactionId?: string;
+  currency?: string;
+  network?: string;
+  address?: string;
+  hash?: string;
+  fee?: number | string;
+  narration?: string;
+  createdAt?: string;
+  category?: 'token';
+}
+
+interface UtilityDetails {
+  orderId?: string;
+  requestId?: string;
+  productName?: string;
+  quantity?: number | string;
+  network?: string;
+  customerInfo?: string;
+  billType?: string;
+  paymentCurrency?: string;
+  category?: 'utility';
+}
+
+type APIDetail =
+  | TokenDetails
+  | UtilityDetails
+  | (Record<string, any> & { category?: 'token' | 'utility' });
+
+interface APITransaction {
+  id: string;
+  type: string;      // "Deposit" | "Withdrawal" | "Swap" | bill label
+  status: string;    // "Successful" | "Failed" | "Pending"
+  amount: string;    // "+₦10,000" | "-0.1 BTC"
+  date: string;      // human-readable
+  createdAt?: string;
+  details?: APIDetail;
+}
+
 interface TokenOption {
   id: string;
   name: string;
@@ -468,11 +508,81 @@ const ExternalWalletTransferScreen: React.FC = () => {
         setPasswordPin('');
         setTwoFactorCode('');
         
-        Alert.alert(
-          'Success!', 
-          'Withdrawal initiated successfully. You will receive a notification when the transaction is processed.',
-          [{ text: 'OK', onPress: () => router.back() }]
-        );
+        // Create transaction data for withdrawal receipt screen
+        const transactionData: APITransaction = {
+          id: result.transactionId || result.id || Date.now().toString(),
+          type: 'Withdrawal',
+          status: 'Successful',
+          amount: `-${amount} ${selectedToken.symbol}`,
+          date: new Date().toLocaleString('en-NG', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          createdAt: new Date().toISOString(),
+          details: {
+            category: 'token' as const,
+            transactionId: result.transactionId || result.id,
+            currency: selectedToken.symbol,
+            network: selectedNetwork.name,
+            address: walletAddress.trim(),
+            hash: result.transactionHash || result.hash,
+            fee: feeCalculation?.feeAmount || feeCalculation?.fee,
+            narration: `External wallet transfer to ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+          } as TokenDetails
+        };
+
+        // Create raw transaction data (for additional context)
+        const rawTransactionData = {
+          id: result.transactionId || result.id,
+          transactionId: result.transactionId || result.id,
+          type: 'WITHDRAWAL',
+          status: 'SUCCESSFUL',
+          currency: selectedToken.symbol,
+          symbol: selectedToken.symbol,
+          amount: parseFloat(amount),
+          formattedAmount: `-${amount} ${selectedToken.symbol}`,
+          network: selectedNetwork.code,
+          networkName: selectedNetwork.name,
+          address: walletAddress.trim(),
+          walletAddress: walletAddress.trim(),
+          to: walletAddress.trim(),
+          hash: result.transactionHash || result.hash,
+          transactionHash: result.transactionHash || result.hash,
+          fee: feeCalculation?.feeAmount || feeCalculation?.fee,
+          networkFee: feeCalculation?.feeAmount || feeCalculation?.fee,
+          feeUsd: feeCalculation?.feeUsd,
+          narration: withdrawalData.narration,
+          createdAt: new Date().toISOString(),
+          formattedDate: new Date().toLocaleString('en-NG', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          details: {
+            transactionId: result.transactionId || result.id,
+            currency: selectedToken.symbol,
+            network: selectedNetwork.code,
+            address: walletAddress.trim(),
+            hash: result.transactionHash || result.hash,
+            fee: feeCalculation?.feeAmount || feeCalculation?.fee,
+            narration: withdrawalData.narration
+          }
+        };
+
+        // Navigate to withdrawal receipt screen
+        router.push({
+          pathname: '/history/WithdrawalReceipt',
+          params: {
+            tx: encodeURIComponent(JSON.stringify(transactionData)),
+            raw: encodeURIComponent(JSON.stringify(rawTransactionData)),
+          },
+        });
+        
       } else {
         setShowTwoFactorModal(false);
         

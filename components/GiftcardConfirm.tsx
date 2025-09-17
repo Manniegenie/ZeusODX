@@ -43,20 +43,21 @@ import frFlag from '../components/icons/france.png';
 import auFlag from '../components/icons/australia.png';
 import aeFlag from '../components/icons/united-arab-emirates.png';
 import trFlag from '../components/icons/turkey.png';
+import chFlag from '../components/icons/switzerland.png'; // Switzerland
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MODAL_HEIGHT = 560;
 
-/* Types */
+/* Types (kept inline for clarity) */
 interface GiftCardBrand {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
   iconSrc?: ImageSourcePropType;
   color?: string;
 }
 interface Country {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
   flagSrc?: ImageSourcePropType;
   code?: string;
 }
@@ -79,7 +80,7 @@ interface GiftCardConfirmationModalProps {
   loading?: boolean;
 }
 
-/* ── Icons map */
+/* ── Icons map (keys are lowercased & normalized to allow flexible matching) */
 const BRAND_ICON_MAP: Record<string, ImageSourcePropType> = {
   amazon: amazonIcon,
   itunes: itunesIcon,
@@ -96,18 +97,22 @@ const BRAND_ICON_MAP: Record<string, ImageSourcePropType> = {
   footlocker: footlockerIcon,
   xbox: xboxIcon,
   ebay: ebayIcon,
+  apple: itunesIcon,
+  'google_play': googlePlayIcon,
+  'american_express': amexIcon,
 };
 
-/* ── Flags */
+/* ── Flags (keys lowercased / normalized) */
 const FLAG_MAP: Record<string, ImageSourcePropType> = {
   gb: gbFlag, 'united-kingdom': gbFlag, uk: gbFlag,
   us: usFlag, 'united-states': usFlag, usa: usFlag,
-  ca: caFlag, canada: caFlag,
+  ca: caFlag, canada: caFlag, 'canada': caFlag,
   de: deFlag, germany: deFlag,
   fr: frFlag, france: frFlag,
   au: auFlag, australia: auFlag,
   ae: aeFlag, 'united-arab-emirates': aeFlag, uae: aeFlag,
-  tr: trFlag, turkey: trFlag, türkiye: trFlag, turkiye: trFlag,
+  tr: trFlag, turkey: trFlag, 'türkiye': trFlag, 'turkiye': trFlag,
+  ch: chFlag, switzerland: chFlag,
 };
 
 /* Normalize helpers */
@@ -119,12 +124,14 @@ const BRAND_SYNONYMS: Record<string, string> = {
   'RAZOR-GOLD': 'RAZOR_GOLD',
   AMEX: 'AMERICAN_EXPRESS',
   "MACY'S": 'MACY',
+  VANILLA: 'VISA', // treat vanilla as visa family (client can pass format later)
 };
 function normalizeGiftcardType(input?: string | null) {
   const raw = (input || '').toString().trim();
   if (!raw) return '';
   const up = raw.toUpperCase();
   if (BRAND_SYNONYMS[up]) return BRAND_SYNONYMS[up];
+  // replace apostrophes and non-alphanum with underscore
   return up.replace(/['’]/g, '').replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 }
 function normalizeCountryToAllowed(input?: string | null) {
@@ -136,6 +143,12 @@ function normalizeCountryToAllowed(input?: string | null) {
   if (['AUSTRALIA', 'AU'].includes(up)) return 'AUSTRALIA';
   if (['SWITZERLAND', 'CH'].includes(up)) return 'SWITZERLAND';
   return up;
+}
+
+/* Utility normalization for icon/flag lookup */
+function keyify(s?: string | null) {
+  if (!s) return '';
+  return s.toString().trim().toLowerCase().replace(/\s+/g, '-');
 }
 
 const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
@@ -153,7 +166,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
     country = null,
     amount = '0',
     transactionValue = '0.00',
-    rate: fallbackRate = '0/$',
+    rate: fallbackRate = '—',
     timeOfUpload = '',
     averageConfirmationTime = '10-15mins',
     cardType = '',
@@ -174,7 +187,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
     return Number.isFinite(n) ? n : 0;
   }, [amount]);
 
-  // Hook
+  // Hook - default values will be overridden below via sync effect
   const {
     loading: calcLoading,
     error: rateError,
@@ -195,7 +208,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
     amount: amountNum,
   });
 
-  // Sync hook state with props
+  // Sync hook state with props whenever they change
   useEffect(() => {
     setGiftcard(normalizedGiftcard || 'AMAZON');
     setCountry(normalizedCountry || 'US');
@@ -203,7 +216,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
     setCardFormat(cardFormat ?? null);
   }, [normalizedGiftcard, normalizedCountry, amountNum, cardFormat, setGiftcard, setCountry, setInputAmount, setCardFormat]);
 
-  // 🔧 IMPORTANT: calculate even if normalized values are empty (use fallbacks)
+  // Trigger calculate when modal opens or inputs change
   useEffect(() => {
     if (!visible) return;
     if (amountNum <= 0) return;
@@ -211,24 +224,31 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
     const gcForCalc = normalizedGiftcard || 'AMAZON';
     const countryForCalc = normalizedCountry || 'US';
 
+    // call calculate; calculate handles errors and sets result
     calculate({
       amount: amountNum,
       giftcard: gcForCalc,
       country: countryForCalc,
       cardFormat: cardFormat ?? undefined,
+    }).catch(() => {
+      /* errors handled inside calculate */
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, normalizedGiftcard, normalizedCountry, amountNum, cardFormat]);
 
   const getBrandIcon = (brandId?: string, fallbackName?: string): ImageSourcePropType => {
     if (brand?.iconSrc) return brand.iconSrc;
-    const id = (brandId || fallbackName || '').toLowerCase().replace(/\s+/g, '-');
-    return BRAND_ICON_MAP[id] || amazonIcon;
+    // prefer brand id or name, fallback to cardType
+    const key = keyify(brandId || fallbackName || cardType || normalizedGiftcard);
+    // special-case VISA vs VANILLA
+    if (key.includes('vanilla')) return vanillaIcon;
+    if (key.includes('visa')) return visaIcon;
+    return BRAND_ICON_MAP[key] || amazonIcon;
   };
   const getCountryFlag = (countryId?: string, fallbackName?: string): ImageSourcePropType => {
     if (country?.flagSrc) return country.flagSrc;
-    const id = (countryId || fallbackName || '').toLowerCase().replace(/\s+/g, '-');
-    return FLAG_MAP[id] || gbFlag;
+    const key = keyify(countryId || fallbackName || normalizedCountry);
+    return FLAG_MAP[key] || usFlag;
   };
 
   const formatUSD = (amt: string | number): string => {
@@ -248,16 +268,13 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
   // Displays
   const rateDisplay = calcLoading
     ? 'Calculating…'
-    : exchangeRate != null
-    ? exchangeRateDisplay
-    : fallbackRate;
+    : (exchangeRate != null && exchangeRateDisplay) ? exchangeRateDisplay : (fallbackRate || '—');
 
   const receiveDisplay = calcLoading
     ? 'Calculating…'
-    : result?.success
-    ? payoutDisplay
-    : '—';
+    : (result?.success && payoutDisplay) ? payoutDisplay : '—';
 
+  // disable pay button if backend not ready or calc error
   const disablePayButton = loading || calcLoading || !!rateError || !result?.success;
 
   return (
@@ -277,7 +294,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
 
                 {/* Amount (USD input) */}
                 <View style={styles.amountSection}>
-                  <Text style={styles.amountTitle}>{formatUSD(amount)}</Text>
+                  <Text style={styles.amountTitle}>{formatUSD(amountNum)}</Text>
                 </View>
 
                 {/* Details */}
@@ -290,32 +307,32 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
                         source={getBrandIcon(brand?.id, brand?.name || cardType)}
                         style={styles.brandIcon}
                       />
-                      <Text style={styles.detailValue}>{brand?.name || cardType || 'Amazon'}</Text>
+                      <Text style={styles.detailValue}>{brand?.name || cardType || normalizedGiftcard || 'Amazon'}</Text>
                     </View>
                   </View>
 
-                  {/* Card Country */}
+                  {/* Card Country (country left, rate right) */}
                   <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Card Country</Text>
+                    <Text style={styles.detailLabel}>Card country</Text>
                     <View style={styles.valueContainer}>
                       <Image
                         source={getCountryFlag(country?.id, country?.name)}
                         style={styles.countryFlag}
                       />
-                      <Text style={styles.detailValue}>{country?.name || 'United States'}</Text>
+                      <Text style={styles.detailValue}>{country?.name || normalizedCountry || 'United States'}</Text>
                     </View>
                   </View>
 
-                  {/* You Receive (NGN) */}
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>You Receive</Text>
-                    <Text style={styles.detailValue}>{receiveDisplay}</Text>
-                  </View>
-
-                  {/* Rate (exchangeRate) */}
+                  {/* Rate shown on its own right-hand row */}
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Rate</Text>
                     <Text style={styles.detailValue}>{rateDisplay}</Text>
+                  </View>
+
+                  {/* You Receive (right) */}
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>You receive</Text>
+                    <Text style={styles.detailValue}>{receiveDisplay}</Text>
                   </View>
 
                   {/* Any rate error from validation/API */}
@@ -331,7 +348,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
                   {/* Time of Upload */}
                   {!!timeOfUpload && (
                     <View style={styles.detailRow}>
-                      <Text style={styles.detailLabel}>Time of Upload</Text>
+                      <Text style={styles.detailLabel}>Time of upload</Text>
                       <Text style={styles.detailValue}>{formatTime(timeOfUpload)}</Text>
                     </View>
                   )}
@@ -344,7 +361,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
                   </Text>
                 </View>
 
-                {/* Pay */}
+                {/* Pay / Confirm */}
                 <View style={styles.buttonSection}>
                   <TouchableOpacity
                     style={[styles.payButton, disablePayButton && styles.payButtonDisabled]}
@@ -394,7 +411,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 24,
   },
-  amountSection: { alignItems: 'center', marginBottom: 32 },
+  amountSection: { alignItems: 'center', marginBottom: 24 },
   amountTitle: {
     color: '#111827',
     fontFamily: Typography.medium || 'System',
@@ -417,6 +434,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     flex: 1,
+    textTransform: 'capitalize',
   },
   detailValue: {
     color: '#111827',
@@ -427,7 +445,7 @@ const styles = StyleSheet.create({
   },
   valueContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'flex-end' },
   brandIcon: { width: 20, height: 20, resizeMode: 'contain', borderRadius: 4 },
-  countryFlag: { width: 20, height: 15, resizeMode: 'cover', borderRadius: 2 },
+  countryFlag: { width: 24, height: 16, resizeMode: 'cover', borderRadius: 2, marginRight: 8 },
   confirmationTimeSection: {
     backgroundColor: '#F3F4F6',
     borderRadius: 8,
