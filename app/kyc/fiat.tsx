@@ -120,7 +120,7 @@ const FiatScreen: React.FC = () => {
             <TouchableOpacity
               activeOpacity={0.8}
               style={[styles.verificationCard, !bvnVerified && styles.incompleteCard]}
-              onPress={() => router.push('/fiat/bvn')}
+              onPress={() => router.push('/kyc/verify/bvn')}
             >
               <View style={styles.verificationContent}>
                 <View style={styles.verificationInfo}>

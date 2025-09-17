@@ -1,6 +1,6 @@
 // hooks/useGiftcardRate.js
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
   giftcardRateService,
   GIFT_CARD_TYPES,
@@ -26,7 +26,7 @@ export function useGiftcardRate(params = {}) {
 
   // State
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);   // normalized body
+  const [result, setResult] = useState(null);   // normalized body: { success, data, message, ... }
   const [error, setError] = useState(null);
   const lastReqRef = useRef(null);
 
@@ -36,15 +36,15 @@ export function useGiftcardRate(params = {}) {
   // === Derived numbers ===
   const exchangeRate = useMemo(() => {
     if (!result?.success || !data) return null;
-    
+
     // Extract from normalized data structure
     return data.calculation?.exchangeRate ?? null;
   }, [result, data]);
 
   const amountToReceive = useMemo(() => {
     if (!result?.success || !data) return 0;
-    
-    // Extract from normalized data structure  
+
+    // Extract from normalized data structure
     return Number(data.amountToReceive ?? 0);
   }, [result, data]);
 
@@ -52,12 +52,12 @@ export function useGiftcardRate(params = {}) {
   const exchangeRateDisplay = useMemo(() => {
     if (loading) return 'Calculating…';
     if (exchangeRate == null) return '';
-    
+
     // Use the rate string from API if available, otherwise format the number
     if (data?.rate && typeof data.rate === 'string') {
       return data.rate; // e.g., "1,430/USD"
     }
-    
+
     try {
       const pretty = new Intl.NumberFormat('en-NG', { maximumFractionDigits: 0 }).format(exchangeRate);
       return `${pretty}/USD`;
@@ -68,7 +68,7 @@ export function useGiftcardRate(params = {}) {
 
   const payoutDisplay = useMemo(() => {
     if (!result?.success || !data) return '';
-    
+
     const targetCurrency = data.calculation?.targetCurrency || 'NGN';
     return giftcardRateService.formatCurrency(amountToReceive, targetCurrency);
   }, [result, data, amountToReceive]);
@@ -84,7 +84,14 @@ export function useGiftcardRate(params = {}) {
   );
 
   const supported = useMemo(
-    () => ({ giftcards: GIFT_CARD_TYPES, countries: GIFT_CARD_COUNTRIES, formats: CARD_FORMATS }),
+    () => {
+      // prefer service-provided options when available
+      try {
+        return giftcardRateService.getSupportedOptions();
+      } catch {
+        return { giftcards: GIFT_CARD_TYPES, countries: GIFT_CARD_COUNTRIES, formats: CARD_FORMATS };
+      }
+    },
     []
   );
 
@@ -101,16 +108,28 @@ export function useGiftcardRate(params = {}) {
         cardFormat: (opts.cardFormat ?? cardFormat) ?? undefined,
       };
 
+      // store last request for debugging / retry usage
       lastReqRef.current = req;
+
+      // Small guard: don't call service with null/undefined amount
+      if (req.amount === null || req.amount === undefined || Number.isNaN(Number(req.amount))) {
+        const msg = 'Invalid amount';
+        setResult({ success: false, data: null, message: msg });
+        setError(msg);
+        setLoading(false);
+        return { success: false, message: msg };
+      }
 
       try {
         const resp = await giftcardRateService.calculateRate(req);
         setResult(resp);
-        
+
         if (!resp?.success) {
           setError(resp?.message || 'Failed to calculate gift card rate');
+        } else {
+          setError(null);
         }
-        
+
         setLoading(false);
         return resp;
       } catch (err) {
@@ -164,6 +183,23 @@ export function useGiftcardRate(params = {}) {
     setResult(null);
     setError(null);
   }, []);
+
+  // Auto-calculate when inputs change (if requested)
+  useEffect(() => {
+    if (!autoCalculate) return;
+    // don't auto-calc for amount 0 or invalid
+    const amt = Number(inputAmount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      return;
+    }
+
+    // call calculate but don't block UI — intentionally not awaiting
+    calculate().catch(err => {
+      // swallow (errors handled in calculate)
+      if (process.env.NODE_ENV === 'development') console.warn('autoCalculate error', err);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCalculate, inputAmount, giftcard, country, cardFormat]);
 
   // Debug logging to help identify issues
   if (process.env.NODE_ENV === 'development' && result) {

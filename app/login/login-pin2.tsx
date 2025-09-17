@@ -1,4 +1,4 @@
-// app/login/simple-pin.tsx (or your current path)
+// app/login/simple-pin.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { Typography } from '../../constants/Typography';
@@ -181,7 +181,20 @@ export default function SimpleLoginPinScreen() {
 
   const handleDismissError = () => setError({ show: false, type: 'general' });
 
-  const handleForgotPin = () => {};
+  // Implemented: navigate to ForgotPinScreen and pass phone as "phonenumber" param
+  const handleForgotPin = () => {
+    try {
+      router.push({
+        pathname: '/login/ForgotPinScreen',
+        params: { phonenumber: phoneNumber || '' },
+      });
+      console.log('Navigating to ForgotPinScreen with phone:', phoneNumber);
+    } catch (err) {
+      console.warn('Failed to navigate to ForgotPinScreen', err);
+      // fallback to query-string style navigation
+      router.push(`/auth/forgot-pin?phonenumber=${encodeURIComponent(phoneNumber || '')}`);
+    }
+  };
 
   const handleBackToPhone = () => {
     router.replace('/login/login-phone');

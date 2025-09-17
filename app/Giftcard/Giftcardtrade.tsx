@@ -66,6 +66,12 @@ const RANGES = [
   { id: '500-1000', label: '$500 – $1,000', min: 500, max: 1000 },
 ];
 
+// VANILLA variants
+const VANILLA_VARIANTS = [
+  { id: '4097', label: 'VANILLA 4097', description: 'BIN: 4097' },
+  { id: '4118', label: 'VANILLA 4118', description: 'BIN: 4118' },
+];
+
 /* ---------------- Success Modal ---------------- */
 interface SuccessModalProps {
   visible: boolean;
@@ -219,6 +225,7 @@ const ChoiceSheet = ({
   onSelect,
   onClose,
   centerAlign = false,
+  showDescription = false,
 }: {
   visible: boolean;
   title: string;
@@ -227,6 +234,7 @@ const ChoiceSheet = ({
   onSelect: (id: string) => void;
   onClose: () => void;
   centerAlign?: boolean;
+  showDescription?: boolean;
 }) => {
   const isScrollable = choices.length > 6;
 
@@ -246,10 +254,12 @@ const ChoiceSheet = ({
               <ChoicePill
                 key={ch.id}
                 label={ch.label}
+                description={(ch as any).description}
                 selected={selectedId === ch.id}
                 left={centerAlign ? undefined : ch.left}
                 onPress={() => onSelect(ch.id)}
                 centerAlign={centerAlign}
+                showDescription={showDescription}
               />
             ))}
           </ScrollView>
@@ -259,10 +269,12 @@ const ChoiceSheet = ({
               <ChoicePill
                 key={ch.id}
                 label={ch.label}
+                description={(ch as any).description}
                 selected={selectedId === ch.id}
                 left={centerAlign ? undefined : ch.left}
                 onPress={() => onSelect(ch.id)}
                 centerAlign={centerAlign}
+                showDescription={showDescription}
               />
             ))}
           </View>
@@ -274,16 +286,20 @@ const ChoiceSheet = ({
 
 const ChoicePill = ({
   label,
+  description,
   selected,
   onPress,
   left,
   centerAlign = false,
+  showDescription = false,
 }: {
   label: string;
+  description?: string;
   selected?: boolean;
   onPress: () => void;
   left?: React.ReactNode;
   centerAlign?: boolean;
+  showDescription?: boolean;
 }) => (
   <TouchableOpacity
     onPress={onPress}
@@ -295,16 +311,27 @@ const ChoicePill = ({
     ]}
   >
     {!centerAlign && left ? <View style={styles.pillLeft}>{left}</View> : null}
-    <Text
-      style={[
-        styles.pillLabel,
-        selected && styles.pillLabelSelected,
-        centerAlign && { textAlign: 'center' },
-      ]}
-      numberOfLines={1}
-    >
-      {label}
-    </Text>
+    <View style={[{ flex: 1 }, centerAlign && { alignItems: 'center' }]}>
+      <Text
+        style={[
+          styles.pillLabel,
+          selected && styles.pillLabelSelected,
+          centerAlign && { textAlign: 'center' },
+        ]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+      {showDescription && description && (
+        <Text style={[
+          styles.pillDescription,
+          selected && styles.pillDescriptionSelected,
+          centerAlign && { textAlign: 'center' },
+        ]}>
+          {description}
+        </Text>
+      )}
+    </View>
   </TouchableOpacity>
 );
 
@@ -314,6 +341,9 @@ const GiftcardTradeScreen: React.FC = () => {
   const params = useLocalSearchParams<{ brand?: string }>();
   const brand = (params.brand as string) || 'Amazon';
 
+  // Check if this is a VANILLA card
+  const isVanillaCard = brand.toLowerCase().includes('vanilla');
+
   // Gift card hook
   const { loading: submitLoading, error: submitError, submitGiftCard, clearError } = useGiftCard();
 
@@ -322,12 +352,13 @@ const GiftcardTradeScreen: React.FC = () => {
   const [countryId, setCountryId] = useState<string | null>(null); // ISO-ish code (e.g., 'US')
   const [receipt, setReceipt] = useState('');          // 'PHYSICAL' | 'ECODE'
   const [ecode, setEcode] = useState('');
+  const [vanillaVariant, setVanillaVariant] = useState(''); // '4097' | '4118' for VANILLA cards
   const [rangeId, setRangeId] = useState('');
   const [valueUSD, setValueUSD] = useState('');
   const [uploads, setUploads] = useState<FileInfo[]>([]);
   const [comments, setComments] = useState('');
 
-  const [openPicker, setOpenPicker] = useState<null | 'receipt' | 'range'>(null);
+  const [openPicker, setOpenPicker] = useState<null | 'receipt' | 'vanilla' | 'range'>(null);
   const [showCountrySheet, setShowCountrySheet] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -336,11 +367,17 @@ const GiftcardTradeScreen: React.FC = () => {
   const [errorDisplayData, setErrorDisplayData] = useState<ErrorDisplayData | null>(null);
 
   const selectedRange = useMemo(() => RANGES.find(r => r.id === rangeId) || null, [rangeId]);
+  const selectedVanillaVariant = useMemo(() => VANILLA_VARIANTS.find(v => v.id === vanillaVariant) || null, [vanillaVariant]);
 
   // Clear e-code when leaving ECODE
   useEffect(() => {
     if (receipt !== 'ECODE') setEcode('');
   }, [receipt]);
+
+  // Clear vanilla variant when not VANILLA card
+  useEffect(() => {
+    if (!isVanillaCard) setVanillaVariant('');
+  }, [isVanillaCard]);
 
   // Clear hook error when it changes
   useEffect(() => {
@@ -447,6 +484,10 @@ const GiftcardTradeScreen: React.FC = () => {
       showError({ type: 'validation', title: 'E-code Required', message: 'Please enter the e-code value.', autoHide: true, duration: 3000 });
       return false;
     }
+    if (isVanillaCard && !vanillaVariant) {
+      showError({ type: 'validation', title: 'Variant Required', message: 'Please select the variant (4097 or 4118).', autoHide: true, duration: 3000 });
+      return false;
+    }
     if (!rangeId) {
       showError({ type: 'validation', title: 'Card Range Required', message: 'Select the card range.', autoHide: true, duration: 3000 });
       return false;
@@ -510,6 +551,7 @@ const GiftcardTradeScreen: React.FC = () => {
       'Nike': 'NIKE',
       'Google Play': 'GOOGLE_PLAY',
       'Visa': 'VISA',
+      'Vanilla': 'VANILLA',
       'Razer Gold': 'RAZOR_GOLD',
       'American Express': 'AMERICAN_EXPRESS',
       'Sephora': 'SEPHORA',
@@ -521,7 +563,7 @@ const GiftcardTradeScreen: React.FC = () => {
     const mappedCardType = cardTypeMapping[brand] || brand.toUpperCase().replace(/\s+/g, '_');
 
     // Prepare gift card data matching backend validation
-    const giftCardData = {
+    const giftCardData: any = {
       cardType: mappedCardType,
       cardFormat: normalizedCardFormat,
       cardRange: selectedRange ? `${selectedRange.min}-${selectedRange.max}` : rangeId,
@@ -537,6 +579,11 @@ const GiftcardTradeScreen: React.FC = () => {
       })),
     };
 
+    // Add vanilla variant for VANILLA cards
+    if (isVanillaCard && vanillaVariant) {
+      giftCardData.vanillaType = vanillaVariant;
+    }
+
     // Submit gift card
     const result = await submitGiftCard(giftCardData);
     
@@ -547,6 +594,7 @@ const GiftcardTradeScreen: React.FC = () => {
       setCountryId(null);
       setReceipt('');
       setEcode('');
+      setVanillaVariant('');
       setRangeId('');
       setValueUSD('');
       setUploads([]);
@@ -558,6 +606,7 @@ const GiftcardTradeScreen: React.FC = () => {
     country &&
       receipt &&
       (receipt !== 'ECODE' || ecode.trim()) &&
+      (!isVanillaCard || vanillaVariant) &&
       rangeId &&
       valueUSD &&
       Number(valueUSD) > 0 &&
@@ -568,11 +617,30 @@ const GiftcardTradeScreen: React.FC = () => {
     id: r.id,
     label: r.label,
   }));
+  const vanillaChoices: ChoiceItem[] = VANILLA_VARIANTS.map(v => ({ 
+    id: v.id, 
+    label: v.label,
+    description: v.description 
+  } as ChoiceItem));
   const rangeChoices: ChoiceItem[] = RANGES.map(r => ({ id: r.id, label: r.label }));
 
-  const activeTitle = openPicker === 'receipt' ? 'Receipt Availability' : openPicker === 'range' ? 'Select Range' : '';
-  const activeChoices = openPicker === 'receipt' ? receiptChoices : openPicker === 'range' ? rangeChoices : [];
-  const activeSelectedId = openPicker === 'receipt' ? receipt : openPicker === 'range' ? rangeId : undefined;
+  const activeTitle = 
+    openPicker === 'receipt' ? 'Receipt Availability' : 
+    openPicker === 'vanilla' ? 'Select Variant' :
+    openPicker === 'range' ? 'Select Range' : 
+    '';
+
+  const activeChoices = 
+    openPicker === 'receipt' ? receiptChoices : 
+    openPicker === 'vanilla' ? vanillaChoices :
+    openPicker === 'range' ? rangeChoices : 
+    [];
+
+  const activeSelectedId = 
+    openPicker === 'receipt' ? receipt : 
+    openPicker === 'vanilla' ? vanillaVariant :
+    openPicker === 'range' ? rangeId : 
+    undefined;
 
   // Normalize UI receipt -> API format
   const normalizedCardFormat =
@@ -589,7 +657,7 @@ const GiftcardTradeScreen: React.FC = () => {
     rate: selectedRange?.label || '',
     timeOfUpload: '',
     averageConfirmationTime: '10-15mins',
-    cardType: '',
+    cardType: isVanillaCard && selectedVanillaVariant ? selectedVanillaVariant.label : '',
     cardFormat: normalizedCardFormat,
   };
 
@@ -657,6 +725,16 @@ const GiftcardTradeScreen: React.FC = () => {
                 autoCorrect={false}
               />
             </View>
+          )}
+
+          {/* VANILLA Variant Selection */}
+          {isVanillaCard && (
+            <SelectField
+              label="Variant"
+              value={selectedVanillaVariant?.label || ''}
+              placeholder="Select variant"
+              onPress={() => setOpenPicker('vanilla')}
+            />
           )}
 
           {/* Range */}
@@ -765,10 +843,12 @@ const GiftcardTradeScreen: React.FC = () => {
         onClose={() => setOpenPicker(null)}
         onSelect={(id) => {
           if (openPicker === 'receipt') setReceipt(id);
+          if (openPicker === 'vanilla') setVanillaVariant(id);
           if (openPicker === 'range') setRangeId(id);
           setOpenPicker(null);
         }}
         centerAlign={openPicker === 'receipt' || openPicker === 'range'}
+        showDescription={openPicker === 'vanilla'}
       />
 
       {/* Country sheet */}
@@ -1114,11 +1194,19 @@ const styles = StyleSheet.create({
     width: 24,
   },
   pillLabel: {
-    flex: 1,
     fontSize: 15,
     color: '#1F2937',
+    fontWeight: '500',
   },
   pillLabelSelected: { color: '#35297F', fontWeight: '700' },
+  pillDescription: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  pillDescriptionSelected: { 
+    color: '#5B4B8A',
+  },
 });
 
 // Success Modal Styles

@@ -1,6 +1,6 @@
-// Updated CableTvScreen with Showmax icon and proper 4-icon spacing
+// Updated CableTvScreen with dynamic, responsive provider icons
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,8 @@ import {
   Alert,
   Image,
   ActivityIndicator,
-  ImageSourcePropType
+  ImageSourcePropType,
+  useWindowDimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
@@ -28,7 +29,7 @@ import { Colors } from '../../constants/Colors';
 import { useCableTV } from '../../hooks/useCabletv';
 import { useCustomer } from '../../hooks/useCustomer';
 
-// ✅ UPDATED: Import cable TV provider icons including Showmax
+// Provider icons
 const DstvIcon = require('../../components/icons/Dstv.png');
 const GotvIcon = require('../../components/icons/Gotv.png');
 const StarTimesIcon = require('../../components/icons/StarTimes.png');
@@ -36,7 +37,7 @@ const ShowmaxIcon = require('../../components/icons/Showmax.png');
 const checkmarkIcon = require('../../components/icons/green-checkmark.png');
 const profileIcon = require('../../components/icons/profile.png');
 
-// ✅ UPDATED: Provider icon mapping including Showmax
+// Provider icon mapping
 const providerIcons: Record<string, ImageSourcePropType> = {
   'dstv': DstvIcon,
   'gotv': GotvIcon,
@@ -44,7 +45,7 @@ const providerIcons: Record<string, ImageSourcePropType> = {
   'showmax': ShowmaxIcon,
 };
 
-// ✅ CONSISTENT TYPOGRAPHY STYLE
+// Base typography style
 const baseTextStyle = {
   fontFamily: 'Bricolage Grotesque',
   fontWeight: '400' as const,
@@ -103,6 +104,26 @@ interface CableTvPackage {
 
 const CableTvScreen: React.FC = () => {
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
+  
+  // Calculate dynamic provider card dimensions
+  const providerDimensions = useMemo(() => {
+    const horizontalPadding = 32; // 16px on each side
+    const totalGaps = 3 * 8; // 3 gaps between 4 items, 8px each
+    const availableWidth = screenWidth - horizontalPadding - totalGaps;
+    const cardWidth = Math.floor(availableWidth / 4); // 4 providers per row
+    const cardHeight = Math.floor(cardWidth * 0.7); // Maintain aspect ratio
+    const iconWidth = Math.floor(cardWidth * 0.85); // Icon is 85% of card width
+    const iconHeight = Math.floor(cardHeight * 0.8); // Icon is 80% of card height
+    
+    return {
+      cardWidth: Math.max(60, Math.min(cardWidth, 90)), // Min 60px, max 90px
+      cardHeight: Math.max(45, Math.min(cardHeight, 68)), // Min 45px, max 68px
+      iconWidth: Math.max(50, Math.min(iconWidth, 80)), // Min 50px, max 80px
+      iconHeight: Math.max(35, Math.min(iconHeight, 58)), // Min 35px, max 58px
+    };
+  }, [screenWidth]);
+
   const {
     loading,
     error,
@@ -221,7 +242,7 @@ const CableTvScreen: React.FC = () => {
 
   // Provider selection that preserves customer data for same provider
   const handleProviderSelect = (provider: any): void => {
-    console.log('🔄 Provider selected:', provider);
+    console.log('Provider selected:', provider);
     
     // Only clear customer data if provider actually changes
     const providerChanged = selectedProvider?.id !== provider.id;
@@ -230,7 +251,7 @@ const CableTvScreen: React.FC = () => {
     clearErrors();
     
     if (providerChanged) {
-      console.log('🔄 Provider changed, clearing customer and package data');
+      console.log('Provider changed, clearing customer and package data');
       // Clear customer verification when provider changes
       if (customerData) {
         clearCustomerData();
@@ -240,11 +261,11 @@ const CableTvScreen: React.FC = () => {
       }
       // Clear selected package when provider changes
       if (selectedPackage) {
-        console.log('🗑️ Clearing previously selected package');
+        console.log('Clearing previously selected package');
         selectPackage(null);
       }
     } else {
-      console.log('🔄 Same provider selected, keeping customer and package data');
+      console.log('Same provider selected, keeping customer and package data');
     }
   };
 
@@ -255,7 +276,7 @@ const CableTvScreen: React.FC = () => {
     
     // Only clear customer data if the smartcard number actually changed
     if (verifiedSmartcardNumber && numericValue !== verifiedSmartcardNumber) {
-      console.log('🔄 Smartcard number changed, clearing customer data');
+      console.log('Smartcard number changed, clearing customer data');
       if (customerData) {
         clearCustomerData();
         clearCustomerError();
@@ -309,7 +330,7 @@ const CableTvScreen: React.FC = () => {
       );
       
       if (result && result.success) {
-        console.log('✅ Customer verified successfully');
+        console.log('Customer verified successfully');
         // Customer verified successfully - verification state will be updated by useEffect
       } else {
         // Handle verification failure
@@ -349,7 +370,7 @@ const CableTvScreen: React.FC = () => {
 
   // Simplified package selection (modal now guarantees good data)
   const handlePackageSelect = (pkg: CableTvPackage): void => {
-    console.log('📦 Normalized package received from modal:', pkg);
+    console.log('Normalized package received from modal:', pkg);
     
     const packageForApp = {
       id: pkg.variationId,              // Guaranteed to exist
@@ -364,7 +385,7 @@ const CableTvScreen: React.FC = () => {
       features: pkg.features
     };
     
-    console.log('📦 Package for app:', packageForApp);
+    console.log('Package for app:', packageForApp);
     selectPackage(packageForApp);
     setShowPlanModal(false);
   };
@@ -478,7 +499,7 @@ const CableTvScreen: React.FC = () => {
         passwordpin: passwordPin
       };
 
-      console.log('🚀 Purchase data:', {
+      console.log('Purchase data:', {
         ...purchaseData,
         twoFactorCode: '***',
         passwordpin: '***'
@@ -556,6 +577,45 @@ const CableTvScreen: React.FC = () => {
     selectedPackage
   );
 
+  // Dynamic styles based on calculated dimensions
+  const dynamicStyles = StyleSheet.create({
+    providerGrid: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 8,
+      paddingHorizontal: 2,
+    },
+    providerCard: {
+      width: providerDimensions.cardWidth,
+      height: providerDimensions.cardHeight,
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+      backgroundColor: 'transparent',
+    },
+    providerIcon: {
+      width: providerDimensions.iconWidth,
+      height: providerDimensions.iconHeight,
+      resizeMode: 'contain',
+    },
+    checkmarkContainer: {
+      position: 'absolute',
+      top: -6,
+      right: -6,
+      zIndex: 1,
+      backgroundColor: '#FFFFFF',
+      borderRadius: 10,
+      padding: 1,
+    },
+    checkmarkIcon: {
+      width: 16,
+      height: 16,
+      resizeMode: 'contain',
+    },
+  });
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -579,28 +639,24 @@ const CableTvScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* ✅ UPDATED: Provider Selection Section with proper 4-icon spacing */}
+          {/* Provider Selection Section with Dynamic Responsive Icons */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Select Cable TV Provider</Text>
-            <View style={styles.providerGrid}>
+            <View style={dynamicStyles.providerGrid}>
               {providers.map((provider) => (
                 <TouchableOpacity
                   key={provider.id}
-                  style={styles.providerCard}
+                  style={dynamicStyles.providerCard}
                   onPress={() => handleProviderSelect(provider)}
                   activeOpacity={0.8}
                 >
                   <Image 
                     source={providerIcons[provider.id]}
-                    style={[
-                      styles.providerIcon,
-                      provider.id === 'showmax' && styles.showmaxIcon
-                    ]}
-                    resizeMode="contain"
+                    style={dynamicStyles.providerIcon}
                   />
                   {selectedProvider?.id === provider.id && (
-                    <View style={styles.checkmarkContainer}>
-                      <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
+                    <View style={dynamicStyles.checkmarkContainer}>
+                      <Image source={checkmarkIcon} style={dynamicStyles.checkmarkIcon} />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -672,8 +728,8 @@ const CableTvScreen: React.FC = () => {
                 (!selectedProvider || !isCustomerVerified) && styles.planTabDisabled
               ]}
               onPress={() => {
-                console.log('📱 Opening package modal for provider:', selectedProvider?.id);
-                console.log('👤 Customer verified:', isCustomerVerified);
+                console.log('Opening package modal for provider:', selectedProvider?.id);
+                console.log('Customer verified:', isCustomerVerified);
                 setShowPlanModal(true);
               }}
               disabled={!selectedProvider || !isCustomerVerified}
@@ -824,7 +880,7 @@ const CableTvScreen: React.FC = () => {
   );
 };
 
-// ✅ UPDATED STYLES WITH PROPER 4-ICON SPACING AND CONSISTENT TYPOGRAPHY
+// Static styles
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
@@ -881,50 +937,6 @@ const styles = StyleSheet.create({
     ...baseTextStyle,
     color: Colors.text?.secondary || '#6B7280',
     marginBottom: 16,
-  },
-  
-  // ✅ UPDATED: Provider grid with same spacing as data screen (4 icons)
-  providerGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12, // Same as data screen
-  },
-  
-  // ✅ UPDATED: Provider card with fixed width like data screen
-  providerCard: {
-    width: 80, // Same as data screen networkCard width
-    height: 60, // Same as data screen networkCard height
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  
-  // ✅ UPDATED: Provider icon with proper sizing
-  providerIcon: {
-    width: 79, // Same as data screen networkIcon width
-    height: 53, // Same as data screen networkIcon height
-    resizeMode: 'contain',
-  },
-  
-  // ✅ NEW: Specific styling for Showmax icon to match others
-  showmaxIcon: {
-    width: 75, // Slightly smaller to match visual weight
-    height: 48, // Adjusted height for better proportion
-    borderRadius: 6, // Soften sharp borders
-    backgroundColor: 'transparent',
-  },
-  
-  checkmarkContainer: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    zIndex: 1,
-  },
-  checkmarkIcon: {
-    width: 20,
-    height: 20,
-    resizeMode: 'contain',
   },
   smartcardInputContainer: { 
     flexDirection: 'row', 

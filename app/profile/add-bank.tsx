@@ -1,5 +1,5 @@
-const currencyOptions = [{ code: 'NGN', name: 'Nigerian Naira', flag: naijaFlag }];// app/user/add-bank.tsx
-import React, { useMemo, useState } from 'react';
+// app/user/add-bank.tsx
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import naijaFlag from '../../components/icons/naija-flag.png';
 import { useBankAccounts } from '../../hooks/usebankAccount';
 import { useNairaBanks } from '../../hooks/usenairaBanks';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import { useResolveAccount } from '../../hooks/useAccountname';
 
 interface BankDetails {
   currency: string;
@@ -30,6 +31,8 @@ interface BankDetails {
   accountNumber: string;
   accountName: string;
 }
+
+const currencyOptions = [{ code: 'NGN', name: 'Nigerian Naira', flag: naijaFlag }];
 
 const AddBankScreen = () => {
   const router = useRouter();
@@ -51,6 +54,15 @@ const AddBankScreen = () => {
     retryLoading
   } = useNairaBanks();
 
+  // Obiex resolve hook (no auto)
+  const {
+    account: resolvedAccount,
+    loading: resolving,
+    error: resolveError,
+    load: resolveLoad,
+    setInput: setResolveInput
+  } = useResolveAccount({ auto: false });
+
   const [bankDetails, setBankDetails] = useState<BankDetails>({
     currency: 'NGN',
     bank: '',
@@ -71,18 +83,58 @@ const AddBankScreen = () => {
     type: 'general'
   });
 
-  const showError = (type: 'network' | 'validation' | 'server' | 'limit' | 'general', title?: string, message?: string) => {
+  // ref to hold pending redirect path (if any) and timeout id
+  const redirectRef = useRef<{ path: string | null; timeoutId: any | null }>({ path: null, timeoutId: null });
+
+  const showError = (type: 'network' | 'validation' | 'server' | 'limit' | 'general', title?: string, message?: string, redirectPath?: string, autoRedirectMs = 1200) => {
+    // Clear any existing redirect timeout
+    if (redirectRef.current.timeoutId) {
+      clearTimeout(redirectRef.current.timeoutId);
+      redirectRef.current.timeoutId = null;
+      redirectRef.current.path = null;
+    }
+
     setErrorDisplayConfig({
       visible: true,
       type,
       title,
       message
     });
+
+    if (redirectPath) {
+      redirectRef.current.path = redirectPath;
+      redirectRef.current.timeoutId = setTimeout(() => {
+        redirectRef.current.timeoutId = null;
+        redirectRef.current.path = null;
+        router.replace(redirectPath);
+      }, autoRedirectMs);
+    }
   };
 
   const hideError = () => {
     setErrorDisplayConfig(prev => ({ ...prev, visible: false }));
+    // If there is a pending redirect, perform it immediately on dismiss
+    if (redirectRef.current.path) {
+      const path = redirectRef.current.path;
+      if (redirectRef.current.timeoutId) {
+        clearTimeout(redirectRef.current.timeoutId);
+        redirectRef.current.timeoutId = null;
+      }
+      redirectRef.current.path = null;
+      router.replace(path);
+    }
   };
+
+  useEffect(() => {
+    // Clear any pending timeout on unmount
+    return () => {
+      if (redirectRef.current.timeoutId) {
+        clearTimeout(redirectRef.current.timeoutId);
+        redirectRef.current.timeoutId = null;
+        redirectRef.current.path = null;
+      }
+    };
+  }, []);
 
   const handleInputChange = (field: keyof BankDetails, value: string) => {
     setBankDetails(prev => ({ ...prev, [field]: value }));
@@ -91,9 +143,13 @@ const AddBankScreen = () => {
   const handleBankSelect = (bank: any) => {
     // Store both bank name (for display) and bank code (for submission)
     handleInputChange('bank', formatBankName(bank));
-    handleInputChange('bankCode', bank.sortCode || bank.uuid);
+    const sortCode = bank.sortCode || bank.uuid || '';
+    handleInputChange('bankCode', sortCode);
     setShowBankModal(false);
     clearSearch(); // Clear search when bank is selected
+
+    // Tell resolve hook about the new sortCode (optional)
+    setResolveInput({ sortCode });
   };
 
   const handleCurrencySelect = (currency: string) => {
@@ -128,9 +184,8 @@ const AddBankScreen = () => {
     });
 
     if (res?.success) {
-      Alert.alert('Success', 'Bank account added successfully.', [
-        { text: 'OK', onPress: () => router.replace('/profile/bank-details') },
-      ]);
+      // Use ErrorDisplay to show success, then auto-route to next screen
+      showError('general', 'Success', 'Bank account added successfully.', '/profile/bank-details', 1200);
     } else {
       // Determine error type based on response
       let errorType: 'network' | 'validation' | 'server' | 'limit' | 'general' = 'general';
@@ -159,9 +214,9 @@ const AddBankScreen = () => {
   };
 
   const renderBankOption = ({ item: bank }: { item: any }) => (
-    <TouchableOpacity 
-      style={styles.modalOption} 
-      onPress={() => handleBankSelect(bank)} 
+    <TouchableOpacity
+      style={styles.modalOption}
+      onPress={() => handleBankSelect(bank)}
       activeOpacity={0.7}
     >
       <Text style={styles.modalOptionText}>
@@ -171,14 +226,65 @@ const AddBankScreen = () => {
   );
 
   const renderCurrencyOption = ({ item }: { item: any }) => (
-    <TouchableOpacity 
-      style={styles.modalOption} 
-      onPress={() => handleCurrencySelect(item.code)} 
+    <TouchableOpacity
+      style={styles.modalOption}
+      onPress={() => handleCurrencySelect(item.code)}
       activeOpacity={0.7}
     >
       <Text style={styles.modalOptionText}>{item.code}</Text>
     </TouchableOpacity>
   );
+
+  // -------------------------
+  // Auto-resolve logic (debounced)
+  // -------------------------
+  const resolveDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    const acc = cleanAccountNumber(bankDetails.accountNumber);
+    const sortCode = bankDetails.bankCode;
+
+    // Trigger only when sortCode exists and account number is exactly 10 digits
+    if (sortCode && acc.length === 10) {
+      if (resolveDebounceRef.current) clearTimeout(resolveDebounceRef.current);
+
+      resolveDebounceRef.current = setTimeout(async () => {
+        try {
+          const res = await resolveLoad({ sortCode: String(sortCode), accountNumber: String(acc) });
+
+          if (res?.success && res?.data) {
+            const acctName = (res.data.accountName || res.data.accountname || res.data.name || '').trim();
+            if (acctName) {
+              handleInputChange('accountName', acctName);
+              hideError();
+            } else {
+              // If resolved but no name returned, show a gentle validation message
+              showError('validation', 'Unable to auto-fill name', 'Account name could not be fetched. You can enter it manually.');
+            }
+          } else {
+            // Show a friendly validation-style error but allow manual override
+            const message = res?.message || 'Failed to resolve account name';
+            showError('validation', 'Account Resolution Failed', message);
+          }
+        } catch (err) {
+          // Hook already surfaces network errors; show a generic network error message
+          showError('network', 'Account Resolution Error', 'Unable to resolve account name. Check your connection.');
+        }
+      }, 500); // 500ms debounce
+    } else {
+      // clear pending debounce if not matching conditions
+      if (resolveDebounceRef.current) {
+        clearTimeout(resolveDebounceRef.current);
+        resolveDebounceRef.current = null;
+      }
+    }
+
+    return () => {
+      if (resolveDebounceRef.current) {
+        clearTimeout(resolveDebounceRef.current);
+        resolveDebounceRef.current = null;
+      }
+    };
+  }, [bankDetails.accountNumber, bankDetails.bankCode, resolveLoad]);
 
   return (
     <View style={styles.container}>
@@ -240,17 +346,25 @@ const AddBankScreen = () => {
             {/* Account Number */}
             <View style={styles.fieldContainer}>
               <Text style={styles.fieldLabel}>Account Number</Text>
-              <TextInput
-                style={styles.textInput}
-                value={bankDetails.accountNumber}
-                onChangeText={(value) =>
-                  handleInputChange('accountNumber', value.replace(/[^\d\s]/g, ''))
-                }
-                placeholder="Enter account number"
-                placeholderTextColor={Colors.text.secondary}
-                keyboardType="number-pad"
-                maxLength={20}
-              />
+              <View>
+                <TextInput
+                  style={styles.textInput}
+                  value={bankDetails.accountNumber}
+                  onChangeText={(value) =>
+                    handleInputChange('accountNumber', value.replace(/[^\d\s]/g, ''))
+                  }
+                  placeholder="Enter account number"
+                  placeholderTextColor={Colors.text.secondary}
+                  keyboardType="number-pad"
+                  maxLength={20}
+                />
+                {/* Inline resolving spinner (keeps layout intact) */}
+                {resolving && (
+                  <View style={{ position: 'absolute', right: 12, top: 12 }}>
+                    <ActivityIndicator size="small" color="#35297F" />
+                  </View>
+                )}
+              </View>
             </View>
 
             {/* Account Name */}
@@ -260,7 +374,7 @@ const AddBankScreen = () => {
                 style={styles.textInput}
                 value={bankDetails.accountName}
                 onChangeText={(value) => handleInputChange('accountName', value)}
-                placeholder="Enter account name"
+                placeholder="Account name"
                 placeholderTextColor={Colors.text.secondary}
                 autoCapitalize="words"
               />
@@ -285,7 +399,7 @@ const AddBankScreen = () => {
         </View>
       </SafeAreaView>
 
-      {/* Error Display */}
+      {/* Error / Success Display (re-used for both) */}
       {errorDisplayConfig.visible && (
         <ErrorDisplay
           type={errorDisplayConfig.type}
