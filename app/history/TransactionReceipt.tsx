@@ -8,10 +8,10 @@ import {
   Image,
   SafeAreaView,
   Alert,
-  Clipboard,
   Share,
   ScrollView,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
@@ -29,7 +29,16 @@ type TokenDetails = {
   fee?: number | string;
   narration?: string;
   createdAt?: string;
-  category?: 'token';
+  category?: 'token' | 'withdrawal';
+  // NEW: NGNZ withdrawal specific fields
+  isNGNZWithdrawal?: boolean;
+  hasReceiptData?: boolean;
+  withdrawalReference?: string;
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  amountSentToBank?: number | string;
+  withdrawalFee?: number | string;
 };
 
 type UtilityDetails = {
@@ -47,16 +56,25 @@ type UtilityDetails = {
 export type APIDetail =
   | TokenDetails
   | UtilityDetails
-  | (Record<string, any> & { category?: 'token' | 'utility' });
+  | (Record<string, any> & { category?: 'token' | 'utility' | 'withdrawal' });
 
 export type APITransaction = {
   id: string;
-  type: string;      // "Deposit" | "Withdrawal" | "Swap" | bill label
-  status: string;    // "Successful" | "Failed" | "Pending"
-  amount: string;    // "+₦10,000" | "-0.1 BTC"
-  date: string;      // human-readable
+  type: string; // "Deposit" | "Withdrawal" | "Swap" | bill label
+  status: string; // "Successful" | "Failed" | "Pending"
+  amount: string; // "+₦10,000" | "-0.1 BTC"
+  date: string; // human-readable
   createdAt?: string;
   details?: APIDetail;
+  // NEW: NGNZ withdrawal fields at transaction level
+  isNGNZWithdrawal?: boolean;
+  withdrawalReference?: string;
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  amountSentToBank?: number | string;
+  withdrawalFee?: number | string;
+  receiptData?: any;
 };
 
 // ---------- helpers ----------
@@ -157,9 +175,19 @@ export default function TransactionReceiptScreen() {
   const rawTx = safeParseParam(params.raw) as any | undefined;
   const transaction = parsedTx;
 
-  const cat: 'token' | 'utility' = useMemo(() => {
+  // NEW: Check if this is an NGNZ withdrawal
+  const isNGNZWithdrawal = useMemo(() => {
+    return transaction?.isNGNZWithdrawal || 
+           transaction?.details?.isNGNZWithdrawal ||
+           (transaction?.details?.currency === 'NGNZ' && 
+            transaction?.type?.toLowerCase().includes('withdrawal'));
+  }, [transaction]);
+
+  const cat: 'token' | 'utility' | 'withdrawal' = useMemo(() => {
+    if (isNGNZWithdrawal) return 'withdrawal';
+    
     const c = transaction?.details?.category;
-    if (c === 'token' || c === 'utility') return c;
+    if (c === 'token' || c === 'utility' || c === 'withdrawal') return c;
     const d = transaction?.details || {};
     if ('transactionId' in d || 'currency' in d || 'hash' in d || 'address' in d)
       return 'token';
@@ -169,15 +197,15 @@ export default function TransactionReceiptScreen() {
     return ['airtime', 'data', 'electricity', 'cable tv', 'internet', 'betting', 'education', 'other'].includes(t)
       ? 'utility'
       : 'token';
-  }, [transaction]);
+  }, [transaction, isNGNZWithdrawal]);
 
   const isSwap = /swap/i.test(transaction?.type || '');
   const s = statusStyles(transaction?.status || '');
 
-  const handleCopy = async (label: string, value?: string) => {
+  const handleCopy = (label: string, value?: string) => {
     if (!value) return;
     try {
-      await Clipboard.setString(value);
+      Clipboard.setString(value);
       Alert.alert('Copied!', `${label} copied to clipboard`);
     } catch {
       Alert.alert('Copy failed', `Unable to copy ${label.toLowerCase()}`);
@@ -220,6 +248,39 @@ export default function TransactionReceiptScreen() {
     ]),
     billType: pick((d as any).billType, rawTx, ['billType', 'type']),
     paymentCurrency: pick((d as any).paymentCurrency, rawTx, ['paymentCurrency']),
+    
+    // NEW: NGNZ withdrawal fields from multiple sources
+    isNGNZWithdrawal,
+    withdrawalReference: pick(
+      transaction?.withdrawalReference || d.withdrawalReference, 
+      rawTx, 
+      ['withdrawalReference', 'reference', 'ref']
+    ),
+    bankName: pick(
+      transaction?.bankName || d.bankName, 
+      rawTx, 
+      ['bankName', 'bank', 'bankDetails.name']
+    ),
+    accountName: pick(
+      transaction?.accountName || d.accountName, 
+      rawTx, 
+      ['accountName', 'accountHolderName', 'beneficiaryName']
+    ),
+    accountNumber: pick(
+      transaction?.accountNumber || d.accountNumber, 
+      rawTx, 
+      ['accountNumber', 'accountNo', 'beneficiaryAccount']
+    ),
+    amountSentToBank: pick(
+      transaction?.amountSentToBank || d.amountSentToBank, 
+      rawTx, 
+      ['amountSentToBank', 'bankAmount', 'netAmount']
+    ),
+    withdrawalFee: pick(
+      transaction?.withdrawalFee || d.withdrawalFee, 
+      rawTx, 
+      ['withdrawalFee', 'fee', 'charges']
+    ),
   };
 
   const swapInfo = useMemo(() => {
@@ -255,7 +316,18 @@ export default function TransactionReceiptScreen() {
       ];
 
       let extra: string[] = [];
-      if (cat === 'token') {
+      
+      // NEW: NGNZ withdrawal sharing
+      if (cat === 'withdrawal' && isNGNZWithdrawal) {
+        extra = [
+          `Reference: ${merged.withdrawalReference ?? '—'}`,
+          `Bank: ${merged.bankName ?? '—'}`,
+          `Account Name: ${merged.accountName ?? '—'}`,
+          `Account Number: ${merged.accountNumber ?? '—'}`,
+          `Amount to Bank: ${formatAmtSym(merged.amountSentToBank, 'NGN')}`,
+          `Withdrawal Fee: ${formatAmtSym(merged.withdrawalFee, 'NGN')}`,
+        ];
+      } else if (cat === 'token') {
         const baseTokenRows = [
           `Currency: ${merged.currency || '—'}`,
           `Network: ${merged.network || '—'}`,
@@ -366,7 +438,39 @@ export default function TransactionReceiptScreen() {
           <Row label="Type" value={asText(transaction.type)} />
           <Row label="Date" value={asText(transaction.date)} />
 
-          {cat === 'token' ? (
+          {/* NEW: NGNZ Withdrawal specific fields */}
+          {cat === 'withdrawal' && isNGNZWithdrawal ? (
+            <>
+              <Row
+                label="Reference"
+                value={asText(merged.withdrawalReference)}
+                copyableValue={merged.withdrawalReference as string}
+                onCopy={(v) => handleCopy('Reference', v)}
+              />
+              
+              <Text style={styles.sectionHeader}>Bank Details</Text>
+              <Row label="Bank Name" value={asText(merged.bankName)} />
+              <Row label="Account Name" value={asText(merged.accountName)} />
+              <Row
+                label="Account Number"
+                value={asText(merged.accountNumber)}
+                copyableValue={merged.accountNumber as string}
+                onCopy={(v) => handleCopy('Account Number', v)}
+              />
+              
+              <Text style={styles.sectionHeader}>Amount Breakdown</Text>
+              <Row 
+                label="Sent to Bank" 
+                value={formatAmtSym(merged.amountSentToBank, 'NGN')} 
+              />
+              <Row 
+                label="Withdrawal Fee" 
+                value={formatAmtSym(merged.withdrawalFee, 'NGN')} 
+              />
+              
+              <Row label="Currency" value={asText(merged.currency)} />
+            </>
+          ) : cat === 'token' ? (
             <>
               {isSwap && (
                 <>
@@ -548,6 +652,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
     marginBottom: Layout?.spacing?.lg || 16,
+  },
+
+  sectionHeader: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginTop: 12,
+    marginBottom: 4,
+    fontFamily: Typography.medium || 'System',
   },
 
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, gap: 8 },

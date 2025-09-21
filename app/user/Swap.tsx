@@ -1,3 +1,4 @@
+// app/user/Swap.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -53,6 +54,10 @@ type SwapTab = 'buy-sell';
 type TokenSelectorType = 'from' | 'to';
 type MessageType = 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' | 'setup' | 'limit' | 'balance' | 'success';
 
+// Token categorization for swap validation
+const STABLECOINS = new Set(['USDT', 'USDC']);
+const CRYPTOCURRENCIES = new Set(['BTC', 'ETH', 'SOL', 'BNB', 'MATIC', 'AVAX']);
+
 export default function SwapScreen({ 
   onBack, 
   onSelectToken, 
@@ -61,8 +66,15 @@ export default function SwapScreen({
   const { defaultToken } = useLocalSearchParams(); // Capture passed token (e.g., BTC, ETH, BNB, AVAX...)
 
   const [activeTab, setActiveTab] = useState<SwapTab>('buy-sell');
+
+  // Visible string that user sees (with commas / truncated decimals)
   const [fromAmount, setFromAmount] = useState('0');
+  // Raw numeric amount used for backend ops (full precision)
+  const [fromAmountRaw, setFromAmountRaw] = useState<number | null>(null);
+
   const [toAmount, setToAmount] = useState('0');
+  const [toAmountRaw, setToAmountRaw] = useState<number | null>(null);
+
   const [selectedFromToken, setSelectedFromToken] = useState<TokenOption | null>(null);
   const [selectedToToken, setSelectedToToken] = useState<TokenOption | null>(null);
   const [showSuccessScreen, setShowSuccessScreen] = useState(false);
@@ -134,6 +146,75 @@ export default function SwapScreen({
     setShowMessage(true);
   };
 
+  // Swap pair validation
+  const validateSwapPair = (fromToken: string, toToken: string): { success: boolean; message?: string } => {
+    if (!fromToken || !toToken) {
+      return { success: false, message: 'Please select both tokens' };
+    }
+
+    if (fromToken === toToken) {
+      return { success: false, message: 'Cannot swap the same token' };
+    }
+
+    // NGNZ operations use different system - allow any NGNZ pair
+    if (fromToken === 'NGNZ' || toToken === 'NGNZ') {
+      return { success: true };
+    }
+
+    const fromIsStablecoin = STABLECOINS.has(fromToken);
+    const toIsStablecoin = STABLECOINS.has(toToken);
+    const fromIsCrypto = CRYPTOCURRENCIES.has(fromToken);
+    const toIsCrypto = CRYPTOCURRENCIES.has(toToken);
+
+    // Only allow crypto to stablecoin or stablecoin to crypto
+    if ((fromIsCrypto && toIsStablecoin) || (fromIsStablecoin && toIsCrypto)) {
+      return { success: true };
+    }
+
+    // Block crypto to crypto swaps
+    if (fromIsCrypto && toIsCrypto) {
+      return {
+        success: false,
+        message: 'Direct crypto-to-crypto swaps are not supported. Please swap through a stablecoin (USDT or USDC) first.'
+      };
+    }
+
+    // Block stablecoin to stablecoin swaps
+    if (fromIsStablecoin && toIsStablecoin) {
+      return {
+        success: false,
+        message: 'Stablecoin-to-stablecoin swaps are not supported.'
+      };
+    }
+
+    return {
+      success: false,
+      message: 'Invalid swap pair. Only crypto-to-stablecoin and stablecoin-to-crypto swaps are allowed.'
+    };
+  };
+
+  // Get valid destination tokens based on selected "from" token
+  const getValidToTokens = (fromToken: string | null): string[] => {
+    if (!fromToken) return [];
+
+    // NGNZ can swap with any crypto
+    if (fromToken === 'NGNZ') {
+      return Array.from(CRYPTOCURRENCIES);
+    }
+
+    // Crypto can swap with NGNZ or stablecoins
+    if (CRYPTOCURRENCIES.has(fromToken)) {
+      return ['NGNZ', ...Array.from(STABLECOINS)];
+    }
+
+    // Stablecoins can swap with NGNZ or crypto
+    if (STABLECOINS.has(fromToken)) {
+      return ['NGNZ', ...Array.from(CRYPTOCURRENCIES)];
+    }
+
+    return [];
+  };
+
   const isNGNZOperation = () => selectedFromToken?.symbol === 'NGNZ' || selectedToToken?.symbol === 'NGNZ';
   const getCurrentQuote = () => (isNGNZOperation() ? ngnzQuote : cryptoQuote);
   const getLoadingStates = () => isNGNZOperation() 
@@ -193,6 +274,19 @@ export default function SwapScreen({
     }
   }, [defaultToken, btcPrice, ethPrice, solPrice, usdtPrice, usdcPrice, ngnzExchangeRate, btcBalance, ethBalance, solBalance, usdtBalance, usdcBalance, ngnzBalance]);
 
+  // Clear "to" token when "from" token changes to ensure valid pairs
+  useEffect(() => {
+    if (selectedFromToken && selectedToToken) {
+      const validation = validateSwapPair(selectedFromToken.symbol, selectedToToken.symbol);
+      if (!validation.success) {
+        setSelectedToToken(null);
+        setToAmount('0');
+        setToAmountRaw(null);
+        clearQuote();
+      }
+    }
+  }, [selectedFromToken]);
+
   // Helpers to format numbers with commas
   const formatWithCommas = (value: string): string => {
     if (!value) return '';
@@ -205,10 +299,53 @@ export default function SwapScreen({
   
   const unformat = (value: string): string => value.replace(/,/g, '');
 
+  // Updated formatDisplayAmount function to show precise decimals without rounding
   const formatDisplayAmount = (amount: string | number): string => {
-    const num = parseFloat(amount as string);
-    if (!num || num === 0) return '0';
-    return num >= 1 ? num.toFixed(2) : num.toFixed(4);
+    const num = parseFloat(String(amount));
+    
+    // Return '0' if amount is invalid or zero
+    if (!num || num === 0 || isNaN(num)) return '0';
+    
+    // For whole numbers, show as integer (e.g., 5 shows as "5")
+    if (Number.isInteger(num)) {
+      return num.toString();
+    }
+    
+    const numStr = num.toString();
+    const [integerPart, decimalPart] = numStr.split('.');
+    
+    if (!decimalPart) return numStr;
+    
+    // For very small numbers, find first significant digit and truncate there
+    if (Math.abs(num) < 0.0001) {
+      // Find first non-zero digit position
+      let firstNonZeroIndex = -1;
+      for (let i = 0; i < decimalPart.length; i++) {
+        if (decimalPart[i] !== '0') {
+          firstNonZeroIndex = i;
+          break;
+        }
+      }
+      
+      if (firstNonZeroIndex !== -1) {
+        // Truncate at first significant digit (e.g., 0.0000897845 -> 0.00008)
+        const truncatedDecimals = decimalPart.substring(0, firstNonZeroIndex + 1);
+        return `${integerPart}.${truncatedDecimals}`;
+      }
+    }
+    
+    // For regular decimals, truncate to first decimal place without rounding
+    // (e.g., 0.456 -> 0.4, 1.789 -> 1.7)
+    const truncatedDecimals = decimalPart.substring(0, 1);
+    return `${integerPart}.${truncatedDecimals}`;
+  };
+
+  // Format the exact max amount for display (trim trailing zeros but keep up to 8 decimals)
+  const formatMaxAmount = (value: number): string => {
+    if (!value || isNaN(value) || value === 0) return '0';
+    // Use up to 8 decimals for tokens; strip trailing zeros
+    const s = value.toFixed(8).replace(/(\.\d*?[1-9])0+$|\.0+$/, '$1');
+    return s;
   };
 
   const formatUsdValue = (amount: string, token: TokenOption | null): string => {
@@ -230,7 +367,7 @@ export default function SwapScreen({
       
       // For NGNZ: divide by exchange rate to get USD value
       const usdValue = val / exchangeRate;
-      return '$' + usdValue.toFixed(2);
+      return '$' + usdValue.toFixed(4); // Show 4 decimal places for USD value
     }
     
     // For all other tokens, use their current price
@@ -242,30 +379,86 @@ export default function SwapScreen({
     }
     
     const usdValue = val * price;
-    return '$' + usdValue.toFixed(2);
+    return '$' + usdValue.toFixed(4); // Show 4 decimal places for USD value
   };
 
   const getMaxBalance = (token: TokenOption | null): string => {
     if (!token) return '0';
     const currentBalance = getTokenBalance(token.symbol);
-    return `${currentBalance.toFixed(4)} ${token.symbol}`;
+    // Show friendly display but not necessarily full precision
+    const display = formatMaxAmount(currentBalance);
+    return `${display} ${token.symbol}`;
   };
 
+  // NEW: handle when user presses MAX => keep raw precise number in fromAmountRaw but show a friendly formatted string
   const handleMax = () => {
     if (!selectedFromToken) return;
-    const balance = getTokenBalance(selectedFromToken.symbol);
-    setSelectedFromToken(prev => prev ? { ...prev, balance } : null);
-    setFromAmount(formatWithCommas(balance.toString()));
+    const balance = getTokenBalance(selectedFromToken.symbol) || 0;
+
+    // Set raw value to exact balance (used for quoting & submission)
+    setFromAmountRaw(balance);
+
+    // Format friendly display string (with commas + trimmed decimals)
+    const displayStr = formatMaxAmount(balance);
+    setFromAmount(formatWithCommas(displayStr));
+
+    // clear quote & preview so a fresh quote will be created using the full balance
+    clearQuote();
+    setToAmount('0');
+    setToAmountRaw(null);
+
+    // Also update selectedFromToken.balance to latest
+    setSelectedFromToken(prev => prev ? { ...prev, balance } : prev);
+    clearMessage();
+  };
+
+  // When user types into input, update both visible string and raw numeric value
+  const handleFromAmountChange = (text: string) => {
+    // Keep commas in visible input
+    const formatted = formatWithCommas(text);
+    setFromAmount(formatted);
+
+    // Update raw numeric value (parse without commas)
+    const numeric = parseFloat(unformat(formatted));
+    if (!isNaN(numeric)) {
+      setFromAmountRaw(numeric);
+    } else {
+      setFromAmountRaw(null);
+    }
+
+    // when user types, clear quote / preview
+    clearQuote();
+    setToAmount('0');
+    setToAmountRaw(null);
+    clearMessage();
   };
 
   const handleCreateQuote = async () => {
-    const rawAmount = parseFloat(unformat(fromAmount));
+    // Prefer the raw precise amount if present (max uses this); otherwise parse visible string
+    const rawAmount = (typeof fromAmountRaw === 'number' && !isNaN(fromAmountRaw))
+      ? fromAmountRaw
+      : parseFloat(unformat(fromAmount)) || 0;
     
-    if (!selectedFromToken || !selectedToToken || rawAmount <= 0) {
-      showError('Please select tokens and enter a valid amount', 'validation', 'Invalid Input');
+    // Validate tokens first
+    if (!selectedFromToken || !selectedToToken) {
+      showError('Please select both tokens to proceed', 'validation', 'Select Tokens');
+      return;
+    }
+
+    // Validate swap pair
+    const pairValidation = validateSwapPair(selectedFromToken.symbol, selectedToToken.symbol);
+    if (!pairValidation.success) {
+      showError(pairValidation.message || 'Invalid token pair', 'validation', 'Invalid Swap Pair');
+      return;
+    }
+
+    // If amount is missing or zero, show specific message
+    if (rawAmount <= 0) {
+      showError('Please enter an amount to swap', 'validation', 'Enter Amount');
       return;
     }
     
+    // Only check balance if a positive amount is provided
     if (!hasSufficientBalance(selectedFromToken.symbol, rawAmount)) {
       showError(
         `You don't have enough ${selectedFromToken.symbol}. Available: ${getMaxBalance(selectedFromToken)}`, 
@@ -297,8 +490,20 @@ export default function SwapScreen({
         return;
       }
 
-      let receiveAmount = quoteResult.data?.data?.amountReceived || quoteResult.data?.amountReceived || quoteResult.data?.data?.data?.amountReceived;
-      if (receiveAmount) setToAmount(formatWithCommas(receiveAmount.toString()));
+      // Extract amountReceived - prefer deep path if necessary
+      let receiveAmount = quoteResult.data?.data?.amountReceived
+        || quoteResult.data?.amountReceived
+        || quoteResult.data?.data?.data?.amountReceived
+        || quoteResult.amountReceived;
+
+      if (receiveAmount) {
+        // store raw and formatted
+        setToAmountRaw(Number(receiveAmount));
+        setToAmount(formatWithCommas(formatDisplayAmount(receiveAmount)));
+      } else {
+        setToAmount('0');
+        setToAmountRaw(null);
+      }
 
       setShowPreviewModal(true);
     } catch (error) {
@@ -328,8 +533,10 @@ export default function SwapScreen({
         onSwap?.();
         
         // Show success message
+        const displayFrom = formatDisplayAmount(((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0));
+        const displayTo = formatDisplayAmount(((toAmountRaw ?? parseFloat(unformat(toAmount))) || 0));
         showSuccess(
-          `Successfully swapped ${formatDisplayAmount(unformat(fromAmount))} ${selectedFromToken?.symbol} to ${formatDisplayAmount(unformat(toAmount))} ${selectedToToken?.symbol}`,
+          `Successfully swapped ${displayFrom} ${selectedFromToken?.symbol} to ${displayTo} ${selectedToToken?.symbol}`,
           'Swap Successful!'
         );
       } else {
@@ -352,7 +559,9 @@ export default function SwapScreen({
 
   const handleSuccessScreenContinue = () => {
     setFromAmount('0'); 
+    setFromAmountRaw(null);
     setToAmount('0'); 
+    setToAmountRaw(null);
     setSelectedToToken(null);
     setShowSuccessScreen(false);
     clearMessage(); // Clear any lingering messages
@@ -366,15 +575,33 @@ export default function SwapScreen({
   
   const handleTokenSelect = (token: TokenOption) => {
     const updated = { ...token, balance: getTokenBalance(token.symbol), price: getTokenPrice(token.symbol) };
-    tokenSelectorType === 'from' ? setSelectedFromToken(updated) : setSelectedToToken(updated);
+    
+    if (tokenSelectorType === 'from') {
+      setSelectedFromToken(updated);
+      // Clear to token if current selection would be invalid
+      if (selectedToToken) {
+        const validation = validateSwapPair(updated.symbol, selectedToToken.symbol);
+        if (!validation.success) {
+          setSelectedToToken(null);
+        }
+      }
+    } else {
+      setSelectedToToken(updated);
+    }
+    
     setToAmount('0'); 
+    setToAmountRaw(null);
     clearQuote(); 
     setShowTokenModal(false);
     clearMessage(); // Clear any error messages when selecting new tokens
   };
 
   const { quoteLoading, acceptLoading } = getLoadingStates();
-  const isSwapDisabled = !selectedFromToken || !selectedToToken || parseFloat(unformat(fromAmount)) <= 0 || quoteLoading || acceptLoading;
+  const isSwapDisabled = !selectedFromToken || !selectedToToken || (((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0) <= 0) || quoteLoading || acceptLoading;
+
+  // The quote we pass down to the preview modal
+  const currentQuote = getCurrentQuote();
+  const currentQuoteLoading = getLoadingStates().quoteLoading;
 
   return (
     <View style={styles.container}>
@@ -409,14 +636,14 @@ export default function SwapScreen({
                   style={styles.amountInput} 
                   value={fromAmount}
                   onFocus={() => { 
-                    if (fromAmount === '0') setFromAmount(''); 
+                    if (fromAmount === '0') {
+                      setFromAmount('');
+                      setFromAmountRaw(null);
+                    }
                     clearMessage(); // Clear messages when user starts typing
                   }}
                   onBlur={() => { if (!fromAmount) setFromAmount('0'); }}
-                  onChangeText={(text) => {
-                    setFromAmount(formatWithCommas(text));
-                    clearMessage(); // Clear messages when user types
-                  }}
+                  onChangeText={handleFromAmountChange}
                   placeholder="0" 
                   keyboardType="decimal-pad" 
                   placeholderTextColor={Colors.text.secondary} 
@@ -494,32 +721,36 @@ export default function SwapScreen({
 
       <BottomTabNavigator activeTab="swap" />
 
-      {/* Token Modal */}
+      {/* Token Modal - Pass valid tokens based on current selection */}
       <ChooseTokenModal 
         visible={showTokenModal} 
         onClose={() => setShowTokenModal(false)} 
         onTokenSelect={handleTokenSelect} 
         selectedTokenId={tokenSelectorType === 'from' ? selectedFromToken?.id : selectedToToken?.id} 
         title="Choose token" 
-        showBalances={true} 
+        showBalances={true}
+        validTokens={tokenSelectorType === 'to' ? getValidToTokens(selectedFromToken?.symbol || null) : undefined}
       />
 
-      {/* Preview Modal */}
+      {/* Preview Modal: PASS RAW QUOTE & LOADING */}
       <SwapPreviewModal 
         visible={showPreviewModal} 
         onClose={() => setShowPreviewModal(false)} 
-        onConfirm={handleAcceptQuote} 
-        fromAmount={formatDisplayAmount(unformat(fromAmount))} 
+        onConfirm={handleAcceptQuote}
+        quote={currentQuote}
+        loading={currentQuoteLoading}
+        // keep fallbacks for readability if quote doesn't include the values
+        fromAmount={formatDisplayAmount((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0)} 
         fromToken={selectedFromToken?.symbol || ''} 
-        toAmount={formatDisplayAmount(unformat(toAmount))} 
+        toAmount={formatDisplayAmount((toAmountRaw ?? parseFloat(unformat(toAmount))) || 0)} 
         toToken={selectedToToken?.symbol || ''} 
-        rate={`1 ${selectedFromToken?.symbol} = ${(parseFloat(unformat(toAmount))/parseFloat(unformat(fromAmount)) || 0).toFixed(6)} ${selectedToToken?.symbol}`} 
+        rate={`1 ${selectedFromToken?.symbol} = ${formatDisplayAmount( (((toAmountRaw ?? parseFloat(unformat(toAmount))) || 0) / ((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 1)) )} ${selectedToToken?.symbol}`} 
       />
 
       {/* Success Screen - Now renders as popup modal */}
       <SwapSuccessfulScreen 
         visible={showSuccessScreen} 
-        fromAmount={formatDisplayAmount(unformat(fromAmount))} 
+        fromAmount={formatDisplayAmount((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0)} 
         fromToken={selectedFromToken?.symbol || ''} 
         toToken={selectedToToken?.symbol || ''} 
         onContinue={handleSuccessScreenContinue} 

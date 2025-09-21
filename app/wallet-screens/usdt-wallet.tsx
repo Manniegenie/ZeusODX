@@ -253,9 +253,15 @@ const USDTWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 
+  // -------------------- Available networks (added requested networks + Tron) --------------------
   const usdtNetworks = [
-    { id: 'bsc', name: 'BSC (Binance Smart Chain)' },
-    { id: 'ethereum', name: 'Ethereum Network' },
+    { id: 'polygon', name: 'Polygon (MATIC)' },
+    { id: 'solana', name: 'Solana' },
+    { id: 'avax', name: 'Avax C-Chain' },
+    { id: 'ethereum', name: 'Ethereum (ERC20)' },
+    { id: 'arbitrum', name: 'Arbitrum One' },
+    { id: 'tron', name: 'Tron (TRC20)' }, // <-- ADDED
+    { id: 'bsc', name: 'BSC (Binance Smart Chain)' }, // optional / legacy
   ];
 
   const onRefresh = useCallback(async () => {
@@ -311,11 +317,32 @@ const USDTWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     setShowTransferMethodModal(false);
   };
 
+  // -------------------- Network selection routing (includes Tron) --------------------
   const handleNetworkSelect = (network: { id: string }) => {
-    if (network.id === 'bsc') {
-      router.push('../deposits/usdt-bsc');
-    } else if (network.id === 'ethereum') {
-      router.push('../deposits/usdt-eth');
+    switch ((network.id || '').toLowerCase()) {
+      case 'polygon':
+        router.push('../deposits/usdt-polygon');
+        break;
+      case 'solana':
+        router.push('../deposits/usdt-solana');
+        break;
+      case 'avax':
+        router.push('../deposits/usdt-avax');
+        break;
+      case 'ethereum':
+        router.push('../deposits/usdt-eth');
+        break;
+      case 'arbitrum':
+        router.push('../deposits/usdt-arbitrum');
+        break;
+      case 'tron':
+        router.push('../deposits/usdt-tron'); // <-- ADDED route for Tron
+        break;
+      case 'bsc':
+        router.push('../deposits/usdt-bsc');
+        break;
+      default:
+        router.push('../deposits/usdt-eth');
     }
     setShowNetworkModal(false);
   };
@@ -570,32 +597,15 @@ const styles = StyleSheet.create({
   actionItem: { alignItems: 'center' },
   actionIconImage: { width: 44, height: 44 },
   actionLabel: { fontSize: 10, color: '#292d32', marginTop: 4 },
-  recentHistorySection: { 
-    paddingHorizontal: Layout.spacing.lg, 
-    paddingBottom: Layout.spacing.xl 
-  },
+  recentHistorySection: { paddingHorizontal: Layout.spacing.lg, paddingBottom: Layout.spacing.xl },
   recentHistoryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Layout.spacing.lg },
-  recentHistoryTitle: { 
-    fontFamily: Typography.medium,
-    fontSize: 14, 
-    fontWeight: '600',
-    color: Colors.text.primary
-  },
-  viewAllText: { 
-    fontFamily: Typography.medium,
-    fontSize: 14, 
-    fontWeight: 'bold', 
-    color: '#35297F' 
-  },
+  recentHistoryTitle: { fontFamily: Typography.medium, fontSize: 14, fontWeight: '600', color: Colors.text.primary },
+  viewAllText: { fontFamily: Typography.medium, fontSize: 14, fontWeight: 'bold', color: '#35297F' },
   emptyState: { alignItems: 'center', marginTop: 16 },
   emptyStateImage: { width: 160, height: 156 },
   emptyText: { fontSize: 12, color: Colors.text.secondary },
-  transactionsList: { 
-    flex: 1
-  },
-  
-  // Updated transaction item styles to match TokensSection formatting
-  transactionItem: { 
+  transactionsList: { flex: 1 },
+  transactionItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -606,46 +616,13 @@ const styles = StyleSheet.create({
     borderRadius: Layout.borderRadius.md,
     minHeight: 64,
   },
-  transactionLeft: { 
-    flex: 1,
-    justifyContent: 'center'
-  },
-  transactionType: { 
-    fontFamily: Typography.medium,
-    fontSize: 14, 
-    color: Colors.text.primary, 
-    fontWeight: '600',
-    marginBottom: 3 
-  },
-  transactionDate: { 
-    fontFamily: Typography.regular,
-    fontSize: 12, 
-    color: Colors.text.secondary 
-  },
-  transactionRight: { 
-    alignItems: 'flex-end',
-    justifyContent: 'center'
-  },
-  transactionAmount: { 
-    fontFamily: Typography.medium,
-    fontSize: 13, 
-    color: Colors.text.primary,
-    fontWeight: '600',
-    marginBottom: 4
-  },
-  statusContainer: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 50,
-  },
-  transactionStatus: { 
-    fontFamily: Typography.medium,
-    fontSize: 12, 
-    fontWeight: '600' 
-  },
+  transactionLeft: { flex: 1, justifyContent: 'center' },
+  transactionType: { fontFamily: Typography.medium, fontSize: 14, color: Colors.text.primary, fontWeight: '600', marginBottom: 3 },
+  transactionDate: { fontFamily: Typography.regular, fontSize: 12, color: Colors.text.secondary },
+  transactionRight: { alignItems: 'flex-end', justifyContent: 'center' },
+  transactionAmount: { fontFamily: Typography.medium, fontSize: 13, color: Colors.text.primary, fontWeight: '600', marginBottom: 4 },
+  statusContainer: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6, alignItems: 'center', justifyContent: 'center', minWidth: 50 },
+  transactionStatus: { fontFamily: Typography.medium, fontSize: 12, fontWeight: '600' },
 });
 
 export default USDTWalletScreen;

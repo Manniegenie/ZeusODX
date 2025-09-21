@@ -1,4 +1,4 @@
-// hooks/useHistory.js
+// hooks/usegeneralHistory.js
 import { useState, useCallback, useEffect } from 'react';
 import { transactionService } from '../services/historyService';
 
@@ -17,11 +17,11 @@ export const useHistory = (currency, options = {}) => {
   const [pagination, setPagination] = useState(null);
   const [summary, setSummary] = useState(null);
 
-  // Helper function to convert month selection to startDate/endDate for service
+  // ALL EXISTING HELPER METHODS STAY EXACTLY THE SAME...
+  
   const getMonthDateRange = (monthYear) => {
     if (!monthYear) return { startDate: null, endDate: null };
     
-    // Parse month and year from string like "Jul 2025"
     const [monthName, year] = monthYear.split(' ');
     const monthMap = {
       'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
@@ -32,7 +32,6 @@ export const useHistory = (currency, options = {}) => {
     const yearNum = parseInt(year);
     
     if (monthIndex === undefined || isNaN(yearNum)) {
-      // Fallback to current month
       const now = new Date();
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth();
@@ -47,7 +46,6 @@ export const useHistory = (currency, options = {}) => {
     return { startDate, endDate };
   };
 
-  // Map UI categories to service transaction types
   const mapCategoryToType = (category) => {
     const categoryMap = {
       'Deposit': 'DEPOSIT',
@@ -58,7 +56,6 @@ export const useHistory = (currency, options = {}) => {
     return categoryMap[category] || null;
   };
 
-  // Map UI status to service status format
   const mapStatusToService = (status) => {
     const statusMap = {
       'Successful': 'SUCCESSFUL',
@@ -68,7 +65,8 @@ export const useHistory = (currency, options = {}) => {
     return statusMap[status] || null;
   };
 
-  // Function to fetch gift card transactions
+  // ALL EXISTING FETCH METHODS STAY EXACTLY THE SAME...
+  
   const fetchGiftCardTransactions = useCallback(async (filterParams = {}) => {
     setLoading(true);
     setError(null);
@@ -88,7 +86,6 @@ export const useHistory = (currency, options = {}) => {
         ...otherFilters
       };
       
-      // Handle date range
       if (customStartDate && customEndDate) {
         apiParams.startDate = customStartDate;
         apiParams.endDate = customEndDate;
@@ -98,7 +95,6 @@ export const useHistory = (currency, options = {}) => {
         apiParams.endDate = dateRange.endDate;
       }
 
-      // Map status
       if (status && status !== 'All Status') {
         const mappedStatus = mapStatusToService(status);
         if (mappedStatus) {
@@ -131,7 +127,6 @@ export const useHistory = (currency, options = {}) => {
     }
   }, [defaultPageSize]);
 
-  // Function to fetch bill payments
   const fetchBillPayments = useCallback(async (filterParams = {}) => {
     setLoading(true);
     setError(null);
@@ -152,7 +147,6 @@ export const useHistory = (currency, options = {}) => {
         ...otherFilters
       };
       
-      // Handle date range
       if (customStartDate && customEndDate) {
         apiParams.startDate = customStartDate;
         apiParams.endDate = customEndDate;
@@ -162,7 +156,6 @@ export const useHistory = (currency, options = {}) => {
         apiParams.endDate = dateRange.endDate;
       }
 
-      // Map category to bill type
       if (category && category !== 'All Categories') {
         const billCategories = ['Airtime', 'Data', 'Cable', 'Electricity'];
         if (billCategories.includes(category)) {
@@ -170,7 +163,6 @@ export const useHistory = (currency, options = {}) => {
         }
       }
 
-      // Map status
       if (status && status !== 'All Status') {
         const mappedStatus = mapStatusToService(status);
         if (mappedStatus) {
@@ -203,7 +195,67 @@ export const useHistory = (currency, options = {}) => {
     }
   }, [defaultPageSize]);
 
-  // Function to fetch complete history (tokens + utilities + gift cards)
+  // NEW: Function to fetch NGNZ withdrawals with enhanced receipt data
+  const fetchNGNZWithdrawals = useCallback(async (filterParams = {}) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { 
+        status,
+        startDate: customStartDate,
+        endDate: customEndDate,
+        month,
+        ...otherFilters 
+      } = filterParams;
+      
+      let apiParams = {
+        page: 1,
+        limit: defaultPageSize,
+        ...otherFilters
+      };
+      
+      if (customStartDate && customEndDate) {
+        apiParams.startDate = customStartDate;
+        apiParams.endDate = customEndDate;
+      } else if (month) {
+        const dateRange = getMonthDateRange(month);
+        apiParams.startDate = dateRange.startDate;
+        apiParams.endDate = dateRange.endDate;
+      }
+
+      if (status && status !== 'All Status') {
+        const mappedStatus = mapStatusToService(status);
+        if (mappedStatus) {
+          apiParams.status = mappedStatus;
+        }
+      }
+
+      const result = await transactionService.getNGNZWithdrawals(apiParams);
+
+      if (result.success && result.data) {
+        setTransactions(result.data.transactions || []);
+        setPagination(result.data.pagination || null);
+        setError(null);
+      } else {
+        setError(result.message || 'Failed to fetch NGNZ withdrawals');
+        setTransactions([]);
+        setPagination(null);
+      }
+
+      return result;
+    } catch (e) {
+      console.error('NGNZ withdrawal fetch error:', e);
+      const errorMessage = 'Failed to fetch NGNZ withdrawal transactions.';
+      setError(errorMessage);
+      setTransactions([]);
+      setPagination(null);
+      return { success: false, error: 'NETWORK_ERROR', message: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  }, [defaultPageSize]);
+
   const fetchCompleteHistory = useCallback(async (filterParams = {}) => {
     setLoading(true);
     setError(null);
@@ -220,11 +272,10 @@ export const useHistory = (currency, options = {}) => {
       let apiParams = {
         page: 1,
         limit: defaultPageSize,
-        transactionType: 'all', // This gets tokens, utilities, and gift cards
+        transactionType: 'all',
         ...otherFilters
       };
       
-      // Handle date range
       if (customStartDate && customEndDate) {
         apiParams.startDate = customStartDate;
         apiParams.endDate = customEndDate;
@@ -234,7 +285,6 @@ export const useHistory = (currency, options = {}) => {
         apiParams.endDate = dateRange.endDate;
       }
 
-      // Map status for complete history
       if (status && status !== 'All Status') {
         const mappedStatus = mapStatusToService(status);
         if (mappedStatus) {
@@ -267,24 +317,25 @@ export const useHistory = (currency, options = {}) => {
     }
   }, [defaultPageSize]);
 
-  // Main fetch function with proper routing
+  // Main fetch function with NEW NGNZ support
   const fetchTransactions = useCallback(async (filterParams = {}) => {
     const { category } = filterParams;
     
-    // Check what type of request this is
     const billCategories = ['Airtime', 'Data', 'Cable', 'Electricity'];
     
-    // If gift card category selected → fetch only gift card transactions
+    // NEW: Check if this is specifically for NGNZ withdrawals
+    if (normalizedCurrency === 'NGNZ' && category === 'Transfer') {
+      return fetchNGNZWithdrawals(filterParams);
+    }
+    
     if (category === 'Giftcard') {
       return fetchGiftCardTransactions(filterParams);
     }
     
-    // If specific bill category selected → fetch only that utility type
     if (category && billCategories.includes(category)) {
       return fetchBillPayments(filterParams);
     }
     
-    // If "All Categories" selected → fetch complete history (tokens + utilities + gift cards)
     if (category === 'All Categories' || !category) {
       return fetchCompleteHistory(filterParams);
     }
@@ -308,7 +359,6 @@ export const useHistory = (currency, options = {}) => {
         ...otherFilters
       };
       
-      // Handle date range
       if (customStartDate && customEndDate) {
         apiParams.startDate = customStartDate;
         apiParams.endDate = customEndDate;
@@ -318,7 +368,6 @@ export const useHistory = (currency, options = {}) => {
         apiParams.endDate = dateRange.endDate;
       }
 
-      // Map category to transaction type
       if (category && category !== 'All Categories') {
         const mappedType = mapCategoryToType(category);
         if (mappedType) {
@@ -326,7 +375,6 @@ export const useHistory = (currency, options = {}) => {
         }
       }
 
-      // Map status
       if (status && status !== 'All Status') {
         const mappedStatus = mapStatusToService(status);
         if (mappedStatus) {
@@ -361,24 +409,27 @@ export const useHistory = (currency, options = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [normalizedCurrency, defaultPageSize, fetchBillPayments, fetchCompleteHistory, fetchGiftCardTransactions]);
+  }, [normalizedCurrency, defaultPageSize, fetchBillPayments, fetchCompleteHistory, fetchGiftCardTransactions, fetchNGNZWithdrawals]);
 
   const refreshTransactions = useCallback((filterParams = {}) => {
     return fetchTransactions(filterParams);
   }, [fetchTransactions]);
 
-  // Load more transactions for pagination
+  // Load more transactions for pagination with NEW NGNZ support
   const loadMoreTransactions = useCallback(async (filterParams = {}) => {
     if (!pagination?.hasNextPage || loading) return;
 
     setLoading(true);
     try {
+      const { category } = filterParams;
+      const billCategories = ['Airtime', 'Data', 'Cable', 'Electricity'];
+      const isNGNZWithdrawal = normalizedCurrency === 'NGNZ' && category === 'Transfer';
+      
       const nextPageParams = {
         ...filterParams,
         page: pagination.currentPage + 1
       };
 
-      // Handle date range
       const { month, startDate: customStartDate, endDate: customEndDate } = filterParams;
       if (customStartDate && customEndDate) {
         nextPageParams.startDate = customStartDate;
@@ -387,6 +438,16 @@ export const useHistory = (currency, options = {}) => {
         const dateRange = getMonthDateRange(month);
         nextPageParams.startDate = dateRange.startDate;
         nextPageParams.endDate = dateRange.endDate;
+      }
+
+      // NEW: Handle NGNZ withdrawal pagination
+      if (isNGNZWithdrawal) {
+        const result = await transactionService.getNGNZWithdrawals(nextPageParams);
+        if (result.success && result.data) {
+          setTransactions(prev => [...prev, ...(result.data.transactions || [])]);
+          setPagination(result.data.pagination || null);
+        }
+        return result;
       }
 
       const result = await transactionService.getTransactionHistory(normalizedCurrency, nextPageParams);
@@ -405,22 +466,20 @@ export const useHistory = (currency, options = {}) => {
     }
   }, [normalizedCurrency, pagination, loading]);
 
-  // Get filtered transactions for specific categories
+  // ALL OTHER EXISTING METHODS STAY THE SAME...
+  
   const getFilteredByCategory = useCallback((category) => {
     if (!category || category === 'All Categories') return transactions;
     
-    // For gift cards
     if (category === 'Giftcard') {
       return transactions.filter(tx => tx.type === 'GIFTCARD');
     }
     
-    // For bill payment categories
     const billCategories = ['Airtime', 'Data', 'Cable', 'Electricity'];
     if (billCategories.includes(category)) {
       return transactions.filter(tx => {
         if (tx.type !== 'BILL_PAYMENT') return false;
         
-        // Check if transaction details contain the bill type
         const details = tx.details || {};
         const billType = details.category || details.billType || '';
         
@@ -428,7 +487,6 @@ export const useHistory = (currency, options = {}) => {
       });
     }
 
-    // For other categories
     const categoryMap = {
       'Deposit': 'DEPOSIT',
       'Transfer': 'WITHDRAWAL', 
@@ -443,7 +501,6 @@ export const useHistory = (currency, options = {}) => {
     return transactions;
   }, [transactions]);
 
-  // Legacy method name for backward compatibility
   const getFilteredByBillType = getFilteredByCategory;
 
   useEffect(() => {
@@ -468,12 +525,13 @@ export const useHistory = (currency, options = {}) => {
     // Actions
     refreshTransactions,
     fetchTransactions,
-    fetchBillPayments, // For bills only
-    fetchGiftCardTransactions, // For gift cards only
-    fetchCompleteHistory, // For all transactions
+    fetchBillPayments,
+    fetchGiftCardTransactions,
+    fetchNGNZWithdrawals, // NEW: For NGNZ withdrawals only
+    fetchCompleteHistory,
     loadMoreTransactions,
     getFilteredByCategory,
-    getFilteredByBillType, // Legacy alias
+    getFilteredByBillType,
     
     // Utilities
     getMonthDateRange,

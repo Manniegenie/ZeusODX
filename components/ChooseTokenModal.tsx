@@ -24,7 +24,7 @@ const avaxIcon = require('../components/icons/avax-icon.png');
 const bnbIcon = require('../components/icons/bnb-icon.png');
 const maticIcon = require('../components/icons/matic-icon.png');
 const ngnzIcon = require('../components/icons/NGNZ.png');
-const checkIcon = require('../components/icons/Check-icon.png'); // Add this icon to your assets
+const checkIcon = require('../components/icons/Check-icon.png');
 
 interface TokenOption {
   id: string;
@@ -42,6 +42,7 @@ interface ChooseTokenModalProps {
   selectedTokenId?: string;
   title?: string;
   showBalances?: boolean;
+  validTokens?: string[];
 }
 
 export default function ChooseTokenModal({
@@ -50,7 +51,8 @@ export default function ChooseTokenModal({
   onTokenSelect,
   selectedTokenId,
   title = "Choose token",
-  showBalances = false
+  showBalances = false,
+  validTokens
 }: ChooseTokenModalProps) {
 
   // Get data from useDashboard hook
@@ -77,13 +79,13 @@ export default function ChooseTokenModal({
   } = useDashboard();
 
   // Token options based on your existing data
-  const tokenOptions: TokenOption[] = [
+  const allTokenOptions: TokenOption[] = [
     {
       id: 'ngnz',
       name: 'Nigeria Naira',
       symbol: 'NGNZ',
       icon: ngnzIcon,
-      price: ngnzExchangeRate?.rate || 1, // Use rate from exchange rate object or default to 1
+      price: ngnzExchangeRate?.rate || 1,
       balance: ngnzBalance?.balance || 0,
     },
     {
@@ -150,13 +152,23 @@ export default function ChooseTokenModal({
       price: maticPrice,
       balance: maticBalance?.balance || 0,
     },
-  ].filter(token => {
+  ];
+
+  // Filter tokens based on price availability and valid token list
+  const tokenOptions = allTokenOptions.filter(token => {
     // Always show NGNZ regardless of price
     if (token.symbol === 'NGNZ') {
       return true;
     }
     // For other tokens, require valid price
     return token.price && token.price > 0;
+  }).filter(token => {
+    // Filter by validTokens if provided
+    if (validTokens && validTokens.length > 0) {
+      return validTokens.includes(token.symbol);
+    }
+    // Show all tokens if no validTokens filter is provided
+    return true;
   });
 
   const formatBalance = (balance: number): string => {
@@ -228,6 +240,9 @@ export default function ChooseTokenModal({
         <View style={styles.modalOverlay}>
           <TouchableWithoutFeedback onPress={() => {}}>
             <View style={styles.modalContent}>
+              {/* Drag Handle */}
+              <View style={styles.dragHandle} />
+              
               {/* Modal Header */}
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>{title}</Text>
@@ -257,25 +272,33 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: Layout.spacing.lg,
+    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: Layout.borderRadius.xl,
-    borderTopRightRadius: Layout.borderRadius.xl,
-    padding: Layout.spacing.lg,
-    width: '90%',
-    maxHeight: '50%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: Layout.spacing.sm,
+    paddingHorizontal: Layout.spacing.lg,
+    paddingBottom: Layout.spacing.xl,
+    width: '100%',
+    height: '70%',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 10,
+      height: -4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 25,
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
     elevation: 25,
+  },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#D1D5DB',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: Layout.spacing.md,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -308,7 +331,9 @@ const styles = StyleSheet.create({
     paddingBottom: Layout.spacing.sm,
   },
   separator: {
-    height: 4,
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginVertical: Layout.spacing.xs,
   },
   tokenItem: {
     flexDirection: 'row',
