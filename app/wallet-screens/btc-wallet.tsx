@@ -253,7 +253,11 @@ const BitcoinWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 
-  const bitcoinNetworks = [{ id: 'bitcoin', name: 'Bitcoin Network' }];
+  // Updated to include BSC network
+  const bitcoinNetworks = [
+    { id: 'bitcoin', name: 'Bitcoin Network' },
+    { id: 'bsc', name: 'BSC Network' }
+  ];
 
   const onRefresh = useCallback(async () => {
     await Promise.all([refreshBalances(), refreshTransactions()]);
@@ -304,8 +308,13 @@ const BitcoinWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     setShowTransferMethodModal(false);
   };
 
+  // Updated to handle BSC routing
   const handleNetworkSelect = (network: { id: string }) => {
-    if (network.id === 'bitcoin') router.push('../deposits/btc');
+    if (network.id === 'bitcoin') {
+      router.push('../deposits/btc');
+    } else if (network.id === 'bsc') {
+      router.push('/deposits/btc-bsc');
+    }
     setShowNetworkModal(false);
   };
 

@@ -9,13 +9,20 @@ import {
   Image,
   ScrollView,
   Alert,
-  Share,
-  Clipboard, // keep consistent with your existing TransactionReceiptScreen
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
+import { useRouter } from 'expo-router';
+import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system';
 import { Typography } from '../constants/Typography';
 import { Colors } from '../constants/Colors';
 // @ts-ignore - Layout typing may be loose in your project
 import { Layout } from '../constants/Layout';
+
+// Brand/logo (local asset)
+import successImage from '../components/icons/logo1.png';
 
 // ======== Types (aligned with your TransactionReceiptScreen) ========
 type APIDetail = Record<string, any> & { category?: 'token' | 'utility' };
@@ -33,29 +40,12 @@ export type APITransaction = {
 type Props = {
   visible: boolean;
   onClose: () => void;
-  /**
-   * High-level normalized transaction (like you pass to TransactionReceiptScreen via params.tx)
-   */
   tx?: APITransaction;
-  /**
-   * Raw payout/withdrawal object (e.g. provider result or your own DB model),
-   * we will pick common fields from this as well
-   */
   raw?: any;
-  /**
-   * Optional override title (defaults to "Withdrawal Receipt")
-   */
   title?: string;
 };
 
 // ======== Helpers (mirroring your screen) ========
-const maskMiddle = (v?: string, lead = 3, tail = 4) => {
-  if (!v) return '—';
-  const s = String(v);
-  if (s.length <= lead + tail) return s;
-  return `${s.slice(0, lead)}***${s.slice(-tail)}`;
-};
-
 const asText = (v: any) => {
   if (v === null || v === undefined) return '—';
   if (typeof v === 'number') return String(v);
@@ -110,7 +100,7 @@ function Row({
             activeOpacity={0.8}
           >
             <Image
-              source={require('./icons/copy-icon.png')}
+              source={require('../components/icons/copy-icon.png')}
               style={styles.copyIcon}
               resizeMode="contain"
             />
@@ -129,77 +119,130 @@ export default function FiatWithdrawalReceiptModal({
   raw,
   title = 'Withdrawal Receipt',
 }: Props) {
+  const router = useRouter();
   const s = statusStyles(tx?.status || '');
 
   const merged = useMemo(() => {
-    // Normalize common fiat withdrawal fields from either tx.details or raw
     const d = (tx?.details || {}) as Record<string, any>;
     return {
-      // identifiers
       transactionId: pick(d.transactionId, raw, ['transactionId', 'txId', 'externalId', 'id', '_id']),
       reference: pick(d.reference, raw, ['reference', 'obiexReference', 'ref', 'requestId']),
-
-      // provider & status
       provider: pick(d.provider, raw, ['provider', 'psp', 'source']) || '—',
       providerStatus: pick(d.providerStatus, raw, ['obiexStatus', 'providerStatus', 'pspStatus']),
-
-      // bank details
       bankName: pick(d.bankName, raw, ['bankName']),
-      bankCode: pick(d.bankCode, raw, ['bankCode']),
       accountName: pick(d.accountName, raw, ['accountName', 'beneficiaryName']),
       accountNumber: pick(d.accountNumber, raw, ['accountNumber', 'beneficiaryAccount']),
-
-      // money fields
       currency: pick(d.currency, raw, ['currency', 'symbol']) || 'NGN',
       fee: pick(d.fee, raw, ['fee', 'charge', 'transactionFee']),
-      amountText: tx?.amount, // already formatted like "-₦120,000"
+      amountText: tx?.amount,
       amount: pick(d.amount, raw, ['amount', 'value', 'ngnAmount']),
-
-      // misc
       narration: pick(d.narration, raw, ['narration', 'note', 'reason', 'description']),
       date: tx?.date || pick(d.createdAt, raw, ['createdAt', 'updatedAt']),
     };
   }, [tx, raw]);
 
-  const handleCopy = async (label: string, value?: string) => {
+  const handleCopy = (label: string, value?: string) => {
     if (!value) return;
     try {
-      await Clipboard.setString(value);
+      Clipboard.setString(value);
       Alert.alert('Copied!', `${label} copied to clipboard`);
     } catch {
       Alert.alert('Copy failed', `Unable to copy ${label.toLowerCase()}`);
     }
   };
 
+  // Generate HTML with embedded logoBase64
+  const generateHtmlWithLogo = async (logoDataUri: string) => {
+    const date = merged.date ?? '—';
+    const amount = merged.amountText ?? merged.amount ?? tx?.amount ?? '—';
+    const provider = merged.provider ?? '—';
+    const rows = [
+      ['Transaction ID', merged.transactionId],
+      ['Reference', merged.reference],
+      ['Provider', provider],
+      ['Bank', merged.bankName],
+      ['Account Name', merged.accountName],
+      ['Account Number', merged.accountNumber],
+      ['Fee', asText(merged.fee)],
+      ['Narration', merged.narration],
+    ];
+
+    const rowsHtml = rows
+      .filter(([, v]) => v !== undefined && v !== null && `${v}`.length)
+      .map(
+        ([k, v]) =>
+          `<tr><td style="padding:8px 0;font-weight:600;color:#6B7280;width:40%">${k}</td><td style="padding:8px 0;text-align:right">${v}</td></tr>`
+      )
+      .join('');
+
+    return `
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8"/>
+          <meta name="viewport" content="width=device-width,initial-scale=1"/>
+          <title>${title}</title>
+        </head>
+        <body style="font-family: Arial, Helvetica, sans-serif; color:#111827; padding:24px;">
+          <div style="max-width:680px;margin:0 auto;">
+            <div style="text-align:center; background:#F3F0FF; padding:20px; border-radius:8px;">
+              <img src="${logoDataUri}" alt="logo" style="height:40px; display:block; margin:0 auto 8px;" />
+              <h2 style="margin:0; color:#111827;">${title}</h2>
+            </div>
+
+            <div style="margin-top:20px; text-align:center;">
+              <div style="font-size:20px; font-weight:700;">${amount}</div>
+              <div style="display:inline-block; margin-top:8px; padding:6px 10px; border-radius:20px; background:${s.bg}; color:${s.text}; border:1px solid ${s.border};">
+                ${tx?.status ?? '—'}
+              </div>
+              <div style="margin-top:8px;color:#6B7280">${date}</div>
+            </div>
+
+            <table style="width:100%; margin-top:20px; border-collapse:collapse;">
+              ${rowsHtml}
+            </table>
+
+            <div style="margin-top:24px; color:#6B7280; font-size:12px; border-top:1px solid #E5E7EB; padding-top:12px; text-align:center;">
+              Thank you for using our services.
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  };
+
   const onShare = async () => {
     try {
-      const lines = [
-        'Fiat Withdrawal Receipt',
-        '',
-        `Type: ${tx?.type ?? 'Withdrawal'}`,
-        `Status: ${tx?.status ?? '—'}`,
-        `Amount: ${merged.amountText ?? merged.amount ?? '—'}`,
-        `Date: ${merged.date ?? '—'}`,
-        '',
-        `Transaction ID: ${merged.transactionId ?? '—'}`,
-        `Reference: ${merged.reference ?? '—'}`,
-        `Provider: ${merged.provider ?? '—'}`,
-        '',
-        `Bank: ${merged.bankName ?? '—'}`,
-        `Account Name: ${merged.accountName ?? '—'}`,
-        `Account Number: ${merged.accountNumber ?? '—'}`,
-        `Bank Code: ${merged.bankCode ?? '—'}`,
-        '',
-        `Fee: ${asText(merged.fee)}`,
-        ...(merged.narration ? [`Narration: ${merged.narration}`] : []),
-      ];
-      await Share.share({ message: lines.join('\n') });
-    } catch {
-      Alert.alert('Share failed', 'Could not open share sheet.');
+      // Load asset and convert to base64
+      const asset = Asset.fromModule(successImage);
+      await asset.downloadAsync();
+      const localUri = asset.localUri || asset.uri;
+      let base64 = '';
+      if (localUri) {
+        base64 = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
+      }
+      const logoDataUri = `data:image/png;base64,${base64}`;
+
+      const html = await generateHtmlWithLogo(logoDataUri);
+      const { uri } = await Print.printToFileAsync({ html });
+      if (!uri) throw new Error('Failed to generate PDF');
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: title });
+      } else {
+        Alert.alert('Share not available', `PDF generated at: ${uri}`);
+      }
+    } catch (err) {
+      console.error('PDF/Share error', err);
+      Alert.alert('Share failed', 'Could not generate or share PDF. Please try again.');
     }
   };
 
-  // Render nothing if not visible to avoid unnecessary layout work
+  const handleDone = () => {
+    router.push('../../user/wallet');
+    onClose?.();
+  };
+
   if (!visible) return null;
 
   return (
@@ -208,12 +251,11 @@ export default function FiatWithdrawalReceiptModal({
         <View style={styles.sheet}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              {title}
-            </Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn} hitSlop={{ top: 8, left: 8, right: 8, bottom: 8 }}>
-              <Text style={styles.closeBtnText}>✕</Text>
+            <TouchableOpacity onPress={onClose} style={styles.backButton}>
+              <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
+            <Image source={successImage} style={styles.headerLogo} resizeMode="contain" />
+            <View style={styles.headerRight} />
           </View>
 
           <ScrollView
@@ -221,37 +263,34 @@ export default function FiatWithdrawalReceiptModal({
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Status Icon (same static icon as your TransactionReceiptScreen) */}
-            <View style={styles.iconContainer}>
-              <Image
-                source={require('./icons/check-check.png')}
-                style={styles.statusIcon}
-                resizeMode="contain"
-              />
-            </View>
-
-            {/* Title + Amount + Status */}
-            <Text style={styles.title} numberOfLines={2}>
-              {tx?.type || 'Withdrawal'}
-            </Text>
-
+            {/* Amount centered */}
             <View style={styles.amountRow}>
               <Text style={styles.amountText} numberOfLines={1}>
-                {tx?.amount || '—'}
+                {tx?.amount ?? merged.amountText ?? '—'}
               </Text>
+            </View>
+
+            {/* Status pill */}
+            <View style={styles.centeredStatus}>
               <View style={[styles.statusPill, { backgroundColor: s.bg, borderColor: s.border }]}>
                 <Text style={[styles.statusPillText, { color: s.text }]} numberOfLines={1}>
-                  {tx?.status || '—'}
+                  {tx?.status ?? '—'}
                 </Text>
               </View>
             </View>
 
             <Text style={styles.metaLine} numberOfLines={1}>
-              {merged.date || '—'}
+              {merged.date ?? '—'}
             </Text>
 
-            {/* Details Card */}
+            {/* Details card */}
             <View style={styles.detailsCard}>
+              <Row
+                label="Type"
+                value={asText(tx?.type)}
+              />
+              <Row label="Date" value={asText(tx?.date)} />
+
               <Row
                 label="Transaction ID"
                 value={asText(merged.transactionId)}
@@ -271,11 +310,10 @@ export default function FiatWithdrawalReceiptModal({
               <Row label="Account Name" value={asText(merged.accountName)} />
               <Row
                 label="Account Number"
-                value={maskMiddle(asText(merged.accountNumber))}
+                value={asText(merged.accountNumber)}
                 copyableValue={typeof merged.accountNumber === 'string' ? merged.accountNumber : undefined}
                 onCopy={(v) => handleCopy('Account Number', v)}
               />
-              {!!merged.bankCode && <Row label="Bank Code" value={asText(merged.bankCode)} />}
 
               {!!merged.fee && <Row label="Fee" value={asText(merged.fee)} />}
               {!!merged.narration && <Row label="Narration" value={asText(merged.narration)} />}
@@ -283,7 +321,7 @@ export default function FiatWithdrawalReceiptModal({
 
             {/* CTAs */}
             <View style={styles.ctaRow}>
-              <TouchableOpacity style={styles.primaryButton} onPress={onClose} activeOpacity={0.95}>
+              <TouchableOpacity style={styles.primaryButton} onPress={handleDone} activeOpacity={0.95}>
                 <Text style={styles.primaryButtonText}>Done</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.secondaryButton} onPress={onShare} activeOpacity={0.85}>
@@ -297,9 +335,8 @@ export default function FiatWithdrawalReceiptModal({
   );
 }
 
-// ======== Styles ========
+// ======== Styles (mirrored from TransactionReceiptScreen) ========
 const styles = StyleSheet.create({
-  // Overlay
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(10, 12, 20, 0.55)',
@@ -309,54 +346,48 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface || '#FFFFFF',
     borderTopLeftRadius: Layout?.borderRadius?.xl || 16,
     borderTopRightRadius: Layout?.borderRadius?.xl || 16,
-    paddingTop: 8,
+    paddingTop: 0,
     maxHeight: '88%',
   },
 
-  // Header
   header: {
-    paddingHorizontal: Layout?.spacing?.xl || 24,
-    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Layout?.spacing?.xl || 24,
+    paddingVertical: 12,
+    backgroundColor: '#F3F0FF',
   },
-  headerTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.text?.primary || '#111827',
-    textAlign: 'center',
-  },
-  closeBtn: { position: 'absolute', right: 16, top: 8, padding: 8 },
-  closeBtnText: { fontSize: 18, color: '#6B7280' },
+  backButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  backButtonText: { fontSize: 24, color: '#1F2937', fontWeight: '400' },
+  headerLogo: { width: 100, height: 44 },
+  headerRight: { width: 44 },
 
-  // Body
   scroll: { maxHeight: '100%' },
   scrollContent: {
     paddingHorizontal: Layout?.spacing?.xl || 24,
     paddingBottom: Layout?.spacing?.xl || 24,
   },
 
-  iconContainer: { alignItems: 'center', marginTop: 4, marginBottom: 8 },
-  statusIcon: { width: 56, height: 56 },
-
-  title: {
-    fontFamily: Typography.bold || 'System',
-    fontSize: 18,
-    lineHeight: 22,
-    color: Colors.text?.primary || '#111827',
-    textAlign: 'center',
-    marginBottom: Layout?.spacing?.xs || 6,
-    fontWeight: '700',
-  },
   amountRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: Layout?.spacing?.xs || 6,
     justifyContent: 'center',
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 6,
   },
-  amountText: { fontFamily: Typography.bold || 'System', fontSize: 17, color: Colors.text?.primary || '#111827' },
+  amountText: {
+    fontFamily: Typography.bold || 'System',
+    fontSize: 20,
+    color: Colors.text?.primary || '#111827',
+  },
+
+  centeredStatus: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Layout?.spacing?.xs || 8,
+  },
   statusPill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1 },
   statusPillText: { fontFamily: Typography.medium || 'System', fontSize: 12, top: 1 },
 
@@ -390,7 +421,7 @@ const styles = StyleSheet.create({
   rowValueWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'flex-end' },
   rowValue: { color: '#111827', fontFamily: Typography.medium || 'System', fontSize: 13, textAlign: 'right', flexShrink: 1 },
 
-  ctaRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 4 },
+  ctaRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 8 },
   primaryButton: {
     flex: 1,
     backgroundColor: Colors.primary || '#35297F',

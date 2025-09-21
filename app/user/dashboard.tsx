@@ -17,7 +17,6 @@ import TransferMethodModal, { TransferMethod } from '../../components/TransferMe
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { useDashboard } from '../../hooks/useDashboard';
-import { apiClient } from '../../services/apiClient'; // Add this import
 import DashboardHeader from './DashboardHeader';
 import DashboardModals from './DashboardModals';
 import PortfolioSection from './PortfolioSection';
@@ -118,15 +117,12 @@ export default function DashboardScreen() {
     setSelectedToken(null);
   };
 
-  // Pull to refresh handler - UPDATED TO CLEAR CACHE
+  // Pull to refresh handler - FIXED: Removed apiClient.clearCache()
   const onRefresh = useCallback(async () => {
     try {
-      console.log('🔄 Refreshing dashboard and clearing cache...');
+      console.log('🔄 Refreshing dashboard...');
       
-      // Clear API cache first
-      apiClient.clearCache();
-      
-      // Then refresh dashboard data
+      // Refresh dashboard data (this already handles cache clearing in dashboardService)
       await refreshDashboard();
       
       console.log('✅ Dashboard refresh completed');

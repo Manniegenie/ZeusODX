@@ -1,4 +1,3 @@
-// app/user/EthereumWalletScreen.tsx
 import React, { useCallback, useState, useEffect } from 'react';
 import {
   View,
@@ -272,7 +271,13 @@ const EthereumWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 
-  const ethereumNetworks = [{ id: 'ethereum', name: 'Ethereum Network' }];
+  // Add networks: Ethereum (default), Arbitrum One, Base, BSC (BEP20)
+  const ethereumNetworks = [
+    { id: 'ethereum', name: 'Ethereum (ETH)' },
+    { id: 'arbitrum', name: 'Arbitrum One' },
+    { id: 'base', name: 'Base' },
+    { id: 'bsc', name: 'BSC (BEP20)' },
+  ];
 
   const onRefresh = useCallback(async () => {
     await Promise.all([refreshBalances(), refreshTransactions()]);
@@ -323,8 +328,21 @@ const EthereumWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     setShowTransferMethodModal(false);
   };
 
+  // Updated: route to deposit pages for networks
   const handleNetworkSelect = (network) => {
-    if (network.id === 'ethereum') router.push('../deposits/eth');
+    if (!network || !network.id) return;
+    const id = String(network.id).toLowerCase();
+
+    // Legacy / existing behavior for plain ethereum route
+    if (id === 'ethereum') {
+      router.push('../deposits/eth');
+    } else {
+      // New behavior: route pattern: /deposits/ETH-<networkId>
+      // e.g. /deposits/ETH-arbitrum, /deposits/ETH-base, /deposits/ETH-bsc
+      const routePath = `/deposits/ETH-${id}`;
+      router.push(routePath);
+    }
+
     setShowNetworkModal(false);
   };
 

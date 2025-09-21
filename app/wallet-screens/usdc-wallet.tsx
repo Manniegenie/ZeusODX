@@ -251,9 +251,15 @@ const USDCWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 
+  // -------------------- Available networks (added requested networks) --------------------
   const usdcNetworks = [
     { id: 'bsc', name: 'BSC (Binance Smart Chain)' },
     { id: 'ethereum', name: 'Ethereum Network' },
+    { id: 'base', name: 'Base' },
+    { id: 'arbitrum', name: 'Arbitrum One' },
+    { id: 'avax', name: 'Avax C-Chain' },
+    { id: 'polygon', name: 'Polygon (MATIC)' },
+    { id: 'solana', name: 'Solana' },
   ];
 
   const onRefresh = useCallback(async () => {
@@ -304,11 +310,34 @@ const USDCWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     setShowTransferMethodModal(false);
   };
 
+  // -------------------- Network selection routing --------------------
   const handleNetworkSelect = (network: { id: string }) => {
-    if (network.id === 'bsc') {
-      router.push('../deposits/usdc-bsc');
-    } else if (network.id === 'ethereum') {
-      router.push('../deposits/usdc-eth');
+    // Map network.id to deposit route
+    switch ((network.id || '').toLowerCase()) {
+      case 'bsc':
+        router.push('../deposits/usdc-bsc');
+        break;
+      case 'ethereum':
+        router.push('../deposits/usdc-eth');
+        break;
+      case 'base':
+        router.push('../deposits/usdc-base');
+        break;
+      case 'arbitrum':
+        router.push('../deposits/usdc-arbitrum');
+        break;
+      case 'avax':
+        router.push('../deposits/usdc-avax');
+        break;
+      case 'polygon':
+        router.push('../deposits/usdc-polygon');
+        break;
+      case 'solana':
+        router.push('../deposits/usdc-solana');
+        break;
+      default:
+        // fallback: open network modal again or route to a generic deposit page
+        router.push('../deposits/usdc-eth');
     }
     setShowNetworkModal(false);
   };
@@ -491,19 +520,19 @@ const styles = StyleSheet.create({
   headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { 
-    width: 48,  // Increased from 40
-    height: 48, // Increased from 40
+    width: 48,
+    height: 48,
     justifyContent: 'center', 
     alignItems: 'center',
     borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Very subtle background instead of transparent
-    overflow: 'hidden', // Better Android performance
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    overflow: 'hidden',
   },
   backButtonText: { fontSize: 20, color: Colors.text.primary },
   headerGroup: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' },
   iconImage: { width: 28, height: 28, resizeMode: 'cover' },
   headerTitle: { fontSize: 16, fontWeight: '600', color: Colors.text.primary },
-  headerRight: { width: 48 }, // Updated to match new back button width
+  headerRight: { width: 48 },
 
   // Balance
   balanceSection: { paddingHorizontal: 16, paddingBottom: 16 },

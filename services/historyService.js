@@ -5,6 +5,8 @@ const DEBUG_HISTORY = true;
 const dbg = (...args) => { if (DEBUG_HISTORY) console.log('[historyService]', ...args); };
 
 export const transactionService = {
+  // ALL EXISTING METHODS STAY EXACTLY THE SAME...
+  
   /**
    * Fetch transaction history for a specific currency using /token-specific endpoint
    * @param {string} currency - Currency symbol (e.g., 'AVAX', 'BTC', 'ETH')
@@ -327,7 +329,7 @@ export const transactionService = {
     }
   },
 
-  // NEW: Fetch gift card transactions
+  // Fetch gift card transactions
   async getGiftCardTransactions(params = {}) {
     try {
       const requestBody = {
@@ -393,8 +395,74 @@ export const transactionService = {
     }
   },
 
-  // ---------- Helpers (updated) ----------
+  // NEW: Fetch NGNZ withdrawals with enhanced receipt data
+  async getNGNZWithdrawals(params = {}) {
+    try {
+      const requestBody = {
+        page: params.page || 1,
+        limit: params.limit || 20,
+        sortBy: params.sortBy || 'createdAt',
+        sortOrder: params.sortOrder || 'desc'
+      };
 
+      // Map status values to backend format
+      if (params.status) {
+        const statusMap = {
+          'PENDING': 'pending',
+          'SUCCESSFUL': 'successful',
+          'FAILED': 'failed'
+        };
+        const mappedStatus = statusMap[params.status.toUpperCase()];
+        if (mappedStatus) requestBody.status = mappedStatus;
+      }
+
+      // Date range
+      if (params.startDate) requestBody.dateFrom = params.startDate.split('T')[0];
+      if (params.endDate) requestBody.dateTo = params.endDate.split('T')[0];
+
+      dbg('getNGNZWithdrawals → POST /history/ngnz-withdrawals', { requestBody });
+      const response = await apiClient.post('/history/ngnz-withdrawals', requestBody);
+      dbg('getNGNZWithdrawals ← response', { status: response.status, data: response.data });
+
+      if (response.data?.success && response.data?.data) {
+        const { transactions, pagination } = response.data.data;
+        const mapped = transactions.map(tx => this.formatNGNZWithdrawal(tx));
+        dbg('getNGNZWithdrawals → mapped sample', mapped?.[0]);
+
+        return {
+          success: true,
+          data: {
+            transactions: mapped,
+            pagination: {
+              currentPage: pagination.currentPage,
+              totalPages: pagination.totalPages,
+              totalCount: pagination.totalCount,
+              limit: pagination.limit,
+              hasNextPage: pagination.currentPage < pagination.totalPages,
+              hasPrevPage: pagination.currentPage > 1
+            }
+          },
+          message: response.data.message || 'NGNZ withdrawal history retrieved successfully'
+        };
+      }
+
+      return {
+        success: false,
+        error: 'FETCH_FAILED',
+        message: response.data?.error || 'Failed to fetch NGNZ withdrawals'
+      };
+    } catch (error) {
+      console.warn('getNGNZWithdrawals error:', error?.message || error);
+      return {
+        success: false,
+        error: 'NETWORK_ERROR',
+        message: 'Network connection failed. Please check your internet connection and try again.'
+      };
+    }
+  },
+
+  // ALL EXISTING HELPER METHODS STAY THE SAME...
+  
   formatTransaction(transaction, currency) {
     if (!transaction) return null;
 
@@ -470,6 +538,55 @@ export const transactionService = {
     }
 
     return baseTransaction;
+  },
+
+  // NEW: Format NGNZ withdrawal with enhanced receipt data
+  formatNGNZWithdrawal(transaction) {
+    if (!transaction) return null;
+
+    const parsedISO = this.tryParseToISO(transaction.createdAt);
+
+    return {
+      id: transaction.id,
+      type: 'WITHDRAWAL',
+      status: this.mapNGNZWithdrawalStatus(transaction.status),
+      amount: this.extractAmountFromString(transaction.amount, 'NGNZ'),
+      currency: transaction.currency || 'NGNZ',
+      
+      createdAt: parsedISO,
+      updatedAt: parsedISO,
+      
+      formattedAmount: transaction.amount,
+      formattedDate: transaction.date,
+      formattedStatus: this.formatTransactionStatus(this.mapNGNZWithdrawalStatus(transaction.status)),
+      
+      // NGNZ withdrawal specific fields
+      isNGNZWithdrawal: true,
+      withdrawalReference: transaction.withdrawalReference,
+      bankName: transaction.bankName,
+      accountName: transaction.accountName,
+      accountNumber: transaction.accountNumber,
+      amountSentToBank: transaction.amountSentToBank,
+      withdrawalFee: transaction.withdrawalFee,
+      provider: transaction.provider,
+      providerStatus: transaction.providerStatus,
+      receiptData: transaction.receiptData,
+      
+      details: {
+        ...transaction.details,
+        category: 'withdrawal',
+        isNGNZWithdrawal: true,
+        hasReceiptData: true,
+        withdrawalReference: transaction.withdrawalReference,
+        bankName: transaction.bankName,
+        accountName: transaction.accountName,
+        accountNumber: transaction.accountNumber,
+        amountSentToBank: transaction.amountSentToBank,
+        withdrawalFee: transaction.withdrawalFee,
+        provider: transaction.provider,
+        providerStatus: transaction.providerStatus
+      }
+    };
   },
 
   formatBillTransaction(transaction) {
@@ -599,6 +716,20 @@ export const transactionService = {
     return statusMap[status] || 'PENDING';
   },
 
+  // NEW: Map NGNZ withdrawal status
+  mapNGNZWithdrawalStatus(status) {
+    const statusMap = {
+      'Successful': 'SUCCESSFUL',
+      'Failed': 'FAILED', 
+      'Pending': 'PENDING',
+      'Completed': 'SUCCESSFUL',
+      'Rejected': 'FAILED'
+    };
+    return statusMap[status] || 'PENDING';
+  },
+
+  // ALL OTHER EXISTING HELPER METHODS STAY EXACTLY THE SAME...
+  
   tryParseToISO(dateLike) {
     if (!dateLike) return null;
     const d = new Date(dateLike);
