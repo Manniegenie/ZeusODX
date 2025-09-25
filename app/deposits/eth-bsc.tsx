@@ -1,4 +1,4 @@
-// app/deposits/usdt-trx.tsx
+// app/deposits/ETH-bsc.tsx
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -49,10 +49,10 @@ const getHorizontalPadding = (): number => {
 
 const horizontalPadding = getHorizontalPadding();
 
-export default function UsdtTrxDepositScreen() {
+export default function EthBscDepositScreen() {
   const router = useRouter();
   const {
-    getUSDTAddress,
+    getDepositAddress,
     getCachedAddress,
     isAddressLoading,
     getAddressError,
@@ -68,26 +68,27 @@ export default function UsdtTrxDepositScreen() {
   const [showCopied, setShowCopied] = useState<boolean>(false);
 
   useEffect(() => {
-    const fetchUSDTAddress = async (): Promise<void> => {
-      const cachedAddress = getCachedAddress('USDT', 'TRX');
+    const fetchBscAddress = async (): Promise<void> => {
+      const cachedAddress = getCachedAddress('ETH', 'BSC');
       if (cachedAddress) {
         const addressData = cachedAddress.data || cachedAddress;
         setDepositData(addressData);
       } else {
-        await handleGetUSDTAddress();
+        await handleGetBscAddress();
       }
     };
-    fetchUSDTAddress();
+    fetchBscAddress();
   }, [getCachedAddress]);
 
-  const handleGetUSDTAddress = async (): Promise<void> => {
+  const handleGetBscAddress = async (): Promise<void> => {
     try {
-      const result = await getUSDTAddress('TRX');
+      // Call getDepositAddress directly with ETH token and BSC network
+      const result = await getDepositAddress('ETH', 'BSC');
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
       } else {
-        showErrorMessage(result.error || 'Failed to get USDT deposit address');
+        showErrorMessage(result.error || 'Failed to get BSC ETH deposit address');
       }
     } catch (error) {
       showErrorMessage('Network error occurred');
@@ -111,7 +112,7 @@ export default function UsdtTrxDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetUSDTAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetBscAddress(), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -127,7 +128,7 @@ export default function UsdtTrxDepositScreen() {
 
   const copyToClipboard = async (): Promise<void> => {
     if (!depositData?.address) {
-      showErrorMessage('USDT wallet address is not yet available');
+      showErrorMessage('BSC ETH wallet address is not yet available');
       return;
     }
     try {
@@ -138,13 +139,13 @@ export default function UsdtTrxDepositScreen() {
     }
   };
 
-  const isLoading = isAddressLoading('USDT', 'TRX') || supportedLoading;
-  const addressError = getAddressError('USDT', 'TRX');
+  const isLoading = isAddressLoading('ETH', 'BSC') || supportedLoading;
+  const addressError = getAddressError('ETH', 'BSC');
   const isWalletSetupNeeded = addressError && addressError.includes('needs to be set up');
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
-  const minDeposit = '$1.00 USDT';
-  const network = depositData?.network || 'Tron';
+  const minDeposit = '0.001 ETH';
+  const network = 'BSC (BEP20)';
 
   return (
     <View style={styles.container}>
@@ -154,6 +155,7 @@ export default function UsdtTrxDepositScreen() {
         {showError && (
           <ErrorDisplay type={errorType} message={errorMessage} onDismiss={hideError} autoHide={false} />
         )}
+
         {showCopied && <AddressCopied onDismiss={() => setShowCopied(false)} />}
 
         <ScrollView
@@ -177,14 +179,13 @@ export default function UsdtTrxDepositScreen() {
               </View>
             </TouchableOpacity>
             <View style={styles.headerGroup}>
-              <Text style={styles.headerTitle}>Deposit USDT</Text>
-              <Text style={styles.headerSubtitle}>Tron Network</Text>
+              <Text style={styles.headerTitle}>Deposit ETH (BSC)</Text>
             </View>
             <View style={styles.headerSpacer} />
           </View>
 
           <View style={styles.subtitleSection}>
-            <Text style={styles.subtitle}>Scan the QR code to get Deposit address</Text>
+            <Text style={styles.subtitle}>Scan the QR code to get BSC (BEP20) deposit address</Text>
           </View>
 
           <View style={styles.qrSection}>
@@ -192,7 +193,7 @@ export default function UsdtTrxDepositScreen() {
               {isLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color={Colors.primary} />
-                  <Text style={styles.loadingText}>Loading USDT address...</Text>
+                  <Text style={styles.loadingText}>Loading BSC address...</Text>
                 </View>
               ) : qrCodeData ? (
                 <Image source={{ uri: qrCodeData }} style={styles.qrCodeImage} resizeMode="contain" />
@@ -228,10 +229,6 @@ export default function UsdtTrxDepositScreen() {
               <Text style={styles.detailLabel}>Network</Text>
               <Text style={styles.detailValue}>{network}</Text>
             </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Token Standard</Text>
-              <Text style={styles.detailValue}>TRC-20</Text>
-            </View>
             {depositData?.walletReferenceId && (
               <View style={[styles.detailRow, styles.lastDetailRow]}>
                 <Text style={styles.detailLabel}>Wallet ID</Text>
@@ -241,13 +238,12 @@ export default function UsdtTrxDepositScreen() {
           </View>
 
           <View style={styles.warningSection}>
-            <View style={styles.warningContainer}>
-              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-              <Text style={styles.warningText}>
-                Only send USDT on the Tron network to this address. 
-                Sending USDT from other networks (like Ethereum, BSC, or Polygon) may result in permanent loss of funds.
-              </Text>
-            </View>
+            <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
+            <Text style={styles.warningText}>
+              • Only send ETH on BSC (BEP20) network to this address{'\n'}
+              • Sending from other networks may result in loss of funds{'\n'}
+              • Ensure your wallet supports BSC (BEP20) before sending
+            </Text>
           </View>
 
           <View style={styles.shareSection}>
@@ -330,13 +326,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.medium,
     fontSize: 18,
     textAlign: 'center',
-  },
-  headerSubtitle: {
-    color: Colors.text.secondary,
-    fontFamily: Typography.regular,
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 2,
   },
   subtitleSection: {
     paddingHorizontal: horizontalPadding,
@@ -482,11 +471,9 @@ const styles = StyleSheet.create({
   warningSection: {
     paddingHorizontal: horizontalPadding,
     paddingVertical: 15,
-  },
-  warningContainer: {
-    backgroundColor: '#FEF3CD',
+    marginHorizontal: horizontalPadding,
+    backgroundColor: '#FEF3C7',
     borderRadius: 12,
-    padding: 16,
     borderWidth: 1,
     borderColor: '#F59E0B',
   },
@@ -494,12 +481,13 @@ const styles = StyleSheet.create({
     color: '#92400E',
     fontFamily: Typography.medium,
     fontSize: 14,
+    fontWeight: '600',
     marginBottom: 8,
   },
   warningText: {
     color: '#92400E',
     fontFamily: Typography.regular,
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 18,
   },
   shareSection: {

@@ -256,7 +256,7 @@ const BitcoinWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   // Updated to include BSC network
   const bitcoinNetworks = [
     { id: 'bitcoin', name: 'Bitcoin Network' },
-    { id: 'bsc', name: 'BSC Network' }
+    { id: 'bsc', name: 'BSC (Binance Smart Chain)' }
   ];
 
   const onRefresh = useCallback(async () => {

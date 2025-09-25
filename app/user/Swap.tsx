@@ -197,9 +197,9 @@ export default function SwapScreen({
   const getValidToTokens = (fromToken: string | null): string[] => {
     if (!fromToken) return [];
 
-    // NGNZ can swap with any crypto
+    // NGNZ can swap with both crypto and stablecoins
     if (fromToken === 'NGNZ') {
-      return Array.from(CRYPTOCURRENCIES);
+      return [...Array.from(CRYPTOCURRENCIES), ...Array.from(STABLECOINS)];
     }
 
     // Crypto can swap with NGNZ or stablecoins
@@ -316,8 +316,8 @@ export default function SwapScreen({
     
     if (!decimalPart) return numStr;
     
-    // For very small numbers, find first significant digit and truncate there
-    if (Math.abs(num) < 0.0001) {
+    // For numbers less than 1, show more significant digits
+    if (Math.abs(num) < 1) {
       // Find first non-zero digit position
       let firstNonZeroIndex = -1;
       for (let i = 0; i < decimalPart.length; i++) {
@@ -328,14 +328,21 @@ export default function SwapScreen({
       }
       
       if (firstNonZeroIndex !== -1) {
-        // Truncate at first significant digit (e.g., 0.0000897845 -> 0.00008)
-        const truncatedDecimals = decimalPart.substring(0, firstNonZeroIndex + 1);
+        // For very small numbers (< 0.0001), show first significant digit
+        if (Math.abs(num) < 0.0001) {
+          const truncatedDecimals = decimalPart.substring(0, firstNonZeroIndex + 1);
+          return `${integerPart}.${truncatedDecimals}`;
+        }
+        // For small numbers (< 1 but >= 0.0001), show more digits for readability
+        // e.g., 0.003935... -> 0.003935, 0.123456 -> 0.123456
+        const endIndex = Math.min(firstNonZeroIndex + 6, decimalPart.length);
+        const truncatedDecimals = decimalPart.substring(0, endIndex);
         return `${integerPart}.${truncatedDecimals}`;
       }
     }
     
-    // For regular decimals, truncate to first decimal place without rounding
-    // (e.g., 0.456 -> 0.4, 1.789 -> 1.7)
+    // For numbers >= 1, truncate to first decimal place without rounding
+    // (e.g., 1.789 -> 1.7, 12.456 -> 12.4)
     const truncatedDecimals = decimalPart.substring(0, 1);
     return `${integerPart}.${truncatedDecimals}`;
   };
@@ -473,6 +480,8 @@ export default function SwapScreen({
         ? await createNGNZQuote(selectedFromToken.symbol, selectedToToken.symbol, rawAmount, 'SELL')
         : await createCryptoQuote(selectedFromToken.symbol, selectedToToken.symbol, rawAmount, 'SELL');
 
+      console.log('Quote Result:', JSON.stringify(quoteResult, null, 2)); // Debug log
+
       if (!quoteResult.success) {
         const errorMessage = quoteResult.error || 'Failed to create quote';
         
@@ -490,23 +499,31 @@ export default function SwapScreen({
         return;
       }
 
-      // Extract amountReceived - prefer deep path if necessary
+      // Extract amountReceived - try multiple possible paths
       let receiveAmount = quoteResult.data?.data?.amountReceived
         || quoteResult.data?.amountReceived
         || quoteResult.data?.data?.data?.amountReceived
-        || quoteResult.amountReceived;
+        || quoteResult.amountReceived
+        || quoteResult.data?.amount_received
+        || quoteResult.data?.data?.amount_received;
 
-      if (receiveAmount) {
+      console.log('Extracted receiveAmount:', receiveAmount); // Debug log
+
+      if (receiveAmount && receiveAmount > 0) {
         // store raw and formatted
         setToAmountRaw(Number(receiveAmount));
-        setToAmount(formatWithCommas(formatDisplayAmount(receiveAmount)));
+        const formattedAmount = formatWithCommas(formatDisplayAmount(receiveAmount));
+        setToAmount(formattedAmount);
+        console.log('Set toAmount to:', formattedAmount); // Debug log
       } else {
+        console.log('No valid receiveAmount found, setting to 0'); // Debug log
         setToAmount('0');
         setToAmountRaw(null);
       }
 
       setShowPreviewModal(true);
     } catch (error) {
+      console.error('Error in handleCreateQuote:', error); // Debug log
       showError('An error occurred while creating the quote', 'server', 'Error');
     }
   };
@@ -732,17 +749,17 @@ export default function SwapScreen({
         validTokens={tokenSelectorType === 'to' ? getValidToTokens(selectedFromToken?.symbol || null) : undefined}
       />
 
-      {/* Preview Modal: PASS RAW QUOTE & LOADING */}
+      {/* Preview Modal: Pass the exact amounts as they appear in the input fields */}
       <SwapPreviewModal 
         visible={showPreviewModal} 
         onClose={() => setShowPreviewModal(false)} 
         onConfirm={handleAcceptQuote}
         quote={currentQuote}
         loading={currentQuoteLoading}
-        // keep fallbacks for readability if quote doesn't include the values
-        fromAmount={formatDisplayAmount((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0)} 
+        // Pass the exact amounts as displayed in the input fields without any formatting
+        fromAmount={fromAmount} 
         fromToken={selectedFromToken?.symbol || ''} 
-        toAmount={formatDisplayAmount((toAmountRaw ?? parseFloat(unformat(toAmount))) || 0)} 
+        toAmount={toAmount === '0' ? '0' : toAmount} 
         toToken={selectedToToken?.symbol || ''} 
         rate={`1 ${selectedFromToken?.symbol} = ${formatDisplayAmount( (((toAmountRaw ?? parseFloat(unformat(toAmount))) || 0) / ((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 1)) )} ${selectedToToken?.symbol}`} 
       />

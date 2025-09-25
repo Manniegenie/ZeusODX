@@ -143,15 +143,6 @@ const ProfileScreen: React.FC = () => {
     router.push('/kyc/kyc-upgrade');
   };
 
-  const handleTermsConditions = (): void => {
-    if (isAnyOperationInProgress) return;
-    router.push('/profile/terms-conditions');
-  };
-
-  const handlePrivacyPolicy = (): void => {
-    if (isAnyOperationInProgress) return;
-    router.push('/profile/privacy-policy');
-  };
 
   const handle2FAToggle = (value: boolean): void => {
     if (isAnyOperationInProgress) return;
@@ -272,8 +263,6 @@ const ProfileScreen: React.FC = () => {
       id: 'other',
       options: [
         { id: 'update-kyc', title: 'Update KYC', iconSrc: kycIcon, hasChevron: true, onPress: handleUpdateKYC },
-        { id: 'terms-conditions', title: 'Terms & Conditions', iconSrc: termsIcon, hasChevron: true, onPress: handleTermsConditions },
-        { id: 'privacy-policy', title: 'Privacy Policy', iconSrc: privacyIcon, hasChevron: true, onPress: handlePrivacyPolicy },
       ],
     },
     {

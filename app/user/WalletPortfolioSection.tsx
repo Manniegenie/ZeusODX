@@ -15,6 +15,7 @@ import { Layout } from '../../constants/Layout';
 import { useDashboard } from '../../hooks/useDashboard';
 import SelectTokenModal, { WalletOption } from '../../components/SelectToken';
 import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
+import DashboardModals from './DashboardModals';
 
 // Assets
 const depositIcon    = require('../../components/icons/deposit-icon.png');
@@ -44,52 +45,33 @@ export default function WalletPortfolioSection({
   // Dashboard-derived data
   const { totalPortfolioBalance } = useDashboard();
   const safeBalance = totalPortfolioBalance || 0;
-  const formattedUsdBalance = `$${safeBalance.toLocaleString('en-US', {
+  const formattedUsdBalance = `${safeBalance.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 
-  // Local modal + selection state
+  // Modal state management - matching main dashboard exactly
+  const [showWalletModal, setShowWalletModal] = useState(false);
   const [showSelectTokenModal, setShowSelectTokenModal] = useState(false);
-  const [showDepositTokenModal, setShowDepositTokenModal] = useState(false);
   const [showTransferMethodModal, setShowTransferMethodModal] = useState(false);
   const [selectedToken, setSelectedToken] = useState<WalletOption | null>(null);
 
-  // Only three quick actions
+  // Quick actions
   const quickLinks: QuickLink[] = [
     { id: 'deposit',   title: 'Deposit',   icon: depositIcon },
     { id: 'transfer',  title: 'Transfer',  icon: transferIcon },
     { id: 'buy-sell',  title: 'Buy/Sell',  icon: swapIcon, route: '/user/Swap' },
   ];
 
-  // ----- Actions -----
+  // Quick link handler - exactly matching main dashboard pattern
   const handleQuickLinkPress = (link: QuickLink) => {
-    switch (link.id) {
-      case 'deposit':
-        setShowDepositTokenModal(true);
-        break;
-      case 'transfer':
-        setShowSelectTokenModal(true);
-        break;
-      case 'buy-sell':
-        if (link.route) router.push(link.route);
-        break;
+    if (link.id === 'deposit') {
+      setShowWalletModal(true);
+    } else if (link.id === 'transfer') {
+      setShowSelectTokenModal(true);
+    } else {
+      if (link.route) router.push(link.route);
     }
-  };
-
-  // Deposit flow
-  const handleSelectTokenForDeposit = (token: WalletOption) => {
-    setSelectedToken(token);
-    setShowDepositTokenModal(false);
-
-    router.push({
-      pathname: '/wallet/deposit',
-      params: {
-        tokenId: token.id,
-        tokenName: token.name,
-        tokenSymbol: token.symbol,
-      },
-    });
   };
 
   // Transfer flow
@@ -132,10 +114,6 @@ export default function WalletPortfolioSection({
   };
 
   // Close helpers
-  const closeDepositModal = () => {
-    setShowDepositTokenModal(false);
-    setSelectedToken(null);
-  };
   const closeSelectTokenModal = () => {
     setShowSelectTokenModal(false);
     setSelectedToken(null);
@@ -188,13 +166,19 @@ export default function WalletPortfolioSection({
         </View>
       </View>
 
-      {/* Modals */}
-      <SelectTokenModal
-        visible={showDepositTokenModal}
-        onClose={closeDepositModal}
-        onSelectToken={handleSelectTokenForDeposit}
-        title="Select Token to Deposit"
+      {/* Dashboard Modals - using same component as main dashboard */}
+      <DashboardModals
+        showTransferModal={false} // Not used in wallet section
+        showWalletModal={showWalletModal}
+        onCloseTransferModal={() => {}} // Not used in wallet section
+        onCloseWalletModal={() => setShowWalletModal(false)}
+        onTransferMethodPress={() => router.push('/user/come-soon')}
+        onWalletOptionPress={() => router.push('/user/come-soon')}
+        onActionButtonPress={() => router.push('/user/come-soon')}
+        onWalletTabPress={() => router.push('/user/come-soon')}
       />
+
+      {/* Transfer-specific modals */}
       <SelectTokenModal
         visible={showSelectTokenModal}
         onClose={closeSelectTokenModal}

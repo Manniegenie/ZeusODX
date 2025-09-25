@@ -17,7 +17,8 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "ZeusODX uses the camera for identity verification and biometric authentication.",
-        "NSFaceIDUsageDescription": "Face ID may be used for secure authentication."
+        "NSFaceIDUsageDescription": "Face ID may be used for secure authentication.",
+        "UIBackgroundModes": ["remote-notification"]
       }
     },
     "android": {
@@ -30,7 +31,11 @@
       "permissions": [
         "INTERNET",
         "CAMERA",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_NETWORK_STATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "WAKE_LOCK",
+        "com.google.android.c2dm.permission.RECEIVE"
       ]
     },
     "web": {
@@ -60,6 +65,15 @@
           "ios": {
             "deploymentTarget": "15.1"
           }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/app-icon.png",
+          "color": "#35297F",
+          "sounds": [],
+          "mode": "production"
         }
       ]
     ],

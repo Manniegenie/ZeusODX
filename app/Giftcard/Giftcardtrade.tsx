@@ -685,14 +685,20 @@ const GiftcardTradeScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
+          {/* Header - Updated to match BTC screen */}
           <View style={styles.header}>
-            <TouchableOpacity style={styles.back} onPress={handleGoBack} activeOpacity={0.7}>
+            <TouchableOpacity 
+              style={styles.back} 
+              onPress={handleGoBack} 
+              activeOpacity={0.7}
+              delayPressIn={0}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
               <Text style={styles.backText}>←</Text>
             </TouchableOpacity>
 
             <Text style={styles.headerTitle}>{brand}</Text>
-            <View style={{ width: 40 }} />
+            <View style={styles.headerRight} />
           </View>
 
           {/* Country */}
@@ -946,14 +952,24 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 16 },
 
+  // Header - Updated to match BTC screen
   header: {
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 15,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  back: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
+  back: { 
+    width: 48,  // Increased from 40
+    height: 48, // Increased from 40
+    justifyContent: 'center', 
+    alignItems: 'center',
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Very subtle background instead of transparent
+    overflow: 'hidden', // Better Android performance
+  },
   backText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
   headerTitle: {
     flex: 1,
@@ -964,6 +980,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 16,
   },
+  headerRight: { width: 48 }, // Updated to match new back button width
 
   label: {
     color: Colors.text?.secondary || '#6B7280',

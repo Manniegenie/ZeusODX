@@ -1,4 +1,4 @@
-// screens/history/TransactionHistoryScreen.tsx
+// screens/history/SpecificTransactionHistoryScreen.tsx
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar,
@@ -20,21 +20,8 @@ type TokenDetails = {
   narration?: string;
   category?: 'token';
 };
-type UtilityDetails = {
-  orderId?: string;
-  requestId?: string;
-  productName?: string;
-  quantity?: number | string;
-  network?: string;
-  customerInfo?: string;
-  billType?: string;
-  paymentCurrency?: string;
-  category?: 'utility';
-};
-type APIDetail =
-  | TokenDetails
-  | UtilityDetails
-  | (Record<string, any> & { category?: 'token' | 'utility' });
+
+type APIDetail = TokenDetails | (Record<string, any> & { category?: 'token' });
 
 type APITransaction = {
   id: string;
@@ -47,13 +34,12 @@ type APITransaction = {
 };
 
 const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const BILL_CATEGORIES = ['Airtime','Data','Cable','Electricity'];
 
 const TransactionHistoryScreen = () => {
   const router = useRouter();
   const { currency, tokenName } = useLocalSearchParams();
 
-  // Months (last 12)
+  // Generate months (last 12)
   const availableMonths = (() => {
     const months: { id: string; label: string; year: number; monthIndex: number }[] = [];
     const now = new Date();
@@ -65,10 +51,10 @@ const TransactionHistoryScreen = () => {
     return months;
   })();
 
-  // UI filters
+  // UI filters - FIXED: Only token-specific categories
   const [selectedMonth, setSelectedMonth] = useState(availableMonths[0]?.label || '');
   const [selectedCategory, setSelectedCategory] = useState<
-    'All Categories' | 'Deposit' | 'Transfer' | 'Swap' | 'Airtime' | 'Data' | 'Cable' | 'Electricity'
+    'All Categories' | 'Deposit' | 'Transfer' | 'Swap'
   >('All Categories');
   const [selectedStatus, setSelectedStatus] = useState<'All Status' | 'Successful' | 'Pending' | 'Failed'>('All Status');
   const [modalType, setModalType] = useState<null | 'category' | 'status' | 'month'>(null);
@@ -99,6 +85,21 @@ const TransactionHistoryScreen = () => {
     };
   };
 
+  // FIXED: Proper filter mapping - let the hook handle the mapping
+  const toServerFilters = () => {
+    const statusMap: Record<string, string | undefined> = {
+      Successful: 'SUCCESSFUL',
+      Pending: 'PENDING',
+      Failed: 'FAILED',
+      'All Status': undefined
+    };
+    
+    return {
+      category: selectedCategory, // ✅ Pass category as-is, let hook handle mapping
+      status: statusMap[selectedStatus],
+    };
+  };
+
   // Initial & month-change refetch
   useEffect(() => {
     const { startDate, endDate } = getMonthRange(selectedMonth);
@@ -114,20 +115,6 @@ const TransactionHistoryScreen = () => {
     refreshTransactions({ startDate, endDate, ...serverFilters });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory, selectedStatus]);
-
-  const toServerFilters = () => {
-    const type = mapCategoryToType(selectedCategory) || undefined;
-    const statusMap: Record<string, string | undefined> = {
-      Successful: 'SUCCESSFUL',
-      Pending: 'PENDING',
-      Failed: 'FAILED',
-      'All Status': undefined
-    };
-    const status = statusMap[selectedStatus];
-    // If bill category, send it so the hook routes to bills endpoint
-    const category = BILL_CATEGORIES.includes(selectedCategory) ? selectedCategory : (type ? undefined : 'All Categories');
-    return { type, status, category };
-  };
 
   // UI events
   const handleGoBack = () => router.back();
@@ -146,17 +133,14 @@ const TransactionHistoryScreen = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTransactions, selectedMonth, selectedCategory, selectedStatus]);
 
-  // Options
+  // FIXED: Only token-specific categories
   const categories = [
     { id: 'all', label: 'All Categories' },
     { id: 'deposit', label: 'Deposit' },
-    { id: 'transfer', label: 'Transfer' },
+    { id: 'transfer', label: 'Transfer' }, // Maps to WITHDRAWAL internally
     { id: 'swap', label: 'Swap' },
-    { id: 'airtime', label: 'Airtime' },
-    { id: 'data', label: 'Data' },
-    { id: 'cable', label: 'Cable' },
-    { id: 'electricity', label: 'Electricity' },
   ];
+  
   const statuses = [
     { id: 'all', label: 'All Status' },
     { id: 'successful', label: 'Successful' },
@@ -170,7 +154,6 @@ const TransactionHistoryScreen = () => {
       case 'DEPOSIT': return 'Deposit';
       case 'WITHDRAWAL': return 'Withdrawal';
       case 'SWAP': return 'Swap';
-      case 'BILL_PAYMENT': return 'Bill Payment';
       default: return t || 'Unknown';
     }
   };
@@ -238,25 +221,6 @@ const TransactionHistoryScreen = () => {
     return 0;
   };
 
-  const displayBillType = (tx: any): string | undefined => {
-    const d = tx?.details || {};
-    const raw =
-      tx?.billType ||
-      tx?.utilityType ||
-      d.billCategory ||
-      d.billType ||
-      d.productName ||
-      tx?.category ||
-      '';
-    if (!raw) return undefined;
-    const v = String(raw).toLowerCase();
-    if (v.includes('airtime')) return 'Airtime';
-    if (v.includes('data')) return 'Data';
-    if (v.includes('cable') || v.includes('tv') || v.includes('dstv') || v.includes('gotv') || v.includes('startimes')) return 'Cable';
-    if (v.includes('electric')) return 'Electricity';
-    return String(raw).charAt(0).toUpperCase() + String(raw).slice(1);
-  };
-
   const toAPITransaction = (tx: any): APITransaction => {
     const serviceType = String(tx?.type || '');
     const serviceStatus = String(tx?.status || '');
@@ -269,41 +233,21 @@ const TransactionHistoryScreen = () => {
     const amountStr = isNaira ? `${sign}₦${prettyAmt}` : `${sign}${prettyAmt} ${symbol}`;
     const dateText = tx?.formattedDate || (tx?.createdAt ? new Date(tx.createdAt).toLocaleString('en-NG') : '—');
 
-    let details: APIDetail = {};
-    let uiType = mapServiceTypeToUI(serviceType);
-
-    if (serviceType === 'BILL_PAYMENT') {
-      const d = tx?.details || {};
-      uiType = displayBillType(tx) || 'Bill Payment';
-      details = {
-        category: 'utility',
-        orderId: d.orderId || d.order_id || tx?.orderId,
-        requestId: d.requestId || d.request_id || tx?.requestId,
-        productName: d.productName || d.product || tx?.productName,
-        quantity: d.quantity || d.units || tx?.quantity,
-        network: d.network || d.provider || tx?.network || tx?.provider,
-        customerInfo: d.customerInfo || d.customerPhone || d.phone || d.meterNo || d.account,
-        billType: d.billType || d.type || displayBillType(tx),
-        paymentCurrency: d.paymentCurrency || tx?.paymentCurrency || symbol,
-      } as UtilityDetails;
-    } else {
-      const d = tx?.details || {};
-      details = {
-        category: 'token',
-        transactionId: d.transactionId || tx?.transactionId || tx?.txId || tx?.externalId || tx?.reference || tx?.id || tx?._id,
-        currency: symbol,
-        network: d.network || tx?.network || tx?.chain || tx?.blockchain,
-        address: d.address || tx?.address || tx?.walletAddress || tx?.to || tx?.toAddress || tx?.receivingAddress,
-        hash: d.hash || tx?.hash || tx?.txHash || tx?.transactionHash,
-        fee: d.fee || tx?.fee || tx?.networkFee || tx?.gasFee || tx?.txFee,
-        narration: d.narration || tx?.narration || tx?.note || tx?.description || tx?.memo || tx?.reason,
-      } as TokenDetails;
-      if (serviceType === 'SWAP') uiType = 'Swap';
-    }
+    const d = tx?.details || {};
+    const details: TokenDetails = {
+      category: 'token',
+      transactionId: d.transactionId || tx?.transactionId || tx?.txId || tx?.externalId || tx?.reference || tx?.id || tx?._id,
+      currency: symbol,
+      network: d.network || tx?.network || tx?.chain || tx?.blockchain,
+      address: d.address || tx?.address || tx?.walletAddress || tx?.to || tx?.toAddress || tx?.receivingAddress,
+      hash: d.hash || tx?.hash || tx?.txHash || tx?.transactionHash,
+      fee: d.fee || tx?.fee || tx?.networkFee || tx?.gasFee || tx?.txFee,
+      narration: d.narration || tx?.narration || tx?.note || tx?.description || tx?.memo || tx?.reason,
+    };
 
     return {
       id: (tx?.id || tx?._id || tx?.transactionId || tx?.reference || tx?.externalId || '') + '',
-      type: uiType,
+      type: mapServiceTypeToUI(serviceType),
       status: mapServiceStatusToUI(serviceStatus),
       amount: amountStr,
       date: dateText,
@@ -312,29 +256,7 @@ const TransactionHistoryScreen = () => {
     };
   };
 
-  const getFilteredTransactions = () => {
-    let filtered = [...transactions];
-
-    if (selectedCategory !== 'All Categories') {
-      const type = mapCategoryToType(selectedCategory);
-      if (type) {
-        filtered = filtered.filter((tx: any) => tx.type === type);
-      } else if (BILL_CATEGORIES.includes(selectedCategory)) {
-        filtered = filtered.filter((tx: any) => {
-          if (tx.type !== 'BILL_PAYMENT') return false;
-          const label = (displayBillType(tx) || '').toLowerCase();
-          return label === selectedCategory.toLowerCase();
-        });
-      }
-    }
-
-    if (selectedStatus !== 'All Status') {
-      const svc = { Successful: 'SUCCESSFUL', Pending: 'PENDING', Failed: 'FAILED' }[selectedStatus];
-      if (svc) filtered = filtered.filter((tx: any) => tx.status === svc);
-    }
-
-    return filtered;
-  };
+  // REMOVED: Client-side filtering since backend should handle it properly now
 
   // Filter sheet component
   const FilterModal = ({
@@ -408,7 +330,8 @@ const TransactionHistoryScreen = () => {
       );
     }
 
-    const list = getFilteredTransactions();
+    // Use transactions directly from hook since backend filtering should work
+    const list = transactions;
     if (list.length === 0) {
       return (
         <View style={styles.emptyStateContainer}>
@@ -425,7 +348,7 @@ const TransactionHistoryScreen = () => {
           const symbol = tx?.currency || tx?.symbol || tx?.asset || 'NGN';
           const formattedAmount = formatAmountForDisplay(amountNum, symbol);
           const prefix = getTransactionPrefix(tx.type, tx.formattedAmount);
-          const humanType = tx.type === 'BILL_PAYMENT' ? (displayBillType(tx) || 'Bill Payment') : mapServiceTypeToUI(tx.type);
+          const humanType = mapServiceTypeToUI(tx.type);
 
           return (
             <TouchableOpacity
@@ -435,7 +358,7 @@ const TransactionHistoryScreen = () => {
               onPress={() => {
                 const apiTx = toAPITransaction(tx);
                 router.push({
-                  pathname: '/history/TransactionReceipt', // ensure app/history/receipt.tsx exists (re-exports TransactionReceiptScreen)
+                  pathname: '/history/TransactionReceipt',
                   params: {
                     tx: encodeURIComponent(JSON.stringify(apiTx)),
                     raw: encodeURIComponent(JSON.stringify(tx)),
@@ -530,6 +453,7 @@ const TransactionHistoryScreen = () => {
   );
 };
 
+// Styles remain the same...
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F0FF' },
   safeArea: { flex: 1 },
@@ -539,23 +463,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#F3F0FF',
   },
   backButton: { 
-    width: 48,  // Increased from 40
-    height: 48, // Increased from 40
-    justifyContent: 'center', 
-    alignItems: 'center',
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Very subtle background instead of transparent
-    overflow: 'hidden', // Better Android performance
+    width: 48, height: 48, justifyContent: 'center', alignItems: 'center',
+    borderRadius: 24, backgroundColor: 'rgba(0, 0, 0, 0.02)', overflow: 'hidden',
   },
   backButtonText: { fontSize: 24, color: '#1F2937', fontWeight: '400' },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#1F2937', flex: 1, textAlign: 'center', marginRight: 48 }, // Updated marginRight
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#1F2937', flex: 1, textAlign: 'center', marginRight: 48 },
   headerRight: { width: 0 },
-
   dateSelector: { alignItems: 'center', paddingVertical: 20 },
   monthSelector: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
   monthText: { fontSize: 16, fontWeight: '600', color: '#1F2937', marginRight: 8 },
   dropdownIcon: { fontSize: 12, color: '#6B7280', fontWeight: '500' },
-
   filterSection: { flexDirection: 'row', paddingHorizontal: 16, gap: 12, marginBottom: 20 },
   filterButton: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -563,7 +480,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#E5E7EB',
   },
   filterText: { fontSize: 14, color: '#6B7280', fontWeight: '400' },
-
   transactionsContainer: { paddingHorizontal: 16, paddingBottom: 20 },
   transactionsList: { borderRadius: 12, paddingHorizontal: 16 },
   transactionItem: {
@@ -577,19 +493,15 @@ const styles = StyleSheet.create({
   transactionAmount: { fontSize: 14, color: '#1F2937', fontWeight: '500', marginBottom: 4 },
   statusContainer: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   transactionStatus: { fontSize: 12, fontWeight: '500' },
-
   loadingContainer: { alignItems: 'center', paddingVertical: 60 },
   loadingText: { fontSize: 16, color: '#6B7280', marginTop: 12 },
-
   errorContainer: { alignItems: 'center', paddingVertical: 60 },
   errorText: { fontSize: 16, color: '#EF4444', marginBottom: 16, textAlign: 'center' },
   retryButton: { backgroundColor: '#35297F', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
   retryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-
   emptyStateContainer: { alignItems: 'center', paddingVertical: 60 },
   emptyStateImage: { width: 160, height: 156, marginBottom: 24, resizeMode: 'contain' },
   emptyStateText: { fontSize: 16, color: '#6B7280', fontWeight: '400', textAlign: 'center' },
-
   overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },
   modalContainer: {
     backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '50%', minHeight: 300,

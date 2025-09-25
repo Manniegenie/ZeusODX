@@ -1,35 +1,35 @@
 // app/user/USDCWalletScreen.tsx
-import React, { useCallback, useState, useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  RefreshControl,
   ActivityIndicator,
-  ImageBackground
+  Image,
+  ImageBackground,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
-import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import NetworkSelectionModal from '../../components/Network';
-import { Typography } from '../../constants/Typography';
+import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import { useBalance } from '../../hooks/useWallet';
+import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
+import { useBalance } from '../../hooks/useWallet';
 
-import usdcIcon from '../../components/icons/usdc-icon.png';
-import transferIcon from '../../components/icons/transfer-icon.png';
-import swapIcon from '../../components/icons/swap-icon.png';
+import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
 import depositIcon from '../../components/icons/deposit-icon.png';
 import emptyStateIcon from '../../components/icons/empty-state.png';
-import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
+import swapIcon from '../../components/icons/swap-icon.png';
+import transferIcon from '../../components/icons/transfer-icon.png';
+import usdcIcon from '../../components/icons/usdc-icon.png';
 
 // -------------------- Types to match History/Receipt --------------------
 type TokenDetails = {
@@ -251,16 +251,12 @@ const USDCWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 
-  // -------------------- Available networks (added requested networks) --------------------
-  const usdcNetworks = [
-    { id: 'bsc', name: 'BSC (Binance Smart Chain)' },
-    { id: 'ethereum', name: 'Ethereum Network' },
-    { id: 'base', name: 'Base' },
-    { id: 'arbitrum', name: 'Arbitrum One' },
-    { id: 'avax', name: 'Avax C-Chain' },
-    { id: 'polygon', name: 'Polygon (MATIC)' },
-    { id: 'solana', name: 'Solana' },
-  ];
+  // -------------------- Available networks (removed polygon, avax, solana, base) --------------------
+const usdcNetworks = [
+  { id: 'ethereum', name: 'Ethereum (ERC20)' },
+  { id: 'arbitrum', name: 'Arbitrum One' },
+  { id: 'bsc', name: 'BSC (Binance Smart Chain)' },
+];
 
   const onRefresh = useCallback(async () => {
     await Promise.all([refreshBalances(), refreshTransactions()]);
@@ -310,37 +306,23 @@ const USDCWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     setShowTransferMethodModal(false);
   };
 
-  // -------------------- Network selection routing --------------------
-  const handleNetworkSelect = (network: { id: string }) => {
-    // Map network.id to deposit route
-    switch ((network.id || '').toLowerCase()) {
-      case 'bsc':
-        router.push('../deposits/usdc-bsc');
-        break;
-      case 'ethereum':
-        router.push('../deposits/usdc-eth');
-        break;
-      case 'base':
-        router.push('../deposits/usdc-base');
-        break;
-      case 'arbitrum':
-        router.push('../deposits/usdc-arbitrum');
-        break;
-      case 'avax':
-        router.push('../deposits/usdc-avax');
-        break;
-      case 'polygon':
-        router.push('../deposits/usdc-polygon');
-        break;
-      case 'solana':
-        router.push('../deposits/usdc-solana');
-        break;
-      default:
-        // fallback: open network modal again or route to a generic deposit page
-        router.push('../deposits/usdc-eth');
-    }
-    setShowNetworkModal(false);
-  };
+  // -------------------- Network selection routing (maintaining exact route format) --------------------
+const handleNetworkSelect = (network: { id: string }) => {
+  switch ((network.id || '').toLowerCase()) {
+    case 'ethereum':
+      router.push('../deposits/usdc-eth');
+      break;
+    case 'arbitrum':
+      router.push('../deposits/usdc-arbitrum');
+      break;
+    case 'bsc':
+      router.push('../deposits/usdc-bsc');
+      break;
+    default:
+      router.push('../deposits/usdc-eth');
+  }
+  setShowNetworkModal(false);
+};
 
   const handleViewAllTransactions = () => {
     router.push({

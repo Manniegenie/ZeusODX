@@ -1,4 +1,4 @@
-// app/user/TransactionHistoryScreen.tsx
+// app/user/TransactionHistoryScreen.tsx (General History)
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar,
@@ -14,8 +14,8 @@ const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct',
 
 const TransactionHistoryScreen = () => {
   const router = useRouter();
-  const { currency, tokenName } = useLocalSearchParams();
-
+  // NOTE: General history doesn't need a specific currency - it shows everything
+  
   // Generate available months (last 12 months)
   const generateAvailableMonths = () => {
     const months = [];
@@ -39,16 +39,19 @@ const TransactionHistoryScreen = () => {
   const [selectedMonth, setSelectedMonth] = useState(
     availableMonths[0]?.label || ''
   );
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
-  const [selectedStatus, setSelectedStatus] = useState('All Status');
-  const [modalType, setModalType] = useState(null); // 'category' | 'status' | 'month' | null
+  const [selectedCategory, setSelectedCategory] = useState<
+    'All Categories' | 'Deposit' | 'Transfer' | 'Swap' | 'Giftcard' | 'Airtime' | 'Data' | 'Cable' | 'Electricity'
+  >('All Categories');
+  const [selectedStatus, setSelectedStatus] = useState<'All Status' | 'Successful' | 'Pending' | 'Failed'>('All Status');
+  const [modalType, setModalType] = useState<null | 'category' | 'status' | 'month'>(null);
 
+  // FIXED: Pass 'ALL' as currency for general history to indicate we want all transactions
   const {
     transactions, loading, error, refreshTransactions, hasTransactions
-  } = useHistory(currency || 'AVAX', { defaultPageSize: 50 });
+  } = useHistory('ALL', { defaultPageSize: 50 });
 
   // Convert "Aug 2025" -> { startDate: '2025-08-01', endDate: '2025-08-31' }
-  const getMonthRange = (label) => {
+  const getMonthRange = (label: string) => {
     if (!label) return { startDate: null, endDate: null };
     const [m, y] = label.split(' ');
     const year = parseInt(y, 10);
@@ -58,7 +61,7 @@ const TransactionHistoryScreen = () => {
     // Use UTC to avoid timezone edge cases
     const start = new Date(Date.UTC(year, monthIndex, 1));
     const end = new Date(Date.UTC(year, monthIndex + 1, 0));
-    const pad = (n) => String(n).padStart(2, '0');
+    const pad = (n: number) => String(n).padStart(2, '0');
 
     return {
       startDate: `${start.getUTCFullYear()}-${pad(start.getUTCMonth() + 1)}-${pad(start.getUTCDate())}`,
@@ -66,14 +69,29 @@ const TransactionHistoryScreen = () => {
     };
   };
 
+  // SIMPLIFIED: Just pass the filters directly to the hook
+  const buildFilters = () => {
+    const statusMap: Record<string, string | undefined> = {
+      Successful: 'SUCCESSFUL',
+      Pending: 'PENDING', 
+      Failed: 'FAILED',
+      'All Status': undefined
+    };
+    
+    return {
+      category: selectedCategory,
+      status: statusMap[selectedStatus],
+    };
+  };
+
   // Fetch whenever the month, category, or status changes
   useEffect(() => {
     const { startDate, endDate } = getMonthRange(selectedMonth);
+    const filters = buildFilters();
     refreshTransactions({ 
       startDate, 
       endDate,
-      category: selectedCategory,
-      status: selectedStatus
+      ...filters
     });
   }, [selectedMonth, selectedCategory, selectedStatus, refreshTransactions]);
 
@@ -82,30 +100,30 @@ const TransactionHistoryScreen = () => {
   const handleCategorySelect = () => setModalType('category');
   const handleStatusSelect = () => setModalType('status');
 
-  const handleMonthSelection = (month) => {
+  const handleMonthSelection = (month: any) => {
     setSelectedMonth(month.label);
     setModalType(null);
   };
-  const handleCategorySelection = (category) => {
+  const handleCategorySelection = (category: any) => {
     setSelectedCategory(category.label);
     setModalType(null);
   };
-  const handleStatusSelection = (status) => {
+  const handleStatusSelection = (status: any) => {
     setSelectedStatus(status.label);
     setModalType(null);
   };
 
   const onRefresh = useCallback(async () => {
     const { startDate, endDate } = getMonthRange(selectedMonth);
+    const filters = buildFilters();
     await refreshTransactions({ 
       startDate, 
       endDate,
-      category: selectedCategory,
-      status: selectedStatus
+      ...filters
     });
   }, [refreshTransactions, selectedMonth, selectedCategory, selectedStatus]);
 
-  // Updated categories with gift card option
+  // CORRECT: All categories for general history
   const categories = [
     { id: 'all', label: 'All Categories' },
     { id: 'deposit', label: 'Deposit' },
@@ -125,7 +143,7 @@ const TransactionHistoryScreen = () => {
     { id: 'failed', label: 'Failed' },
   ];
 
-  const getTransactionPrefix = (type, formattedAmount) => {
+  const getTransactionPrefix = (type: string, formattedAmount?: string) => {
     if (type === 'DEPOSIT') return '+';
     if (type === 'WITHDRAWAL' || type === 'BILL_PAYMENT' || type === 'GIFTCARD') return '-';
     if (type === 'SWAP') {
@@ -137,17 +155,17 @@ const TransactionHistoryScreen = () => {
     return '';
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     if (status === 'SUCCESSFUL') return '#10B981';
     if (status === 'FAILED') return '#EF4444';
     return '#F59E0B';
   };
-  const getStatusBackgroundColor = (status) => {
+  const getStatusBackgroundColor = (status: string) => {
     if (status === 'SUCCESSFUL') return '#E8F5E8';
     if (status === 'FAILED') return '#FFE8E8';
     return '#FFF3E0';
   };
-  const formatTransactionType = (type, billType, cardType) => {
+  const formatTransactionType = (type: string, billType?: string, cardType?: string) => {
     switch (type) {
       case 'DEPOSIT': return 'Deposit';
       case 'WITHDRAWAL': return 'Withdrawal';
@@ -160,7 +178,7 @@ const TransactionHistoryScreen = () => {
       default: return type || 'Unknown';
     }
   };
-  const formatTransactionStatus = (status) => {
+  const formatTransactionStatus = (status: string) => {
     switch (status) {
       case 'SUCCESSFUL': return 'Successful';
       case 'FAILED': return 'Failed';
@@ -168,7 +186,7 @@ const TransactionHistoryScreen = () => {
       default: return status || 'Unknown';
     }
   };
-  const formatAmountForDisplay = (value, symbol) => {
+  const formatAmountForDisplay = (value: number, symbol: string) => {
     if (!symbol) return value.toString();
     switch (symbol) {
       case 'NGNZ':
@@ -188,14 +206,14 @@ const TransactionHistoryScreen = () => {
         return Number(value.toPrecision(3)).toString();
     }
   };
-  const extractAmountValue = (transaction) => {
+  const extractAmountValue = (transaction: any) => {
     const amountString = transaction.formattedAmount || '0';
     const cleanAmount = amountString.replace(/[+\-₦,\s]/g, '').replace(/[A-Z]/g, '').trim();
     return parseFloat(cleanAmount) || 0;
   };
 
-  // ===== Helpers for receipt navigation (mirrors NGNZWalletScreen) =====
-  const mapServiceTypeToUI = (t) => {
+  // ===== Helpers for receipt navigation =====
+  const mapServiceTypeToUI = (t: string) => {
     switch (t) {
       case 'DEPOSIT': return 'Deposit';
       case 'WITHDRAWAL': return 'Withdrawal';
@@ -205,7 +223,7 @@ const TransactionHistoryScreen = () => {
       default: return t || 'Unknown';
     }
   };
-  const mapServiceStatusToUI = (s) => {
+  const mapServiceStatusToUI = (s: string) => {
     switch (s) {
       case 'SUCCESSFUL': return 'Successful';
       case 'FAILED': return 'Failed';
@@ -213,7 +231,7 @@ const TransactionHistoryScreen = () => {
       default: return s || 'Unknown';
     }
   };
-  const displayBillType = (tx) => {
+  const displayBillType = (tx: any) => {
     const d = tx?.details || {};
     const raw =
       tx?.billType ||
@@ -232,8 +250,8 @@ const TransactionHistoryScreen = () => {
     return String(raw).charAt(0).toUpperCase() + String(raw).slice(1);
   };
 
-  // Build the object TransactionReceipt expects
-  const toAPITransaction = (tx) => {
+  // FIXED: Build the object TransactionReceipt expects with proper swap parsing
+  const toAPITransaction = (tx: any) => {
     const serviceType = String(tx?.type || '');
     const serviceStatus = String(tx?.status || '');
     const amountNum = extractAmountValue(tx);
@@ -281,6 +299,60 @@ const TransactionHistoryScreen = () => {
         billType: d.billType || d.type || displayBillType(tx),
         paymentCurrency: d.paymentCurrency || tx?.paymentCurrency || symbol,
       };
+    } else if (serviceType === 'SWAP') {
+      // FIXED: Parse swap details from narration
+      const d = tx?.details || {};
+      const narration = d.narration || tx?.narration || tx?.description || '';
+      
+      // Parse narration like "Crypto Swap: 16.02517057 USDT to 0.0001425658690743243 BTC"
+      let fromAmount = '';
+      let fromCurrency = '';
+      let toAmount = '';
+      let toCurrency = '';
+      
+      if (narration.includes('Crypto Swap:')) {
+        const swapPart = narration.split('Crypto Swap:')[1]?.trim() || '';
+        const parts = swapPart.split(' to ');
+        
+        if (parts.length === 2) {
+          // Parse "from" part: "16.02517057 USDT"
+          const fromPart = parts[0].trim();
+          const fromMatch = fromPart.match(/^([\d.]+)\s+(.+)$/);
+          if (fromMatch) {
+            fromAmount = fromMatch[1];
+            fromCurrency = fromMatch[2];
+          }
+          
+          // Parse "to" part: "0.0001425658690743243 BTC"
+          const toPart = parts[1].trim();
+          const toMatch = toPart.match(/^([\d.]+)\s+(.+)$/);
+          if (toMatch) {
+            toAmount = toMatch[1];
+            toCurrency = toMatch[2];
+          }
+        }
+      }
+      
+      uiType = 'Swap';
+      details = {
+        category: 'token',
+        transactionId: d.transactionId || tx?.transactionId || tx?.txId || tx?.externalId || tx?.reference || tx?.id || tx?._id,
+        currency: symbol,
+        network: d.network || tx?.network || tx?.chain || tx?.blockchain,
+        address: d.address || tx?.address || tx?.walletAddress || tx?.to || tx?.toAddress || tx?.receivingAddress,
+        hash: d.hash || tx?.hash || tx?.txHash || tx?.transactionHash,
+        fee: d.fee || tx?.fee || tx?.networkFee || tx?.gasFee || tx?.txFee,
+        narration: narration,
+        // Add swap-specific fields for TransactionReceipt
+        swapDetails: {
+          fromAmount: fromAmount,
+          fromCurrency: fromCurrency,
+          toAmount: toAmount,
+          toCurrency: toCurrency,
+          rate: tx?.rate || d.rate,
+          exchangeRate: tx?.exchangeRate || d.exchangeRate,
+        }
+      };
     } else {
       const d = tx?.details || {};
       details = {
@@ -307,7 +379,14 @@ const TransactionHistoryScreen = () => {
     };
   };
 
-  const FilterModal = ({ visible, title, options, selectedValue, onSelect, onClose }) => (
+  const FilterModal = ({ visible, title, options, selectedValue, onSelect, onClose }: {
+    visible: boolean;
+    title: string;
+    options: any[];
+    selectedValue: string;
+    onSelect: (option: any) => void;
+    onClose: () => void;
+  }) => (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
@@ -373,6 +452,8 @@ const TransactionHistoryScreen = () => {
         </View>
       );
     }
+
+    // Use transactions directly from hook - let backend handle filtering
     const list = transactions;
     if (list.length === 0) {
       return (
@@ -384,7 +465,7 @@ const TransactionHistoryScreen = () => {
     }
     return (
       <View style={styles.transactionsList}>
-        {list.map((tx, idx) => {
+        {list.map((tx: any, idx: number) => {
           const amountValue = extractAmountValue(tx);
           const formattedAmount = formatAmountForDisplay(amountValue, tx.currency);
           const prefix = getTransactionPrefix(tx.type, tx.formattedAmount);
@@ -394,7 +475,7 @@ const TransactionHistoryScreen = () => {
               style={styles.transactionItem}
               activeOpacity={0.85}
               onPress={() => {
-                // Route exactly like NGNZWalletScreen
+                // Route exactly like before
                 const apiTx = toAPITransaction(tx);
                 router.push({
                   pathname: '/history/TransactionReceipt',
@@ -433,7 +514,7 @@ const TransactionHistoryScreen = () => {
     }
   })();
 
-  const displayTitle = tokenName ? `${tokenName} History` : 'Transaction History';
+  const displayTitle = 'Transaction History'; // General history always shows this title
 
   return (
     <View style={styles.container}>
@@ -498,7 +579,6 @@ const TransactionHistoryScreen = () => {
   );
 };
 
-// Styles remain the same...
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F0FF' },
   safeArea: { flex: 1 },

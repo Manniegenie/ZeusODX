@@ -11,6 +11,7 @@ import {
   Share,
   ScrollView,
   Platform,
+  Linking,
 } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import * as Print from 'expo-print';
@@ -42,6 +43,15 @@ type TokenDetails = {
   accountNumber?: string;
   amountSentToBank?: number | string;
   withdrawalFee?: number | string;
+  // NEW: Swap details
+  swapDetails?: {
+    fromAmount?: string;
+    fromCurrency?: string;
+    toAmount?: string;
+    toCurrency?: string;
+    rate?: string | number;
+    exchangeRate?: string | number;
+  };
 };
 
 type UtilityDetails = {
@@ -131,6 +141,56 @@ const prettyNetwork = (net?: string) => {
   return map[key] || net;
 };
 
+// NEW: Function to get blockchain explorer URL for hash
+const getExplorerUrl = (network?: string, hash?: string) => {
+  if (!network || !hash) return null;
+  
+  const net = String(network).toUpperCase().trim();
+  const explorerMap: Record<string, string> = {
+    // Ethereum variants
+    ETHEREUM: 'https://etherscan.io/tx/',
+    ETH: 'https://etherscan.io/tx/',
+    'ERC-20': 'https://etherscan.io/tx/',
+    ERC20: 'https://etherscan.io/tx/',
+    
+    // Tron variants  
+    TRON: 'https://tronscan.org/#/transaction/',
+    TRX: 'https://tronscan.org/#/transaction/',
+    'TRC-20': 'https://tronscan.org/#/transaction/',
+    TRC20: 'https://tronscan.org/#/transaction/',
+    
+    // BSC variants
+    BSC: 'https://bscscan.com/tx/',
+    BNB: 'https://bscscan.com/tx/',
+    'BEP-20': 'https://bscscan.com/tx/',
+    BEP20: 'https://bscscan.com/tx/',
+    BINANCE: 'https://bscscan.com/tx/',
+    'BINANCE SMART CHAIN': 'https://bscscan.com/tx/',
+    
+    // Polygon variants
+    POLYGON: 'https://polygonscan.com/tx/',
+    MATIC: 'https://polygonscan.com/tx/',
+    
+    // Avalanche variants
+    AVALANCHE: 'https://snowtrace.io/tx/',
+    AVALANCHE_C: 'https://snowtrace.io/tx/',
+    AVALANCHE_X: 'https://avascan.info/blockchain/x/tx/',
+    AVALANCHE_P: 'https://avascan.info/blockchain/p/tx/',
+    AVAX: 'https://snowtrace.io/tx/',
+    
+    // Bitcoin variants
+    BITCOIN: 'https://blockstream.info/tx/',
+    BTC: 'https://blockstream.info/tx/',
+    
+    // Solana variants
+    SOLANA: 'https://solscan.io/tx/',
+    SOL: 'https://solscan.io/tx/',
+  };
+  
+  const baseUrl = explorerMap[net];
+  return baseUrl ? `${baseUrl}${hash}` : null;
+};
+
 const formatAmtSym = (amount?: number | string, symbol?: string) => {
   if (amount === undefined || amount === null) return '—';
   const n = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -142,11 +202,11 @@ const formatAmtSym = (amount?: number | string, symbol?: string) => {
   return `${n.toLocaleString('en-US', { maximumFractionDigits: 8 })} ${s || ''}`.trim();
 };
 
-// Parse: "Swap 20000 NGNZ to 12.11754014 USDT"
+// Parse: "Swap 20000 NGNZ to 12.11754014 USDT" - kept for backward compatibility
 const parseSwapFromNarration = (narr?: string) => {
   if (!narr) return null;
   const r =
-    /(Swap|Swapped)\s+([\d.,]+)\s+([A-Za-z]+)\s+(?:to|for)\s+([\d.,]+)\s+([A-Za-z]+)/i;
+    /(Swap|Swapped|Crypto Swap:)\s+([\d.,]+)\s+([A-Za-z]+)\s+(?:to|for)\s+([\d.,]+)\s+([A-Za-z]+)/i;
   const m = narr.match(r);
   if (!m) return null;
   const fromAmount = parseFloat(m[2].replace(/,/g, ''));
@@ -178,7 +238,8 @@ const generateTransactionReceiptHTML = (
   category: 'token' | 'utility' | 'withdrawal',
   isNGNZWithdrawal: boolean,
   isSwap: boolean,
-  swapInfo?: any
+  swapInfo?: any,
+  rawNetwork?: string
 ) => {
   const currentDate = new Date().toLocaleString();
   
@@ -232,7 +293,12 @@ const generateTransactionReceiptHTML = (
     detailRows.push(`<tr><td>Network</td><td>${asText(merged.network)}</td></tr>`);
     
     if (merged.hash) {
-      detailRows.push(`<tr><td>Hash</td><td>${maskMiddle(asText(merged.hash))}</td></tr>`);
+      const explorerUrl = getExplorerUrl(rawNetwork, merged.hash as string);
+      if (explorerUrl) {
+        detailRows.push(`<tr><td>Hash</td><td><a href="${explorerUrl}" target="_blank" style="color: #35297F; text-decoration: underline;">${maskMiddle(asText(merged.hash))}</a></td></tr>`);
+      } else {
+        detailRows.push(`<tr><td>Hash</td><td>${maskMiddle(asText(merged.hash))}</td></tr>`);
+      }
     }
     if (merged.fee !== undefined && merged.fee !== null) {
       detailRows.push(`<tr><td>Fee</td><td>${asText(merged.fee)}</td></tr>`);
@@ -476,7 +542,39 @@ export default function TransactionReceiptScreen() {
     }
   };
 
+  // NEW: Handle opening hash in blockchain explorer
+  const handleOpenHash = async (network?: string, hash?: string) => {
+    if (!network || !hash) return;
+    
+    console.log('Opening hash for network:', network, 'hash:', hash); // Debug log
+    
+    const explorerUrl = getExplorerUrl(network, hash);
+    if (!explorerUrl) {
+      Alert.alert(
+        'No Explorer Available', 
+        `No blockchain explorer available for network: "${network}". Supported networks: Ethereum, Bitcoin, Tron, BSC, Polygon, Avalanche, Solana.`
+      );
+      return;
+    }
+
+    try {
+      const supported = await Linking.canOpenURL(explorerUrl);
+      if (supported) {
+        await Linking.openURL(explorerUrl);
+      } else {
+        Alert.alert('Cannot Open', 'Unable to open blockchain explorer');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open blockchain explorer');
+      console.error('Failed to open URL:', error);
+    }
+  };
+
   const d = (transaction?.details || {}) as TokenDetails & UtilityDetails;
+  
+  // Get raw network value before prettifying
+  const rawNetwork = pick(d.network, rawTx, ['network', 'chain', 'blockchain']) as string;
+  
   const merged: TokenDetails & UtilityDetails = {
     ...d,
     transactionId: pick(d.transactionId, rawTx, [
@@ -488,7 +586,7 @@ export default function TransactionReceiptScreen() {
       '_id',
     ]),
     currency: (pick(d.currency, rawTx, ['currency', 'symbol', 'asset']) || '') as string,
-    network: prettyNetwork(pick(d.network, rawTx, ['network', 'chain', 'blockchain']) as string),
+    network: prettyNetwork(rawNetwork),
     address: pick(d.address, rawTx, [
       'address',
       'walletAddress',
@@ -545,12 +643,31 @@ export default function TransactionReceiptScreen() {
       rawTx, 
       ['withdrawalFee', 'fee', 'charges']
     ),
+    
+    // Keep existing swap details from transaction details
+    swapDetails: d.swapDetails,
   };
 
+  // UPDATED: Enhanced swapInfo parsing with structured data priority
   const swapInfo = useMemo(() => {
     if (!isSwap) return null;
+    
+    // PRIORITY 1: Check if we have structured swap details from TransactionHistoryScreen
+    const swapDetails = (transaction?.details as any)?.swapDetails;
+    if (swapDetails && swapDetails.fromAmount && swapDetails.toCurrency) {
+      return {
+        fromAmount: parseFloat(swapDetails.fromAmount),
+        fromCurrency: swapDetails.fromCurrency,
+        toAmount: parseFloat(swapDetails.toAmount),
+        toCurrency: swapDetails.toCurrency,
+      };
+    }
+    
+    // PRIORITY 2: Fallback to parsing from narration (backward compatibility)
     const viaNarr = parseSwapFromNarration(String(merged.narration || ''));
     if (viaNarr) return viaNarr;
+    
+    // PRIORITY 3: Final fallback for basic swap info
     const fromCurrency = (
       merged.currency || pick(null, rawTx, ['currency', 'symbol', 'asset']) || ''
     )
@@ -568,7 +685,7 @@ export default function TransactionReceiptScreen() {
     return (fromCurrency || toCurrency)
       ? { fromAmount: undefined, fromCurrency, toAmount, toCurrency }
       : null;
-  }, [isSwap, merged.narration, merged.currency, rawTx]);
+  }, [isSwap, transaction?.details, merged.narration, merged.currency, rawTx]);
 
   const onShare = async () => {
     try {
@@ -584,7 +701,8 @@ export default function TransactionReceiptScreen() {
         cat, 
         isNGNZWithdrawal, 
         isSwap, 
-        swapInfo
+        swapInfo,
+        rawNetwork
       );
 
       // Generate PDF file from HTML using expo-print with explicit sizing
@@ -769,6 +887,8 @@ export default function TransactionReceiptScreen() {
                   value={maskMiddle(asText(merged.hash))}
                   copyableValue={typeof merged.hash === 'string' ? merged.hash : undefined}
                   onCopy={(v) => handleCopy('Hash', v)}
+                  isHashLink={true}
+                  onHashPress={() => handleOpenHash(rawNetwork, merged.hash as string)}
                 />
               )}
               {merged.fee !== undefined && merged.fee !== null && (
@@ -810,11 +930,15 @@ function Row({
   value,
   copyableValue,
   onCopy,
+  isHashLink = false,
+  onHashPress,
 }: {
   label: string;
   value: string;
   copyableValue?: string;
   onCopy?: (val: string) => void;
+  isHashLink?: boolean;
+  onHashPress?: () => void;
 }) {
   return (
     <View style={styles.row}>
@@ -822,9 +946,17 @@ function Row({
         {label}
       </Text>
       <View style={styles.rowValueWrap}>
-        <Text style={styles.rowValue} numberOfLines={1}>
-          {value}
-        </Text>
+        {isHashLink && onHashPress ? (
+          <TouchableOpacity onPress={onHashPress} activeOpacity={0.7}>
+            <Text style={[styles.rowValue, styles.linkText]} numberOfLines={1}>
+              {value}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={styles.rowValue} numberOfLines={1}>
+            {value}
+          </Text>
+        )}
         {copyableValue ? (
           <TouchableOpacity
             style={styles.copyButton}
@@ -922,6 +1054,12 @@ const styles = StyleSheet.create({
   },
   rowValueWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'flex-end' },
   rowValue: { color: '#111827', fontFamily: Typography.medium || 'System', fontSize: 13, textAlign: 'right', flexShrink: 1 },
+  
+  // NEW: Link styling for hash
+  linkText: {
+    color: '#35297F',
+    textDecorationLine: 'underline',
+  },
 
   ctaRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 8 },
   primaryButton: {

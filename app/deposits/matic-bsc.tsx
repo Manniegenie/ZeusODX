@@ -69,7 +69,7 @@ export default function MaticEthDepositScreen() {
 
   useEffect(() => {
     const fetchMATICAddress = async (): Promise<void> => {
-      const cachedAddress = getCachedAddress('POL', 'ETH');
+      const cachedAddress = getCachedAddress('MATIC', 'ETH');
       if (cachedAddress) {
         const addressData = cachedAddress.data || cachedAddress;
         setDepositData(addressData);
@@ -82,7 +82,7 @@ export default function MaticEthDepositScreen() {
 
   const handleGetMATICAddress = async (): Promise<void> => {
     try {
-      const result = await getDepositAddress('POL', 'ETH');
+      const result = await getDepositAddress('POL', 'BSC');
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
@@ -138,8 +138,8 @@ export default function MaticEthDepositScreen() {
     }
   };
 
-  const isLoading = isAddressLoading('MATIC', 'ETH') || supportedLoading;
-  const addressError = getAddressError('MATIC', 'ETH');
+  const isLoading = isAddressLoading('MATIC', 'BSC') || supportedLoading;
+  const addressError = getAddressError('MATIC', 'BSC');
   const isWalletSetupNeeded = addressError && addressError.includes('needs to be set up');
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
@@ -180,7 +180,7 @@ export default function MaticEthDepositScreen() {
             </TouchableOpacity>
             <View style={styles.headerGroup}>
               <Text style={styles.headerTitle}>Deposit MATIC</Text>
-              <Text style={styles.headerSubtitle}>Ethereum Network</Text>
+              <Text style={styles.headerSubtitle}>Binance Smart Chain Network</Text>
             </View>
             <View style={styles.headerSpacer} />
           </View>
@@ -232,7 +232,7 @@ export default function MaticEthDepositScreen() {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Token Standard</Text>
-              <Text style={styles.detailValue}>ERC-20</Text>
+              <Text style={styles.detailValue}>BEP20</Text>
             </View>
             {depositData?.walletReferenceId && (
               <View style={[styles.detailRow, styles.lastDetailRow]}>
@@ -246,8 +246,8 @@ export default function MaticEthDepositScreen() {
             <View style={styles.warningContainer}>
               <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
               <Text style={styles.warningText}>
-                Only send MATIC on the Ethereum network to this address. 
-                Sending MATIC from other networks (like Polygon or BSC) may result in permanent loss of funds.
+                Only send MATIC on the BSC network to this address. 
+                Sending MATIC from other networks (like Polygon or ETH) may result in permanent loss of funds.
               </Text>
             </View>
           </View>

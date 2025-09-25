@@ -247,7 +247,11 @@ const MaticWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     }
   }, [openNetworkModal]);
 
-  const maticNetworks = [{ id: 'ethereum', name: 'Ethereum Network' }];
+  // Properly include both Ethereum and BSC networks (mirrors USDT screen behaviour)
+  const maticNetworks = [
+    { id: 'ethereum', name: 'Ethereum Network' },
+    { id: 'bsc', name: 'BSC (Binance Smart Chain)' },
+  ];
 
   const onRefresh = useCallback(async () => {
     await Promise.all([refreshBalances(), refreshTransactions()]);
@@ -305,9 +309,16 @@ const MaticWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   };
 
   const handleNetworkSelect = (network: { id: string }) => {
+    // route to the correct deposit flow depending on selected network
     if (network.id === 'ethereum') {
       router.push('../deposits/matic-eth');
+    } else if (network.id === 'bsc') {
+      router.push('../deposits/matic-bsc');
+    } else {
+      // fallback: open generic deposit screen or close modal
+      router.push('../deposits/matic-eth');
     }
+
     setShowNetworkModal(false);
   };
 
@@ -448,7 +459,7 @@ const MaticWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
                           {prefix}{formattedAmount} {symbol}
                         </Text>
                         <View style={[styles.statusContainer, { backgroundColor: getStatusBackgroundColor(tx?.status) }]}>
-                          <Text style={[styles.transactionStatus, { color: getStatusColor(tx?.status) }]}>
+                          <Text style={[styles.transactionStatus, { color: getStatusColor(tx?.status) }]}> 
                             {mapServiceStatusToUI(tx?.status)}
                           </Text>
                         </View>
@@ -488,21 +499,20 @@ const styles = StyleSheet.create({
   headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { 
-    width: 48,  // Increased from 40
-    height: 48, // Increased from 40
+    width: 48,
+    height: 48,
     justifyContent: 'center', 
     alignItems: 'center',
     borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Very subtle background instead of transparent
-    overflow: 'hidden', // Better Android performance
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    overflow: 'hidden',
   },
   backButtonText: { fontSize: 20, color: Colors.text.primary },
   headerGroup: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' },
   iconImage: { width: 28, height: 28, resizeMode: 'cover' },
   headerTitle: { fontSize: 16, fontWeight: '600', color: Colors.text.primary },
-  headerRight: { width: 48 }, // Updated to match new back button width
+  headerRight: { width: 48 },
 
-  // Updated Balance Section Styles (Portfolio Style)
   balanceSection: { 
     paddingHorizontal: 16,
     paddingBottom: 16
@@ -554,7 +564,6 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
 
-  // Updated section padding for consistent alignment
   quickActionsSection: { 
     paddingHorizontal: 16, 
     paddingVertical: 16 
@@ -588,7 +597,6 @@ const styles = StyleSheet.create({
 
   transactionsList: { flex: 1 },
 
-  // Updated transaction item styles to match TokensSection formatting
   transactionItem: { 
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -50,18 +50,13 @@ export default function SwapPreviewModal({
     return () => clearInterval(timer);
   }, [visible]);
 
-  const formatAmount = (amt: string) => {
-    const num = parseFloat(amt) || 0;
-    return num.toFixed(4);
-  };
-
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.backdrop}>
         <View style={styles.modalContainer}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>You’re swapping</Text>
+            <Text style={styles.title}>You're swapping</Text>
             <TouchableOpacity onPress={onClose}>
               <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
@@ -69,7 +64,7 @@ export default function SwapPreviewModal({
 
           {/* FROM BOX */}
           <View style={styles.assetBox}>
-            <Text style={styles.assetAmount}>{formatAmount(fromAmount)} {fromToken}</Text>
+            <Text style={styles.assetAmount}>{fromAmount} {fromToken}</Text>
             <Image source={getIcon(fromToken)} style={styles.assetIcon} />
           </View>
 
@@ -77,7 +72,7 @@ export default function SwapPreviewModal({
 
           {/* TO BOX */}
           <View style={styles.assetBox}>
-            <Text style={styles.assetAmount}>{formatAmount(toAmount)} {toToken}</Text>
+            <Text style={styles.assetAmount}>{toAmount} {toToken}</Text>
             <Image source={getIcon(toToken)} style={styles.assetIcon} />
           </View>
 
