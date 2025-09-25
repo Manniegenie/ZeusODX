@@ -7,7 +7,7 @@ export function useDeposit() {
   const [loadingAddresses, setLoadingAddresses] = useState({});
   const [addressErrors, setAddressErrors] = useState({});
 
-  // Fetch supported tokens and networks
+  // Fetch supported tokens and networks - keeping your exact destructuring format
   const {
     data: supportedData,
     loading: supportedLoading,
@@ -60,6 +60,12 @@ export function useDeposit() {
       hasEthereum: networks.includes('ETH') || networks.includes('ETHEREUM'),
       hasBSC: networks.includes('BSC') || networks.includes('BINANCE'),
       hasTron: networks.includes('TRX') || networks.includes('TRON'),
+      // Add more network detection for new networks
+      hasPolygon: networks.includes('POLYGON') || networks.includes('MATIC'),
+      hasArbitrum: networks.includes('ARBITRUM') || networks.includes('ARB'),
+      hasOptimism: networks.includes('OPTIMISM') || networks.includes('OP'),
+      hasBase: networks.includes('BASE'),
+      hasAvalanche: networks.includes('AVALANCHE') || networks.includes('AVAX'),
       // Add icons/display info
       displayName: token === 'BTC' ? 'Bitcoin' :
                   token === 'ETH' ? 'Ethereum' :
@@ -202,15 +208,30 @@ export function useDeposit() {
   const getBNBAddress = useCallback((network = 'BSC') => 
     getDepositAddress('BNB', network), [getDepositAddress]);
 
-  // Validate token/network combination
+  // Validate token/network combination using live API data
   const isTokenNetworkSupported = useCallback((tokenSymbol, network) => {
-    return depositService.isTokenNetworkSupported(tokenSymbol, network);
-  }, []);
+    if (!supportedTokens || Object.keys(supportedTokens).length === 0) {
+      console.warn('No supported tokens loaded - validation may be inaccurate');
+      return true; // Let backend validate during actual request
+    }
 
-  // Get supported networks for a token
+    const token = tokenSymbol.toUpperCase();
+    const net = network.toUpperCase();
+    const supportedNetworks = supportedTokens[token];
+    
+    return supportedNetworks ? supportedNetworks.includes(net) : false;
+  }, [supportedTokens]);
+
+  // Get supported networks for a token using live API data
   const getSupportedNetworksForToken = useCallback((tokenSymbol) => {
-    return depositService.getSupportedNetworksForToken(tokenSymbol);
-  }, []);
+    if (!supportedTokens || Object.keys(supportedTokens).length === 0) {
+      console.warn('No supported tokens loaded');
+      return [];
+    }
+
+    const token = tokenSymbol.toUpperCase();
+    return supportedTokens[token] || [];
+  }, [supportedTokens]);
 
   // Get cached address for token/network
   const getCachedAddress = useCallback((tokenSymbol, network) => {

@@ -182,6 +182,7 @@ export const transactionService = {
     }
   },
 
+  // FIXED: Updated to pass the type parameter to backend
   async getCompleteTransactionHistory(params = {}) {
     try {
       const requestBody = {
@@ -191,6 +192,11 @@ export const transactionService = {
         sortBy: params.sortBy || 'createdAt',
         sortOrder: params.sortOrder || 'desc'
       };
+
+      // ADDED: Pass the type parameter for category filtering
+      if (params.type && ['DEPOSIT', 'WITHDRAWAL', 'SWAP', 'GIFTCARD'].includes(params.type.toUpperCase())) {
+        requestBody.type = params.type.toUpperCase();
+      }
 
       if (params.status) {
         const statusMap = {

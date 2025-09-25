@@ -253,16 +253,13 @@ const USDTWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 
-  // -------------------- Available networks (added requested networks + Tron) --------------------
-  const usdtNetworks = [
-    { id: 'polygon', name: 'Polygon (MATIC)' },
-    { id: 'solana', name: 'Solana' },
-    { id: 'avax', name: 'Avax C-Chain' },
-    { id: 'ethereum', name: 'Ethereum (ERC20)' },
-    { id: 'arbitrum', name: 'Arbitrum One' },
-    { id: 'tron', name: 'Tron (TRC20)' }, // <-- ADDED
-    { id: 'bsc', name: 'BSC (Binance Smart Chain)' }, // optional / legacy
-  ];
+  // -------------------- Available networks (removed polygon, avax, solana, base) --------------------
+const usdtNetworks = [
+  { id: 'ethereum', name: 'Ethereum (ERC20)' },
+  { id: 'arbitrum', name: 'Arbitrum One' },
+  { id: 'tron', name: 'Tron (TRC20)' },
+  { id: 'bsc', name: 'BSC (Binance Smart Chain)' },
+];
 
   const onRefresh = useCallback(async () => {
     await Promise.all([refreshBalances(), refreshTransactions()]);
@@ -317,35 +314,26 @@ const USDTWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     setShowTransferMethodModal(false);
   };
 
-  // -------------------- Network selection routing (includes Tron) --------------------
-  const handleNetworkSelect = (network: { id: string }) => {
-    switch ((network.id || '').toLowerCase()) {
-      case 'polygon':
-        router.push('../deposits/usdt-polygon');
-        break;
-      case 'solana':
-        router.push('../deposits/usdt-solana');
-        break;
-      case 'avax':
-        router.push('../deposits/usdt-avax');
-        break;
-      case 'ethereum':
-        router.push('../deposits/usdt-eth');
-        break;
-      case 'arbitrum':
-        router.push('../deposits/usdt-arbitrum');
-        break;
-      case 'tron':
-        router.push('../deposits/usdt-tron'); // <-- ADDED route for Tron
-        break;
-      case 'bsc':
-        router.push('../deposits/usdt-bsc');
-        break;
-      default:
-        router.push('../deposits/usdt-eth');
-    }
-    setShowNetworkModal(false);
-  };
+  // -------------------- Network selection routing (maintaining exact route format) --------------------
+const handleNetworkSelect = (network: { id: string }) => {
+  switch ((network.id || '').toLowerCase()) {
+    case 'ethereum':
+      router.push('../deposits/usdt-eth');
+      break;
+    case 'arbitrum':
+      router.push('../deposits/usdt-arbitrum');
+      break;
+    case 'tron':
+      router.push('../deposits/usdt-tron');
+      break;
+    case 'bsc':
+      router.push('../deposits/usdt-bsc');
+      break;
+    default:
+      router.push('../deposits/usdt-eth');
+  }
+  setShowNetworkModal(false);
+};
 
   const handleViewAllTransactions = () => {
     router.push({

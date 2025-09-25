@@ -1,4 +1,4 @@
-// app/deposits/matic-eth.tsx
+// app/deposits/ETH-arbitrum.tsx
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -49,7 +49,7 @@ const getHorizontalPadding = (): number => {
 
 const horizontalPadding = getHorizontalPadding();
 
-export default function MaticEthDepositScreen() {
+export default function EthArbitrumDepositScreen() {
   const router = useRouter();
   const {
     getDepositAddress,
@@ -68,28 +68,29 @@ export default function MaticEthDepositScreen() {
   const [showCopied, setShowCopied] = useState<boolean>(false);
 
   useEffect(() => {
-    const fetchMATICAddress = async (): Promise<void> => {
-      const cachedAddress = getCachedAddress('POL', 'ETH');
+    const fetchArbitrumAddress = async (): Promise<void> => {
+      const cachedAddress = getCachedAddress('ETH', 'ARBITRUM');
       if (cachedAddress) {
         const addressData = cachedAddress.data || cachedAddress;
         setDepositData(addressData);
       } else {
-        await handleGetMATICAddress();
+        await handleGetArbitrumAddress();
       }
     };
-    fetchMATICAddress();
+    fetchArbitrumAddress();
   }, [getCachedAddress]);
 
-  const handleGetMATICAddress = async (): Promise<void> => {
+  const handleGetArbitrumAddress = async (): Promise<void> => {
     try {
-      const result = await getDepositAddress('POL', 'ETH');
+      // Call getDepositAddress directly with ETH token and ARBITRUM network
+      const result = await getDepositAddress('ETH', 'ARBITRUM');
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
       } else {
-        showErrorMessage(result.error || 'Failed to get MATIC deposit address');
+        showErrorMessage(result.error || 'Failed to get Arbitrum ETH deposit address');
       }
-    } catch {
+    } catch (error) {
       showErrorMessage('Network error occurred');
     }
   };
@@ -111,7 +112,7 @@ export default function MaticEthDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetMATICAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetArbitrumAddress(), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -127,24 +128,24 @@ export default function MaticEthDepositScreen() {
 
   const copyToClipboard = async (): Promise<void> => {
     if (!depositData?.address) {
-      showErrorMessage('MATIC wallet address is not yet available');
+      showErrorMessage('Arbitrum ETH wallet address is not yet available');
       return;
     }
     try {
       await Clipboard.setString(depositData.address);
       setShowCopied(true);
-    } catch {
+    } catch (error) {
       showErrorMessage('Failed to copy address to clipboard');
     }
   };
 
-  const isLoading = isAddressLoading('MATIC', 'ETH') || supportedLoading;
-  const addressError = getAddressError('MATIC', 'ETH');
+  const isLoading = isAddressLoading('ETH', 'ARBITRUM') || supportedLoading;
+  const addressError = getAddressError('ETH', 'ARBITRUM');
   const isWalletSetupNeeded = addressError && addressError.includes('needs to be set up');
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
-  const minDeposit = '1 MATIC';
-  const network = depositData?.network || 'Ethereum';
+  const minDeposit = '0.001 ETH';
+  const network = 'Arbitrum One';
 
   return (
     <View style={styles.container}>
@@ -155,7 +156,6 @@ export default function MaticEthDepositScreen() {
           <ErrorDisplay type={errorType} message={errorMessage} onDismiss={hideError} autoHide={false} />
         )}
 
-        {/* Address Copied banner */}
         {showCopied && <AddressCopied onDismiss={() => setShowCopied(false)} />}
 
         <ScrollView
@@ -179,14 +179,13 @@ export default function MaticEthDepositScreen() {
               </View>
             </TouchableOpacity>
             <View style={styles.headerGroup}>
-              <Text style={styles.headerTitle}>Deposit MATIC</Text>
-              <Text style={styles.headerSubtitle}>Ethereum Network</Text>
+              <Text style={styles.headerTitle}>Deposit ETH (Arbitrum)</Text>
             </View>
             <View style={styles.headerSpacer} />
           </View>
 
           <View style={styles.subtitleSection}>
-            <Text style={styles.subtitle}>Scan the QR code to get Deposit address</Text>
+            <Text style={styles.subtitle}>Scan the QR code to get Arbitrum One deposit address</Text>
           </View>
 
           <View style={styles.qrSection}>
@@ -194,7 +193,7 @@ export default function MaticEthDepositScreen() {
               {isLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color={Colors.primary} />
-                  <Text style={styles.loadingText}>Loading MATIC address...</Text>
+                  <Text style={styles.loadingText}>Loading Arbitrum address...</Text>
                 </View>
               ) : qrCodeData ? (
                 <Image source={{ uri: qrCodeData }} style={styles.qrCodeImage} resizeMode="contain" />
@@ -230,10 +229,6 @@ export default function MaticEthDepositScreen() {
               <Text style={styles.detailLabel}>Network</Text>
               <Text style={styles.detailValue}>{network}</Text>
             </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Token Standard</Text>
-              <Text style={styles.detailValue}>ERC-20</Text>
-            </View>
             {depositData?.walletReferenceId && (
               <View style={[styles.detailRow, styles.lastDetailRow]}>
                 <Text style={styles.detailLabel}>Wallet ID</Text>
@@ -243,13 +238,12 @@ export default function MaticEthDepositScreen() {
           </View>
 
           <View style={styles.warningSection}>
-            <View style={styles.warningContainer}>
-              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-              <Text style={styles.warningText}>
-                Only send MATIC on the Ethereum network to this address. 
-                Sending MATIC from other networks (like Polygon or BSC) may result in permanent loss of funds.
-              </Text>
-            </View>
+            <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
+            <Text style={styles.warningText}>
+              • Only send ETH on Arbitrum One network to this address{'\n'}
+              • Sending from other networks may result in loss of funds{'\n'}
+              • Ensure your wallet supports Arbitrum One before sending
+            </Text>
           </View>
 
           <View style={styles.shareSection}>
@@ -332,13 +326,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.medium,
     fontSize: 18,
     textAlign: 'center',
-  },
-  headerSubtitle: {
-    color: Colors.text.secondary,
-    fontFamily: Typography.regular,
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 2,
   },
   subtitleSection: {
     paddingHorizontal: horizontalPadding,
@@ -484,24 +471,23 @@ const styles = StyleSheet.create({
   warningSection: {
     paddingHorizontal: horizontalPadding,
     paddingVertical: 15,
-  },
-  warningContainer: {
-    backgroundColor: '#FEF3CD',
+    marginHorizontal: horizontalPadding,
+    backgroundColor: '#FFF8E6',
     borderRadius: 12,
-    padding: 16,
     borderWidth: 1,
-    borderColor: '#F59E0B',
+    borderColor: '#FBE1B3',
   },
   warningTitle: {
     color: '#92400E',
     fontFamily: Typography.medium,
     fontSize: 14,
+    fontWeight: '600',
     marginBottom: 8,
   },
   warningText: {
     color: '#92400E',
     fontFamily: Typography.regular,
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 18,
   },
   shareSection: {

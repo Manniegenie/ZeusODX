@@ -339,7 +339,7 @@ const EthereumWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
     } else {
       // New behavior: route pattern: /deposits/ETH-<networkId>
       // e.g. /deposits/ETH-arbitrum, /deposits/ETH-base, /deposits/ETH-bsc
-      const routePath = `/deposits/ETH-${id}`;
+      const routePath = `/deposits/eth-${id}`;
       router.push(routePath);
     }
 

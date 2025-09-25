@@ -88,11 +88,13 @@ const GiftCardScreen = ({ onGiftCardSelect }) => {
           {/* Header Section */}
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
-              {/* Back Button */}
+              {/* Back Button - Updated to match BTC screen */}
               <TouchableOpacity 
                 style={styles.backButton} 
                 onPress={handleGoBack}
                 activeOpacity={0.7}
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
                 <Text style={styles.backButtonText}>←</Text>
               </TouchableOpacity>
@@ -100,8 +102,8 @@ const GiftCardScreen = ({ onGiftCardSelect }) => {
               {/* Title */}
               <Text style={styles.headerTitle}>Gift Card</Text>
 
-              {/* Empty space for alignment */}
-              <View style={styles.emptySpace} />
+              {/* Empty space for alignment - Updated to match BTC screen */}
+              <View style={styles.headerRight} />
             </View>
           </View>
 
@@ -151,7 +153,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
 
-  // Header styles
+  // Header styles - Updated to match BTC screen
   headerSection: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -162,12 +164,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
+  backButton: { 
+    width: 48,  // Increased from 40
+    height: 48, // Increased from 40
+    justifyContent: 'center', 
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Very subtle background instead of transparent
+    overflow: 'hidden', // Better Android performance
   },
   backButtonText: {
     fontSize: 20,
@@ -183,7 +187,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  emptySpace: { width: 40 },
+  headerRight: { width: 48 }, // Updated to match new back button width
 
   // Search
   searchSection: {

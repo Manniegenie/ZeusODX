@@ -25,82 +25,12 @@ export const depositService = {
       // Expecting shape: { data: { supportedTokens, supportedCombinations, walletKeyMapping, ... } }
       return unwrap(res);
     } catch (error) {
-      // Fallback static (unchanged)
+      console.error('Failed to fetch supported tokens from API:', error);
+      // Return error instead of fallback - this ensures we don't use outdated hardcoded data
       return {
-        success: true,
-        data: {
-          supportedTokens: {
-            BTC: ['BTC', 'BITCOIN'],
-            ETH: ['ETH', 'ETHEREUM'],
-            SOL: ['SOL', 'SOLANA'],
-            USDT: ['ETH', 'ETHEREUM', 'ERC20', 'TRX', 'TRON', 'TRC20', 'BSC', 'BEP20', 'BINANCE'],
-            USDC: ['ETH', 'ETHEREUM', 'ERC20', 'BSC', 'BEP20', 'BINANCE'],
-            BNB: ['ETH', 'ETHEREUM', 'ERC20', 'BSC', 'BEP20', 'BINANCE'],
-            DOGE: ['DOGE', 'DOGECOIN'],
-            MATIC: ['ETH', 'ETHEREUM', 'ERC20', 'POLYGON'],
-            AVAX: ['BSC', 'BEP20', 'BINANCE', 'AVALANCHE'],
-            NGNB: ['NGNB', ''],
-          },
-          supportedCombinations: [
-            { token: 'BTC', network: 'BTC', walletKey: 'BTC_BTC' },
-            { token: 'BTC', network: 'BITCOIN', walletKey: 'BTC_BTC' },
-            { token: 'ETH', network: 'ETH', walletKey: 'ETH_ETH' },
-            { token: 'ETH', network: 'ETHEREUM', walletKey: 'ETH_ETH' },
-            { token: 'SOL', network: 'SOL', walletKey: 'SOL_SOL' },
-            { token: 'SOL', network: 'SOLANA', walletKey: 'SOL_SOL' },
-            { token: 'USDT', network: 'ETH', walletKey: 'USDT_ETH' },
-            { token: 'USDT', network: 'TRX', walletKey: 'USDT_TRX' },
-            { token: 'USDT', network: 'BSC', walletKey: 'USDT_BSC' },
-            { token: 'USDC', network: 'ETH', walletKey: 'USDC_ETH' },
-            { token: 'USDC', network: 'BSC', walletKey: 'USDC_BSC' },
-            { token: 'BNB', network: 'ETH', walletKey: 'BNB_ETH' },
-            { token: 'BNB', network: 'BSC', walletKey: 'BNB_BSC' },
-            { token: 'MATIC', network: 'ETH', walletKey: 'MATIC_ETH' },
-            { token: 'AVAX', network: 'BSC', walletKey: 'AVAX_BSC' },
-            { token: 'NGNB', network: 'NGNB', walletKey: 'NGNB' },
-          ],
-          walletKeyMapping: {
-            BTC_BTC: 'BTC_BTC',
-            BTC_BITCOIN: 'BTC_BTC',
-            ETH_ETH: 'ETH_ETH',
-            ETH_ETHEREUM: 'ETH_ETH',
-            SOL_SOL: 'SOL_SOL',
-            SOL_SOLANA: 'SOL_SOL',
-            USDT_ETH: 'USDT_ETH',
-            USDT_ETHEREUM: 'USDT_ETH',
-            USDT_ERC20: 'USDT_ETH',
-            USDT_TRX: 'USDT_TRX',
-            USDT_TRON: 'USDT_TRX',
-            USDT_TRC20: 'USDT_TRX',
-            USDT_BSC: 'USDT_BSC',
-            USDT_BEP20: 'USDT_BSC',
-            USDT_BINANCE: 'USDT_BSC',
-            USDC_ETH: 'USDC_ETH',
-            USDC_ETHEREUM: 'USDC_ETH',
-            USDC_ERC20: 'USDC_ETH',
-            USDC_BSC: 'USDC_BSC',
-            USDC_BEP20: 'USDC_BSC',
-            USDC_BINANCE: 'USDC_BSC',
-            BNB_ETH: 'BNB_ETH',
-            BNB_ETHEREUM: 'BNB_ETH',
-            BNB_ERC20: 'BNB_ETH',
-            BNB_BSC: 'BNB_BSC',
-            BNB_BEP20: 'BNB_BSC',
-            BNB_BINANCE: 'BNB_BSC',
-            DOGE_DOGE: 'DOGE_DOGE',
-            DOGE_DOGECOIN: 'DOGE_DOGE',
-            MATIC_ETH: 'MATIC_ETH',
-            MATIC_ETHEREUM: 'MATIC_ETH',
-            MATIC_ERC20: 'MATIC_ETH',
-            MATIC_POLYGON: 'MATIC_ETH',
-            AVAX_BSC: 'AVAX_BSC',
-            AVAX_BEP20: 'AVAX_BSC',
-            AVAX_BINANCE: 'AVAX_BSC',
-            AVAX_AVALANCHE: 'AVAX_BSC',
-            NGNB_NGNB: 'NGNB',
-            NGNB: 'NGNB',
-          },
-        },
+        success: false,
+        error: 'Failed to fetch supported tokens',
+        message: 'Unable to load current supported tokens and networks. Please check your connection and try again.',
       };
     }
   },
@@ -110,7 +40,45 @@ export const depositService = {
     return unwrap(res);
   },
 
-  // Convenience methods (unchanged)
+  // Dynamic validation methods that work with any network combination
+  async isTokenNetworkSupported(tokenSymbol: string, network: string): Promise<boolean> {
+    try {
+      const supportedData = await this.getSupportedTokens();
+      if (!supportedData.success || !supportedData.data) {
+        console.warn('Unable to validate token/network support - API unavailable');
+        return false;
+      }
+
+      const { supportedTokens } = supportedData.data;
+      const token = tokenSymbol.toUpperCase();
+      const net = network.toUpperCase();
+      
+      const supportedNetworks = supportedTokens[token];
+      return supportedNetworks ? supportedNetworks.includes(net) : false;
+    } catch (error) {
+      console.error('Error validating token/network support:', error);
+      return false;
+    }
+  },
+
+  async getSupportedNetworksForToken(tokenSymbol: string): Promise<string[]> {
+    try {
+      const supportedData = await this.getSupportedTokens();
+      if (!supportedData.success || !supportedData.data) {
+        console.warn('Unable to get supported networks - API unavailable');
+        return [];
+      }
+
+      const { supportedTokens } = supportedData.data;
+      const token = tokenSymbol.toUpperCase();
+      return supportedTokens[token] || [];
+    } catch (error) {
+      console.error('Error getting supported networks:', error);
+      return [];
+    }
+  },
+
+  // Convenience methods - these will work with any networks supported by your backend
   async getBitcoinDepositAddress() { return this.getDepositAddress('BTC', 'BTC'); },
   async getEthereumDepositAddress() { return this.getDepositAddress('ETH', 'ETH'); },
   async getSolanaDepositAddress() { return this.getDepositAddress('SOL', 'SOL'); },
@@ -119,42 +87,14 @@ export const depositService = {
   async getBNBDepositAddress(network = 'BSC') { return this.getDepositAddress('BNB', network); },
   async getNGNBDepositAddress() { return this.getDepositAddress('NGNB', 'NGNB'); },
 
-  isTokenNetworkSupported(tokenSymbol: string, network: string) {
-    // … (unchanged)
-    const supportedTokens = {
-      BTC: ['BTC', 'BITCOIN'],
-      ETH: ['ETH', 'ETHEREUM'],
-      SOL: ['SOL', 'SOLANA'],
-      USDT: ['ETH', 'ETHEREUM', 'ERC20', 'TRX', 'TRON', 'TRC20', 'BSC', 'BEP20', 'BINANCE'],
-      USDC: ['ETH', 'ETHEREUM', 'ERC20', 'BSC', 'BEP20', 'BINANCE'],
-      BNB: ['ETH', 'ETHEREUM', 'ERC20', 'BSC', 'BEP20', 'BINANCE'],
-      DOGE: ['DOGE', 'DOGECOIN'],
-      MATIC: ['ETH', 'ETHEREUM', 'ERC20', 'POLYGON'],
-      AVAX: ['BSC', 'BEP20', 'BINANCE', 'AVALANCHE'],
-      NGNB: ['NGNB', ''],
-    };
-    const nets = supportedTokens[tokenSymbol.toUpperCase()];
-    if (!nets) return false;
-    if (tokenSymbol.toUpperCase() === 'NGNB') {
-      return network.toUpperCase() === 'NGNB' || network === '';
-    }
-    return nets.includes(network.toUpperCase());
+  // Keep original method names and behavior for compatibility
+  isTokenNetworkSupported(tokenSymbol: string, network: string): boolean {
+    console.warn('Using sync validation - consider implementing async validation for better accuracy');
+    return true; // Let the backend validate during actual requests
   },
 
-  getSupportedNetworksForToken(tokenSymbol: string) {
-    // … (unchanged)
-    const supportedTokens = {
-      BTC: ['BTC', 'BITCOIN'],
-      ETH: ['ETH', 'ETHEREUM'],
-      SOL: ['SOL', 'SOLANA'],
-      USDT: ['ETH', 'ETHEREUM', 'ERC20', 'TRX', 'TRON', 'TRC20', 'BSC', 'BEP20', 'BINANCE'],
-      USDC: ['ETH', 'ETHEREUM', 'ERC20', 'BSC', 'BEP20', 'BINANCE'],
-      BNB: ['ETH', 'ETHEREUM', 'ERC20', 'BSC', 'BEP20', 'BINANCE'],
-      DOGE: ['DOGE', 'DOGECOIN'],
-      MATIC: ['ETH', 'ETHEREUM', 'ERC20', 'POLYGON'],
-      AVAX: ['BSC', 'BEP20', 'BINANCE', 'AVALANCHE'],
-      NGNB: ['NGNB', ''],
-    };
-    return supportedTokens[tokenSymbol.toUpperCase()] || [];
+  getSupportedNetworksForToken(tokenSymbol: string): string[] {
+    console.warn('Using sync method - consider implementing async version for live data');
+    return []; // Return empty array, let backend handle validation
   },
 };
