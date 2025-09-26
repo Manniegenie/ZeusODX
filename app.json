@@ -27,7 +27,7 @@
         "foregroundImage": "./assets/images/app-icon.png",
         "backgroundColor": "#35297F"
       },
-      "edgeToEdgeEnabled": true,
+      "edgeToEdgeEnabled": false,
       "permissions": [
         "INTERNET",
         "CAMERA",
@@ -58,8 +58,8 @@
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
             "minSdkVersion": 24
           },
           "ios": {
