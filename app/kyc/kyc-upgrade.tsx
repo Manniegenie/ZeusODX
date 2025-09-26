@@ -35,7 +35,7 @@ interface KYCLevel {
 const KYCUpgradeScreen: React.FC = () => {
   const router = useRouter();
 
-  // KYC levels configuration
+  // KYC levels configuration - removed Level 3
   const kycLevels: KYCLevel[] = [
     {
       id: 'level1',
@@ -54,17 +54,7 @@ const KYCUpgradeScreen: React.FC = () => {
       status: 'current',
       statusText: 'Current',
       iconSrc: currentIcon,
-      description: 'Identity + Facial Verification',
-      clickable: true
-    },
-    {
-      id: 'level3',
-      level: 3,
-      title: 'Level 3',
-      status: 'up-next',
-      statusText: 'Up Next',
-      iconSrc: upNextIcon,
-      description: 'Address Verification',
+      description: 'Identity + Facial Verification + Address Verification',
       clickable: true
     },
     {
@@ -94,9 +84,6 @@ const KYCUpgradeScreen: React.FC = () => {
         break;
       case 'level2':
         router.push('/kyc/kyc-2');
-        break;
-      case 'level3':
-        router.push('/kyc/kyc-3');
         break;
       case 'Fiat':
         router.push('/kyc/fiat');

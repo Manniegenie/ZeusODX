@@ -81,20 +81,33 @@ export const useBiometricAuth = () => {
   const getBiometricTypeName = () => {
     if (!biometricType || biometricType.length === 0) return 'Biometric';
     
+    // For iOS, prioritize Face ID over Touch ID if both are available
+    if (Platform.OS === 'ios') {
+      if (biometricType.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+        return 'Face ID';
+      }
+      if (biometricType.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+        return 'Touch ID';
+      }
+    }
+    
+    // For Android and other platforms, use more appropriate naming
     const types = biometricType.map(type => {
       switch (type) {
         case LocalAuthentication.AuthenticationType.FINGERPRINT:
-          return 'Fingerprint';
+          return Platform.OS === 'ios' ? 'Touch ID' : 'Fingerprint';
         case LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION:
-          return 'Face ID';
+          return Platform.OS === 'ios' ? 'Face ID' : 'Face Unlock';
         case LocalAuthentication.AuthenticationType.IRIS:
-          return 'Iris';
+          return 'Iris Scanner';
         default:
           return 'Biometric';
       }
     });
     
-    return types.join(' or ');
+    // Remove duplicates and join with "or"
+    const uniqueTypes = [...new Set(types)];
+    return uniqueTypes.join(' or ');
   };
 
   const openBiometricSettings = async () => {

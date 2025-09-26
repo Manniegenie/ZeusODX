@@ -314,8 +314,12 @@ const BankAccountsScreen = () => {
     hideError();
     setTransferLoading(true);
 
-    // amount priority: transferAmount; fallback to netAmount
-    const amountNumber = Number(transferAmount || netAmount || 0);
+    // Calculate amountNumber as calculatedNetAmount
+    const transferAmountNum = parseFloat(transferAmount || '0');
+    const transferFeeNum = parseFloat(transferFee || '0');
+    const calculatedNetAmount = transferAmountNum - transferFeeNum;
+    const amountNumber = calculatedNetAmount;
+
     if (!amountNumber || amountNumber <= 0) {
       setTransferLoading(false);
       showError('validation', 'Invalid Amount', 'Please go back and enter a valid amount.');
@@ -387,12 +391,6 @@ const BankAccountsScreen = () => {
       return;
     }
 
-    // Failure path — map and display error
-    const type = mapErrorType(res.error);
-    const msg = res.message || 'Something went wrong. Please try again.';
-
-    showError(type, 'Transfer Failed', msg);
-
     // Re-open relevant modal for quick retry
     if (res.error === 'INVALID_PASSWORDPIN') {
       setPasswordPin('');
@@ -400,12 +398,8 @@ const BankAccountsScreen = () => {
     } else if (res.error === 'INVALID_2FA_CODE') {
       setTwoFactorCode('');
       setShowTwoFactorModal(true);
-    } else if (res.error === '2FA_NOT_SETUP') {
-      // Keep user on screen; they can navigate to settings manually
-    } else if (res.error === 'PIN_NOT_SETUP') {
-      // Same as above
     } else {
-      // For other errors, keep both modals closed
+      // Re-open relevant modal for quick retry
       setShowTwoFactorModal(false);
       setShowPinModal(false);
     }
@@ -445,7 +439,7 @@ const BankAccountsScreen = () => {
             <View style={styles.transferSummarySection}>
               <View style={styles.summaryCard}>
                 <Text style={styles.summaryTitle}>Transfer Details</Text>
-                <View className="summaryRow" style={styles.summaryRow}>
+                <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Amount:</Text>
                   <Text style={styles.summaryValue}>
                     {parseFloat(transferAmount).toLocaleString()} NGNZ
@@ -463,7 +457,7 @@ const BankAccountsScreen = () => {
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>You will receive:</Text>
                     <Text style={[styles.summaryValue, styles.summaryHighlight]}>
-                      {parseFloat(netAmount).toLocaleString()} NGNZ
+                      {calculatedNetAmount.toLocaleString()} NGNZ
                     </Text>
                   </View>
                 )}
@@ -628,7 +622,7 @@ const BankAccountsScreen = () => {
           transferData={{
             amount: transferAmount || '0',
             fee: transferFee || '0',
-            netAmount: netAmount || '0',
+            netAmount: calculatedNetAmount.toLocaleString() || '0',
             bank: selectedBankForTransfer,
             currency: 'NGN',
           }}

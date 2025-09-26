@@ -1,5 +1,5 @@
 // app/profile/profile.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import { Colors } from '../../constants/Colors';
 import { useDashboard } from '../../hooks/useDashboard';
 import { useBiometricAuth } from '../../hooks/usebiometric';
 import useLogout from '../../hooks/useLogout';
+import { useNotifications } from '../../hooks/usenotification';
 
 // Delete Account modal
 import DeleteAccountModal from '../../components/DeleteAccount';
@@ -42,25 +43,7 @@ import privacyIcon from '../../components/icons/privacy.png';
 import logoutIcon from '../../components/icons/logout.png';
 import deleteIcon from '../../components/icons/delete.png';
 
-interface ProfileOption {
-  id: string;
-  title: string;
-  iconSrc: ImageSourcePropType;
-  hasChevron?: boolean;
-  hasToggle?: boolean;
-  toggleValue?: boolean;
-  onToggle?: (value: boolean) => void;
-  onPress?: () => void;
-  isDestructive?: boolean;
-}
-
-interface ProfileSection {
-  id: string;
-  title?: string;
-  options: ProfileOption[];
-}
-
-const ProfileScreen: React.FC = () => {
+const ProfileScreen = () => {
   const router = useRouter();
 
   const {
@@ -94,10 +77,20 @@ const ProfileScreen: React.FC = () => {
     getSetupInstructions,
   } = useBiometricAuth();
 
-  const isAnyOperationInProgress = isDashboardLoading || loggingOut;
+  // Use the notifications hook
+  const {
+    isPermissionGranted,
+    isInitialized,
+    turnOffNotifications,
+    turnOnNotifications,
+    isLoading: isNotificationLoading,
+  } = useNotifications();
 
-  const [notificationEnabled, setNotificationEnabled] = useState<boolean>(true);
-  const [fingerprintEnabled, setFingerprintEnabled] = useState<boolean>(isEnrolled);
+  const isAnyOperationInProgress = isDashboardLoading || loggingOut || isNotificationLoading;
+
+  // Initialize notification state based on actual permission status
+  const [notificationEnabled, setNotificationEnabled] = useState(true);
+  const [fingerprintEnabled, setFingerprintEnabled] = useState(isEnrolled);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const openDeleteModal = () => {
@@ -106,6 +99,11 @@ const ProfileScreen: React.FC = () => {
   };
   const closeDeleteModal = () => setShowDeleteModal(false);
 
+  // Sync notification toggle with actual permission status
+  useEffect(() => {
+    setNotificationEnabled(isPermissionGranted && isInitialized);
+  }, [isPermissionGranted, isInitialized]);
+
   const userData = {
     name: `${firstname} ${lastname}`.trim() || '-',
     email: email || '-',
@@ -113,53 +111,87 @@ const ProfileScreen: React.FC = () => {
     avatar: profileAvatarIcon,
   };
 
-  const handleGoBack = (): void => {
+  const handleGoBack = () => {
     if (isAnyOperationInProgress) return;
     router.replace('/user/dashboard');
   };
 
-  const handlePersonalDetails = (): void => {
+  const handlePersonalDetails = () => {
     if (isAnyOperationInProgress) return;
     router.push('/profile/personal-details');
   };
 
-  const handleReferEarn = (): void => {
+  const handleReferEarn = () => {
     if (isAnyOperationInProgress) return;
     router.push('/profile/refer-earn');
   };
 
-  const handleBankDetails = (): void => {
+  const handleBankDetails = () => {
     if (isAnyOperationInProgress) return;
     router.push('/profile/bank-details');
   };
 
-  const handleResetPin = (): void => {
+  const handleResetPin = () => {
     if (isAnyOperationInProgress) return;
     router.push('/profile/pin-reset');
   };
 
-  const handleUpdateKYC = (): void => {
+  const handleUpdateKYC = () => {
     if (isAnyOperationInProgress) return;
     router.push('/kyc/kyc-upgrade');
   };
 
-
-  const handle2FAToggle = (value: boolean): void => {
+  const handle2FAToggle = (value) => {
     if (isAnyOperationInProgress) return;
     if (value) router.push('/profile/2FA');
   };
 
-  const handleDeleteAccount = (): void => {
+  const handleDeleteAccount = () => {
     if (isAnyOperationInProgress) return;
     openDeleteModal();
   };
 
-  const handleNotificationToggle = (value: boolean): void => {
+  const handleNotificationToggle = async (value) => {
     if (isAnyOperationInProgress) return;
-    setNotificationEnabled(value);
+    
+    try {
+      if (value) {
+        console.log('🔔 User enabling notifications');
+        const success = await turnOnNotifications();
+        if (success) {
+          setNotificationEnabled(true);
+          console.log('✅ Notifications enabled successfully');
+        } else {
+          // If failed, show alert and keep toggle off
+          Alert.alert(
+            'Unable to Enable Notifications',
+            'Please check your device settings and try again.',
+            [{ text: 'OK' }]
+          );
+          setNotificationEnabled(false);
+        }
+      } else {
+        console.log('🔕 User disabling notifications');
+        const success = await turnOffNotifications();
+        if (success) {
+          setNotificationEnabled(false);
+          console.log('✅ Notifications disabled successfully');
+          Alert.alert('Notifications Disabled', 'You will no longer receive push notifications.');
+        } else {
+          // If failed to turn off, keep it enabled and show error
+          Alert.alert('Error', 'Failed to disable notifications. Please try again.');
+          setNotificationEnabled(true);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error toggling notifications:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+      // Revert toggle state on error
+      setNotificationEnabled(!value);
+    }
   };
 
-  const handleFingerprintToggle = async (value: boolean): Promise<void> => {
+  const handleBiometricToggle = async (value) => {
     if (isAnyOperationInProgress) return;
 
     if (!isBiometricSupported) {
@@ -168,32 +200,51 @@ const ProfileScreen: React.FC = () => {
     }
 
     if (!isEnrolled && value) {
+      const biometricType = getBiometricTypeName();
       const instructions = getSetupInstructions();
-      Alert.alert('Biometric Setup Required', `${instructions}\n\nOpen Settings now?`, [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Open Settings',
-          onPress: async () => {
-            const opened = await openBiometricSettings();
-            if (!opened) {
-              Alert.alert('Settings', 'Please open Settings and set up biometric authentication.', [{ text: 'OK' }]);
-            }
+      Alert.alert(
+        'Biometric Setup Required', 
+        `${biometricType} is not set up on your device.\n\n${instructions}\n\nOpen Settings to set up ${biometricType}?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Open Settings',
+            onPress: async () => {
+              const opened = await openBiometricSettings();
+              if (!opened) {
+                Alert.alert('Settings', `Please open Settings and set up ${biometricType}.`, [{ text: 'OK' }]);
+              }
+            },
           },
-        },
-      ]);
+        ]
+      );
       return;
+    }
+
+    if (value) {
+      Alert.alert(
+        'Biometrics Enabled',
+        `${getBiometricTypeName()} authentication has been enabled for this app.`,
+        [{ text: 'OK' }]
+      );
+    } else {
+      Alert.alert(
+        'Biometrics Disabled',
+        `${getBiometricTypeName()} authentication has been disabled for this app.`,
+        [{ text: 'OK' }]
+      );
     }
 
     setFingerprintEnabled(value);
   };
 
-  const getBiometricOption = (): ProfileOption => ({
-    id: 'fingerprint',
-    title: isBiometricSupported ? getBiometricTypeName() : 'Biometric',
+  const getBiometricOption = () => ({
+    id: 'biometrics',
+    title: 'Biometrics',
     iconSrc: fingerprintIcon,
     hasToggle: true,
     toggleValue: isEnrolled && fingerprintEnabled,
-    onToggle: handleFingerprintToggle,
+    onToggle: handleBiometricToggle,
   });
 
   const confirmAndLogout = () => {
@@ -226,7 +277,7 @@ const ProfileScreen: React.FC = () => {
     ]);
   };
 
-  const profileSections: ProfileSection[] = [
+  const profileSections = [
     {
       id: 'profile',
       title: 'Profile',
@@ -286,7 +337,7 @@ const ProfileScreen: React.FC = () => {
     },
   ];
 
-  const renderProfileOption = (option: ProfileOption): JSX.Element => (
+  const renderProfileOption = (option) => (
     <TouchableOpacity
       key={option.id}
       style={[styles.optionContainer, isAnyOperationInProgress && styles.optionContainerDisabled]}
@@ -329,7 +380,7 @@ const ProfileScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
-  const renderProfileSection = (section: ProfileSection): JSX.Element => (
+  const renderProfileSection = (section) => (
     <View key={section.id} style={styles.section}>
       {section.title && <Text style={styles.sectionTitle}>{section.title}</Text>}
       <View style={styles.sectionContent}>
@@ -344,7 +395,7 @@ const ProfileScreen: React.FC = () => {
   );
 
   // Minimal loading overlay: tiny spinner, no text, no container, no dim
-  const renderLoadingOverlay = (): JSX.Element | null => {
+  const renderLoadingOverlay = () => {
     if (!isDashboardLoading) return null;
     return (
       <View style={styles.loadingOverlay}>
