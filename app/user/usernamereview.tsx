@@ -22,7 +22,7 @@ const solIcon = require('../../components/icons/sol-icon.png');
 const usdtIcon = require('../../components/icons/usdt-icon.png');
 const usdcIcon = require('../../components/icons/usdc-icon.png');
 const ngnzIcon = require('../../components/icons/NGNZ.png');
-const avaxIcon = require('../../components/icons/avax-icon.png');
+const trxIcon = require('../../components/icons/Tron.png');
 const bnbIcon = require('../../components/icons/bnb-icon.png');
 const maticIcon = require('../../components/icons/matic-icon.png');
 
@@ -68,7 +68,7 @@ export default function TransferScreen() {
     usdt: usdtIcon,
     usdc: usdcIcon,
     ngnz: ngnzIcon,
-    avax: avaxIcon,
+    trx: trxIcon,
     bnb: bnbIcon,
     matic: maticIcon
   }[id] || btcIcon);

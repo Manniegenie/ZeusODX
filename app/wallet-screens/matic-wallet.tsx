@@ -30,6 +30,7 @@ import transferIcon from '../../components/icons/transfer-icon.png';
 import swapIcon from '../../components/icons/swap-icon.png';
 import emptyStateIcon from '../../components/icons/empty-state.png';
 import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
+import backIcon from '../../components/icons/backy.png';
 
 // -------------------- Types to match History/Receipt --------------------
 type TokenDetails = {
@@ -362,7 +363,7 @@ const MaticWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
                 delayPressIn={0}
                 hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
-                <Text style={styles.backButtonText}>←</Text>
+                <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
               <View style={styles.headerGroup}>
                 <Image source={maticIcon} style={styles.iconImage} />
@@ -499,19 +500,21 @@ const styles = StyleSheet.create({
   headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { 
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     justifyContent: 'center', 
     alignItems: 'center',
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)',
-    overflow: 'hidden',
+    borderRadius: 20,
   },
-  backButtonText: { fontSize: 20, color: Colors.text.primary },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
   headerGroup: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' },
   iconImage: { width: 28, height: 28, resizeMode: 'cover' },
   headerTitle: { fontSize: 16, fontWeight: '600', color: Colors.text.primary },
-  headerRight: { width: 48 },
+  headerRight: { width: 40 },
 
   balanceSection: { 
     paddingHorizontal: 16,

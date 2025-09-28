@@ -22,7 +22,9 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { use2FA } from '../../hooks/use2FA';
 
-// Type definitions
+// use same back icon as BankAccountsScreen
+import backIcon from '../../components/icons/backy.png';
+
 interface QRCodeData {
   dataUrl: string;
   format: string;
@@ -291,6 +293,9 @@ export default function TwoFASetupScreen() {
   const displaySecret = twoFAData?.secretKey || 'Loading...';
   const qrCodeData = twoFAData?.qrCode?.dataUrl;
 
+  // Disable back while loading to match BankAccountsScreen pattern
+  const backDisabled = Boolean(isLoading);
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -323,19 +328,23 @@ export default function TwoFASetupScreen() {
             />
           }
         >
+          {/* Header - using shared back icon + centered title like BankAccountsScreen */}
           <View style={styles.headerSection}>
             <TouchableOpacity 
               style={styles.backButton} 
-              onPress={() => router.back()}
-              activeOpacity={0.7}
+              onPress={() => { if (!backDisabled) router.back(); }}
+              activeOpacity={backDisabled ? 1 : 0.7}
               delayPressIn={0}
               hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              disabled={backDisabled}
             >
-              <Text style={styles.backButtonText}>←</Text>
+              <Image source={backIcon} style={styles.backIcon} />
             </TouchableOpacity>
-            <View style={styles.headerGroup}>
-              <Text style={styles.headerTitle}>2FA Setup</Text>
-            </View>
+
+            {/* Centered title (absolute / centered like BankAccountsScreen) */}
+            <Text style={styles.headerTitle}>2FA Setup</Text>
+
+            {/* spacer to keep title centered */}
             <View style={styles.headerSpacer} />
           </View>
 
@@ -458,24 +467,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.02)',
     overflow: 'hidden',
   },
-  backButtonText: {
-    fontSize: 20,
-    color: Colors.text.primary,
-    fontWeight: '500',
-  },
-  headerGroup: {
-    flex: 1,
-    alignItems: 'center',
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerSpacer: {
     width: 48,
     height: 48,
   },
   headerTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     color: Colors.text.primary,
     fontFamily: Typography.medium,
     fontSize: 18,
     textAlign: 'center',
+    fontWeight: '600',
+    pointerEvents: 'none',
   },
   subtitleSection: {
     paddingHorizontal: horizontalPadding,
@@ -590,9 +600,9 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   copyIcon: {
-    width: 32,
-    height: 32,
-    resizeMode: 'cover',
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
   },
   secretHelper: {
     color: Colors.text.secondary,

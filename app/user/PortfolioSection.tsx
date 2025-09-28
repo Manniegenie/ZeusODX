@@ -149,7 +149,7 @@ export default function PortfolioSection({
         >
           <View style={styles.setupContent}>
             <Text style={styles.setupText}>
-              {kycLoading ? '🔄 Processing...' : 'Finalize your setup'}
+              {kycLoading ? '🔄 Processing...' : 'Complete your kyc'}
             </Text>
             <View style={styles.progressBarContainer}>
               <View style={styles.progressBar}>

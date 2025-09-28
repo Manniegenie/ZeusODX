@@ -1,3 +1,4 @@
+// app/user/BettingScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -23,6 +24,9 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useBetting } from '../../hooks/useBetting';
 import { useCustomer } from '../../hooks/useCustomer';
+
+// shared back icon used across screens
+import backIcon from '../../components/icons/backy.png';
 
 interface BettingProvider {
   id: string;
@@ -62,8 +66,12 @@ const BettingScreen: React.FC = () => {
 
   const predefinedAmounts = [1000, 2000, 5000, 10000, 20000];
 
-  const handleGoBack = (): void => router.back();
-  const handleHistoryPress = (): void => router.push('/history');
+  // backDisabled when any async action is in progress
+  const backDisabled = Boolean(loading || customerLoading);
+
+  const handleGoBack = (): void => {
+    if (!backDisabled) router.back();
+  };
 
   const showErrorMessage = (errorData: any): void => {
     setErrorDisplayData(errorData);
@@ -301,13 +309,20 @@ const BettingScreen: React.FC = () => {
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
-              <TouchableOpacity style={styles.backButton} onPress={handleGoBack} activeOpacity={0.7}>
-                <Text style={styles.backButtonText}>←</Text>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={handleGoBack}
+                activeOpacity={backDisabled ? 1 : 0.7}
+                disabled={backDisabled}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
+
               <Text style={styles.headerTitle}>Betting</Text>
-              <TouchableOpacity onPress={handleHistoryPress}>
-                <Text style={styles.historyLink}>History</Text>
-              </TouchableOpacity>
+
+              {/* spacer to keep title centered */}
+              <View style={styles.headerSpacer} />
             </View>
           </View>
 
@@ -478,9 +493,12 @@ const styles = StyleSheet.create({
   headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backButtonText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
-  headerTitle: { color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center', marginHorizontal: 16 },
-  historyLink: { color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 14, fontWeight: '500' },
+  backIcon: { width: 24, height: 24, resizeMode: 'contain' },
+  headerTitle: { position: 'absolute', left: 0, right: 0, color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600', textAlign: 'center', pointerEvents: 'none' },
+  headerSpacer: { width: 40 },
+
+  // history removed
+
   section: { paddingHorizontal: 16, marginBottom: 24 },
   sectionTitle: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400', marginBottom: 16 },
   providerSelector: { backgroundColor: Colors.surface || '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center' },

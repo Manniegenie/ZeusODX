@@ -1,12 +1,12 @@
 // services/bankAccountService.js
 import { apiClient } from './apiClient';
 
-// Paths (match your live logs & routes)
-const GET_BANK_ACCOUNTS_PATH = '/bank/bank-accounts'; // GET
-const ADD_BANK_ACCOUNT_PATH  = '/bank/add-bank';       // POST (your log shows this)
-const DELETE_BANK_ACCOUNT_PATH = '/bank/delete-bank'; // DELETE with JSON body { accountId } - FIXED PATH
+// Paths
+const GET_BANK_ACCOUNTS_PATH = '/bank/bank-accounts';
+const ADD_BANK_ACCOUNT_PATH  = '/bank/add-bank';
+const DELETE_BANK_ACCOUNT_PATH = '/bank/delete-bank';
 
-// -------------------- Safe helpers (no `this`) --------------------
+// Helper
 function toDigits(value) {
   if (value === null || value === undefined) return '';
   try {
@@ -16,27 +16,10 @@ function toDigits(value) {
   }
 }
 
-export function maskAccountNumber(accountNumber) {
-  const cleaned = toDigits(accountNumber);
-  const len = cleaned.length || 0;
-  if (len === 0) return '';
-  if (len <= 2) return '*'.repeat(len);
-  return `${'*'.repeat(len - 2)}${cleaned.slice(-2)}`;
-}
-
-export function formatAccountNumber(accountNumber) {
-  const cleaned = toDigits(accountNumber);
-  const len = cleaned.length || 0;
-  if (len <= 4) return cleaned;
-  return `${'*'.repeat(len - 4)}${cleaned.slice(-4)}`;
-}
-
 function normalizeResponse(res) {
-  // Handles axios responses or flattened payloads
   const isAxios = res && typeof res === 'object' && 'data' in res && 'status' in res;
   const body = isAxios ? res.data : res;
 
-  // Some clients hand back only body; some include top-level error/message
   return {
     success: typeof body?.success === 'boolean' ? body.success : null,
     data: body?.data ?? null,
@@ -59,7 +42,7 @@ function generateErrorCode(errorMessage) {
   if (msg.includes('account name') && (msg.includes('required') || msg.includes('invalid'))) return 'INVALID_ACCOUNT_NAME';
   if (msg.includes('bank code') && (msg.includes('required') || msg.includes('invalid'))) return 'INVALID_BANK_CODE';
   if (msg.includes('user not found')) return 'USER_NOT_FOUND';
-  if (msg.includes('invalid token') || msg.includes('unauthorized') || msg.includes('token payload')) return 'UNAUTHORIZED';
+  if (msg.includes('unauthorized')) return 'UNAUTHORIZED';
   if (msg.includes('validation') || msg.includes('required') || msg.includes('invalid')) return 'VALIDATION_ERROR';
   if (msg.includes('server error') || msg.includes('internal error')) return 'SERVER_ERROR';
   return 'OPERATION_FAILED';
@@ -107,31 +90,21 @@ function mapBankAccount(account) {
     accountName: account.accountName,
     bankName: account.bankName,
     bankCode: account.bankCode,
-    accountNumber: account.accountNumber,
+    accountNumber: account.accountNumber, // Keep original account number
     addedAt: account.addedAt,
     isVerified: Boolean(account.isVerified),
-    isActive: Boolean(account.isActive),
-    formattedAccountNumber: formatAccountNumber(account.accountNumber)
+    isActive: Boolean(account.isActive)
   };
 }
 
-// -------------------- Service --------------------
 export const bankService = {
   async getBankAccounts() {
     try {
       const raw = await apiClient.get(GET_BANK_ACCOUNTS_PATH);
       const { success, data, message, error } = normalizeResponse(raw);
-
-      console.log('DEBUG Raw response:', JSON.stringify(raw.data, null, 2));
-      console.log('DEBUG Normalized data:', JSON.stringify(data, null, 2));
-      console.log('DEBUG data structure:', data);
       
-      // FIX: Access the correct path - data.bankAccounts, not data?.bankAccounts
       const bankAccountsFromAPI = data?.bankAccounts || raw.data?.data?.bankAccounts;
-      console.log('DEBUG bankAccountsFromAPI:', bankAccountsFromAPI);
-      console.log('DEBUG bankAccounts length:', bankAccountsFromAPI?.length);
-
-      // Treat as success if either success flag is true OR a sensible payload is present
+      
       const isOk = (success === true) || Array.isArray(bankAccountsFromAPI);
       if (!isOk) {
         const backendMessage = error || message || 'Failed to load bank accounts';
@@ -146,25 +119,6 @@ export const bankService = {
 
       let bankAccountsRaw = Array.isArray(bankAccountsFromAPI) ? bankAccountsFromAPI : [];
       
-      // POTENTIAL FIX: If bankAccounts contains nested arrays, flatten them
-      if (bankAccountsRaw.length > 0 && Array.isArray(bankAccountsRaw[0])) {
-        console.log('DEBUG: Flattening nested array');
-        bankAccountsRaw = bankAccountsRaw.flat();
-      }
-
-      // POTENTIAL FIX: If bankAccounts contains wrapper objects, extract the actual accounts
-      if (bankAccountsRaw.length > 0 && bankAccountsRaw[0] && typeof bankAccountsRaw[0] === 'object' && !bankAccountsRaw[0].accountNumber && !bankAccountsRaw[0].id) {
-        console.log('DEBUG: Checking for wrapper objects');
-        // Look for common wrapper patterns
-        if (bankAccountsRaw[0].bankAccount) {
-          bankAccountsRaw = bankAccountsRaw.map(item => item.bankAccount);
-        } else if (bankAccountsRaw[0].account) {
-          bankAccountsRaw = bankAccountsRaw.map(item => item.account);
-        }
-      }
-
-      console.log('DEBUG bankAccountsRaw after processing:', JSON.stringify(bankAccountsRaw, null, 2));
-      
       const summary = data?.summary || raw.data?.data?.summary || {
         totalAccounts: bankAccountsRaw.length,
         maxAllowed: 10,
@@ -173,7 +127,6 @@ export const bankService = {
       };
 
       const mappedAccounts = bankAccountsRaw.map(mapBankAccount);
-      console.log('DEBUG mappedAccounts:', JSON.stringify(mappedAccounts, null, 2));
 
       return {
         success: true,
@@ -184,7 +137,6 @@ export const bankService = {
         message: message || 'Bank accounts loaded successfully'
       };
     } catch (error) {
-      console.error('DEBUG getBankAccounts error:', error);
       return {
         success: false,
         error: 'NETWORK_ERROR',
@@ -196,7 +148,6 @@ export const bankService = {
 
   async addBankAccount(bankData) {
     try {
-      // client-side validation (server will also validate)
       const validation = this.validateBankAccountData(bankData);
       if (!validation.isValid) {
         return {
@@ -217,14 +168,8 @@ export const bankService = {
       const raw = await apiClient.post(ADD_BANK_ACCOUNT_PATH, payload);
       const norm = normalizeResponse(raw);
 
-      console.log('DEBUG Add bank raw response:', JSON.stringify(raw.data, null, 2));
-      console.log('DEBUG Add bank normalized:', JSON.stringify(norm, null, 2));
-
-      // FIX: Access the correct path for bankAccount data
       const bankAccountFromAPI = norm.data?.bankAccount || raw.data?.data?.bankAccount;
-      console.log('DEBUG bankAccountFromAPI:', bankAccountFromAPI);
-
-      // Treat as success if success flag is true OR bankAccount exists
+      
       const isOk = (norm.success === true) || Boolean(bankAccountFromAPI);
       if (!isOk) {
         const backendMessage = norm.error || norm.message || 'Failed to add bank account';
@@ -245,7 +190,6 @@ export const bankService = {
         message: norm.message || raw.data?.message || 'Bank account added successfully'
       };
     } catch (error) {
-      console.error('DEBUG Add bank error:', error);
       return {
         success: false,
         error: 'NETWORK_ERROR',
@@ -254,18 +198,33 @@ export const bankService = {
     }
   },
 
-  async deleteBankAccount(accountId) {
+  async deleteBankAccount(accountNumber) {
     try {
-      // Send accountId directly in the body, not wrapped in data object
-      const raw = await apiClient.delete(DELETE_BANK_ACCOUNT_PATH, { 
-        data: { accountId }  // This creates { data: { accountId: "..." } }
-      });
+      if (!accountNumber) {
+        return {
+          success: false,
+          error: 'INVALID_ACCOUNT_NUMBER',
+          message: 'Account number is required'
+        };
+      }
+
+      const cleanAccountNumber = String(accountNumber).trim();
+      
+      // Try query parameter first (most reliable for DELETE)
+      let raw;
+      try {
+        const url = `${DELETE_BANK_ACCOUNT_PATH}?accountNumber=${encodeURIComponent(cleanAccountNumber)}`;
+        raw = await apiClient.delete(url);
+      } catch (queryError) {
+        // Fallback to body
+        raw = await apiClient.delete(DELETE_BANK_ACCOUNT_PATH, {
+          data: { accountNumber: cleanAccountNumber },
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
       const norm = normalizeResponse(raw);
-
-      console.log('DEBUG Delete bank raw response:', JSON.stringify(raw.data, null, 2));
-      console.log('DEBUG Delete bank normalized:', JSON.stringify(norm, null, 2));
-
-      // Treat as success if success true OR server returned a deletedAccount payload
+      
       const deleted = norm.raw?.deletedAccount || norm.data?.deletedAccount || raw.data?.deletedAccount;
       const isOk = (norm.success === true) || Boolean(deleted);
       if (!isOk) {
@@ -280,11 +239,10 @@ export const bankService = {
 
       return {
         success: true,
-        data: { deletedAccount: deleted ?? { id: accountId } },
+        data: { deletedAccount: deleted ?? { accountNumber: cleanAccountNumber } },
         message: norm.message || raw.data?.message || 'Bank account deleted successfully'
       };
     } catch (error) {
-      console.error('DEBUG Delete bank error:', error);
       return {
         success: false,
         error: 'NETWORK_ERROR',
@@ -293,7 +251,6 @@ export const bankService = {
     }
   },
 
-  // -------------------- validation & utilities --------------------
   validateBankAccountData(data) {
     const errors = [];
 
@@ -316,40 +273,7 @@ export const bankService = {
     return { isValid: errors.length === 0, errors };
   },
 
-  formatAccountNumber,
-  maskAccountNumber,
-
-  findBankByCode(bankCode, banksList) {
-    if (!bankCode || !Array.isArray(banksList)) return null;
-    return banksList.find(b => b.sortCode === bankCode || b.uuid === bankCode) || null;
-  },
-
-  sortAccountsByDate(accounts) {
-    if (!Array.isArray(accounts)) return [];
-    return [...accounts].sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt));
-  },
-
-  filterActiveAccounts(accounts) {
-    if (!Array.isArray(accounts)) return [];
-    return accounts.filter(a => a.isActive);
-  },
-
-  filterVerifiedAccounts(accounts) {
-    if (!Array.isArray(accounts)) return [];
-    return accounts.filter(a => a.isVerified);
-  },
-
-  formatDate(date) {
-    if (!date) return '';
-    try {
-      const d = new Date(date);
-      return d.toLocaleDateString('en-NG', { year: 'numeric', month: 'short', day: 'numeric' });
-    } catch {
-      return '';
-    }
-  },
-
   getUserFriendlyMessage(code, original) {
     return userFriendly(code, original);
-  },
+  }
 };

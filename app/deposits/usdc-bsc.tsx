@@ -12,7 +12,6 @@ import {
   RefreshControl,
   ActivityIndicator,
   Clipboard,
-  Alert,
   Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -22,6 +21,9 @@ import AddressCopied from '../../components/AddressCopied';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useDeposit } from '../../hooks/useDeposit';
+
+// Icons - Updated to match BTC-BSC screen
+import backIcon from '../../components/icons/backy.png';
 
 // Type definitions
 interface QRCodeData {
@@ -144,8 +146,8 @@ export default function UsdcBscDepositScreen() {
   const isWalletSetupNeeded = addressError && addressError.includes('needs to be set up');
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
-  const minDeposit = '$1.00 USDC';
-  const network = depositData?.network || 'BSC (Binance Smart Chain)';
+  const minDeposit = '1 USDC';
+  const network = 'BNB Smart Chain (BSC)';
 
   return (
     <View style={styles.container}>
@@ -156,7 +158,6 @@ export default function UsdcBscDepositScreen() {
           <ErrorDisplay type={errorType} message={errorMessage} onDismiss={hideError} autoHide={false} />
         )}
 
-        {/* Address Copied banner */}
         {showCopied && <AddressCopied onDismiss={() => setShowCopied(false)} />}
 
         <ScrollView
@@ -172,22 +173,30 @@ export default function UsdcBscDepositScreen() {
             />
           }
         >
+          {/* Header - Updated to match BTC-BSC screen */}
           <View style={styles.headerSection}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <View style={styles.backArrow}>
-                <View style={styles.arrowLine} />
-                <View style={styles.arrowHead} />
+            <View style={styles.headerContainer}>
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={() => router.back()}
+                activeOpacity={0.7}
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
+              </TouchableOpacity>
+
+              <View style={styles.headerGroup}>
+                <Text style={styles.headerTitle}>Deposit USDC</Text>
+                <Text style={styles.headerSubtitle}>BNB Smart Chain</Text>
               </View>
-            </TouchableOpacity>
-            <View style={styles.headerGroup}>
-              <Text style={styles.headerTitle}>Deposit USDC</Text>
-              <Text style={styles.headerSubtitle}>Binance Smart Chain</Text>
+
+              <View style={styles.headerRight} />
             </View>
-            <View style={styles.headerSpacer} />
           </View>
 
           <View style={styles.subtitleSection}>
-            <Text style={styles.subtitle}>Scan the QR code to get Deposit address</Text>
+            <Text style={styles.subtitle}>Scan the QR code to get BNB Smart Chain deposit address</Text>
           </View>
 
           <View style={styles.qrSection}>
@@ -247,8 +256,9 @@ export default function UsdcBscDepositScreen() {
             <View style={styles.warningContainer}>
               <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
               <Text style={styles.warningText}>
-                Only send USDC on the Binance Smart Chain (BSC) network to this address. 
-                Sending USDC from other networks (like Ethereum) may result in permanent loss of funds.
+                • Only send USDC on BNB Smart Chain (BSC) network to this address{'\n'}
+                • Sending USDC from other networks (like Ethereum) may result in loss of funds{'\n'}
+                • Ensure your wallet supports BSC USDC (BEP-20) before sending
               </Text>
             </View>
           </View>
@@ -279,60 +289,43 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 100,
   },
+
+  // Header - Updated to match BTC-BSC screen
   headerSection: {
     paddingHorizontal: horizontalPadding,
-    paddingTop: 15,
-    paddingBottom: 8,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  backButton: {
+  backButton: { 
     width: 40,
     height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+    justifyContent: 'center', 
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    borderRadius: 20,
   },
-  backArrow: {
+  backIcon: {
     width: 24,
     height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  arrowLine: {
-    width: 16,
-    height: 2,
-    backgroundColor: Colors.text.primary,
-    position: 'absolute',
-  },
-  arrowHead: {
-    width: 8,
-    height: 8,
-    borderLeftWidth: 2,
-    borderTopWidth: 2,
-    borderLeftColor: Colors.text.primary,
-    borderTopColor: Colors.text.primary,
-    backgroundColor: 'transparent',
-    transform: [{ rotate: '-45deg' }],
-    position: 'absolute',
-    left: 0,
+    resizeMode: 'contain',
   },
   headerGroup: {
     flex: 1,
     alignItems: 'center',
   },
-  headerSpacer: {
+  headerRight: {
     width: 40,
-    height: 40,
   },
   headerTitle: {
     color: Colors.text.primary,
     fontFamily: Typography.medium,
     fontSize: 18,
     textAlign: 'center',
+    fontWeight: '600',
   },
   headerSubtitle: {
     color: Colors.text.secondary,
@@ -341,6 +334,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 2,
   },
+
   subtitleSection: {
     paddingHorizontal: horizontalPadding,
     paddingVertical: 8,
@@ -497,12 +491,13 @@ const styles = StyleSheet.create({
     color: '#92400E',
     fontFamily: Typography.medium,
     fontSize: 14,
+    fontWeight: '600',
     marginBottom: 8,
   },
   warningText: {
     color: '#92400E',
     fontFamily: Typography.regular,
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 18,
   },
   shareSection: {

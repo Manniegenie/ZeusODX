@@ -69,7 +69,7 @@ export function useDashboard() {
   const solPrice = prices?.SOL || 0;
   const usdcPrice = prices?.USDC || 0;
   const usdtPrice = prices?.USDT || 0;
-  const avaxPrice = prices?.AVAX || 0;
+  const trxPrice = prices?.TRX || 0;
   const bnbPrice = prices?.BNB || 0;
   const maticPrice = prices?.MATIC || 0;
   const dogePrice = prices?.DOGE || 0;
@@ -78,7 +78,7 @@ export function useDashboard() {
   const btcPriceChange = priceChanges12h?.BTC || {};
   const ethPriceChange = priceChanges12h?.ETH || {};
   const solPriceChange = priceChanges12h?.SOL || {};
-  const avaxPriceChange = priceChanges12h?.AVAX || {};
+  const trxPriceChange = priceChanges12h?.TRX || {};
   const bnbPriceChange = priceChanges12h?.BNB || {};
   const maticPriceChange = priceChanges12h?.MATIC || {};
 
@@ -106,13 +106,13 @@ export function useDashboard() {
   const solPriceChangeAmount = solPriceChange?.priceChange || 0;
   const solTimeframe = solPriceChange?.timeframe || '';
 
-  // AVAX price change details
-  const avaxDataAvailable = avaxPriceChange?.dataAvailable || false;
-  const avaxNewPrice = avaxPriceChange?.newPrice || 0;
-  const avaxOldPrice = avaxPriceChange?.oldPrice || 0;
-  const avaxPercentageChange = avaxPriceChange?.percentageChange || 0;
-  const avaxPriceChangeAmount = avaxPriceChange?.priceChange || 0;
-  const avaxTimeframe = avaxPriceChange?.timeframe || '';
+  // TRX price change details
+  const trxDataAvailable = trxPriceChange?.dataAvailable || false;
+  const trxNewPrice = trxPriceChange?.newPrice || 0;
+  const trxOldPrice = trxPriceChange?.oldPrice || 0;
+  const trxPercentageChange = trxPriceChange?.percentageChange || 0;
+  const trxPriceChangeAmount = trxPriceChange?.priceChange || 0;
+  const trxTimeframe = trxPriceChange?.timeframe || '';
 
   // BNB price change details
   const bnbDataAvailable = bnbPriceChange?.dataAvailable || false;
@@ -144,7 +144,7 @@ export function useDashboard() {
   const solBalance = balances?.SOL || {};
   const usdcBalance = balances?.USDC || {};
   const usdtBalance = balances?.USDT || {};
-  const avaxBalance = balances?.AVAX || {};
+  const trxBalance = balances?.TRX || {};
   const bnbBalance = balances?.BNB || {};
   const maticBalance = balances?.MATIC || {};
   const ngnzBalance = balances?.NGNZ || {};
@@ -164,7 +164,7 @@ export function useDashboard() {
   const usdtEthWallet = wallets?.USDT_ETH || {};
   const usdtTrxWallet = wallets?.USDT_TRX || {};
   const ngnzWallet = wallets?.NGNZ || {};
-  const avaxBscWallet = wallets?.AVAX_BSC || {};
+  const trxWallet = wallets?.TRX_TRX || {};
   const bnbBscWallet = wallets?.BNB_BSC || {};
   const bnbEthWallet = wallets?.BNB_ETH || {};
   const dogeWallet = wallets?.DOGE_DOGE || {};
@@ -180,6 +180,7 @@ export function useDashboard() {
   const usdtEthWalletAddress = usdtEthWallet?.address || '';
   const usdtTrxWalletAddress = usdtTrxWallet?.address || '';
   const ngnzWalletAddress = ngnzWallet?.address || '';
+  const trxWalletAddress = trxWallet?.address || '';
 
   // Individual wallet reference IDs
   const btcWalletReferenceId = btcWallet?.walletReferenceId || '';
@@ -191,6 +192,7 @@ export function useDashboard() {
   const usdtEthWalletReferenceId = usdtEthWallet?.walletReferenceId || '';
   const usdtTrxWalletReferenceId = usdtTrxWallet?.walletReferenceId || '';
   const ngnzWalletReferenceId = ngnzWallet?.walletReferenceId || '';
+  const trxWalletReferenceId = trxWallet?.walletReferenceId || '';
 
   // Individual wallet networks
   const btcWalletNetwork = btcWallet?.network || '';
@@ -202,6 +204,7 @@ export function useDashboard() {
   const usdtEthWalletNetwork = usdtEthWallet?.network || '';
   const usdtTrxWalletNetwork = usdtTrxWallet?.network || '';
   const ngnzWalletNetwork = ngnzWallet?.network || '';
+  const trxWalletNetwork = trxWallet?.network || '';
 
   // FIXED: Refresh dashboard data - Clear cache before refetching
   const refreshDashboard = async () => {
@@ -262,7 +265,7 @@ export function useDashboard() {
     solPrice,
     usdcPrice,
     usdtPrice,
-    avaxPrice,
+    trxPrice,
     bnbPrice,
     maticPrice,
     dogePrice,
@@ -294,14 +297,14 @@ export function useDashboard() {
     solPriceChangeAmount,
     solTimeframe,
     
-    // AVAX price change fields
-    avaxPriceChange,
-    avaxDataAvailable,
-    avaxNewPrice,
-    avaxOldPrice,
-    avaxPercentageChange,
-    avaxPriceChangeAmount,
-    avaxTimeframe,
+    // TRX price change fields
+    trxPriceChange,
+    trxDataAvailable,
+    trxNewPrice,
+    trxOldPrice,
+    trxPercentageChange,
+    trxPriceChangeAmount,
+    trxTimeframe,
     
     // BNB price change fields
     bnbPriceChange,
@@ -331,7 +334,7 @@ export function useDashboard() {
     solBalance,
     usdcBalance,
     usdtBalance,
-    avaxBalance,
+    trxBalance,
     bnbBalance,
     maticBalance,
     ngnzBalance,
@@ -346,7 +349,7 @@ export function useDashboard() {
     usdtEthWallet,
     usdtTrxWallet,
     ngnzWallet,
-    avaxBscWallet,
+    trxWallet,
     bnbBscWallet,
     bnbEthWallet,
     dogeWallet,
@@ -362,6 +365,7 @@ export function useDashboard() {
     usdtEthWalletAddress,
     usdtTrxWalletAddress,
     ngnzWalletAddress,
+    trxWalletAddress,
     
     // Wallet reference IDs
     btcWalletReferenceId,
@@ -373,6 +377,7 @@ export function useDashboard() {
     usdtEthWalletReferenceId,
     usdtTrxWalletReferenceId,
     ngnzWalletReferenceId,
+    trxWalletReferenceId,
     
     // Wallet networks
     btcWalletNetwork,
@@ -384,6 +389,7 @@ export function useDashboard() {
     usdtEthWalletNetwork,
     usdtTrxWalletNetwork,
     ngnzWalletNetwork,
+    trxWalletNetwork,
     
     // API state
     loading,

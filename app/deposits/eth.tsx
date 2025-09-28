@@ -22,6 +22,9 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useDeposit } from '../../hooks/useDeposit';
 
+// Icons - Updated to match BTC-BSC screen
+import backIcon from '../../components/icons/backy.png';
+
 // Type definitions
 interface QRCodeData {
   dataUrl: string;
@@ -132,7 +135,7 @@ export default function EthDepositScreen() {
     }
     try {
       await Clipboard.setString(depositData.address);
-      setShowCopied(true); // show green "Address Copied"
+      setShowCopied(true);
     } catch (error) {
       showErrorMessage('Failed to copy address to clipboard');
     }
@@ -144,7 +147,7 @@ export default function EthDepositScreen() {
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
   const minDeposit = '0.001 ETH';
-  const network = depositData?.network || 'Ethereum';
+  const network = 'Ethereum';
 
   return (
     <View style={styles.container}>
@@ -155,7 +158,6 @@ export default function EthDepositScreen() {
           <ErrorDisplay type={errorType} message={errorMessage} onDismiss={hideError} autoHide={false} />
         )}
 
-        {/* Address Copied banner */}
         {showCopied && <AddressCopied onDismiss={() => setShowCopied(false)} />}
 
         <ScrollView
@@ -171,21 +173,30 @@ export default function EthDepositScreen() {
             />
           }
         >
+          {/* Header - Updated to match BTC-BSC screen */}
           <View style={styles.headerSection}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <View style={styles.backArrow}>
-                <View style={styles.arrowLine} />
-                <View style={styles.arrowHead} />
+            <View style={styles.headerContainer}>
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={() => router.back()}
+                activeOpacity={0.7}
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
+              </TouchableOpacity>
+
+              <View style={styles.headerGroup}>
+                <Text style={styles.headerTitle}>Deposit ETH</Text>
+                <Text style={styles.headerSubtitle}>Ethereum</Text>
               </View>
-            </TouchableOpacity>
-            <View style={styles.headerGroup}>
-              <Text style={styles.headerTitle}>Deposit ETH</Text>
+
+              <View style={styles.headerRight} />
             </View>
-            <View style={styles.headerSpacer} />
           </View>
 
           <View style={styles.subtitleSection}>
-            <Text style={styles.subtitle}>Scan the QR code to get Deposit address</Text>
+            <Text style={styles.subtitle}>Scan the QR code to get Ethereum deposit address</Text>
           </View>
 
           <View style={styles.qrSection}>
@@ -237,6 +248,17 @@ export default function EthDepositScreen() {
             )}
           </View>
 
+          <View style={styles.warningSection}>
+            <View style={styles.warningContainer}>
+              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
+              <Text style={styles.warningText}>
+                • Only send ETH on Ethereum network to this address{'\n'}
+                • Sending from other networks may result in loss of funds{'\n'}
+                • Ensure your wallet supports Ethereum before sending
+              </Text>
+            </View>
+          </View>
+
           <View style={styles.shareSection}>
             <TouchableOpacity style={styles.shareButton}>
               <Text style={styles.shareButtonText}>Share as image</Text>
@@ -263,61 +285,52 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 100,
   },
+
+  // Header - Updated to match BTC-BSC screen
   headerSection: {
     paddingHorizontal: horizontalPadding,
-    paddingTop: 15,
-    paddingBottom: 8,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  backButton: {
+  backButton: { 
     width: 40,
     height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+    justifyContent: 'center', 
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    borderRadius: 20,
   },
-  backArrow: {
+  backIcon: {
     width: 24,
     height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  arrowLine: {
-    width: 16,
-    height: 2,
-    backgroundColor: Colors.text.primary,
-    position: 'absolute',
-  },
-  arrowHead: {
-    width: 8,
-    height: 8,
-    borderLeftWidth: 2,
-    borderTopWidth: 2,
-    borderLeftColor: Colors.text.primary,
-    borderTopColor: Colors.text.primary,
-    backgroundColor: 'transparent',
-    transform: [{ rotate: '-45deg' }],
-    position: 'absolute',
-    left: 0,
+    resizeMode: 'contain',
   },
   headerGroup: {
     flex: 1,
     alignItems: 'center',
   },
-  headerSpacer: {
+  headerRight: {
     width: 40,
-    height: 40,
   },
   headerTitle: {
     color: Colors.text.primary,
     fontFamily: Typography.medium,
     fontSize: 18,
     textAlign: 'center',
+    fontWeight: '600',
   },
+  headerSubtitle: {
+    color: Colors.text.secondary,
+    fontFamily: Typography.regular,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+
   subtitleSection: {
     paddingHorizontal: horizontalPadding,
     paddingVertical: 8,
@@ -458,6 +471,30 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     fontFamily: Typography.medium,
     fontSize: 14,
+  },
+  warningSection: {
+    paddingHorizontal: horizontalPadding,
+    paddingVertical: 15,
+  },
+  warningContainer: {
+    backgroundColor: '#FEF3CD',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+  },
+  warningTitle: {
+    color: '#92400E',
+    fontFamily: Typography.medium,
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  warningText: {
+    color: '#92400E',
+    fontFamily: Typography.regular,
+    fontSize: 12,
+    lineHeight: 18,
   },
   shareSection: {
     paddingHorizontal: horizontalPadding,

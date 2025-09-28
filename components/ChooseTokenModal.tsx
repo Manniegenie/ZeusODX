@@ -20,7 +20,7 @@ const ethIcon = require('../components/icons/eth-icon.png');
 const solIcon = require('../components/icons/sol-icon.png');
 const usdtIcon = require('../components/icons/usdt-icon.png');
 const usdcIcon = require('../components/icons/usdc-icon.png');
-const avaxIcon = require('../components/icons/avax-icon.png');
+const trxIcon = require('../components/icons/Tron.png');
 const bnbIcon = require('../components/icons/bnb-icon.png');
 const maticIcon = require('../components/icons/matic-icon.png');
 const ngnzIcon = require('../components/icons/NGNZ.png');
@@ -62,7 +62,7 @@ export default function ChooseTokenModal({
     solPrice,
     usdtPrice,
     usdcPrice,
-    avaxPrice,
+    trxPrice,
     bnbPrice,
     maticPrice,
     ngnzExchangeRate,
@@ -72,7 +72,7 @@ export default function ChooseTokenModal({
     solBalance,
     usdtBalance,
     usdcBalance,
-    avaxBalance,
+    trxBalance,
     bnbBalance,
     maticBalance,
     ngnzBalance,
@@ -137,12 +137,12 @@ export default function ChooseTokenModal({
       balance: bnbBalance?.balance || 0,
     },
     {
-      id: 'avax',
-      name: 'Avalanche',
-      symbol: 'AVAX',
-      icon: avaxIcon,
-      price: avaxPrice,
-      balance: avaxBalance?.balance || 0,
+      id: 'trx',
+      name: 'Tron',
+      symbol: 'TRX',
+      icon: trxIcon,
+      price: trxPrice,
+      balance: trxBalance?.balance || 0,
     },
     {
       id: 'matic',

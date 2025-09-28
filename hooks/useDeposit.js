@@ -18,33 +18,33 @@ export function useDeposit() {
   // Extract supported tokens and networks from response
   const supportedTokens = useMemo(() => {
     if (!supportedData?.supportedTokens) {
-      console.log('💳 useDeposit: No supported tokens data');
+      console.log('useDeposit: No supported tokens data');
       return {};
     }
     
-    console.log('💳 useDeposit: Processing supported tokens', Object.keys(supportedData.supportedTokens).length);
+    console.log('useDeposit: Processing supported tokens', Object.keys(supportedData.supportedTokens).length);
     return supportedData.supportedTokens;
   }, [supportedData]);
 
   // Extract supported combinations
   const supportedCombinations = useMemo(() => {
     if (!supportedData?.supportedCombinations) {
-      console.log('🔗 useDeposit: No supported combinations data');
+      console.log('useDeposit: No supported combinations data');
       return [];
     }
     
-    console.log('🔗 useDeposit: Processing supported combinations', supportedData.supportedCombinations.length);
+    console.log('useDeposit: Processing supported combinations', supportedData.supportedCombinations.length);
     return supportedData.supportedCombinations;
   }, [supportedData]);
 
   // Extract wallet key mapping
   const walletKeyMapping = useMemo(() => {
     if (!supportedData?.walletKeyMapping) {
-      console.log('🗝️ useDeposit: No wallet key mapping data');
+      console.log('useDeposit: No wallet key mapping data');
       return {};
     }
     
-    console.log('🗝️ useDeposit: Processing wallet key mapping', Object.keys(supportedData.walletKeyMapping).length);
+    console.log('useDeposit: Processing wallet key mapping', Object.keys(supportedData.walletKeyMapping).length);
     return supportedData.walletKeyMapping;
   }, [supportedData]);
 
@@ -73,6 +73,7 @@ export function useDeposit() {
                   token === 'USDT' ? 'Tether USD' :
                   token === 'USDC' ? 'USD Coin' :
                   token === 'BNB' ? 'BNB' :
+                  token === 'TRX' ? 'Tron' :
                   token === 'DOGE' ? 'Dogecoin' :
                   token === 'MATIC' ? 'Polygon' :
                   token === 'AVAX' ? 'Avalanche' :
@@ -80,7 +81,7 @@ export function useDeposit() {
                   token,
     }));
     
-    console.log('💎 useDeposit: Formatted supported tokens', formatted.length);
+    console.log('useDeposit: Formatted supported tokens', formatted.length);
     return formatted;
   }, [supportedTokens]);
 
@@ -90,18 +91,18 @@ export function useDeposit() {
     
     // Return cached address if available
     if (depositAddresses[addressKey]) {
-      console.log(`💾 useDeposit: Using cached address for ${addressKey}`);
+      console.log(`useDeposit: Using cached address for ${addressKey}`);
       return { success: true, data: depositAddresses[addressKey] };
     }
 
     // Check if already loading
     if (loadingAddresses[addressKey]) {
-      console.log(`⏳ useDeposit: Already loading address for ${addressKey}`);
+      console.log(`useDeposit: Already loading address for ${addressKey}`);
       return { success: false, error: 'Already loading' };
     }
 
     try {
-      console.log(`💳 useDeposit: Fetching deposit address for ${tokenSymbol} on ${network}`);
+      console.log(`useDeposit: Fetching deposit address for ${tokenSymbol} on ${network}`);
       
       setLoadingAddresses(prev => ({ ...prev, [addressKey]: true }));
       setAddressErrors(prev => ({ ...prev, [addressKey]: null }));
@@ -109,7 +110,7 @@ export function useDeposit() {
       const response = await depositService.getDepositAddress(tokenSymbol, network);
       
       if (response.success) {
-        console.log(`✅ useDeposit: Got deposit address for ${addressKey}`);
+        console.log(`useDeposit: Got deposit address for ${addressKey}`);
         const addressData = {
           ...response.data,
           tokenSymbol,
@@ -119,15 +120,15 @@ export function useDeposit() {
         setDepositAddresses(prev => ({ ...prev, [addressKey]: addressData }));
         return { success: true, data: addressData };
       } else {
-        console.log(`❌ useDeposit: Failed to get address for ${addressKey}`, response);
+        console.log(`useDeposit: Failed to get address for ${addressKey}`, response);
         
         // Handle specific error cases
         let errorMessage = response.error || response.message || 'Unknown error';
         
         // Check if it's a wallet not found error with available wallets
         if (response.message && response.message.includes('not found')) {
-          console.log('📋 Available wallets from API:', response.availableWallets);
-          console.log('📋 Requested wallet key:', response.requestedWalletKey);
+          console.log('Available wallets from API:', response.availableWallets);
+          console.log('Requested wallet key:', response.requestedWalletKey);
           
           if (response.availableWallets && Array.isArray(response.availableWallets)) {
             // Handle both formats: array of strings or array of objects
@@ -160,7 +161,7 @@ export function useDeposit() {
         return { success: false, error: errorMessage };
       }
     } catch (error) {
-      console.error(`💥 useDeposit: Error getting address for ${addressKey}`, error);
+      console.error(`useDeposit: Error getting address for ${addressKey}`, error);
       
       let errorMessage = 'Network error occurred';
       if (error.response?.data?.message) {
@@ -179,18 +180,18 @@ export function useDeposit() {
   // Generate QR code for any address
   const generateQRCode = useCallback(async (address, size = 256) => {
     try {
-      console.log(`🔗 useDeposit: Generating QR code for address: ${address.slice(0, 8)}...${address.slice(-6)}`);
+      console.log(`useDeposit: Generating QR code for address: ${address.slice(0, 8)}...${address.slice(-6)}`);
       const response = await depositService.generateQRCode(address, size);
       
       if (response.success) {
-        console.log('✅ useDeposit: QR code generated successfully');
+        console.log('useDeposit: QR code generated successfully');
         return { success: true, data: response.data };
       } else {
-        console.log('❌ useDeposit: Failed to generate QR code');
+        console.log('useDeposit: Failed to generate QR code');
         return { success: false, error: response.error };
       }
     } catch (error) {
-      console.error('💥 useDeposit: QR code generation error', error);
+      console.error('useDeposit: QR code generation error', error);
       return { success: false, error: error.message };
     }
   }, []);
@@ -207,6 +208,8 @@ export function useDeposit() {
     getDepositAddress('USDC', network), [getDepositAddress]);
   const getBNBAddress = useCallback((network = 'BSC') => 
     getDepositAddress('BNB', network), [getDepositAddress]);
+  const getTRXAddress = useCallback((network = 'TRON') => 
+    getDepositAddress('TRX', network), [getDepositAddress]);
 
   // Validate token/network combination using live API data
   const isTokenNetworkSupported = useCallback((tokenSymbol, network) => {
@@ -253,7 +256,7 @@ export function useDeposit() {
 
   // Clear cached addresses
   const clearCache = useCallback(() => {
-    console.log('🗑️ useDeposit: Clearing address cache');
+    console.log('useDeposit: Clearing address cache');
     setDepositAddresses({});
     setLoadingAddresses({});
     setAddressErrors({});
@@ -261,7 +264,7 @@ export function useDeposit() {
 
   // Refresh supported tokens
   const refreshSupportedTokens = useCallback(async () => {
-    console.log('🔄 useDeposit: Refreshing supported tokens');
+    console.log('useDeposit: Refreshing supported tokens');
     await refetchSupported();
   }, [refetchSupported]);
 
@@ -299,6 +302,7 @@ export function useDeposit() {
     getUSDTAddress,
     getUSDCAddress,
     getBNBAddress,
+    getTRXAddress,
     
     // Validation utilities
     isTokenNetworkSupported,

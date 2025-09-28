@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import backIcon from '../../components/icons/backy.png';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
@@ -38,8 +39,9 @@ const KYCLevel2Screen: React.FC = () => {
   });
 
   const kyc2Pct = Math.max(0, Math.min(100, kyc2Progress?.percentage ?? 0));
-  const canStartIdentity = !!emailVerified;
+  const canStartIdentity = !!emailVerified && !identityVerified;
   const emailClickable = !emailVerified; // <- make email step unclickable when already verified
+  const identityClickable = !identityVerified && !!emailVerified; // <- make identity step unclickable when already verified
 
   const handleGoBack = (): void => {
     router.back();
@@ -51,7 +53,7 @@ const KYCLevel2Screen: React.FC = () => {
   };
 
   const handleIdentityPress = (): void => {
-    if (!canStartIdentity) return;
+    if (!identityClickable) return;
     router.push('/kyc/verify');
   };
 
@@ -74,7 +76,7 @@ const KYCLevel2Screen: React.FC = () => {
                 onPress={handleGoBack}
                 activeOpacity={0.7}
               >
-                <Text style={styles.backButtonText}>←</Text>
+                <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
 
               <Text style={styles.headerTitle}>Level 2 Verification</Text>
@@ -180,17 +182,17 @@ const KYCLevel2Screen: React.FC = () => {
               </View>
             </TouchableOpacity>
 
-            {/* Identity Verification (only clickable if email is verified) */}
+            {/* Identity Verification (only clickable if email is verified and identity not yet verified) */}
             <TouchableOpacity
-              activeOpacity={canStartIdentity ? 0.8 : 1}
+              activeOpacity={identityClickable ? 0.8 : 1}
               style={[
                 styles.verificationCard,
                 { borderColor: '#C7D2FE' },
-                !canStartIdentity && styles.disabledCard,
+                !identityClickable && styles.disabledCard,
               ]}
               onPress={handleIdentityPress}
-              disabled={!canStartIdentity}
-              accessibilityState={{ disabled: !canStartIdentity }}
+              disabled={!identityClickable}
+              accessibilityState={{ disabled: !identityClickable }}
               testID="identityVerificationCard"
             >
               <View style={styles.verificationContent}>
@@ -250,10 +252,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 20,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: Colors.text?.primary || '#111827',
-    fontWeight: '500',
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerTitle: {
     color: '#35297F',

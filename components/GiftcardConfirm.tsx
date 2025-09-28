@@ -370,7 +370,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
                     activeOpacity={0.8}
                   >
                     <Text style={styles.payButtonText}>
-                      {loading ? 'Processing...' : calcLoading ? 'Calculating…' : 'Pay'}
+                      {loading ? 'Processing...' : calcLoading ? 'Calculating…' : 'Confirm'}
                     </Text>
                   </TouchableOpacity>
                 </View>

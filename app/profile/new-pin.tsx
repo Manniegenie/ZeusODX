@@ -1,9 +1,13 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Vibration } from 'react-native';
+// app/profile/pin-reset.tsx
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Vibration, Image } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+
+// use same back icon as other screens
+import backIcon from '../../components/icons/backy.png';
 
 export default function SetupPinScreen() {
   const router = useRouter();
@@ -28,6 +32,10 @@ export default function SetupPinScreen() {
       // Vibrate if PIN incomplete
       Vibration.vibrate(100);
     }
+  };
+
+  const handleGoBack = () => {
+    router.back();
   };
 
   const renderPinDots = () => {
@@ -88,7 +96,25 @@ export default function SetupPinScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Header */}
+        {/* Header with image back button + centered title (consistent with other screens) */}
+        <View style={styles.headerSection}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleGoBack}
+            activeOpacity={0.7}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Image source={backIcon} style={styles.backIcon} />
+          </TouchableOpacity>
+
+          {/* Centered title using absolute-position technique */}
+          <Text style={styles.headerTitle}>Set up your PIN</Text>
+
+          {/* spacer to keep title centered */}
+          <View style={styles.headerSpacer} />
+        </View>
+
+        {/* Subtitle / header content */}
         <View style={styles.header}>
           <Text style={styles.title}>Set up your PIN</Text>
           <Text style={styles.subtitle}>Please set up your security PIN</Text>
@@ -114,6 +140,7 @@ export default function SetupPinScreen() {
               pin.length === PIN_LENGTH ? styles.activeButton : styles.inactiveButton
             ]} 
             onPress={handleContinue}
+            activeOpacity={0.7}
           >
             <Text style={[
               styles.continueButtonText,
@@ -137,6 +164,34 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Layout.spacing.lg,
   },
+
+  // header area with back button and centered title
+  headerSection: {
+    paddingTop: 12,
+    paddingBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
+  headerTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    color: '#35297F',
+    fontFamily: Typography.medium || 'System',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    pointerEvents: 'none',
+  },
+  headerSpacer: { width: 40 },
+
   header: {
     paddingTop: Layout.spacing.xl,
     marginBottom: Layout.spacing.xxl,
@@ -156,6 +211,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: Layout.spacing.md,
   },
+
   pinContainer: {
     alignItems: 'center',
     marginBottom: Layout.spacing.xxl,

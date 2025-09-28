@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import naijaFlag from '../../components/icons/naija-flag.png';
+import backIcon from '../../components/icons/backy.png';
 import { useBankAccounts } from '../../hooks/usebankAccount';
 import ErrorDisplay from '../../components/ErrorDisplay';
 
@@ -30,11 +31,11 @@ const BankAccountsScreen = () => {
     error,
     getBankAccounts,
     deleteBankAccount,
-    formatAccountNumber,
   } = useBankAccounts();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [selectedAccountNumber, setSelectedAccountNumber] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [errorDisplayConfig, setErrorDisplayConfig] = useState<{
     visible: boolean;
@@ -46,7 +47,6 @@ const BankAccountsScreen = () => {
     type: 'general'
   });
 
-  // Auto-fetch bank accounts on mount
   useEffect(() => {
     getBankAccounts();
   }, [getBankAccounts]);
@@ -64,24 +64,13 @@ const BankAccountsScreen = () => {
     setErrorDisplayConfig(prev => ({ ...prev, visible: false }));
   };
 
-  // Map hook data to match current component expectations
-  const maskedAccounts = useMemo(() => {
-    return bankAccounts.map(account => ({
-      ...account,
-      maskedNumber: formatAccountNumber(account.accountNumber)
-    }));
-  }, [bankAccounts, formatAccountNumber]);
-
-  const summary = accountsSummary;
-  const accounts = maskedAccounts;
-  const canAddMore = summary?.canAddMore !== false;
+  const canAddMore = accountsSummary?.canAddMore !== false;
 
   const selectedDeleting = useMemo(
     () => Boolean(selectedAccountId && deletingId === selectedAccountId),
     [selectedAccountId, deletingId]
   );
 
-  // Check if any operation is in progress
   const isAnyOperationInProgress = loading || selectedDeleting;
 
   const handleGoBack = () => {
@@ -93,7 +82,7 @@ const BankAccountsScreen = () => {
     if (isAnyOperationInProgress) return;
     
     if (!canAddMore) {
-      showError('limit', 'Account Limit Reached', `You can only add up to ${summary?.maxAllowed ?? 10} bank accounts.`);
+      showError('limit', 'Account Limit Reached', `You can only add up to ${accountsSummary?.maxAllowed ?? 10} bank accounts.`);
       return;
     }
     router.push('/profile/add-bank');
@@ -101,24 +90,29 @@ const BankAccountsScreen = () => {
 
   const handleAccountOptions = (accountId: string) => {
     if (isAnyOperationInProgress) return;
+    
+    const account = bankAccounts.find(acc => acc.id === accountId);
+    if (!account) return;
+    
     setSelectedAccountId(accountId);
+    setSelectedAccountNumber(account.accountNumber);
     setShowDeleteModal(true);
   };
 
   const handleDeleteAccount = async () => {
-    if (!selectedAccountId || selectedDeleting) return;
+    if (!selectedAccountId || !selectedAccountNumber || selectedDeleting) return;
     
     setDeletingId(selectedAccountId);
     
-    const res = await deleteBankAccount(selectedAccountId);
+    const res = await deleteBankAccount(selectedAccountNumber);
     
     setDeletingId(null);
     
     if (res?.success) {
       setShowDeleteModal(false);
       setSelectedAccountId(null);
+      setSelectedAccountNumber(null);
     } else {
-      // Determine error type based on response
       let errorType: 'network' | 'validation' | 'server' | 'general' = 'general';
       if (res?.error === 'NETWORK_ERROR') {
         errorType = 'network';
@@ -136,11 +130,7 @@ const BankAccountsScreen = () => {
     if (selectedDeleting) return;
     setShowDeleteModal(false);
     setSelectedAccountId(null);
-  };
-
-  const refetch = () => {
-    if (loading) return;
-    getBankAccounts();
+    setSelectedAccountNumber(null);
   };
 
   return (
@@ -162,11 +152,15 @@ const BankAccountsScreen = () => {
               onPress={handleGoBack}
               activeOpacity={isAnyOperationInProgress ? 1 : 0.7}
               disabled={isAnyOperationInProgress}
+              hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
             >
-              <Text style={[
-                styles.backButtonText,
-                isAnyOperationInProgress && styles.backButtonTextDisabled
-              ]}>←</Text>
+              <Image 
+                source={backIcon} 
+                style={[
+                  styles.backIcon,
+                  isAnyOperationInProgress && styles.backIconDisabled
+                ]} 
+              />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Bank Accounts</Text>
             <View style={styles.headerSpacer} />
@@ -192,32 +186,9 @@ const BankAccountsScreen = () => {
             </View>
           )}
 
-          {/* Error */}
-          {!loading && error && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>
-                Failed to load bank accounts
-              </Text>
-              <TouchableOpacity 
-                style={[
-                  styles.retryButton,
-                  isAnyOperationInProgress && styles.retryButtonDisabled
-                ]} 
-                onPress={() => {
-                  if (loading) return;
-                  getBankAccounts();
-                }}
-                disabled={isAnyOperationInProgress}
-                activeOpacity={isAnyOperationInProgress ? 1 : 0.7}
-              >
-                <Text style={styles.retryButtonText}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
           {/* Bank Accounts List */}
           <View style={styles.accountsSection}>
-            {!loading && accounts.length === 0 ? (
+            {!loading && bankAccounts.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={[
                   styles.emptyStateText,
@@ -229,7 +200,7 @@ const BankAccountsScreen = () => {
                 ]}>Add your first bank account to get started</Text>
               </View>
             ) : (
-              accounts.map((account) => (
+              bankAccounts.map((account) => (
                 <View 
                   key={account.id} 
                   style={[
@@ -330,7 +301,7 @@ const BankAccountsScreen = () => {
         />
       )}
 
-      {/* Delete Confirmation Modal (sized to match 2FA modal: width 320, radius 16, padding 24) */}
+      {/* Delete Confirmation Modal */}
       <Modal
         visible={showDeleteModal && !loading}
         transparent
@@ -402,8 +373,12 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20,
   },
-  backButtonText: { fontSize: 20, color: Colors.text.primary, fontWeight: '500' },
-  backButtonTextDisabled: { opacity: 0.5 },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
+  backIconDisabled: { opacity: 0.5 },
   headerTitle: {
     position: 'absolute',
     left: 0, right: 0,
@@ -436,35 +411,6 @@ const styles = StyleSheet.create({
   loadingText: { 
     color: Colors.text.secondary, 
     fontFamily: Typography.regular, 
-    fontSize: 14 
-  },
-
-  errorContainer: { 
-    marginHorizontal: 16, 
-    marginBottom: 12, 
-    backgroundColor: '#FEE2E2', 
-    borderColor: '#FCA5A5', 
-    borderWidth: 1, 
-    borderRadius: 8, 
-    padding: 12 
-  },
-  errorText: { 
-    color: '#991B1B', 
-    fontFamily: Typography.regular, 
-    fontSize: 14, 
-    marginBottom: 8 
-  },
-  retryButton: { 
-    alignSelf: 'flex-start', 
-    paddingHorizontal: 12, 
-    paddingVertical: 8, 
-    backgroundColor: '#EF4444', 
-    borderRadius: 6 
-  },
-  retryButtonDisabled: { opacity: 0.5 },
-  retryButtonText: { 
-    color: '#fff', 
-    fontFamily: Typography.medium, 
     fontSize: 14 
   },
 
@@ -539,7 +485,6 @@ const styles = StyleSheet.create({
   addButtonText: { color: '#35297F', fontFamily: Typography.medium, fontSize: 16, fontWeight: '600' },
   addButtonTextDisabled: { color: '#9CA3AF' },
 
-  // Loading overlay
   loadingOverlay: {
     position: 'absolute',
     top: 0,
@@ -552,15 +497,13 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
 
-  // ===== Modal styles (match 2FA modal sizing) =====
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // same as 2FA overlay
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20, // same as 2FA overlay
+    paddingHorizontal: 20,
   },
-  // Match TwoFactorAuthModal: width: 320, radius: 16, white bg, padding 24
   deleteModalContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,

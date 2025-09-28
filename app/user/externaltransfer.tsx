@@ -151,7 +151,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
     usdcBalance,
     usdtBalance,
     ethBalance,
-    avaxBalance,
+    trxBalance,
     bnbBalance,
     maticBalance,
     btcBalance,
@@ -159,7 +159,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
     formattedUsdcBalanceUSD,
     formattedUsdtBalanceUSD,
     formattedEthBalanceUSD,
-    formattedAvaxBalanceUSD,
+    formattedTrxBalanceUSD,
     formattedBnbBalanceUSD,
     formattedMaticBalanceUSD,
     formattedBtcBalanceUSD,
@@ -191,14 +191,14 @@ const ExternalWalletTransferScreen: React.FC = () => {
 
   // Create tokenMap with the same pattern as TransferBottomSheet
   const tokenMap = useMemo((): { [key: string]: TokenOption } => {
-    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'AVAX', 'BNB', 'MATIC', 'BTC'];
+    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'TRX', 'BNB', 'MATIC', 'BTC'];
     
     const balanceMap = {
       SOL: solBalance || 0,
       USDC: usdcBalance || 0,
       USDT: usdtBalance || 0,
       ETH: ethBalance || 0,
-      AVAX: avaxBalance || 0,
+      TRX: trxBalance || 0,
       BNB: bnbBalance || 0,
       MATIC: maticBalance || 0,
       BTC: btcBalance || 0,
@@ -209,7 +209,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
       USDC: formattedUsdcBalanceUSD || '$0.00',
       USDT: formattedUsdtBalanceUSD || '$0.00',
       ETH: formattedEthBalanceUSD || '$0.00',
-      AVAX: formattedAvaxBalanceUSD || '$0.00',
+      TRX: formattedTrxBalanceUSD || '$0.00',
       BNB: formattedBnbBalanceUSD || '$0.00',
       MATIC: formattedMaticBalanceUSD || '$0.00',
       BTC: formattedBtcBalanceUSD || '$0.00',
@@ -253,9 +253,9 @@ const ExternalWalletTransferScreen: React.FC = () => {
   }, [
     allTokens,
     solBalance, usdcBalance, usdtBalance, ethBalance,
-    avaxBalance, bnbBalance, maticBalance, btcBalance,
+    trxBalance, bnbBalance, maticBalance, btcBalance,
     formattedSolBalanceUSD, formattedUsdcBalanceUSD, formattedUsdtBalanceUSD, formattedEthBalanceUSD,
-    formattedAvaxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD, formattedBtcBalanceUSD
+    formattedTrxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD, formattedBtcBalanceUSD
   ]);
 
   const selectedToken = useMemo(() => {

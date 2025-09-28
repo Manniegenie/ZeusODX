@@ -103,6 +103,9 @@ export const dashboardService = {
         SOL: { name: 'Solana', symbol: 'SOL' },
         USDT: { name: 'USD Tether', symbol: 'USDT' },
         USDC: { name: 'USDC', symbol: 'USDC' },
+        BNB: { name: 'Binance Coin', symbol: 'BNB' },
+        MATIC: { name: 'Polygon', symbol: 'MATIC' },
+        TRX: { name: 'TRON', symbol: 'TRX' },
         NGNZ: { name: 'Nigeria Naira', symbol: 'NGNZ' }
       };
 

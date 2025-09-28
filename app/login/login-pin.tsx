@@ -9,6 +9,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
@@ -18,6 +19,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/authService';
 import ErrorDisplay from '../../components/ErrorDisplay';
+
+// Import mascot image
+import mascot from '../../components/icons/mascot.png';
 
 export default function LoginPinScreen() {
   const router = useRouter();
@@ -270,46 +274,6 @@ export default function LoginPinScreen() {
     inputRefs[0].current?.focus();
   };
 
-  // Format phone number for display with masking
-  const formatPhoneForDisplay = (phone: string) => {
-    if (!phone) return '';
-
-    // Remove all non-digit characters
-    const cleaned = phone.replace(/\D/g, '');
-
-    // Handle Nigerian numbers (starting with 234 or local format)
-    let formattedNumber = '';
-
-    if (cleaned.startsWith('234')) {
-      // International format: 234XXXXXXXXXX
-      if (cleaned.length >= 13) {
-        const countryCode = '+234';
-        const firstTwo = cleaned.slice(3, 5); // First 2 digits after country code
-        const lastTwo = cleaned.slice(-2); // Last 2 digits
-        formattedNumber = `${countryCode}${firstTwo}******${lastTwo}`;
-      } else {
-        // Not enough digits, return as-is with + prefix
-        formattedNumber = `+${cleaned}`;
-      }
-    } else if (cleaned.startsWith('0') && cleaned.length >= 11) {
-      // Local Nigerian format: 0XXXXXXXXXX
-      const withoutLeadingZero = cleaned.slice(1);
-      const firstTwo = withoutLeadingZero.slice(0, 2);
-      const lastTwo = withoutLeadingZero.slice(-2);
-      formattedNumber = `+234${firstTwo}******${lastTwo}`;
-    } else if (cleaned.length >= 10) {
-      // Assume it's a Nigerian number without country code
-      const firstTwo = cleaned.slice(0, 2);
-      const lastTwo = cleaned.slice(-2);
-      formattedNumber = `+234${firstTwo}******${lastTwo}`;
-    } else {
-      // Not enough digits, return as-is
-      formattedNumber = phone;
-    }
-
-    return formattedNumber;
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       {/* Toast Error Display */}
@@ -328,9 +292,18 @@ export default function LoginPinScreen() {
         <View style={styles.content}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.title}>{savedUsername ? `Welcome back, ${savedUsername}!` : 'Welcome back!'}</Text>
-            <Text style={styles.subtitle}>Enter your 6-digit PIN to continue</Text>
-            {currentPhoneNumber ? <Text style={styles.phoneNumber}>{formatPhoneForDisplay(currentPhoneNumber)}</Text> : null}
+            {/* TITLE: Welcome back message */}
+            <Text style={styles.title}>
+              {savedUsername ? `Welcome back, ${savedUsername}` : 'Welcome back'}
+            </Text>
+            
+            {/* Mascot Image */}
+            <View style={styles.mascotContainer}>
+              <Image source={mascot} style={styles.mascotImage} />
+            </View>
+            
+            {/* SUBTITLE: PIN instruction */}
+            <Text style={styles.subtitle}>Enter your pin</Text>
           </View>
 
           {/* PIN Input */}
@@ -414,19 +387,24 @@ const styles = StyleSheet.create({
     fontSize: 24,
     lineHeight: 28,
     color: Colors.primaryText,
-    marginBottom: Layout.spacing.xs,
+    marginBottom: Layout.spacing.lg,
     textAlign: 'center',
   },
+  
+  // Mascot Image Styles
+  mascotContainer: { 
+    marginBottom: Layout.spacing.md 
+  },
+  mascotImage: {
+    width: 32,
+    height: 32,
+  },
+  
   subtitle: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    fontSize: 14,
+    color: Colors.primaryText, // <-- changed to match title color
     textAlign: 'center',
-  },
-  phoneNumber: {
-    ...Typography.styles.bodyMedium,
-    color: Colors.primary,
-    textAlign: 'center',
-    marginTop: Layout.spacing.xs,
   },
   pinSection: {
     flex: 1,

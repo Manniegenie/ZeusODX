@@ -9,7 +9,7 @@ import {
   StatusBar,
   ScrollView,
   TextInput,
-  Alert,
+  ActivityIndicator,
   ImageSourcePropType,
   Dimensions
 } from 'react-native';
@@ -32,9 +32,10 @@ import airtelIcon from '../../components/icons/airtel.png';
 import nineMobileIcon from '../../components/icons/9mobile.png';
 import profileIcon from '../../components/icons/profile.png';
 import checkmarkIcon from '../../components/icons/green-checkmark.png';
+import backIcon from '../../components/icons/backy.png'; // shared back icon
 
 // Get screen dimensions for responsive design
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 
 // Calculate responsive dimensions
 const getResponsiveDimensions = () => {
@@ -98,8 +99,12 @@ const BuyDataScreen: React.FC = () => {
     { id: '9mobile', name: '9mobile', iconSrc: nineMobileIcon, color: '#00AA4F' },
   ];
 
-  // Navigation
-  const handleGoBack = () => router.back();
+  // Navigation (back disabled while loading)
+  const backDisabled = Boolean(loading);
+
+  const handleGoBack = () => {
+    if (!backDisabled) router.back();
+  };
 
   // Helper function to safely get network display name
   const getSafeNetworkDisplayName = (networkId: string): string => {
@@ -316,7 +321,7 @@ const BuyDataScreen: React.FC = () => {
         title: 'Network Required', 
         message: 'Select a network first', 
         autoHide: true, 
-        duration: 3000 
+        duration: 3000
       });
       return;
     }
@@ -468,13 +473,20 @@ const BuyDataScreen: React.FC = () => {
           {/* Header */}
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
-              <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
-                <Text style={styles.backButtonText}>←</Text>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={handleGoBack}
+                disabled={backDisabled}
+                activeOpacity={backDisabled ? 1 : 0.7}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
+
               <Text style={styles.headerTitle}>Buy Data</Text>
-              <TouchableOpacity onPress={() => router.push('/history')}>
-                <Text style={styles.historyLink}>History</Text>
-              </TouchableOpacity>
+
+              {/* spacer to keep title centered */}
+              <View style={styles.headerSpacer} />
             </View>
           </View>
 
@@ -496,6 +508,7 @@ const BuyDataScreen: React.FC = () => {
                       selectedNetwork?.id === n.id && styles.networkCardSelected
                     ]} 
                     onPress={() => handleNetworkSelect(n)}
+                    activeOpacity={0.8}
                   >
                     <Image source={n.iconSrc} style={styles.networkIcon} />
                     {selectedNetwork?.id === n.id && (
@@ -543,6 +556,7 @@ const BuyDataScreen: React.FC = () => {
               ]} 
               onPress={handleDataPlanSelectorPress} 
               disabled={loading}
+              activeOpacity={0.8}
             >
               <Text style={[
                 styles.dataPlanSelectorText, 
@@ -587,6 +601,7 @@ const BuyDataScreen: React.FC = () => {
             ]} 
             onPress={handleContinue} 
             disabled={!isFormValid || loading}
+            activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>
               {loading ? 'Processing...' : 'Continue'}
@@ -689,20 +704,23 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     borderRadius: 20 
   },
-  backButtonText: { 
-    fontSize: 20, 
-    color: Colors.text?.primary || '#111827', 
-    fontWeight: '500' 
+  backIcon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain'
   },
   headerTitle: { 
     color: '#35297F', 
     fontFamily: Typography.medium, 
     fontSize: 18, 
     fontWeight: '600', 
-    flex: 1, 
-    textAlign: 'center', 
-    marginHorizontal: 16 
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    pointerEvents: 'none',
   },
+  headerSpacer: { width: 40 },
   historyLink: { 
     color: '#35297F', 
     fontFamily: Typography.medium, 

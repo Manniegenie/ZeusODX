@@ -55,7 +55,7 @@ export default function WalletTokensSection({
     usdcBalance,
     usdtBalance,
     ethBalance,
-    avaxBalance,
+    trxBalance,
     bnbBalance,
     maticBalance,
     ngnzBalance,
@@ -65,7 +65,7 @@ export default function WalletTokensSection({
     formattedUsdcBalanceUSD,
     formattedUsdtBalanceUSD,
     formattedEthBalanceUSD,
-    formattedAvaxBalanceUSD,
+    formattedTrxBalanceUSD,
     formattedBnbBalanceUSD,
     formattedMaticBalanceUSD,
     formattedNgnzBalanceUSD,
@@ -81,7 +81,7 @@ export default function WalletTokensSection({
 
   // Filter tokens to only include wallet tokens and combine with balance data
   const walletTokens: WalletToken[] = useMemo(() => {
-    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'AVAX', 'BNB', 'MATIC', 'NGNZ', 'BTC'];
+    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'TRX', 'BNB', 'MATIC', 'NGNZ', 'BTC'];
     
     // Map of raw balances
     const balanceMap = {
@@ -89,7 +89,7 @@ export default function WalletTokensSection({
       USDC: usdcBalance || 0,
       USDT: usdtBalance || 0,
       ETH: ethBalance || 0,
-      AVAX: avaxBalance || 0,
+      TRX: trxBalance || 0,
       BNB: bnbBalance || 0,
       MATIC: maticBalance || 0,
       NGNZ: ngnzBalance || 0,
@@ -102,7 +102,7 @@ export default function WalletTokensSection({
       USDC: formattedUsdcBalanceUSD || '$0.00',
       USDT: formattedUsdtBalanceUSD || '$0.00',
       ETH: formattedEthBalanceUSD || '$0.00',
-      AVAX: formattedAvaxBalanceUSD || '$0.00',
+      TRX: formattedTrxBalanceUSD || '$0.00',
       BNB: formattedBnbBalanceUSD || '$0.00',
       MATIC: formattedMaticBalanceUSD || '$0.00',
       NGNZ: formattedNgnzBalanceUSD || '$0.00',
@@ -153,9 +153,9 @@ export default function WalletTokensSection({
   }, [
     allTokens,
     solBalance, usdcBalance, usdtBalance, ethBalance,
-    avaxBalance, bnbBalance, maticBalance, ngnzBalance, btcBalance,
+    trxBalance, bnbBalance, maticBalance, ngnzBalance, btcBalance,
     formattedSolBalanceUSD, formattedUsdcBalanceUSD, formattedUsdtBalanceUSD, formattedEthBalanceUSD,
-    formattedAvaxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD,
+    formattedTrxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD,
     formattedNgnzBalanceUSD, formattedBtcBalanceUSD
   ]);
 
@@ -186,8 +186,8 @@ export default function WalletTokensSection({
       case 'ETH':
         router.push('/wallet-screens/eth-wallet');
         break;
-      case 'AVAX':
-        router.push('/wallet-screens/avax-wallet');
+      case 'TRX':
+        router.push('/wallet-screens/trx-wallet');
         break;
       case 'BNB':
         router.push('/wallet-screens/bnb-wallet');

@@ -30,7 +30,7 @@ const solIcon = require('../../components/icons/sol-icon.png');
 const usdtIcon = require('../../components/icons/usdt-icon.png');
 const usdcIcon = require('../../components/icons/usdc-icon.png');
 const ngnzIcon = require('../../components/icons/NGNZ.png');
-const avaxIcon = require('../../components/icons/avax-icon.png');
+const trxIcon = require('../../components/icons/Tron.png');
 const bnbIcon = require('../../components/icons/bnb-icon.png');
 const swapIcon = require('../../components/icons/swap-icon.png');
 const maticIcon = require('../../components/icons/matic-icon.png');
@@ -56,14 +56,14 @@ type MessageType = 'network' | 'validation' | 'auth' | 'server' | 'notFound' | '
 
 // Token categorization for swap validation
 const STABLECOINS = new Set(['USDT', 'USDC']);
-const CRYPTOCURRENCIES = new Set(['BTC', 'ETH', 'SOL', 'BNB', 'MATIC', 'AVAX']);
+const CRYPTOCURRENCIES = new Set(['BTC', 'ETH', 'SOL', 'BNB', 'MATIC', 'TRX']);
 
 export default function SwapScreen({ 
   onBack, 
   onSelectToken, 
   onSwap 
 }: SwapScreenProps) {
-  const { defaultToken } = useLocalSearchParams(); // Capture passed token (e.g., BTC, ETH, BNB, AVAX...)
+  const { defaultToken } = useLocalSearchParams(); // Capture passed token (e.g., BTC, ETH, BNB, TRX...)
 
   const [activeTab, setActiveTab] = useState<SwapTab>('buy-sell');
 
@@ -246,7 +246,7 @@ export default function SwapScreen({
     usdt: usdtIcon,
     usdc: usdcIcon,
     ngnz: ngnzIcon,
-    avax: avaxIcon,
+    trx: trxIcon,
     bnb: bnbIcon,
     matic: maticIcon
   }[id] || btcIcon);
@@ -261,7 +261,7 @@ export default function SwapScreen({
         USDT: { id: 'usdt', name: 'Tether', symbol: 'USDT', icon: usdtIcon, price: usdtPrice, balance: usdtBalance?.balance || 0 },
         USDC: { id: 'usdc', name: 'USD Coin', symbol: 'USDC', icon: usdcIcon, price: usdcPrice, balance: usdcBalance?.balance || 0 },
         NGNZ: { id: 'ngnz', name: 'Nigerian Naira', symbol: 'NGNZ', icon: ngnzIcon, price: ngnzExchangeRate, balance: ngnzBalance || 0 },
-        AVAX: { id: 'avax', name: 'Avalanche', symbol: 'AVAX', icon: avaxIcon, price: 0, balance: 0 },
+        TRX: { id: 'trx', name: 'Tron', symbol: 'TRX', icon: trxIcon, price: 0, balance: 0 },
         BNB: { id: 'bnb', name: 'Binance Coin', symbol: 'BNB', icon: bnbIcon, price: 0, balance: 0 },
         MATIC: { id: 'matic', name: 'Polygon', symbol: 'MATIC', icon: maticIcon, price: 0, balance: 0 },
       };

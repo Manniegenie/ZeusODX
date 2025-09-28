@@ -88,9 +88,9 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
 
   // Balances
   const {
-    solBalance, usdcBalance, usdtBalance, ethBalance, avaxBalance, bnbBalance, maticBalance, ngnzBalance, btcBalance,
+    solBalance, usdcBalance, usdtBalance, ethBalance, trxBalance, bnbBalance, maticBalance, ngnzBalance, btcBalance,
     formattedSolBalanceUSD, formattedUsdcBalanceUSD, formattedUsdtBalanceUSD, formattedEthBalanceUSD,
-    formattedAvaxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD, formattedNgnzBalanceUSD, formattedBtcBalanceUSD,
+    formattedTrxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD, formattedNgnzBalanceUSD, formattedBtcBalanceUSD,
     loading: balanceLoading, error: balanceError
   } = useBalance();
 
@@ -136,11 +136,11 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
 
   // Token map
   const tokenMap = useMemo((): { [key: string]: TokenOption } => {
-    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'AVAX', 'BNB', 'MATIC', 'NGNZ', 'BTC'];
+    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'TRX', 'BNB', 'MATIC', 'NGNZ', 'BTC'];
 
     const balanceMap: Record<string, number> = {
       SOL: solBalance || 0, USDC: usdcBalance || 0, USDT: usdtBalance || 0, ETH: ethBalance || 0,
-      AVAX: avaxBalance || 0, BNB: bnbBalance || 0, MATIC: maticBalance || 0, NGNZ: ngnzBalance || 0, BTC: btcBalance || 0,
+      TRX: trxBalance || 0, BNB: bnbBalance || 0, MATIC: maticBalance || 0, NGNZ: ngnzBalance || 0, BTC: btcBalance || 0,
     };
 
     const usdValueMap: Record<string, string> = {
@@ -148,7 +148,7 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
       USDC: formattedUsdcBalanceUSD || '$0.00',
       USDT: formattedUsdtBalanceUSD || '$0.00',
       ETH: formattedEthBalanceUSD || '$0.00',
-      AVAX: formattedAvaxBalanceUSD || '$0.00',
+      TRX: formattedTrxBalanceUSD || '$0.00',
       BNB: formattedBnbBalanceUSD || '$0.00',
       MATIC: formattedMaticBalanceUSD || '$0.00',
       NGNZ: formattedNgnzBalanceUSD || '$0.00',
@@ -193,9 +193,9 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
   }, [
     allTokens,
     solBalance, usdcBalance, usdtBalance, ethBalance,
-    avaxBalance, bnbBalance, maticBalance, ngnzBalance, btcBalance,
+    trxBalance, bnbBalance, maticBalance, ngnzBalance, btcBalance,
     formattedSolBalanceUSD, formattedUsdcBalanceUSD, formattedUsdtBalanceUSD, formattedEthBalanceUSD,
-    formattedAvaxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD,
+    formattedTrxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD,
     formattedNgnzBalanceUSD, formattedBtcBalanceUSD
   ]);
 

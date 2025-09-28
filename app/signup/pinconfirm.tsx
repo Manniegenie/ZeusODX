@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
   numberButton: {
     width: 70,
     height: 70,
-    borderRadius: 35,
+    borderRadius: 8, // Changed from 35 to 8 for box corners
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',

@@ -6,6 +6,7 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Typography } from '../../constants/Typography';
@@ -13,6 +14,9 @@ import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import { useForgotPin } from '../../hooks/useforgotpin';
+
+// Back icon import - matching BTC-BSC screen
+import backIcon from '../../components/icons/backy.png';
 
 export default function ForgotPinScreen() {
   const router = useRouter();
@@ -125,7 +129,7 @@ export default function ForgotPinScreen() {
               delayPressIn={0}
               hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             >
-              <Text style={styles.backButtonText}>←</Text>
+              <Image source={backIcon} style={styles.backIcon} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Forgot PIN</Text>
             <View style={styles.emptySpace} />
@@ -173,8 +177,18 @@ const styles = StyleSheet.create({
 
   headerSection: { paddingTop: 12, paddingBottom: 6 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center', borderRadius: 24, backgroundColor: 'rgba(0,0,0,0.02)', overflow: 'hidden' },
-  backButtonText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
+  backButton: { 
+    width: 40,
+    height: 40,
+    justifyContent: 'center', 
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
   headerTitle: {
     color: '#35297F',
     fontFamily: Typography.medium || 'System',
@@ -184,7 +198,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  emptySpace: { width: 48 },
+  emptySpace: { width: 40 },
 
   header: { paddingTop: Layout.spacing.xl, marginBottom: Layout.spacing.lg, alignItems: 'center' },
   title: {

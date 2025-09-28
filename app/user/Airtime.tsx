@@ -1,3 +1,4 @@
+// app/user/BuyAirtimeScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -9,9 +10,9 @@ import {
   StatusBar,
   ScrollView,
   TextInput,
+  Dimensions,
   Alert,
   ImageSourcePropType,
-  Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
@@ -32,8 +33,11 @@ import nineMobileIcon from '../../components/icons/9mobile.png';
 import profileIcon from '../../components/icons/profile.png';
 import checkmarkIcon from '../../components/icons/green-checkmark.png';
 
+// use same back icon as other screens
+import backIcon from '../../components/icons/backy.png';
+
 // Get screen dimensions for responsive design
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 
 // Calculate responsive dimensions
 const getResponsiveDimensions = () => {
@@ -165,7 +169,7 @@ const BuyAirtimeScreen: React.FC = () => {
 
   // Navigation handler
   const handleGoBack = (): void => {
-    router.back();
+    if (!loading) router.back();
   };
 
   // Helper functions
@@ -429,6 +433,8 @@ const BuyAirtimeScreen: React.FC = () => {
     rate: '1 NGNZ = 1 NGN'
   };
 
+  const backDisabled = Boolean(loading);
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -461,16 +467,18 @@ const BuyAirtimeScreen: React.FC = () => {
               <TouchableOpacity 
                 style={styles.backButton} 
                 onPress={handleGoBack}
-                activeOpacity={0.7}
+                activeOpacity={backDisabled ? 1 : 0.7}
+                disabled={backDisabled}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               >
-                <Text style={styles.backButtonText}>←</Text>
+                <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
 
+              {/* Centered Title */}
               <Text style={styles.headerTitle}>Buy Airtime</Text>
 
-              <TouchableOpacity onPress={() => router.push('/history')}>
-                <Text style={styles.historyLink}>History</Text>
-              </TouchableOpacity>
+              {/* spacer to keep centered title */}
+              <View style={styles.headerSpacer} />
             </View>
           </View>
 
@@ -673,20 +681,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 20,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: Colors.text?.primary || '#111827',
-    fontWeight: '500',
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     color: '#35297F',
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
-    flex: 1,
     textAlign: 'center',
-    marginHorizontal: 16,
+    pointerEvents: 'none',
   },
+  headerSpacer: { width: 40 },
+
   historyLink: {
     color: '#35297F',
     fontFamily: Typography.medium || 'System',
