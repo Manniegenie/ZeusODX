@@ -8,8 +8,12 @@ import {
   TouchableOpacity,
   ScrollView,
   FlatList,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+
+// Icons - Updated to match btc-bsc screen
+import backIcon from '../../components/icons/backy.png';
 
 const NotificationScreen = () => {
   const router = useRouter();
@@ -70,12 +74,12 @@ const NotificationScreen = () => {
         <View style={styles.header}>
           <TouchableOpacity 
             style={styles.backButton} 
-            onPress={() => router.back()} 
+            onPress={() => router.back()}
             activeOpacity={0.7}
             delayPressIn={0}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
-            <Text style={styles.backButtonText}>←</Text>
+            <Image source={backIcon} style={styles.backIcon} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
           <View style={styles.headerSpacer} />
@@ -112,19 +116,17 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 24,
   },
-  backButton: {
-    width: 48,  // Increased from 40
-    height: 48, // Increased from 40
-    justifyContent: 'center',
+  backButton: { 
+    width: 40,
+    height: 40,
+    justifyContent: 'center', 
     alignItems: 'center',
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Very subtle background instead of transparent
-    overflow: 'hidden', // Better Android performance
+    borderRadius: 20,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: '#1F2937',
-    fontWeight: '500',
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerTitle: {
     position: 'absolute',
@@ -137,8 +139,8 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   headerSpacer: {
-    width: 48, // Updated to match new back button width
-    height: 48, // Updated to match new back button height
+    width: 40,
+    height: 40,
   },
   content: {
     flex: 1,

@@ -24,6 +24,7 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useElectricity } from '../../hooks/useElectricity';
 import { useCustomer } from '../../hooks/useCustomer';
+import backIcon from '../../components/icons/backy.png';
 
 // ---- Types ----
 interface ErrorAction {
@@ -134,7 +135,10 @@ const ElectricityScreen: React.FC = () => {
   const predefinedAmounts = [1000, 2000, 3000, 5000, 10000, 20000];
 
   // ---- Helpers ----
-  const handleGoBack = (): void => router.back();
+  const backDisabled = Boolean(loading);
+  const handleGoBack = (): void => {
+    if (!backDisabled) router.back();
+  };
 
   const showErrorMessage = (errorData: ErrorDisplayData): void => {
     setErrorDisplayData(errorData);
@@ -346,13 +350,20 @@ const ElectricityScreen: React.FC = () => {
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
-              <TouchableOpacity style={styles.backButton} onPress={handleGoBack} activeOpacity={0.7}>
-                <Text style={styles.backButtonText}>←</Text>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={handleGoBack}
+                disabled={backDisabled}
+                activeOpacity={backDisabled ? 1 : 0.7}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
+
               <Text style={styles.headerTitle}>Electricity</Text>
-              <TouchableOpacity onPress={() => router.push('/history')}>
-                <Text style={styles.historyLink}>History</Text>
-              </TouchableOpacity>
+
+              {/* spacer to keep title centered */}
+              <View style={styles.headerSpacer} />
             </View>
           </View>
 
@@ -547,11 +558,12 @@ const styles = StyleSheet.create({
   headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backButtonText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
+  backIcon: { width: 22, height: 22, resizeMode: 'contain' },
   headerTitle: {
     color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600',
-    flex: 1, textAlign: 'center', marginHorizontal: 16,
+    position: 'absolute', left: 0, right: 0, textAlign: 'center', pointerEvents: 'none',
   },
+  headerSpacer: { width: 40 },
   historyLink: { color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 14, fontWeight: '500' },
   section: { paddingHorizontal: 16, marginBottom: 24 },
   sectionTitle: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400', marginBottom: 16 },

@@ -85,6 +85,7 @@ export const depositService = {
   async getUSDTDepositAddress(network = 'ETH') { return this.getDepositAddress('USDT', network); },
   async getUSDCDepositAddress(network = 'ETH') { return this.getDepositAddress('USDC', network); },
   async getBNBDepositAddress(network = 'BSC') { return this.getDepositAddress('BNB', network); },
+  async getTRXDepositAddress(network = 'TRON') { return this.getDepositAddress('TRX', network); },
   async getNGNBDepositAddress() { return this.getDepositAddress('NGNB', 'NGNB'); },
 
   // Keep original method names and behavior for compatibility

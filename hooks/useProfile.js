@@ -1,21 +1,6 @@
-// hooks/useUserProfile.js
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { userProfileService } from '../services/profileService';
 
-/**
- * React hook to load the authenticated user's profile.
- * @param {{ auto?: boolean, onSuccess?: (profile:any)=>void, onError?: (err:{error:string,message:string})=>void }} [options]
- * @returns {{
- *   profile: any,
- *   loading: boolean,
- *   refreshing: boolean,
- *   error: null | { error: string, message: string },
- *   refetch: () => Promise<void>,
- *   displayName: string,
- *   avatarUrl: string | null,
- *   hasAvatar: boolean
- * }}
- */
 export function useUserProfile(options = {}) {
   const { auto = true, onSuccess, onError } = options;
 
@@ -26,7 +11,6 @@ export function useUserProfile(options = {}) {
   const [error, setError] = useState(null);
 
   const load = useCallback(async ({ refreshingRun = false } = {}) => {
-    // Abort any in-flight request
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;

@@ -10,6 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import backIcon from '../../components/icons/backy.png';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
@@ -44,7 +45,7 @@ const KYCLevel1Screen: React.FC = () => {
                 onPress={handleGoBack}
                 activeOpacity={0.7}
               >
-                <Text style={styles.backButtonText}>←</Text>
+                <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
 
               {/* Title */}
@@ -151,10 +152,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 20,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: Colors.text?.primary || '#111827',
-    fontWeight: '500',
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerTitle: {
     color: '#35297F',

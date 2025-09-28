@@ -1,3 +1,4 @@
+// app/user/UtilityScreen.tsx
 import React from 'react';
 import {
   View,
@@ -22,6 +23,9 @@ import utilityElectricityIcon from '../../components/icons/utility-electricity.p
 import utilityCableIcon from '../../components/icons/utility-cable.png';
 import utilityBettingIcon from '../../components/icons/utility-betting.png';
 import utilityGiftcardIcon from '../../components/icons/utility-giftcard.png';
+
+// use same back icon as other screens
+import backIcon from '../../components/icons/backy.png';
 
 // Type definitions
 interface UtilityService {
@@ -95,7 +99,7 @@ const UtilityScreen: React.FC = () => {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
 
-        {/* Header Section - Fixed */}
+        {/* Header Section */}
         <View style={styles.headerSection}>
           <View style={styles.headerContainer}>
             {/* Back Button */}
@@ -103,15 +107,16 @@ const UtilityScreen: React.FC = () => {
               style={styles.backButton} 
               onPress={handleGoBack}
               activeOpacity={0.7}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <Text style={styles.backButtonText}>←</Text>
+              <Image source={backIcon} style={styles.backIcon} />
             </TouchableOpacity>
 
-            {/* Title */}
+            {/* Centered Title */}
             <Text style={styles.headerTitle}>Utility</Text>
 
             {/* Empty space for alignment */}
-            <View style={styles.emptySpace} />
+            <View style={styles.headerSpacer} />
           </View>
           
           {/* Header underline */}
@@ -181,21 +186,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 20,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: Colors.text?.primary || '#111827',
-    fontWeight: '500',
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     color: '#35297F',
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
-    flex: 1,
     textAlign: 'center',
-    marginHorizontal: 16,
+    pointerEvents: 'none',
   },
-  emptySpace: {
+  headerSpacer: {
     width: 40,
   },
   headerUnderline: {

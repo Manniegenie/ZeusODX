@@ -1,5 +1,4 @@
-// Updated CableTvScreen with dynamic, responsive provider icons
-
+// app/user/CableTvScreen.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
@@ -10,7 +9,6 @@ import {
   StatusBar,
   ScrollView,
   TextInput,
-  Alert,
   Image,
   ActivityIndicator,
   ImageSourcePropType,
@@ -36,6 +34,9 @@ const StarTimesIcon = require('../../components/icons/StarTimes.png');
 const ShowmaxIcon = require('../../components/icons/Showmax.png');
 const checkmarkIcon = require('../../components/icons/green-checkmark.png');
 const profileIcon = require('../../components/icons/profile.png');
+
+// shared back icon
+import backIcon from '../../components/icons/backy.png';
 
 // Provider icon mapping
 const providerIcons: Record<string, ImageSourcePropType> = {
@@ -208,15 +209,13 @@ const CableTvScreen: React.FC = () => {
   }, [customerData, smartcardNumber]);
 
   // Navigation handlers
+  // backDisabled while loading or customer verification in progress
+  const backDisabled = Boolean(loading || customerLoading);
   const handleGoBack = (): void => {
-    router.back();
+    if (!backDisabled) router.back();
   };
 
-  const handleHistoryPress = (): void => {
-    router.push('/history');
-  };
-
-  // Error Helpers
+  // history removed
   const showErrorMessage = (data: ErrorDisplayData) => { 
     setErrorDisplayData(data); 
     setShowErrorDisplay(true); 
@@ -629,13 +628,20 @@ const CableTvScreen: React.FC = () => {
           {/* Header */}
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
-              <TouchableOpacity style={styles.backButton} onPress={handleGoBack} activeOpacity={0.7}>
-                <Text style={styles.backButtonText}>←</Text>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={handleGoBack}
+                activeOpacity={backDisabled ? 1 : 0.7}
+                disabled={backDisabled}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
+
               <Text style={styles.headerTitle}>Cable TV</Text>
-              <TouchableOpacity onPress={handleHistoryPress}>
-                <Text style={styles.historyLink}>History</Text>
-              </TouchableOpacity>
+
+              {/* spacer to keep title centered */}
+              <View style={styles.headerSpacer} />
             </View>
           </View>
 
@@ -909,21 +915,23 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     borderRadius: 20 
   },
-  backButtonText: { 
-    ...baseTextStyle,
-    fontSize: 20, 
-    color: Colors.text?.primary || '#111827', 
-    fontWeight: '500' 
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerTitle: {
     ...baseTextStyle,
     color: '#35297F',
     fontSize: 18,
     fontWeight: '600',
-    flex: 1,
+    position: 'absolute',
+    left: 0,
+    right: 0,
     textAlign: 'center',
-    marginHorizontal: 16,
+    pointerEvents: 'none',
   },
+  headerSpacer: { width: 40 },
   historyLink: { 
     ...baseTextStyle,
     color: '#35297F', 

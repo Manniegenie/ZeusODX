@@ -1,4 +1,3 @@
-// services/userProfileService.js
 import { apiClient } from './apiClient';
 
 export const userProfileService = {
@@ -11,11 +10,7 @@ export const userProfileService = {
     try {
       console.log('👤 Fetching user profile…');
 
-      // Base URL in apiClient should already prefix with /api
       const resp = await apiClient.get('/profile/profile', { signal: opts.signal });
-
-      // Your apiClient typically standardizes to { success, data }
-      // But backend returns { success, profile }. Handle both safely.
       const payload = resp?.data ?? resp;
       const success = Boolean(payload?.success);
 
@@ -32,6 +27,7 @@ export const userProfileService = {
       console.log('✅ Profile fetched:', {
         username: normalized.username,
         email: normalized.email,
+        is2FAEnabled: normalized.is2FAEnabled,
       });
 
       return {
@@ -47,7 +43,6 @@ export const userProfileService = {
         response: error?.response?.data,
       });
 
-      // If backend sent structured error
       const errData = error?.response?.data;
       if (errData) {
         const code = this._codeFromMessage(errData.error || errData.message);
@@ -68,18 +63,13 @@ export const userProfileService = {
 
   /**
    * Map server profile → app shape
-   * Accepts either {username, fullName, email, phoneNumber, avatar:{url,lastUpdated}}
-   * or {firstname, lastname, phonenumber, avatarUrl, avatarLastUpdated}
    * @param {any} p
    */
   _normalize(p = {}) {
     const first = p.firstname ?? p.firstName ?? null;
     const last = p.lastname ?? p.lastName ?? null;
 
-    const fullName =
-      p.fullName ||
-      [first, last].filter(Boolean).join(' ').trim() ||
-      null;
+    const fullName = p.fullName || [first, last].filter(Boolean).join(' ').trim() || null;
 
     const avatarUrl = p.avatar?.url ?? p.avatarUrl ?? null;
     const avatarLastUpdated = p.avatar?.lastUpdated ?? p.avatarLastUpdated ?? null;
@@ -89,21 +79,16 @@ export const userProfileService = {
       fullName,
       email: p.email ?? null,
       phoneNumber: p.phoneNumber ?? p.phonenumber ?? null,
+      is2FAEnabled: Boolean(p.is2FAEnabled),
       avatar: {
         url: avatarUrl,
         lastUpdated: avatarLastUpdated,
-        // Helpful cache-buster for <Image/> e.g. `${url}?t=...`
         cacheKey: avatarLastUpdated ? String(new Date(avatarLastUpdated).getTime()) : null,
       },
       _original: p,
     };
   },
 
-  /**
-   * Generate a stable error code from backend text
-   * @param {string} msg
-   * @returns {string}
-   */
   _codeFromMessage(msg = '') {
     const m = String(msg).toLowerCase();
     if (m.includes('unauthorized') || m.includes('invalid token')) return 'UNAUTHORIZED';
@@ -113,11 +98,6 @@ export const userProfileService = {
     return 'FETCH_FAILED';
   },
 
-  /**
-   * Optional: map error codes → user-friendly messages
-   * @param {string} code
-   * @param {string} [fallback]
-   */
   getUserFriendlyMessage(code, fallback = 'Something went wrong') {
     const map = {
       UNAUTHORIZED: 'Your session has expired. Please log in again.',

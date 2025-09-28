@@ -22,6 +22,9 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useDeposit } from '../../hooks/useDeposit';
 
+// Icons - Updated to match BTC-BSC screen
+import backIcon from '../../components/icons/backy.png';
+
 interface QRCodeData {
   dataUrl: string;
   format: string;
@@ -143,7 +146,7 @@ export default function UsdtArbitrumDepositScreen() {
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
   const minDeposit = '1 USDT';
-  const network = 'Arbitrum (ARB)';
+  const network = 'Arbitrum One';
 
   return (
     <View style={styles.container}>
@@ -169,21 +172,30 @@ export default function UsdtArbitrumDepositScreen() {
             />
           }
         >
+          {/* Header - Updated to match BTC-BSC screen */}
           <View style={styles.headerSection}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <View style={styles.backArrow}>
-                <View style={styles.arrowLine} />
-                <View style={styles.arrowHead} />
+            <View style={styles.headerContainer}>
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={() => router.back()}
+                activeOpacity={0.7}
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
+              </TouchableOpacity>
+
+              <View style={styles.headerGroup}>
+                <Text style={styles.headerTitle}>Deposit USDT</Text>
+                <Text style={styles.headerSubtitle}>Arbitrum One</Text>
               </View>
-            </TouchableOpacity>
-            <View style={styles.headerGroup}>
-              <Text style={styles.headerTitle}>Deposit USDT (Arbitrum)</Text>
+
+              <View style={styles.headerRight} />
             </View>
-            <View style={styles.headerSpacer} />
           </View>
 
           <View style={styles.subtitleSection}>
-            <Text style={styles.subtitle}>Scan the QR code to get Arbitrum deposit address</Text>
+            <Text style={styles.subtitle}>Scan the QR code to get Arbitrum One deposit address</Text>
           </View>
 
           <View style={styles.qrSection}>
@@ -236,12 +248,14 @@ export default function UsdtArbitrumDepositScreen() {
           </View>
 
           <View style={styles.warningSection}>
-            <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-            <Text style={styles.warningText}>
-              • Only send USDT on Arbitrum network to this address{'\n'}
-              • Sending from other networks may result in loss of funds{'\n'}
-              • Ensure your wallet supports Arbitrum before sending
-            </Text>
+            <View style={styles.warningContainer}>
+              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
+              <Text style={styles.warningText}>
+                • Only send USDT on Arbitrum One network to this address{'\n'}
+                • Sending from other networks may result in loss of funds{'\n'}
+                • Ensure your wallet supports Arbitrum One before sending
+              </Text>
+            </View>
           </View>
 
           <View style={styles.shareSection}>
@@ -257,59 +271,65 @@ export default function UsdtArbitrumDepositScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  safeArea: { flex: 1 },
-  scrollView: { flex: 1 },
-  scrollContent: { paddingBottom: 100 },
+  container: { 
+    flex: 1, 
+    backgroundColor: Colors.background 
+  },
+  safeArea: { 
+    flex: 1 
+  },
+  scrollView: { 
+    flex: 1 
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
+
+  // Header - Updated to match BTC-BSC screen
   headerSection: {
     paddingHorizontal: horizontalPadding,
-    paddingTop: 15,
-    paddingBottom: 8,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  backButton: {
+  backButton: { 
     width: 40,
     height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+    justifyContent: 'center', 
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    borderRadius: 20,
   },
-  backArrow: {
+  backIcon: {
     width: 24,
     height: 24,
-    justifyContent: 'center',
+    resizeMode: 'contain',
+  },
+  headerGroup: {
+    flex: 1,
     alignItems: 'center',
-    position: 'relative',
   },
-  arrowLine: {
-    width: 16,
-    height: 2,
-    backgroundColor: Colors.text.primary,
-    position: 'absolute',
+  headerRight: {
+    width: 40,
   },
-  arrowHead: {
-    width: 8,
-    height: 8,
-    borderLeftWidth: 2,
-    borderTopWidth: 2,
-    borderLeftColor: Colors.text.primary,
-    borderTopColor: Colors.text.primary,
-    backgroundColor: 'transparent',
-    transform: [{ rotate: '-45deg' }],
-    position: 'absolute',
-    left: 0,
-  },
-  headerGroup: { flex: 1, alignItems: 'center' },
-  headerSpacer: { width: 40, height: 40 },
   headerTitle: {
     color: Colors.text.primary,
     fontFamily: Typography.medium,
     fontSize: 18,
     textAlign: 'center',
+    fontWeight: '600',
   },
+  headerSubtitle: {
+    color: Colors.text.secondary,
+    fontFamily: Typography.regular,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+
   subtitleSection: {
     paddingHorizontal: horizontalPadding,
     paddingVertical: 8,
@@ -418,9 +438,18 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     overflow: 'hidden',
   },
-  copyButtonDisabled: { opacity: 0.5 },
-  copyIcon: { width: 32, height: 32, resizeMode: 'cover' },
-  detailsSection: { paddingHorizontal: horizontalPadding, paddingVertical: 8 },
+  copyButtonDisabled: { 
+    opacity: 0.5 
+  },
+  copyIcon: { 
+    width: 32, 
+    height: 32, 
+    resizeMode: 'cover' 
+  },
+  detailsSection: { 
+    paddingHorizontal: horizontalPadding, 
+    paddingVertical: 8 
+  },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -429,7 +458,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  lastDetailRow: { borderBottomWidth: 0 },
+  lastDetailRow: { 
+    borderBottomWidth: 0 
+  },
   detailLabel: {
     color: Colors.text.secondary,
     fontFamily: Typography.regular,
@@ -443,9 +474,11 @@ const styles = StyleSheet.create({
   warningSection: {
     paddingHorizontal: horizontalPadding,
     paddingVertical: 15,
-    marginHorizontal: horizontalPadding,
-    backgroundColor: '#FEF3C7',
+  },
+  warningContainer: {
+    backgroundColor: '#FEF3CD',
     borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#F59E0B',
   },
@@ -462,7 +495,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
-  shareSection: { paddingHorizontal: horizontalPadding, paddingVertical: 15, paddingBottom: 20 },
+  shareSection: { 
+    paddingHorizontal: horizontalPadding, 
+    paddingVertical: 15, 
+    paddingBottom: 20 
+  },
   shareButton: {
     backgroundColor: Colors.primary,
     borderRadius: 12,

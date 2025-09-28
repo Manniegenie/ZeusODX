@@ -24,6 +24,9 @@ import { useNairaBanks } from '../../hooks/usenairaBanks';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import { useResolveAccount } from '../../hooks/useAccountname';
 
+// NEW: import the same back icon used in BankAccountsScreen
+import backIcon from '../../components/icons/backy.png';
+
 interface BankDetails {
   currency: string;
   bank: string;
@@ -291,16 +294,22 @@ const AddBankScreen = () => {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          {/* Header */}
+          {/* Header - now matches BankAccountsScreen style & back icon */}
           <View style={styles.headerSection}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
-              <Text style={styles.backButtonText}>←</Text>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
+              <Image source={backIcon} style={styles.backIcon} />
             </TouchableOpacity>
-          </View>
 
-          {/* Title */}
-          <View style={styles.titleSection}>
+            {/* Centered title (absolute positioned) */}
             <Text style={styles.headerTitle}>Enter your Bank Details</Text>
+
+            {/* spacer to keep title centered */}
+            <View style={styles.headerSpacer} />
           </View>
 
           {/* Description */}
@@ -512,11 +521,37 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
-  headerSection: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+
+  // Header updated to match BankAccountsScreen
+  headerSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
+  },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backButtonText: { fontSize: 20, color: Colors.text.primary, fontWeight: '500' },
-  titleSection: { paddingHorizontal: 16, paddingBottom: 16 },
-  headerTitle: { color: '#35297F', fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', textAlign: 'left' },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
+  headerTitle: {
+    position: 'absolute',
+    left: 0, right: 0,
+    color: '#35297F',
+    fontFamily: Typography.medium,
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    pointerEvents: 'none',
+  },
+  headerSpacer: { width: 40, height: 40 },
+
+  titleSection: { paddingHorizontal: 16, paddingBottom: 16 }, // unused but kept for compatibility if needed
+  headerTitleInline: { color: '#35297F', fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', textAlign: 'left' },
+
   descriptionSection: { paddingHorizontal: 16, paddingBottom: 32 },
   descriptionText: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14, fontWeight: '400', lineHeight: 20 },
   formSection: { paddingHorizontal: 16, paddingBottom: 32 },
@@ -634,7 +669,7 @@ const styles = StyleSheet.create({
   },
   emptyText: { 
     color: Colors.text.secondary, 
-    fontFamily: Typography.regular,
+    fontFamily: Typography.regular, 
     fontSize: 14 
   },
   modalOption: { paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F3F4' },

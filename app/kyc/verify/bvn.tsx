@@ -12,17 +12,20 @@ import {
   Alert,
   Dimensions,
   Image,
+  Modal,
+  TouchableWithoutFeedback,
+  Animated,
 } from 'react-native';
-import { Camera, useCameraDevices, useCameraPermission } from 'react-native-vision-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import Svg, { Defs, Rect, Mask, Circle } from 'react-native-svg';
-
+import backIcon from '../../../components/icons/backy.png';
 import ErrorDisplay from '../../../components/ErrorDisplay';
 import { Colors } from '../../../constants/Colors';
 import { Typography } from '../../../constants/Typography';
 import { useBiometricVerification } from '../../../hooks/useKYC';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth } = Dimensions.get('window');
 
 const PREVIEW_SIZE = 280;
 const PREVIEW_RECT = {
@@ -32,7 +35,7 @@ const PREVIEW_RECT = {
   height: PREVIEW_SIZE
 };
 
-type Step = 'input' | 'camera' | 'preview' | 'processing' | 'success' | 'error';
+type Step = 'input' | 'camera' | 'preview' | 'processing' | 'success';
 type ErrorType = 'network' | 'server' | 'notFound' | 'general';
 
 const CameraOverlay = () => (
@@ -57,6 +60,91 @@ const CameraOverlay = () => (
   </Svg>
 );
 
+/* ---------------- Success Modal (giftcard style) ---------------- */
+interface SuccessModalProps {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  message: string;
+  buttonText?: string;
+}
+
+const SuccessModal: React.FC<SuccessModalProps> = ({
+  visible,
+  onClose,
+  title,
+  message,
+  buttonText = 'Continue'
+}) => {
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        })
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(scaleAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(opacityAnim, { toValue: 0, duration: 200, useNativeDriver: true })
+      ]).start();
+    }
+  }, [visible, scaleAnim, opacityAnim]);
+
+  const handleBackdropPress = () => {
+    onClose();
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+      <TouchableWithoutFeedback onPress={handleBackdropPress}>
+        <View style={successModalStyles.overlay}>
+          <TouchableWithoutFeedback>
+            <Animated.View
+              style={[
+                successModalStyles.modalContainer,
+                { opacity: opacityAnim, transform: [{ scale: scaleAnim }] },
+              ]}
+            >
+              <TouchableOpacity
+                style={successModalStyles.closeButton}
+                onPress={onClose}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={successModalStyles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+
+              <View style={successModalStyles.titleSection}>
+                <Text style={successModalStyles.title}>{title}</Text>
+                <Text style={successModalStyles.message}>{message}</Text>
+              </View>
+
+              <TouchableOpacity
+                style={successModalStyles.submitButton}
+                onPress={onClose}
+                activeOpacity={0.8}
+              >
+                <Text style={successModalStyles.submitButtonText}>{buttonText}</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
+};
+
 export default function BVNVerify() {
   const router = useRouter();
   const [bvn, setBvn] = useState('');
@@ -65,17 +153,17 @@ export default function BVNVerify() {
   const [verificationResult, setVerificationResult] = useState<any>(null);
   const [countdown, setCountdown] = useState(3);
   const [isCountingDown, setIsCountingDown] = useState(false);
-  
-  const cameraRef = useRef<Camera>(null);
-  
-  const { hasPermission, requestPermission } = useCameraPermission();
-  const devices = useCameraDevices();
-  const frontCamera = devices.front;
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const { 
-    isVerifying, 
-    submitBiometricVerification, 
-    validateBVN 
+  const cameraRef = useRef<CameraView | null>(null);
+  const [permission, requestPermission] = useCameraPermissions();
+  const {
+    isVerifying,
+    isValidating,
+    submitBiometricVerification,
+    validateBiometricData,
+    validateBVN,
+    formatIdNumber
   } = useBiometricVerification();
 
   const [showError, setShowError] = useState(false);
@@ -98,19 +186,31 @@ export default function BVNVerify() {
 
   const closeError = useCallback(() => {
     setShowError(false);
+    setErrorMessage('');
   }, []);
 
-  const validation = useMemo(() => validateBVN(bvn), [bvn, validateBVN]);
+  const handleBvnChange = (value: string) => {
+    const formatted = formatIdNumber('bvn', value);
+    setBvn(formatted);
+  };
+
+  const validation = useMemo(() => {
+    if (!bvn || bvn.length === 0) {
+      return { valid: false, message: '' };
+    }
+    return validateBVN ? validateBVN(bvn) : { valid: false, message: '' };
+  }, [bvn, validateBVN]);
+
   const isValidFormat = validation?.valid === true;
 
   useEffect(() => {
-    if (!hasPermission) {
+    if (!permission?.granted) {
       requestPermission();
     }
-  }, [hasPermission, requestPermission]);
+  }, [permission, requestPermission]);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (isCountingDown && countdown > 0) {
       timer = setTimeout(() => {
         setCountdown(prev => prev - 1);
@@ -119,7 +219,9 @@ export default function BVNVerify() {
       capturePhoto();
       setIsCountingDown(false);
     }
-    return () => clearTimeout(timer);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [isCountingDown, countdown]);
 
   const capturePhoto = async () => {
@@ -129,16 +231,22 @@ export default function BVNVerify() {
     }
 
     try {
-      const photo = await cameraRef.current.takePhoto({
-        quality: 85,
-        skipMetadata: true,
+      const photo: any = await (cameraRef.current as any).takePictureAsync({
+        quality: 0.85,
+        base64: true,
+        skipProcessing: true,
       });
-      
-      const base64 = `data:image/jpeg;base64,${photo.base64 || ''}`;
+
+      if (!photo || !photo.base64) {
+        openError('Failed to capture photo: no image data');
+        return;
+      }
+
+      const base64 = `data:image/jpeg;base64,${photo.base64}`;
       setCapturedImage(base64);
       setStep('preview');
     } catch (error: any) {
-      openError('Failed to capture photo: ' + error.message);
+      openError('Failed to capture photo: ' + (error?.message ?? String(error)));
     }
   };
 
@@ -147,30 +255,81 @@ export default function BVNVerify() {
     setIsCountingDown(true);
   };
 
-  const handleBiometricSubmit = async () => {
+  const validateBeforeSubmit = async () => {
     if (!capturedImage) {
       openError('No selfie captured');
-      return;
+      return false;
     }
 
+    const verificationData = {
+      idType: 'bvn',
+      idNumber: bvn,
+      selfieImage: capturedImage
+    };
+
+    try {
+      console.log('🔍 Validating biometric data before submission...');
+      const validationResult = await validateBiometricData(verificationData);
+
+      if (!validationResult || !validationResult.success) {
+        openError(validationResult?.message || 'Validation failed');
+        return false;
+      }
+
+      return true;
+    } catch (error: any) {
+      openError(error?.message || 'Validation failed');
+      return false;
+    }
+  };
+
+  const handleBiometricSubmit = async () => {
+    const isValid = await validateBeforeSubmit();
+    if (!isValid) return;
+
+    // Show local processing UI then return to input screen immediately after submission
     setStep('processing');
 
     try {
+      console.log('🔐 Submitting BVN verification...');
       const result = await submitBiometricVerification({
         idType: 'bvn',
         idNumber: bvn,
         selfieImage: capturedImage
       });
 
-      if (result.success && result.data) {
-        setVerificationResult(result.data);
-        setStep(result.data.isApproved ? 'success' : 'error');
+      console.log('📨 Verification result:', result);
+
+      // Always return to the input (load up) screen
+      setStep('input');
+
+      if (result && result.success) {
+        // Store the verification result for potential display (optional)
+        setVerificationResult({
+          ...result.data,
+          submissionTime: new Date().toLocaleString('en-NG', {
+            dateStyle: 'medium',
+            timeStyle: 'short'
+          })
+        });
+
+        // Show KYC in progress modal (giftcard style)
+        setShowSuccess(true);
       } else {
-        throw new Error(result.error || 'Verification failed');
+        // Surface backend error on the input screen using ErrorDisplay
+        const errMsg = (result && (result.message || result.error)) || 'Verification submission failed. Please try again.';
+        openError(errMsg);
       }
     } catch (error: any) {
-      openError(error.message || 'Verification failed');
-      setStep('error');
+      console.error('❌ Verification error:', error);
+      // Return to input screen and show error
+      setStep('input');
+      openError(error?.message || 'Verification failed. Please try again.');
+    } finally {
+      // keep user on input screen - do not navigate to any error screen
+      setCapturedImage(null);
+      setIsCountingDown(false);
+      setCountdown(3);
     }
   };
 
@@ -180,7 +339,7 @@ export default function BVNVerify() {
       return;
     }
 
-    if (!hasPermission) {
+    if (!permission?.granted) {
       Alert.alert(
         'Camera Permission Required',
         'Camera access is needed for identity verification. Please enable camera permission in your device settings.',
@@ -189,11 +348,6 @@ export default function BVNVerify() {
           { text: 'Grant Permission', onPress: requestPermission }
         ]
       );
-      return;
-    }
-
-    if (!frontCamera) {
-      openError('Front camera not available');
       return;
     }
 
@@ -206,6 +360,8 @@ export default function BVNVerify() {
     setVerificationResult(null);
     setCountdown(3);
     setIsCountingDown(false);
+    closeError();
+    setShowSuccess(false);
   };
 
   const renderInputStep = () => (
@@ -221,7 +377,7 @@ export default function BVNVerify() {
             onPress={() => router.back()}
             activeOpacity={0.7}
           >
-            <Text style={styles.backButtonText}>←</Text>
+            <Image source={backIcon} style={styles.backIcon} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>BVN Verification</Text>
           <View style={styles.headerSpacer} />
@@ -229,8 +385,9 @@ export default function BVNVerify() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sub}>Enter your 11-digit Bank Verification Number (BVN) for identity verification.</Text>
-        <Text style={styles.formatHint}>Your BVN links all your bank accounts in Nigeria</Text>
+        <Text style={styles.sub}>
+          Enter your 11-digit Bank Verification Number (BVN) for identity verification.
+        </Text>
         
         <View style={styles.noticeContainer}>
           <Text style={styles.noticeText}>
@@ -241,7 +398,7 @@ export default function BVNVerify() {
         <View style={styles.inputContainer}>
           <TextInput
             value={bvn}
-            onChangeText={(text) => setBvn(text.replace(/\D/g, ''))}
+            onChangeText={handleBvnChange}
             inputMode="numeric"
             keyboardType="number-pad"
             maxLength={11}
@@ -250,30 +407,47 @@ export default function BVNVerify() {
               styles.input,
               !isValidFormat && bvn.length > 0 && styles.inputError,
             ]}
-            editable={!isVerifying}
+            editable={!isVerifying && !isValidating}
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="done"
             testID="bvnInput"
+            onSubmitEditing={handleBVNSubmit}
           />
           {!isValidFormat && bvn.length > 0 && (
             <Text style={styles.errorText}>
               {validation?.message || 'BVN must be exactly 11 digits.'}
             </Text>
           )}
+          {bvn.length > 0 && isValidFormat && (
+            <Text style={styles.successText}>
+              ✓ Valid BVN format
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.infoBox}>
+          <Text style={styles.infoTitle}>💡 Tips for better verification:</Text>
+          <Text style={styles.infoText}>• Ensure your BVN is correct and active</Text>
+          <Text style={styles.infoText}>• Use good lighting for your selfie</Text>
+          <Text style={styles.infoText}>• Remove glasses if possible</Text>
         </View>
 
         <TouchableOpacity
           style={[
             styles.cta,
-            { opacity: isValidFormat && !isVerifying ? 1 : 0.5 },
+            { opacity: isValidFormat && !isVerifying && !isValidating ? 1 : 0.5 },
           ]}
-          disabled={!isValidFormat || isVerifying}
+          disabled={!isValidFormat || isVerifying || isValidating}
           onPress={handleBVNSubmit}
           activeOpacity={0.7}
           testID="submitBvnButton"
         >
-          <Text style={styles.ctaText}>Continue to Face Verification</Text>
+          {isValidating ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.ctaText}>Continue to Face Verification</Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -288,20 +462,18 @@ export default function BVNVerify() {
             onPress={() => setStep('input')}
             activeOpacity={0.7}
           >
-            <Text style={[styles.backButtonText, { color: '#fff' }]}>←</Text>
+            <Image source={backIcon} style={[styles.backIcon, { tintColor: '#fff' }]} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: '#fff' }]}>Take Selfie</Text>
           <View style={styles.headerSpacer} />
         </View>
       </View>
 
-      {frontCamera && (
-        <Camera
+      {permission?.granted && (
+        <CameraView
           ref={cameraRef}
           style={StyleSheet.absoluteFillObject}
-          device={frontCamera}
-          isActive={step === 'camera'}
-          photo={true}
+          facing="front"
         >
           <CameraOverlay />
 
@@ -315,6 +487,9 @@ export default function BVNVerify() {
                 </Text>
                 <Text style={styles.subInstructionsText}>
                   Make sure your face is well lit and clearly visible
+                </Text>
+                <Text style={styles.subInstructionsText}>
+                  Look directly at the camera
                 </Text>
               </>
             )}
@@ -335,7 +510,20 @@ export default function BVNVerify() {
               </View>
             )}
           </View>
-        </Camera>
+        </CameraView>
+      )}
+
+      {!permission?.granted && (
+        <View style={styles.centerContainer}>
+          <Text style={styles.permissionText}>Camera permission is required</Text>
+          <TouchableOpacity
+            style={styles.cta}
+            onPress={requestPermission}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.ctaText}>Grant Permission</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );
@@ -349,7 +537,7 @@ export default function BVNVerify() {
             onPress={() => setStep('camera')}
             activeOpacity={0.7}
           >
-            <Text style={styles.backButtonText}>←</Text>
+            <Image source={backIcon} style={styles.backIcon} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Review Photo</Text>
           <View style={styles.headerSpacer} />
@@ -360,11 +548,15 @@ export default function BVNVerify() {
         {capturedImage && (
           <Image source={{ uri: capturedImage }} style={styles.previewImage} />
         )}
-        
+
         <Text style={styles.previewText}>
           Is this photo clear and well-lit?
         </Text>
-        
+
+        <Text style={styles.previewSubtext}>
+          Make sure your face is clearly visible and the image is not blurry
+        </Text>
+
         <View style={styles.previewActions}>
           <TouchableOpacity
             style={[styles.cta, { backgroundColor: '#6B7280', flex: 1, marginRight: 8 }]}
@@ -373,16 +565,18 @@ export default function BVNVerify() {
           >
             <Text style={styles.ctaText}>Retake</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[styles.cta, { flex: 1, marginLeft: 8 }]}
             onPress={handleBiometricSubmit}
             activeOpacity={0.7}
-            disabled={isVerifying}
+            disabled={isVerifying || isValidating}
           >
-            <Text style={styles.ctaText}>
-              {isVerifying ? 'Processing...' : 'Submit'}
-            </Text>
+            {isVerifying || isValidating ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.ctaText}>Submit</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -393,25 +587,25 @@ export default function BVNVerify() {
     <View style={styles.centerContainer}>
       <ActivityIndicator size="large" color="#35297F" />
       <Text style={styles.processingText}>Verifying your BVN...</Text>
-      <Text style={styles.processingSubtext}>This may take a few moments</Text>
+      <Text style={styles.processingSubtext}>
+        We're comparing your selfie with your BVN records
+      </Text>
+      <Text style={styles.processingSubtext}>
+        This may take a few moments
+      </Text>
     </View>
   );
 
   const renderSuccessStep = () => (
     <View style={styles.centerContainer}>
       <Text style={styles.successIcon}>✅</Text>
-      <Text style={styles.successTitle}>Verification Successful!</Text>
+      <Text style={styles.successTitle}>Verification Submitted</Text>
       <Text style={styles.successText}>
-        Your BVN has been successfully verified.
+        Your KYC verification is in progress.
       </Text>
-      {verificationResult && (
-        <Text style={styles.resultText}>
-          Confidence: {verificationResult.confidenceValue}%
-        </Text>
-      )}
       <TouchableOpacity
         style={styles.cta}
-        onPress={() => router.back()}
+        onPress={() => router.replace('../kyc/kyc-upgrade')}
         activeOpacity={0.7}
       >
         <Text style={styles.ctaText}>Continue</Text>
@@ -419,28 +613,11 @@ export default function BVNVerify() {
     </View>
   );
 
-  const renderErrorStep = () => (
-    <View style={styles.centerContainer}>
-      <Text style={styles.errorIcon}>❌</Text>
-      <Text style={styles.errorTitle}>Verification Failed</Text>
-      <Text style={styles.errorText}>
-        {verificationResult?.resultText || 'Unable to verify your BVN. Please ensure your BVN is correct and try again.'}
-      </Text>
-      <TouchableOpacity
-        style={[styles.cta, { backgroundColor: '#EF4444' }]}
-        onPress={resetVerification}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.ctaText}>Try Again</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar 
-        backgroundColor={step === 'camera' ? '#000' : Colors.background} 
-        barStyle={step === 'camera' ? 'light-content' : 'dark-content'} 
+      <StatusBar
+        backgroundColor={step === 'camera' ? '#000' : Colors.background}
+        barStyle={step === 'camera' ? 'light-content' : 'dark-content'}
       />
 
       {showError && (
@@ -458,16 +635,26 @@ export default function BVNVerify() {
       {step === 'preview' && renderPreviewStep()}
       {step === 'processing' && renderProcessingStep()}
       {step === 'success' && renderSuccessStep()}
-      {step === 'error' && renderErrorStep()}
+
+      <SuccessModal
+        visible={showSuccess}
+        onClose={() => {
+          setShowSuccess(false);
+          router.replace('../kyc/kyc-upgrade');
+        }}
+        title="KYC in Progress"
+        message="You will get an email with the confirmation status soon."
+        buttonText="Continue"
+      />
     </SafeAreaView>
   );
 }
 
+/* ---------------- Styles ---------------- */
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
-
   headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
   headerContainer: {
     flexDirection: 'row',
@@ -481,10 +668,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 20,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: Colors.text?.primary || '#111827',
-    fontWeight: '500',
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerTitle: {
     color: '#35297F',
@@ -496,16 +683,13 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   headerSpacer: { width: 40 },
-
   section: { paddingHorizontal: 16, marginBottom: 24 },
-  sub: { color: Colors.text?.secondary || '#6B7280', fontSize: 14, marginBottom: 8 },
-  formatHint: { 
-    color: '#9CA3AF', 
-    fontSize: 12, 
-    marginBottom: 12,
-    fontStyle: 'italic' 
+  sub: {
+    color: Colors.text?.secondary || '#6B7280',
+    fontSize: 14,
+    marginBottom: 16,
+    lineHeight: 20
   },
-
   noticeContainer: {
     backgroundColor: '#EEF2FF',
     borderLeftWidth: 4,
@@ -519,8 +703,7 @@ const styles = StyleSheet.create({
     color: '#4338CA',
     lineHeight: 18,
   },
-
-  inputContainer: { marginBottom: 12 },
+  inputContainer: { marginBottom: 16 },
   input: {
     backgroundColor: '#fff',
     borderColor: '#E5E7EB',
@@ -533,7 +716,26 @@ const styles = StyleSheet.create({
   },
   inputError: { borderColor: '#EF4444' },
   errorText: { color: '#EF4444', fontSize: 12, marginTop: 4, marginLeft: 4 },
-
+  successText: { color: '#10B981', fontSize: 12, marginTop: 4, marginLeft: 4 },
+  infoBox: {
+    backgroundColor: '#F0F9FF',
+    borderColor: '#BAE6FD',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+  },
+  infoTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#0369A1',
+    marginBottom: 8,
+  },
+  infoText: {
+    fontSize: 12,
+    color: '#0369A1',
+    marginBottom: 2,
+  },
   cta: {
     backgroundColor: '#35297F',
     borderRadius: 10,
@@ -543,7 +745,6 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   ctaText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-
   cameraContainer: {
     flex: 1,
     backgroundColor: '#000',
@@ -567,6 +768,7 @@ const styles = StyleSheet.create({
     color: '#D1D5DB',
     fontSize: 14,
     textAlign: 'center',
+    marginBottom: 4,
   },
   countdownText: {
     color: '#fff',
@@ -602,7 +804,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
-
+  permissionText: {
+    color: '#111827',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
   previewContainer: {
     flex: 1,
     backgroundColor: '#F8F9FA',
@@ -624,13 +831,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#111827',
     textAlign: 'center',
+    marginBottom: 8,
+  },
+  previewSubtext: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
     marginBottom: 24,
   },
   previewActions: {
     flexDirection: 'row',
     width: '100%',
   },
-
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -666,21 +878,94 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textAlign: 'center',
     marginBottom: 16,
+    lineHeight: 22,
+  },
+  resultContainer: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 24,
+    alignSelf: 'stretch',
   },
   resultText: {
     fontSize: 14,
     color: '#374151',
-    marginBottom: 24,
-  },
-  errorIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  errorTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#EF4444',
-    marginBottom: 8,
     textAlign: 'center',
+    marginBottom: 4,
+  },
+});
+
+const successModalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+    width: 320,
+    alignSelf: 'center',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
+    backgroundColor: '#F3F4F6',
+    zIndex: 1,
+  },
+  closeButtonText: {
+    color: '#6B7280',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  titleSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingTop: 8,
+  },
+  title: {
+    color: '#111827',
+    fontFamily: Typography.medium || 'System',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  message: {
+    color: '#6B7280',
+    fontFamily: Typography.regular || 'System',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 8,
+  },
+  submitButton: {
+    backgroundColor: '#35297F',
+    borderRadius: 12,
+    paddingVertical: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontFamily: Typography.medium || 'System',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

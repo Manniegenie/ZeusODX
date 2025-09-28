@@ -19,7 +19,7 @@ const ethIcon = require('../components/icons/eth-icon.png');
 const solIcon = require('../components/icons/sol-icon.png');
 const usdtIcon = require('../components/icons/usdt-icon.png');
 const usdcIcon = require('../components/icons/usdc-icon.png');
-const avaxIcon = require('../components/icons/avax-icon.png');
+const trxIcon = require('../components/icons/Tron.png');
 const bnbIcon = require('../components/icons/bnb-icon.png');
 const maticIcon = require('../components/icons/matic-icon.png');
 const ngnzIcon = require('../components/icons/NGNZ.png'); // ✅ NGNZ icon
@@ -52,7 +52,7 @@ export default function DepositTokenModal({
     { id: 'sol', name: 'Solana', symbol: 'SOL', icon: solIcon },
     { id: 'usdc', name: 'USD Coin', symbol: 'USDC', icon: usdcIcon },
     { id: 'usdt', name: 'Tether', symbol: 'USDT', icon: usdtIcon },
-    { id: 'avax', name: 'Avalanche', symbol: 'AVAX', icon: avaxIcon },
+    { id: 'trx', name: 'Tron', symbol: 'TRX', icon: trxIcon },
     { id: 'bnb', name: 'Binance Coin', symbol: 'BNB', icon: bnbIcon },
     { id: 'matic', name: 'Polygon', symbol: 'MATIC', icon: maticIcon },
     { id: 'ngnz', name: 'NGNZ', symbol: 'NGNZ', icon: ngnzIcon }, // ✅ Added NGNZ

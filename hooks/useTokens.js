@@ -33,10 +33,10 @@ const TOKEN_METADATA = {
     icon: require('../components/icons/bnb-icon.png'),
     order: 5
   },
-  AVAX: {
-    name: 'Avalanche',
-    symbol: 'AVAX',
-    icon: require('../components/icons/avax-icon.png'),
+  TRX: {
+    name: 'Tron',
+    symbol: 'TRX',
+    icon: require('../components/icons/Tron.png'),
     order: 6
   },
   MATIC: {

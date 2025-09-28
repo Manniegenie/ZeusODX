@@ -1,5 +1,5 @@
 // app/profile/confirm-new-pin.tsx
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Vibration, Alert } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Vibration, Alert, Image } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
@@ -7,6 +7,9 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import TwoFactorAuthModal from '../../components/2FA';
 import useResetPin from '../../hooks/useResetPin';
+
+// use same back icon as other screens
+import backIcon from '../../components/icons/backy.png';
 
 export default function ResetPinConfirmScreen() {
   const router = useRouter();
@@ -33,7 +36,7 @@ export default function ResetPinConfirmScreen() {
   };
 
   const handleBackPress = () => {
-    router.back();
+    if (!changing) router.back();
   };
 
   const handleConfirm = () => {
@@ -136,24 +139,28 @@ export default function ResetPinConfirmScreen() {
     ));
   };
 
+  const backDisabled = Boolean(changing);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        {/* Header with Back Button */}
+        {/* Header with Image Back Button (centered title) */}
         <View style={styles.headerSection}>
-          <View style={styles.headerContainer}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={handleBackPress}
-              activeOpacity={0.7}
-              disabled={changing}
-            >
-              <Text style={styles.backButtonText}>←</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleBackPress}
+            activeOpacity={backDisabled ? 1 : 0.7}
+            disabled={backDisabled}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Image source={backIcon} style={styles.backIcon} />
+          </TouchableOpacity>
 
-            <Text style={styles.headerTitle}>Reset PIN</Text>
-            <View style={styles.emptySpace} />
-          </View>
+          {/* Centered title using absolute-position pattern */}
+          <Text style={styles.headerTitle}>Reset PIN</Text>
+
+          {/* spacer to keep title centered */}
+          <View style={styles.emptySpace} />
         </View>
 
         {/* Header Content */}
@@ -218,18 +225,29 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: Layout.spacing.lg },
 
   // Header with back button
-  headerSection: { paddingTop: 12, paddingBottom: 6 },
-  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  headerSection: {
+    paddingTop: 12,
+    paddingBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backButtonText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
   headerTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     color: '#35297F',
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
-    flex: 1,
     textAlign: 'center',
-    marginHorizontal: 16,
+    pointerEvents: 'none',
   },
   emptySpace: { width: 40 },
 

@@ -22,6 +22,9 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useDeposit } from '../../hooks/useDeposit';
 
+// Icons - Updated to match gift card screens
+import backIcon from '../../components/icons/backy.png';
+
 // Type definitions
 interface QRCodeData {
   dataUrl: string;
@@ -172,18 +175,26 @@ export default function BnbBscDepositScreen() {
             />
           }
         >
+          {/* Header - Updated to match gift card screens */}
           <View style={styles.headerSection}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <View style={styles.backArrow}>
-                <View style={styles.arrowLine} />
-                <View style={styles.arrowHead} />
+            <View style={styles.headerContainer}>
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={() => router.back()}
+                activeOpacity={0.7}
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
+              </TouchableOpacity>
+
+              <View style={styles.headerGroup}>
+                <Text style={styles.headerTitle}>Deposit BNB</Text>
+                <Text style={styles.headerSubtitle}>Binance Smart Chain</Text>
               </View>
-            </TouchableOpacity>
-            <View style={styles.headerGroup}>
-              <Text style={styles.headerTitle}>Deposit BNB</Text>
-              <Text style={styles.headerSubtitle}>Binance Smart Chain</Text>
+
+              <View style={styles.headerRight} />
             </View>
-            <View style={styles.headerSpacer} />
           </View>
 
           <View style={styles.subtitleSection}>
@@ -265,7 +276,6 @@ export default function BnbBscDepositScreen() {
   );
 }
 
-// styles unchanged
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
@@ -280,60 +290,43 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 100,
   },
+
+  // Header - Updated to match gift card screens
   headerSection: {
     paddingHorizontal: horizontalPadding,
-    paddingTop: 15,
-    paddingBottom: 8,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  backButton: {
+  backButton: { 
     width: 40,
     height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
+    justifyContent: 'center', 
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    borderRadius: 20,
   },
-  backArrow: {
+  backIcon: {
     width: 24,
     height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  arrowLine: {
-    width: 16,
-    height: 2,
-    backgroundColor: Colors.text.primary,
-    position: 'absolute',
-  },
-  arrowHead: {
-    width: 8,
-    height: 8,
-    borderLeftWidth: 2,
-    borderTopWidth: 2,
-    borderLeftColor: Colors.text.primary,
-    borderTopColor: Colors.text.primary,
-    backgroundColor: 'transparent',
-    transform: [{ rotate: '-45deg' }],
-    position: 'absolute',
-    left: 0,
+    resizeMode: 'contain',
   },
   headerGroup: {
     flex: 1,
     alignItems: 'center',
   },
-  headerSpacer: {
+  headerRight: {
     width: 40,
-    height: 40,
   },
   headerTitle: {
     color: Colors.text.primary,
     fontFamily: Typography.medium,
     fontSize: 18,
     textAlign: 'center',
+    fontWeight: '600',
   },
   headerSubtitle: {
     color: Colors.text.secondary,
@@ -342,6 +335,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 2,
   },
+
   subtitleSection: {
     paddingHorizontal: horizontalPadding,
     paddingVertical: 8,

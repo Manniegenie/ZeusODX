@@ -1,5 +1,6 @@
+// app/profile/pin-reset-send.tsx
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
@@ -27,6 +28,9 @@ interface ErrorDisplayData {
   dismissible?: boolean;
 }
 
+// use same back icon as other screens
+import backIcon from '../../components/icons/backy.png';
+
 export default function PinResetSendScreen() {
   const router = useRouter();
   const { initiate, initiating } = useResetPin();
@@ -35,7 +39,9 @@ export default function PinResetSendScreen() {
   const [showErrorDisplay, setShowErrorDisplay] = useState<boolean>(false);
   const [errorDisplayData, setErrorDisplayData] = useState<ErrorDisplayData | null>(null);
 
-  const handleBackPress = () => router.back();
+  const handleBackPress = () => {
+    if (!initiating) router.back();
+  };
 
   // Helper functions for error handling
   const showErrorMessage = (errorData: ErrorDisplayData): void => {
@@ -79,7 +85,7 @@ export default function PinResetSendScreen() {
       const res = await initiate();
       if (res && res.success === true) {
         // IMPORTANT: route name must match the file EXACTLY: app/profile/verify-otp.tsx
-        router.push('/profile/verifyOTP');
+        router.push('/profile/verify-otp');
       } else {
         // Use ErrorDisplay instead of simple error banner
         const errorType = getErrorType(res?.errorCode);
@@ -106,6 +112,8 @@ export default function PinResetSendScreen() {
     }
   };
 
+  const backDisabled = Boolean(initiating);
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Error Display */}
@@ -126,10 +134,19 @@ export default function PinResetSendScreen() {
       <View style={styles.content}>
         <View style={styles.headerSection}>
           <View style={styles.headerContainer}>
-            <TouchableOpacity style={styles.backButton} onPress={handleBackPress} activeOpacity={0.7}>
-              <Text style={styles.backButtonText}>←</Text>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBackPress}
+              activeOpacity={backDisabled ? 1 : 0.7}
+              disabled={backDisabled}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Image source={backIcon} style={styles.backIcon} />
             </TouchableOpacity>
+
+            {/* Centered title (absolute positioned) */}
             <Text style={styles.headerTitle}>Reset PIN</Text>
+
             <View style={styles.emptySpace} />
           </View>
         </View>
@@ -162,10 +179,21 @@ const styles = StyleSheet.create({
   headerSection: { paddingTop: 12, paddingBottom: 6 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backButtonText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
   headerTitle: {
-    color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600',
-    flex: 1, textAlign: 'center', marginHorizontal: 16,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    color: '#35297F',
+    fontFamily: Typography.medium || 'System',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    pointerEvents: 'none',
   },
   emptySpace: { width: 40 },
   header: { paddingTop: Layout.spacing.xl, marginBottom: Layout.spacing.lg, alignItems: 'center' },

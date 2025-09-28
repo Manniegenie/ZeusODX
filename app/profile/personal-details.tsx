@@ -9,11 +9,15 @@ import {
   StatusBar,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useUserProfile } from '../../hooks/useProfile';
+
+// use same back icon as other screens
+import backIcon from '../../components/icons/backy.png';
 
 interface PersonalDetails {
   firstName: string;
@@ -66,24 +70,29 @@ const PersonalDetailsScreen = () => {
     };
   }, [profile]);
 
+  const isBusy = Boolean(loading);
+
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          {/* Header */}
-          <View style={styles.headerSection}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.backButtonText}>←</Text>
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Personal Details</Text>
-            <View style={styles.headerSpacer} />
-          </View>
 
+        {/* Header */}
+        <View style={styles.headerSection}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+          >
+            <Image source={backIcon} style={styles.backIcon} />
+          </TouchableOpacity>
+
+          <Text style={styles.headerTitle}>Personal Details</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Loading */}
           {loading && (
             <View style={styles.loadingWrap}>
@@ -153,8 +162,18 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 24,
   },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backButtonText: { fontSize: 20, color: Colors.text.primary, fontWeight: '500' },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
   headerTitle: {
     position: 'absolute',
     left: 0,

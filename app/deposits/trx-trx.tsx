@@ -1,4 +1,4 @@
-// app/deposits/USDC-arbitrum.tsx
+// app/deposits/trx-tron.tsx
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -22,9 +22,10 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useDeposit } from '../../hooks/useDeposit';
 
-// Icons - Updated to match BTC-BSC screen
+// Icons - Updated to match gift card screens
 import backIcon from '../../components/icons/backy.png';
 
+// Type definitions
 interface QRCodeData {
   dataUrl: string;
   format: string;
@@ -51,10 +52,10 @@ const getHorizontalPadding = (): number => {
 
 const horizontalPadding = getHorizontalPadding();
 
-export default function UsdcArbitrumDepositScreen() {
+export default function TrxTronDepositScreen() {
   const router = useRouter();
   const {
-    getDepositAddress,
+    getTRXAddress,
     getCachedAddress,
     isAddressLoading,
     getAddressError,
@@ -70,27 +71,26 @@ export default function UsdcArbitrumDepositScreen() {
   const [showCopied, setShowCopied] = useState<boolean>(false);
 
   useEffect(() => {
-    const fetchArbitrumAddress = async (): Promise<void> => {
-      const cachedAddress = getCachedAddress('USDC', 'ARBITRUM');
+    const fetchTRXAddress = async (): Promise<void> => {
+      const cachedAddress = getCachedAddress('TRX', 'TRON');
       if (cachedAddress) {
         const addressData = cachedAddress.data || cachedAddress;
         setDepositData(addressData);
       } else {
-        await handleGetArbitrumAddress();
+        await handleGetTRXAddress();
       }
     };
-    fetchArbitrumAddress();
+    fetchTRXAddress();
   }, [getCachedAddress]);
 
-  const handleGetArbitrumAddress = async (): Promise<void> => {
+  const handleGetTRXAddress = async (): Promise<void> => {
     try {
-      // Call getDepositAddress with USDC token and ARBITRUM network
-      const result = await getDepositAddress('USDC', 'ARBITRUM');
+      const result = await getTRXAddress('TRON');
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
       } else {
-        showErrorMessage(result.error || 'Failed to get Arbitrum USDC deposit address');
+        showErrorMessage(result.error || 'Failed to get TRX deposit address');
       }
     } catch (error) {
       showErrorMessage('Network error occurred');
@@ -114,7 +114,7 @@ export default function UsdcArbitrumDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetArbitrumAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetTRXAddress(), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -130,24 +130,24 @@ export default function UsdcArbitrumDepositScreen() {
 
   const copyToClipboard = async (): Promise<void> => {
     if (!depositData?.address) {
-      showErrorMessage('Arbitrum USDC wallet address is not yet available');
+      showErrorMessage('TRX wallet address is not yet available');
       return;
     }
     try {
       await Clipboard.setString(depositData.address);
-      setShowCopied(true);
+      setShowCopied(true); // show green "Address Copied" banner
     } catch (error) {
       showErrorMessage('Failed to copy address to clipboard');
     }
   };
 
-  const isLoading = isAddressLoading('USDC', 'ARBITRUM') || supportedLoading;
-  const addressError = getAddressError('USDC', 'ARBITRUM');
+  const isLoading = isAddressLoading('TRX', 'TRON') || supportedLoading;
+  const addressError = getAddressError('TRX', 'TRON');
   const isWalletSetupNeeded = addressError && addressError.includes('needs to be set up');
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
-  const minDeposit = '1 USDC';
-  const network = 'Arbitrum One';
+  const minDeposit = '10 TRX';
+  const network = depositData?.network || 'Tron';
 
   return (
     <View style={styles.container}>
@@ -173,7 +173,7 @@ export default function UsdcArbitrumDepositScreen() {
             />
           }
         >
-          {/* Header - Updated to match BTC-BSC screen */}
+          {/* Header - Updated to match gift card screens */}
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
               <TouchableOpacity 
@@ -187,8 +187,8 @@ export default function UsdcArbitrumDepositScreen() {
               </TouchableOpacity>
 
               <View style={styles.headerGroup}>
-                <Text style={styles.headerTitle}>Deposit USDC</Text>
-                <Text style={styles.headerSubtitle}>Arbitrum One</Text>
+                <Text style={styles.headerTitle}>Deposit TRX</Text>
+                <Text style={styles.headerSubtitle}>Tron Network</Text>
               </View>
 
               <View style={styles.headerRight} />
@@ -196,7 +196,7 @@ export default function UsdcArbitrumDepositScreen() {
           </View>
 
           <View style={styles.subtitleSection}>
-            <Text style={styles.subtitle}>Scan the QR code to get Arbitrum One deposit address</Text>
+            <Text style={styles.subtitle}>Scan the QR code to get Deposit address</Text>
           </View>
 
           <View style={styles.qrSection}>
@@ -204,7 +204,7 @@ export default function UsdcArbitrumDepositScreen() {
               {isLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color={Colors.primary} />
-                  <Text style={styles.loadingText}>Loading Arbitrum address...</Text>
+                  <Text style={styles.loadingText}>Loading TRX address...</Text>
                 </View>
               ) : qrCodeData ? (
                 <Image source={{ uri: qrCodeData }} style={styles.qrCodeImage} resizeMode="contain" />
@@ -240,6 +240,10 @@ export default function UsdcArbitrumDepositScreen() {
               <Text style={styles.detailLabel}>Network</Text>
               <Text style={styles.detailValue}>{network}</Text>
             </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Token Standard</Text>
+              <Text style={styles.detailValue}>TRC-20</Text>
+            </View>
             {depositData?.walletReferenceId && (
               <View style={[styles.detailRow, styles.lastDetailRow]}>
                 <Text style={styles.detailLabel}>Wallet ID</Text>
@@ -252,9 +256,8 @@ export default function UsdcArbitrumDepositScreen() {
             <View style={styles.warningContainer}>
               <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
               <Text style={styles.warningText}>
-                • Only send USDC on Arbitrum One network to this address{'\n'}
-                • Sending from other networks may result in loss of funds{'\n'}
-                • Ensure your wallet supports Arbitrum One before sending
+                Only send TRX on the Tron network to this address. 
+                Sending TRX from other networks or sending other tokens may result in permanent loss of funds.
               </Text>
             </View>
           </View>
@@ -286,7 +289,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
 
-  // Header - Updated to match BTC-BSC screen
+  // Header - Updated to match gift card screens
   headerSection: {
     paddingHorizontal: horizontalPadding,
     paddingTop: 12,
@@ -439,17 +442,17 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     overflow: 'hidden',
   },
-  copyButtonDisabled: { 
-    opacity: 0.5 
+  copyButtonDisabled: {
+    opacity: 0.5,
   },
-  copyIcon: { 
-    width: 32, 
-    height: 32, 
-    resizeMode: 'cover' 
+  copyIcon: {
+    width: 32,
+    height: 32,
+    resizeMode: 'cover',
   },
-  detailsSection: { 
-    paddingHorizontal: horizontalPadding, 
-    paddingVertical: 8 
+  detailsSection: {
+    paddingHorizontal: horizontalPadding,
+    paddingVertical: 8,
   },
   detailRow: {
     flexDirection: 'row',
@@ -459,8 +462,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  lastDetailRow: { 
-    borderBottomWidth: 0 
+  lastDetailRow: {
+    borderBottomWidth: 0,
   },
   detailLabel: {
     color: Colors.text.secondary,
@@ -487,19 +490,18 @@ const styles = StyleSheet.create({
     color: '#92400E',
     fontFamily: Typography.medium,
     fontSize: 14,
-    fontWeight: '600',
     marginBottom: 8,
   },
   warningText: {
     color: '#92400E',
     fontFamily: Typography.regular,
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 18,
   },
-  shareSection: { 
-    paddingHorizontal: horizontalPadding, 
-    paddingVertical: 15, 
-    paddingBottom: 20 
+  shareSection: {
+    paddingHorizontal: horizontalPadding,
+    paddingVertical: 15,
+    paddingBottom: 20,
   },
   shareButton: {
     backgroundColor: Colors.primary,

@@ -147,7 +147,6 @@ export default function LoginScreen() {
   );
 }
 
-// YOUR EXACT ORIGINAL STYLES - UNCHANGED
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -181,6 +180,7 @@ const styles = StyleSheet.create({
   },
   form: {
     flex: 1,
+    marginBottom: Layout.spacing.lg, // Reduced from xxl to lg
   },
   inputContainer: {
     gap: Layout.spacing.xs,

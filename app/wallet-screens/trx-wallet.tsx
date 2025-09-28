@@ -1,4 +1,4 @@
-// app/user/AvaxWalletScreen.tsx
+// app/user/TronWalletScreen.tsx
 import React, { useCallback, useState, useEffect } from 'react';
 import {
   View,
@@ -24,12 +24,13 @@ import { Layout } from '../../constants/Layout';
 import { useBalance } from '../../hooks/useWallet';
 import { useHistory } from '../../hooks/useHistory';
 
-import avaxIcon from '../../components/icons/avax-icon.png';
+import trxIcon from '../../components/icons/Tron.png';
 import transferIcon from '../../components/icons/transfer-icon.png';
 import swapIcon from '../../components/icons/swap-icon.png';
 import depositIcon from '../../components/icons/deposit-icon.png';
 import emptyStateIcon from '../../components/icons/empty-state.png';
 import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
+import backIcon from '../../components/icons/backy.png';
 
 // -------------------- Types to match History/Receipt --------------------
 type TokenDetails = {
@@ -217,7 +218,7 @@ const toAPITransaction = (tx: any): APITransaction => {
 };
 
 // -------------------- Screen --------------------
-const AvaxWalletScreen = ({ onQuickActionPress }: { onQuickActionPress?: (id: string) => void }) => {
+const TronWalletScreen = ({ onQuickActionPress }: { onQuickActionPress?: (id: string) => void }) => {
   const router = useRouter();
   const { openNetworkModal } = useLocalSearchParams();
 
@@ -225,10 +226,10 @@ const AvaxWalletScreen = ({ onQuickActionPress }: { onQuickActionPress?: (id: st
   const [showTransferMethodModal, setShowTransferMethodModal] = useState(false);
 
   const {
-    avaxBalance,
-    avaxBalanceUSD,
-    formattedAvaxBalance,
-    formattedAvaxBalanceUSD,
+    trxBalance,
+    trxBalanceUSD,
+    formattedTrxBalance,
+    formattedTrxBalanceUSD,
     loading,
     error,
     refreshBalances
@@ -239,7 +240,7 @@ const AvaxWalletScreen = ({ onQuickActionPress }: { onQuickActionPress?: (id: st
     loading: transactionsLoading,
     hasTransactions,
     refreshTransactions
-  } = useHistory('AVAX', { defaultPageSize: 10 });
+  } = useHistory('TRX', { defaultPageSize: 10 });
 
   useEffect(() => {
     if (openNetworkModal === 'true') {
@@ -253,7 +254,7 @@ const AvaxWalletScreen = ({ onQuickActionPress }: { onQuickActionPress?: (id: st
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 
-  const avaxNetworks = [{ id: 'bsc', name: 'BSC (Binance Smart Chain)' }];
+  const trxNetworks = [{ id: 'trx', name: 'TRX (Tron Network)' }];
 
   const onRefresh = useCallback(async () => {
     await Promise.all([refreshBalances(), refreshTransactions()]);
@@ -267,7 +268,7 @@ const AvaxWalletScreen = ({ onQuickActionPress }: { onQuickActionPress?: (id: st
     } else if (actionId === 'transfer') {
       setShowTransferMethodModal(true);
     } else if (actionId === 'buy-sell') {
-      router.push({ pathname: '../user/Swap', params: { defaultToken: 'AVAX' } });
+      router.push({ pathname: '../user/Swap', params: { defaultToken: 'TRX' } });
     } else {
       onQuickActionPress?.(actionId);
     }
@@ -277,36 +278,36 @@ const AvaxWalletScreen = ({ onQuickActionPress }: { onQuickActionPress?: (id: st
   const handleCloseTransferMethodModal = () => setShowTransferMethodModal(false);
 
   const handleTransferMethodSelect = (method: TransferMethod) => {
-    const token = { id: 'avax', name: 'Avalanche', symbol: 'AVAX' };
+    const tokenParams = {
+      tokenId: 'trx',
+      tokenName: 'Tron',
+      tokenSymbol: 'trx',
+      transferMethod: method.id
+    };
 
     if (method.id === 'zeus') {
-      router.push({
-        pathname: '/user/usernametransfer',
-        params: { tokenId: token.id, tokenName: token.name, tokenSymbol: token.symbol, transferMethod: 'zeus' }
-      });
+      router.push({ pathname: '/user/usernametransfer', params: tokenParams });
     } else if (method.id === 'external') {
-      router.push({
-        pathname: '/user/externaltransfer',
-        params: { tokenId: token.id, tokenName: token.name, tokenSymbol: token.symbol, transferMethod: 'external' }
-      });
+      router.push({ pathname: '/user/externaltransfer', params: tokenParams });
     }
+
     setShowTransferMethodModal(false);
   };
 
   const handleNetworkSelect = (network: { id: string }) => {
-    if (network.id === 'bsc') router.push('../deposits/avax-bsc');
+    if (network.id === 'trx') router.push('../deposits/trx-trx');
     setShowNetworkModal(false);
   };
 
   const handleViewAllTransactions = () => {
     router.push({
       pathname: '/user/transactionhistory',
-      params: { currency: 'AVAX', tokenName: 'Avalanche', tokenSymbol: 'AVAX' }
+      params: { currency: 'TRX', tokenName: 'Tron', tokenSymbol: 'TRX' }
     });
   };
 
-  const displayAvaxBalance = formattedAvaxBalance || (avaxBalance ?? 0).toString();
-  const displayUsdBalance = formattedAvaxBalanceUSD || '$0.00';
+  const displayTrxBalance = formattedTrxBalance || (trxBalance ?? 0).toString();
+  const displayUsdBalance = formattedTrxBalanceUSD || '$0.00';
 
   return (
     <View style={styles.container}>
@@ -333,11 +334,11 @@ const AvaxWalletScreen = ({ onQuickActionPress }: { onQuickActionPress?: (id: st
                 delayPressIn={0}
                 hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
-                <Text style={styles.backButtonText}>←</Text>
+                <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
               <View style={styles.headerGroup}>
-                <Image source={avaxIcon} style={styles.iconImage} />
-                <Text style={styles.headerTitle}>Avalanche</Text>
+                <Image source={trxIcon} style={styles.iconImage} />
+                <Text style={styles.headerTitle}>Tron</Text>
               </View>
               <View style={styles.headerRight} />
             </View>
@@ -352,14 +353,14 @@ const AvaxWalletScreen = ({ onQuickActionPress }: { onQuickActionPress?: (id: st
                 imageStyle={styles.balanceBackgroundImage}
               >
                 <View style={styles.balanceContent}>
-                  {loading && !avaxBalance ? (
+                  {loading && !trxBalance ? (
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : error ? (
                     <Text style={styles.errorText}>Unable to load balance</Text>
                   ) : (
                     <>
                       <Text style={styles.balanceLabel}></Text>
-                      <Text style={styles.balanceAmount}>AVAX {displayAvaxBalance}</Text>
+                      <Text style={styles.balanceAmount}>TRX {displayTrxBalance}</Text>
                       <Text style={styles.balanceUsd}>{displayUsdBalance}</Text>
                     </>
                   )}
@@ -450,14 +451,14 @@ const AvaxWalletScreen = ({ onQuickActionPress }: { onQuickActionPress?: (id: st
         visible={showTransferMethodModal}
         onClose={handleCloseTransferMethodModal}
         onSelectMethod={handleTransferMethodSelect}
-        title="Send Avalanche"
+        title="Send Tron"
       />
 
       <NetworkSelectionModal
         visible={showNetworkModal}
         onClose={handleCloseNetworkModal}
         onNetworkSelect={handleNetworkSelect}
-        availableNetworks={[...avaxNetworks]}
+        availableNetworks={[...trxNetworks]}
       />
     </View>
   );
@@ -471,19 +472,21 @@ const styles = StyleSheet.create({
   headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { 
-    width: 48,  // Increased from 40
-    height: 48, // Increased from 40
+    width: 40,
+    height: 40,
     justifyContent: 'center', 
     alignItems: 'center',
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Very subtle background instead of transparent
-    overflow: 'hidden', // Better Android performance
+    borderRadius: 20,
   },
-  backButtonText: { fontSize: 20, color: Colors.text.primary },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
   headerGroup: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' },
   iconImage: { width: 28, height: 28, resizeMode: 'cover' },
   headerTitle: { fontSize: 16, fontWeight: '600', color: Colors.text.primary },
-  headerRight: { width: 48 }, // Updated to match new back button width
+  headerRight: { width: 40 },
 
   balanceSection: { paddingHorizontal: 16, paddingBottom: 16 },
   balanceCard: { borderRadius: 12, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: '#DDDDDD' },
@@ -533,4 +536,4 @@ const styles = StyleSheet.create({
   transactionStatus: { fontFamily: Typography.medium, fontSize: 12, fontWeight: '600' },
 });
 
-export default AvaxWalletScreen;
+export default TronWalletScreen;

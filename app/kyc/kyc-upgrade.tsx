@@ -11,6 +11,7 @@ import {
   ImageSourcePropType
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import backIcon from '../../components/icons/backy.png';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
@@ -141,7 +142,7 @@ const KYCUpgradeScreen: React.FC = () => {
                 delayPressIn={0}
                 hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
-                <Text style={styles.backButtonText}>←</Text>
+                <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
 
               {/* Title */}
@@ -235,18 +236,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   backButton: {
-    width: 48,  // Increased from 40
-    height: 48, // Increased from 40
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Very subtle background instead of transparent
-    overflow: 'hidden', // Better Android performance
+    borderRadius: 20,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: Colors.text?.primary || '#111827',
-    fontWeight: '500',
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerTitle: {
     color: '#35297F',
@@ -258,8 +257,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   headerSpacer: {
-    width: 48, // Updated to match new back button width
-    height: 48, // Updated to match new back button height
+    width: 40,
   },
   subtitleContainer: {
     paddingHorizontal: 0,

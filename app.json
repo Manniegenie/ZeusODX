@@ -48,17 +48,10 @@
       "expo-font",
       "expo-secure-store",
       [
-        "react-native-vision-camera",
-        {
-          "cameraPermissionText": "ZeusODX uses the camera for identity verification and biometric authentication.",
-          "enableMicrophonePermission": false
-        }
-      ],
-      [
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 34,
+            "compileSdkVersion": 35,
             "targetSdkVersion": 34,
             "minSdkVersion": 24
           },

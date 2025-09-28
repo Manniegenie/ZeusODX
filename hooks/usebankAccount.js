@@ -37,7 +37,7 @@ export const useBankAccounts = (options = {}) => {
 
   const addAccount = useCallback(async (data) => {
     setCreating(true);
-    setError(null); // clear any old "operation failed" message
+    setError(null);
     try {
       const result = await bankService.addBankAccount(data);
       if (result.success) {
@@ -68,16 +68,16 @@ export const useBankAccounts = (options = {}) => {
     }
   }, []);
 
-  const deleteBankAccount = useCallback(async (accountId) => {
-    if (!accountId) {
-      return { success: false, error: 'INVALID_ACCOUNT_ID', message: 'Account ID is required' };
+  const deleteBankAccount = useCallback(async (accountNumber) => {
+    if (!accountNumber) {
+      return { success: false, error: 'INVALID_ACCOUNT_NUMBER', message: 'Account number is required' };
     }
     setLoading(true);
     setError(null);
     try {
-      const result = await bankService.deleteBankAccount(accountId);
+      const result = await bankService.deleteBankAccount(accountNumber);
       if (result.success) {
-        setBankAccounts(prev => prev.filter(a => a.id !== accountId));
+        setBankAccounts(prev => prev.filter(a => a.accountNumber !== accountNumber));
         setAccountsSummary(prev => {
           if (!prev) return null;
           const total = Math.max(prev.totalAccounts - 1, 0);
@@ -101,29 +101,30 @@ export const useBankAccounts = (options = {}) => {
     }
   }, []);
 
-  // Auto-load on mount when requested
+  const deleteBankAccountById = useCallback(async (accountId) => {
+    const account = bankAccounts.find(a => a.id === accountId);
+    if (!account) {
+      return { success: false, error: 'ACCOUNT_NOT_FOUND', message: 'Bank account not found' };
+    }
+    return deleteBankAccount(account.accountNumber);
+  }, [bankAccounts, deleteBankAccount]);
+
   useEffect(() => {
     if (auto) getBankAccounts();
   }, [auto, getBankAccounts]);
 
   return {
-    // For AddBankScreen
     addAccount,
     creating,
     summary: accountsSummary,
     error,
-
-    // For BankAccountsScreen & general use
     loading,
     bankAccounts,
     accountsSummary,
     getBankAccounts,
     deleteBankAccount,
-
-    // Utils passthrough
+    deleteBankAccountById,
     validateBankAccountData: bankService.validateBankAccountData,
-    formatAccountNumber: bankService.formatAccountNumber,
-    maskAccountNumber: bankService.maskAccountNumber,
     getUserFriendlyMessage: bankService.getUserFriendlyMessage,
   };
 };

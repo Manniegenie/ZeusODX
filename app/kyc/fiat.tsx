@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import backIcon from '../../components/icons/backy.png';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
@@ -35,9 +36,21 @@ const FiatScreen: React.FC = () => {
   });
 
   const fiatPct = Math.max(0, Math.min(100, fiat?.percentage ?? 0));
+  const bvnClickable = !bvnVerified; // make BVN step unclickable when already verified
+  const bankClickable = !hasBankAccount; // make bank account step unclickable when already added
 
   const handleGoBack = (): void => {
     router.back();
+  };
+
+  const handleBvnPress = (): void => {
+    if (!bvnClickable) return;
+    router.push('/kyc/verify/bvn');
+  };
+
+  const handleBankPress = (): void => {
+    if (!bankClickable) return;
+    router.push('/profile/add-bank');
   };
 
   return (
@@ -61,7 +74,7 @@ const FiatScreen: React.FC = () => {
                 delayPressIn={0}
                 hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
-                <Text style={styles.backButtonText}>←</Text>
+                <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
 
               <Text style={styles.headerTitle}>Fiat Verification</Text>
@@ -118,9 +131,15 @@ const FiatScreen: React.FC = () => {
           <View style={styles.section}>
             {/* BVN Verification */}
             <TouchableOpacity
-              activeOpacity={0.8}
-              style={[styles.verificationCard, !bvnVerified && styles.incompleteCard]}
-              onPress={() => router.push('/kyc/verify/bvn')}
+              activeOpacity={bvnClickable ? 0.8 : 1}
+              style={[
+                styles.verificationCard, 
+                !bvnVerified && styles.incompleteCard,
+                !bvnClickable && styles.disabledCard
+              ]}
+              onPress={handleBvnPress}
+              disabled={!bvnClickable}
+              accessibilityState={{ disabled: !bvnClickable }}
             >
               <View style={styles.verificationContent}>
                 <View style={styles.verificationInfo}>
@@ -149,9 +168,15 @@ const FiatScreen: React.FC = () => {
 
             {/* Add Bank Account */}
             <TouchableOpacity
-              activeOpacity={0.8}
-              style={[styles.verificationCard, !hasBankAccount && styles.incompleteCard]}
-              onPress={() => router.push('/profile/add-bank')}
+              activeOpacity={bankClickable ? 0.8 : 1}
+              style={[
+                styles.verificationCard, 
+                !hasBankAccount && styles.incompleteCard,
+                !bankClickable && styles.disabledCard
+              ]}
+              onPress={handleBankPress}
+              disabled={!bankClickable}
+              accessibilityState={{ disabled: !bankClickable }}
             >
               <View style={styles.verificationContent}>
                 <View style={styles.verificationInfo}>
@@ -210,18 +235,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)',
-    overflow: 'hidden',
+    borderRadius: 20,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: Colors.text?.primary || '#111827',
-    fontWeight: '500',
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerTitle: {
     color: '#35297F',
@@ -233,7 +256,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   headerSpacer: {
-    width: 48,
+    width: 40,
   },
   subtitleContainer: {
     paddingHorizontal: 0,
@@ -338,6 +361,11 @@ const styles = StyleSheet.create({
   incompleteCard: {
     borderColor: '#FEF3C7',
     backgroundColor: '#FFFBEB',
+  },
+  disabledCard: {
+    opacity: 0.55,
+    backgroundColor: '#F9FAFB',
+    borderColor: '#E5E7EB',
   },
   verificationContent: {
     flexDirection: 'row',

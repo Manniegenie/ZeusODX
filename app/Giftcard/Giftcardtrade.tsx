@@ -27,7 +27,8 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useGiftCard } from '../../hooks/usegiftcard';
 
-// Icons
+// Icons - Updated to match main screen
+import backIcon from '../../components/icons/backy.png';
 import chevronRightIcon from '../../components/icons/arrow.png';
 import cloudUploadIcon from '../../components/icons/cloud-upload.png';
 
@@ -685,20 +686,22 @@ const GiftcardTradeScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header - Updated to match BTC screen */}
-          <View style={styles.header}>
-            <TouchableOpacity 
-              style={styles.back} 
-              onPress={handleGoBack} 
-              activeOpacity={0.7}
-              delayPressIn={0}
-              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-            >
-              <Text style={styles.backText}>←</Text>
-            </TouchableOpacity>
+          {/* Header - Updated to match main gift card screen */}
+          <View style={styles.headerSection}>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={handleGoBack}
+                activeOpacity={0.7}
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
+              </TouchableOpacity>
 
-            <Text style={styles.headerTitle}>{brand}</Text>
-            <View style={styles.headerRight} />
+              <Text style={styles.headerTitle}>{brand}</Text>
+              <View style={styles.headerRight} />
+            </View>
           </View>
 
           {/* Country */}
@@ -952,35 +955,39 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 16 },
 
-  // Header - Updated to match BTC screen
-  header: {
+  // Header - Updated to match main gift card screen
+  headerSection: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 15,
+    paddingBottom: 6,
+  },
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  back: { 
-    width: 48,  // Increased from 40
-    height: 48, // Increased from 40
+  backButton: { 
+    width: 40,
+    height: 40,
     justifyContent: 'center', 
     alignItems: 'center',
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)', // Very subtle background instead of transparent
-    overflow: 'hidden', // Better Android performance
+    borderRadius: 20,
   },
-  backText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
   headerTitle: {
-    flex: 1,
     color: '#35297F',
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
+    flex: 1,
     textAlign: 'center',
     marginHorizontal: 16,
   },
-  headerRight: { width: 48 }, // Updated to match new back button width
+  headerRight: { width: 40 },
 
   label: {
     color: Colors.text?.secondary || '#6B7280',
