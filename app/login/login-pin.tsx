@@ -396,8 +396,8 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.md 
   },
   mascotImage: {
-    width: 32,
-    height: 32,
+    width: 50,
+    height: 50,
   },
   
   subtitle: {

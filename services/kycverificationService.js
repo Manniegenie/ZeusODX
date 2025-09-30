@@ -311,6 +311,32 @@ export const kycService = {
   },
 
   /**
+   * Validate Driver's License format
+   */
+  validateDriversLicense(license) {
+    if (!license) {
+      return { valid: false, message: 'Driver\'s license number is required' };
+    }
+
+    const cleanLicense = license.trim().toUpperCase();
+
+    if (cleanLicense.length < 8) {
+      return { valid: false, message: 'License number must be at least 8 characters' };
+    }
+
+    if (cleanLicense.length > 20) {
+      return { valid: false, message: 'License number cannot exceed 20 characters' };
+    }
+
+    const alphanumericRegex = /^[A-Z0-9]+$/;
+    if (!alphanumericRegex.test(cleanLicense)) {
+      return { valid: false, message: 'License number can only contain letters and numbers' };
+    }
+
+    return { valid: true };
+  },
+
+  /**
    * Validate Voter ID format
    */
   validateVoterID(voterID) {
@@ -346,6 +372,9 @@ export const kycService = {
 
       case 'bvn':
         return this.validateBVN(idNumber);
+
+      case 'drivers_license':
+        return this.validateDriversLicense(idNumber);
 
       case 'voter_id':
         return this.validateVoterID(idNumber);
@@ -451,9 +480,9 @@ export const kycService = {
       { id: 'national_id', name: 'National ID (NIN)', pattern: '11 digits' },
       { id: 'bvn', name: 'Bank Verification Number', pattern: '11 digits' },
       { id: 'passport', name: 'International Passport', pattern: 'A12345678 or B12345678' },
+      { id: 'drivers_license', name: 'Driver License', pattern: '8-20 alphanumeric' },
       { id: 'voter_id', name: 'Voter ID', pattern: '19 digits' },
       { id: 'nin_slip', name: 'NIN with Slip', pattern: '11 digits' },
-      { id: 'drivers_license', name: 'Driver License', pattern: 'Varies by state' },
       { id: 'nin', name: 'NIN (alternate)', pattern: '11 digits' }
     ];
   },

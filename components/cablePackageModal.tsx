@@ -52,7 +52,7 @@ interface CableTvPackage {
   provider: string;
   serviceName: string;
   availability: string;
-  originalPackage?: any; // For debugging reference
+  originalPackage?: any;
 }
 
 interface Provider {
@@ -90,7 +90,6 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
     clearErrors
   } = useCableTvPackages();
 
-  // Safe property extraction helper (like DataPlansModal)
   const getSafeProperty = useCallback((obj: any, property: string, fallback: any = '') => {
     try {
       if (!obj || typeof obj !== 'object') return fallback;
@@ -101,7 +100,6 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
     }
   }, []);
 
-  // Enhanced debug logging for package structure
   const debugPackageData = useCallback((packages: any[]) => {
     if (packages.length > 0) {
       const samplePackage = packages[0];
@@ -119,7 +117,6 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
     }
   }, [getSafeProperty]);
 
-  // Get packages when modal opens or provider changes
   useEffect(() => {
     if (visible && provider?.id) {
       console.log('🔍 CablePackageModal opened for provider:', provider.id);
@@ -127,7 +124,6 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
     }
   }, [visible, provider?.id]);
 
-  // Clear search when modal closes
   useEffect(() => {
     if (!visible) {
       setSearchQuery('');
@@ -148,7 +144,6 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
       } else if (result.error) {
         console.error('❌ Failed to load packages:', result.error, result.message);
         
-        // Show error alert for critical errors
         if (['NETWORK_ERROR', 'SERVICE_ERROR', 'INVALID_SERVICE_ID'].includes(result.error)) {
           Alert.alert(
             'Error Loading Packages',
@@ -173,34 +168,28 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
     }
   };
 
-  // Get packages based on current search and filters
   const getFilteredPackages = useCallback((): CableTvPackage[] => {
     if (!provider?.id) return [];
     
     let packages = getCachedCableTvPackages(provider.id);
     
-    // 🔍 DEBUG: Log package structure
     if (packages.length > 0) {
       debugPackageData(packages);
     }
     
-    // Apply search filter
     if (searchQuery.trim()) {
       packages = searchCableTvPackages(provider.id, searchQuery);
     }
     
-    // Apply category filter
     if (selectedCategory !== 'all') {
       packages = packages.filter(pkg => pkg.category === selectedCategory);
     }
     
-    // Sort by price (ascending)
     packages.sort((a, b) => a.price - b.price);
     
     return packages;
   }, [provider?.id, searchQuery, selectedCategory, getCachedCableTvPackages, searchCableTvPackages, debugPackageData]);
 
-  // ✅ ROBUST PACKAGE SELECTION HANDLER (Like DataPlansModal)
   const handlePackageSelect = useCallback((pkg: any) => {
     console.log('📦 Raw package selected in modal:', pkg);
     
@@ -215,7 +204,6 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
     }
 
     try {
-      // ✅ ROBUST variation_id extraction with multiple fallbacks
       const extractVariationId = () => {
         const candidates = [
           getSafeProperty(pkg, 'variationId'),
@@ -226,7 +214,6 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
           getSafeProperty(pkg, 'originalData.id')
         ];
         
-        // Find first non-empty string value
         for (const candidate of candidates) {
           if (candidate && typeof candidate === 'string' && candidate.trim()) {
             return candidate.trim();
@@ -251,7 +238,6 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
         }
       });
 
-      // ✅ Validate variation_id exists
       if (!variationId) {
         console.error('❌ No variation_id found in package:', pkg);
         Alert.alert(
@@ -262,7 +248,6 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
         return;
       }
 
-      // ✅ Extract and validate other required fields
       const extractSafeString = (value: any, fallback: string = ''): string => {
         if (value === null || value === undefined) return fallback;
         return typeof value === 'string' ? value : String(value);
@@ -279,14 +264,11 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
         return fallback;
       };
 
-      // ✅ Create normalized package object (like DataPlansModal)
       const normalizedPackage: CableTvPackage = {
-        // Both camelCase and snake_case versions for compatibility
         variationId: variationId,
         variation_id: variationId,
         id: variationId,
         
-        // Package details with safe extraction
         name: extractSafeString(
           getSafeProperty(pkg, 'name') || 
           getSafeProperty(pkg, 'package_bouquet') || 
@@ -337,11 +319,9 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
           getSafeProperty(pkg, 'availability'), 'available'
         ),
         
-        // ✅ Include original package data for debugging (like DataPlansModal)
         originalPackage: pkg
       };
 
-      // ✅ Final validation of normalized package
       if (normalizedPackage.price <= 0) {
         console.error('❌ Invalid price in package:', pkg);
         Alert.alert(
@@ -363,10 +343,9 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
         price: normalizedPackage.price,
         formattedPrice: normalizedPackage.formattedPrice,
         provider: normalizedPackage.provider,
-        originalPackage: '[Original Package Object]' // Don't log the full original object
+        originalPackage: '[Original Package Object]'
       });
 
-      // ✅ Send normalized package to parent
       if (typeof onSelectPackage === 'function') {
         onSelectPackage(normalizedPackage);
         setSearchQuery('');
@@ -539,7 +518,6 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
                 >
                   {filteredPackages.length > 0 ? (
                     filteredPackages.map((pkg) => {
-                      // Safe key generation
                       const packageKey = pkg.variationId || 
                                         pkg.variation_id || 
                                         pkg.id || 
@@ -621,7 +599,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     position: 'absolute',
-    top: 391,
+    top: 150,
     bottom: 0,
     left: (SCREEN_WIDTH - MODAL_WIDTH) / 2,
     overflow: 'hidden',
@@ -632,7 +610,6 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   
-  // Header styles
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -670,7 +647,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   
-  // Search Container
   searchContainer: {
     paddingHorizontal: 20,
     paddingBottom: 16,
@@ -701,7 +677,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.regular || 'System',
   },
   
-  // Category Filter
   categoryContainer: {
     paddingBottom: 16,
   },
@@ -732,7 +707,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   
-  // Loading State
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -747,7 +721,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   
-  // Error State
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -788,7 +761,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.medium || 'System',
   },
   
-  // Packages Container
   packagesContainer: {
     flex: 1,
     paddingHorizontal: 20,
@@ -895,7 +867,6 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   
-  // No Results
   noResultsContainer: {
     paddingVertical: 40,
     alignItems: 'center',
@@ -922,7 +893,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   
-  // Bottom Safe Area
   bottomSafeArea: {
     backgroundColor: '#FFFFFF',
   },

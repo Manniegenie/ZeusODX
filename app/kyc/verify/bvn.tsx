@@ -287,7 +287,6 @@ export default function BVNVerify() {
     const isValid = await validateBeforeSubmit();
     if (!isValid) return;
 
-    // Show local processing UI then return to input screen immediately after submission
     setStep('processing');
 
     try {
@@ -300,11 +299,9 @@ export default function BVNVerify() {
 
       console.log('📨 Verification result:', result);
 
-      // Always return to the input (load up) screen
       setStep('input');
 
       if (result && result.success) {
-        // Store the verification result for potential display (optional)
         setVerificationResult({
           ...result.data,
           submissionTime: new Date().toLocaleString('en-NG', {
@@ -313,20 +310,16 @@ export default function BVNVerify() {
           })
         });
 
-        // Show KYC in progress modal (giftcard style)
         setShowSuccess(true);
       } else {
-        // Surface backend error on the input screen using ErrorDisplay
         const errMsg = (result && (result.message || result.error)) || 'Verification submission failed. Please try again.';
         openError(errMsg);
       }
     } catch (error: any) {
       console.error('❌ Verification error:', error);
-      // Return to input screen and show error
       setStep('input');
       openError(error?.message || 'Verification failed. Please try again.');
     } finally {
-      // keep user on input screen - do not navigate to any error screen
       setCapturedImage(null);
       setIsCountingDown(false);
       setCountdown(3);
@@ -601,11 +594,11 @@ export default function BVNVerify() {
       <Text style={styles.successIcon}>✅</Text>
       <Text style={styles.successTitle}>Verification Submitted</Text>
       <Text style={styles.successText}>
-        Your KYC verification is in progress.
+        Your BVN verification is in progress.
       </Text>
       <TouchableOpacity
         style={styles.cta}
-        onPress={() => router.replace('../kyc/kyc-upgrade')}
+        onPress={() => router.replace('/kyc/kyc-upgrade')}
         activeOpacity={0.7}
       >
         <Text style={styles.ctaText}>Continue</Text>
@@ -640,9 +633,9 @@ export default function BVNVerify() {
         visible={showSuccess}
         onClose={() => {
           setShowSuccess(false);
-          router.replace('../kyc/kyc-upgrade');
+          router.replace('/kyc/kyc-upgrade');
         }}
-        title="KYC in Progress"
+        title="BVN Verification in Progress"
         message="You will get an email with the confirmation status soon."
         buttonText="Continue"
       />

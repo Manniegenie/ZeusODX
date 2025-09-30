@@ -326,10 +326,10 @@ export const useBiometricVerification = () => {
         case 'national_id':
         case 'nin_slip':
         case 'bvn':
-        case 'voter_id':
           return idNumber.replace(/\D/g, '');
 
         case 'passport':
+        case 'drivers_license':
           return idNumber.toUpperCase().replace(/\s/g, '');
 
         default:
@@ -360,10 +360,25 @@ export const useBiometricVerification = () => {
     return validation;
   };
 
-  const validateVoterID = (voterId) => {
-    const validation = kycService.validateVoterID(voterId);
-    if (voterId && voterId.length === 0) return { valid: false, message: '' };
-    return validation;
+  const validateDriversLicense = (license) => {
+    if (!license || license.length === 0) return { valid: false, message: '' };
+    
+    const cleanLicense = license.trim().toUpperCase();
+    
+    if (cleanLicense.length < 8) {
+      return { valid: false, message: 'License number must be at least 8 characters' };
+    }
+    
+    if (cleanLicense.length > 20) {
+      return { valid: false, message: 'License number cannot exceed 20 characters' };
+    }
+    
+    const alphanumericRegex = /^[A-Z0-9]+$/;
+    if (!alphanumericRegex.test(cleanLicense)) {
+      return { valid: false, message: 'License number can only contain letters and numbers' };
+    }
+    
+    return { valid: true };
   };
 
   const validateIdNumber = (idType, idNumber) => {
@@ -423,7 +438,7 @@ export const useBiometricVerification = () => {
     validateNIN,
     validateBVN,
     validatePassport,
-    validateVoterID,
+    validateDriversLicense,
 
     getSupportedIdTypes,
     getIdTypeDisplayName,
