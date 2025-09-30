@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '../constants/Typography';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const MODAL_HEIGHT = 520; // Same height as DataConfirmationModal
+const MODAL_HEIGHT = 520;
 
 // Type definitions
 interface ElectricityProvider {
@@ -38,6 +38,7 @@ interface ElectricityConfirmationModalProps {
   provider: ElectricityProvider | null;
   meterNumber: string;
   customerData: CustomerData | null;
+  customerName: string;
   amount: number;
 }
 
@@ -49,6 +50,7 @@ const ElectricityConfirmationModal: React.FC<ElectricityConfirmationModalProps> 
   provider,
   meterNumber,
   customerData,
+  customerName,
   amount
 }) => {
   const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
@@ -65,16 +67,6 @@ const ElectricityConfirmationModal: React.FC<ElectricityConfirmationModalProps> 
   // Format amount for detail section (without decimals)
   const formatAmount = (amt: number): string => {
     return `₦${amt.toLocaleString('en-NG')}`;
-  };
-
-  // Format customer name
-  const formatCustomerName = (name?: string): string => {
-    if (!name) return 'N/A';
-    return name
-      .toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
   };
 
   // Slide animation
@@ -157,7 +149,7 @@ const ElectricityConfirmationModal: React.FC<ElectricityConfirmationModalProps> 
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Customer Name</Text>
                     <Text style={styles.detailValue}>
-                      {formatCustomerName(customerData?.customer_name)}
+                      {customerName || 'N/A'}
                     </Text>
                   </View>
 

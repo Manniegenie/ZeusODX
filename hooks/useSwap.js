@@ -24,7 +24,7 @@ export function useSwap() {
     solPrice,
     usdtPrice,
     usdcPrice,
-    avaxPrice,
+    trxPrice,
     bnbPrice,
     maticPrice,
     // Crypto Balances only
@@ -33,7 +33,7 @@ export function useSwap() {
     solBalance,
     usdtBalance,
     usdcBalance,
-    avaxBalance,
+    trxBalance,
     bnbBalance,
     maticBalance,
   } = useDashboard();
@@ -46,13 +46,13 @@ export function useSwap() {
       'sol': solPrice || 0,
       'usdt': usdtPrice || 0,
       'usdc': usdcPrice || 0,
-      'avax': avaxPrice || 0,
+      'trx': trxPrice || 0,
       'bnb': bnbPrice || 0,
       'matic': maticPrice || 0,
     };
   }, [
     btcPrice, ethPrice, solPrice, usdtPrice, usdcPrice,
-    avaxPrice, bnbPrice, maticPrice
+    trxPrice, bnbPrice, maticPrice
   ]);
 
   // Crypto token balance mapping (excluding NGNZ)
@@ -63,18 +63,18 @@ export function useSwap() {
       'sol': solBalance?.balance || 0,
       'usdt': usdtBalance?.balance || 0,
       'usdc': usdcBalance?.balance || 0,
-      'avax': avaxBalance?.balance || 0,
+      'trx': trxBalance?.balance || 0,
       'bnb': bnbBalance?.balance || 0,
       'matic': maticBalance?.balance || 0,
     };
   }, [
     btcBalance, ethBalance, solBalance, usdtBalance, usdcBalance,
-    avaxBalance, bnbBalance, maticBalance
+    trxBalance, bnbBalance, maticBalance
   ]);
 
   // Supported crypto currencies for swapping
   const supportedCryptos = useMemo(() => [
-    'BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'AVAX', 'BNB', 'MATIC'
+    'BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'TRX', 'BNB', 'MATIC'
   ], []);
 
   // Check authentication on mount

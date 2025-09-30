@@ -1,3 +1,4 @@
+// app/kyc/verify/passport-verify.tsx
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
@@ -287,7 +288,6 @@ export default function PassportVerify() {
     const isValid = await validateBeforeSubmit();
     if (!isValid) return;
 
-    // Show local processing UI then return to input screen immediately after submission
     setStep('processing');
 
     try {
@@ -300,11 +300,9 @@ export default function PassportVerify() {
 
       console.log('📨 Verification result:', result);
 
-      // Always return to the input (load up) screen
       setStep('input');
 
       if (result && result.success) {
-        // Store the verification result for potential display (optional)
         setVerificationResult({
           ...result.data,
           submissionTime: new Date().toLocaleString('en-NG', {
@@ -313,20 +311,16 @@ export default function PassportVerify() {
           })
         });
 
-        // Show KYC in progress modal (giftcard style)
         setShowSuccess(true);
       } else {
-        // Surface backend error on the input screen using ErrorDisplay
         const errMsg = (result && (result.message || result.error)) || 'Verification submission failed. Please try again.';
         openError(errMsg);
       }
     } catch (error: any) {
       console.error('❌ Verification error:', error);
-      // Return to input screen and show error
       setStep('input');
       openError(error?.message || 'Verification failed. Please try again.');
     } finally {
-      // keep user on input screen - do not navigate to any error screen
       setCapturedImage(null);
       setIsCountingDown(false);
       setCountdown(3);
@@ -597,7 +591,7 @@ export default function PassportVerify() {
       </Text>
       <TouchableOpacity
         style={styles.cta}
-        onPress={() => router.replace('../kyc/kyc-upgrade')}
+        onPress={() => router.replace('/kyc/kyc-upgrade')}
         activeOpacity={0.7}
       >
         <Text style={styles.ctaText}>Continue</Text>
@@ -632,7 +626,7 @@ export default function PassportVerify() {
         visible={showSuccess}
         onClose={() => {
           setShowSuccess(false);
-          router.replace('../kyc/kyc-upgrade');
+          router.replace('/kyc/kyc-upgrade');
         }}
         title="KYC in Progress"
         message="You will get an email with the confirmation status soon."
@@ -642,7 +636,6 @@ export default function PassportVerify() {
   );
 }
 
-/* ---------------- Styles ---------------- */
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
   scroll: { flex: 1 },

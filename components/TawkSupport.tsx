@@ -11,7 +11,7 @@ import {
   Linking,
   Platform,
   useWindowDimensions,
-  KeyboardAvoidingView,
+  Keyboard,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,13 +21,13 @@ import { Typography } from '../constants/Typography';
 import { useUserProfile as useProfileHookMaybe } from '../hooks/useProfile';
 import { useUserProfile as useProfileHookAltMaybe } from '../hooks/useProfile';
 
-// ---- small helper so this works when your hook file is named either way
+// Helper for hook compatibility
 const useUserProfile = (opts?: any) =>
   (useProfileHookMaybe || useProfileHookAltMaybe)(opts);
 
-/* ================= Bottom Sheet Base (90% height) ================= */
+/* ================= Bottom Sheet Base (75% height) ================= */
 
-const EXTRA_BOTTOM_PADDING = 20; // tweak this to change the extra gap you want
+const EXTRA_BOTTOM_PADDING = 12;
 
 const Sheet = ({
   visible,
@@ -39,9 +39,27 @@ const Sheet = ({
   children: React.ReactNode;
 }) => {
   const { height: screenH } = useWindowDimensions();
-  const SHEET_HEIGHT = Math.round(screenH * 0.9); // 90% screen height
+  const SHEET_HEIGHT = Math.round(screenH * 0.75); // 75% screen height
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const insets = useSafeAreaInsets();
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // Track keyboard visibility for iOS
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => setKeyboardHeight(e.endCoordinates.height)
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardHeight(0)
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -60,7 +78,6 @@ const Sheet = ({
     }
   }, [visible, translateY, SHEET_HEIGHT]);
 
-  // combined bottom padding: safe-area + extra gap
   const bottomPadding = insets.bottom + EXTRA_BOTTOM_PADDING;
 
   return (
@@ -84,20 +101,13 @@ const Sheet = ({
             {
               transform: [{ translateY }],
               height: SHEET_HEIGHT,
+              marginBottom: Platform.OS === 'ios' ? keyboardHeight : 0,
             },
           ]}
         >
           <View style={styles.handleBar} />
-          {/* Safe area for bottom notch; content fills remaining height.
-              We add explicit extra paddingBottom so content won't butt up to bottom */}
           <SafeAreaView style={{ flex: 1, paddingBottom: bottomPadding }} edges={['bottom']}>
-            <KeyboardAvoidingView
-              style={{ flex: 1, paddingBottom: 0 }}
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-            >
-              {children}
-            </KeyboardAvoidingView>
+            {children}
           </SafeAreaView>
         </Animated.View>
       </View>
@@ -105,12 +115,12 @@ const Sheet = ({
   );
 };
 
-/* ================= Tawk Chat Bottom Sheet (90%) ================= */
+/* ================= Tawk Chat Bottom Sheet ================= */
 
 type TawkChatSheetProps = {
   visible: boolean;
   onClose: () => void;
-  directLink?: string; // Tawk.to Direct Chat Link
+  directLink?: string;
   title?: string;
 };
 
@@ -127,7 +137,7 @@ export function TawkChatSheet({
   const [loading, setLoading] = useState(true);
   const webRef = useRef<any>(null);
 
-  // Allow-list navigation targets (incl. about:blank/data/blob)
+  // Allow-list navigation targets
   const allowInApp = (url: string) => {
     if (url.startsWith('about:blank') || url.startsWith('data:') || url.startsWith('blob:')) return true;
     try {
@@ -153,7 +163,7 @@ export function TawkChatSheet({
     return true;
   };
 
-  // Prefill visitor info before content loads
+  // Inject CSS to limit input height and set visitor info
   const injectedBefore = useMemo(
     () => `
     (function() {
@@ -163,6 +173,58 @@ export function TawkChatSheet({
           name: ${JSON.stringify(userName || '')},
           email: ${JSON.stringify(userEmail || '')}
         };
+        
+        // Add CSS to limit message input height
+        const style = document.createElement('style');
+        style.textContent = \`
+          /* Limit message input container height */
+          .tawk-textarea-wrapper,
+          .tawk-input-container,
+          textarea[placeholder*="Type your message"],
+          textarea[placeholder*="type"] {
+            max-height: 120px !important;
+            min-height: 44px !important;
+          }
+          
+          /* Ensure textarea doesn't stretch indefinitely */
+          .tawk-textarea,
+          .tawk-min-container textarea,
+          .tawk-composer textarea {
+            max-height: 100px !important;
+            overflow-y: auto !important;
+          }
+          
+          /* Fix chat container layout */
+          .tawk-min-container,
+          .tawk-chat-panel {
+            max-height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          
+          /* Message list takes remaining space */
+          .tawk-message-list,
+          .tawk-messages-container {
+            flex: 1 !important;
+            overflow-y: auto !important;
+            min-height: 0 !important;
+          }
+          
+          /* Input area fixed height */
+          .tawk-composer-area,
+          .tawk-form-container,
+          .tawk-input-area {
+            flex: 0 0 auto !important;
+            max-height: 140px !important;
+          }
+          
+          /* Prevent body/html stretching */
+          html, body {
+            height: 100% !important;
+            overflow: hidden !important;
+          }
+        \`;
+        document.head.appendChild(style);
       } catch (e) {}
     })();
     true;
@@ -170,7 +232,7 @@ export function TawkChatSheet({
     [userName, userEmail]
   );
 
-  // Update attributes after mount (in case profile arrives late)
+  // Update visitor attributes after mount
   useEffect(() => {
     if (!webRef.current) return;
     const js = `
@@ -197,11 +259,11 @@ export function TawkChatSheet({
         </TouchableOpacity>
       </View>
 
-      {/* Web content fills remaining space */}
+      {/* Web content */}
       <View style={styles.webContainer}>
         {loading && (
           <View style={styles.loader}>
-            <ActivityIndicator size="large" />
+            <ActivityIndicator size="large" color={Colors.primary || '#007AFF'} />
           </View>
         )}
 
@@ -212,7 +274,7 @@ export function TawkChatSheet({
           onLoadEnd={() => setLoading(false)}
           javaScriptEnabled
           domStorageEnabled
-          allowsInlineMediaPlaybook
+          allowsInlineMediaPlayback
           setSupportMultipleWindows={false}
           allowsBackForwardNavigationGestures
           originWhitelist={['*']}
@@ -222,7 +284,6 @@ export function TawkChatSheet({
             Linking.openURL(req.url).catch(() => {});
             return false;
           }}
-          // Android-specific optimizations for touch handling
           androidHardwareAccelerationDisabled={false}
           nestedScrollEnabled={true}
           androidLayerType="hardware"
@@ -234,10 +295,9 @@ export function TawkChatSheet({
           overScrollMode="never"
           showsVerticalScrollIndicator={false}
           keyboardDisplayRequiresUserAction={false}
-          onTouchStart={() => {}} // Prevents touch conflicts
+          onTouchStart={() => {}}
           bounces={false}
-          // KEY FIXES for keyboard/input layer issues
-          hideKeyboardAccessoryView={true}
+          hideKeyboardAccessoryView={false}
           automaticallyAdjustContentInsets={false}
           contentInsetAdjustmentBehavior="never"
           scrollEnabled={true}
@@ -298,7 +358,7 @@ export function TawkPrefetcher({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
     zIndex: 1000,
   },
@@ -312,47 +372,67 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
 
-  // Full-width bottom sheet, 90% height (set in-line), rounded top
   sheetContainer: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    paddingTop: 4,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 6,
     overflow: 'hidden',
     width: '100%',
     alignSelf: 'stretch',
-    elevation: 10, // Android shadow/elevation
-    shadowColor: '#000', // iOS shadow
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
+    elevation: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
   },
 
-  handleBar: { width: 42, height: 3, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 6 },
+  handleBar: {
+    width: 36,
+    height: 4,
+    backgroundColor: '#D1D5DB',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 8,
+  },
 
-  titleRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 6 },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#E5E7EB',
+  },
+
   sheetTitle: {
     flex: 1,
-    fontSize: 13,              // reduced from 15
-    fontWeight: '600',         // slightly lighter
+    fontSize: 15,
+    fontWeight: '600',
     color: '#111827',
     textAlign: 'center',
     fontFamily: (Typography?.medium as any) || 'System',
   },
-  closeTxt: { fontSize: 14, color: '#6B7280', fontWeight: '600' }, // reduced from 16
+
+  closeTxt: {
+    fontSize: 22,
+    color: '#6B7280',
+    fontWeight: '400',
+    lineHeight: 22,
+  },
 
   webContainer: {
     flex: 1,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#F3F4F6',
     backgroundColor: Colors.background || '#0b0b10',
-    overflow: 'hidden', // Ensure WebView stays contained
+    overflow: 'hidden',
   },
 
   loader: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,s0.95)',
     zIndex: 2,
   },
 });

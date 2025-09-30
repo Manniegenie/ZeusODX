@@ -19,7 +19,7 @@ import PinEntryModal from '../../components/PinEntry';
 import TwoFactorAuthModal from '../../components/2FA';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import ProviderSelectionModal from '../../components/ElectricityProviderModal';
-import UtilityPurchaseSuccessModal from '../../components/ElectricitySuccess'; // ⬅️ NEW POPUP MODAL
+import UtilityPurchaseSuccessModal from '../../components/ElectricitySuccess';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { useElectricity } from '../../hooks/useElectricity';
@@ -281,11 +281,10 @@ const ElectricityScreen: React.FC = () => {
         paymentType: selectedPaymentType.id
       };
 
-      // Expect RAW: { code, message, data }
       const result = await purchaseElectricity(payload);
 
       if (result?.code === 'success') {
-        setPurchaseReceipt(result.data || null); // raw fields for popup
+        setPurchaseReceipt(result.data || null);
         setShowTwoFactorModal(false);
         setShowPinModal(false);
         setShowConfirmationModal(false);
@@ -335,7 +334,7 @@ const ElectricityScreen: React.FC = () => {
     meterNumber.trim() &&
     meterNumber.length >= 10 &&
     getCurrentAmount() >= 1000 &&
-    customerData // must verify customer first
+    customerData
   );
 
   return (
@@ -362,7 +361,6 @@ const ElectricityScreen: React.FC = () => {
 
               <Text style={styles.headerTitle}>Electricity</Text>
 
-              {/* spacer to keep title centered */}
               <View style={styles.headerSpacer} />
             </View>
           </View>
@@ -527,6 +525,7 @@ const ElectricityScreen: React.FC = () => {
         provider={selectedProvider}
         meterNumber={meterNumber}
         customerData={customerData}
+        customerName={customerData ? formatCustomerName(customerData.customer_name) : ''}
         amount={getCurrentAmount()}
       />
 
@@ -537,7 +536,6 @@ const ElectricityScreen: React.FC = () => {
         selectedProvider={selectedProvider}
       />
 
-      {/* ✅ Popup success modal with RAW receipt fields */}
       <UtilityPurchaseSuccessModal
         visible={showSuccessModal}
         onContinue={handleSuccessModalClose}

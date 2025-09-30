@@ -10,6 +10,9 @@ import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useGeneralHistory';
 import emptyStateIcon from '../../components/icons/empty-black.png';
 
+// Icons - Updated to match btc-bsc screen
+import backIcon from '../../components/icons/backy.png';
+
 const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const TransactionHistoryScreen = () => {
@@ -530,7 +533,7 @@ const TransactionHistoryScreen = () => {
             delayPressIn={0}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
-            <Text style={styles.backButtonText}>←</Text>
+            <Image source={backIcon} style={styles.backIcon} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{displayTitle}</Text>
           <View style={styles.headerSpacer} />
@@ -591,19 +594,17 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 24,
   },
-  backButton: {
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
+  backButton: { 
+    width: 40,
+    height: 40,
+    justifyContent: 'center', 
     alignItems: 'center',
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.02)',
-    overflow: 'hidden',
+    borderRadius: 20,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: '#1F2937',
-    fontWeight: '500',
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   headerTitle: {
     position: 'absolute',
@@ -616,8 +617,8 @@ const styles = StyleSheet.create({
     pointerEvents: 'none',
   },
   headerSpacer: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
   },
   dateSelector: { alignItems: 'center', paddingVertical: 20 },
   monthSelector: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },

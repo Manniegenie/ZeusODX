@@ -42,6 +42,13 @@ const BankAccountsScreen = () => {
 
   const isSelectionMode = mode === 'select';
 
+  // ↓↓↓ FIX: Calculate calculatedNetAmount at component level ↓↓↓
+  const calculatedNetAmount = useMemo(() => {
+    const transferAmountNum = parseFloat(transferAmount || '0');
+    const transferFeeNum = parseFloat(transferFee || '0');
+    return transferAmountNum - transferFeeNum;
+  }, [transferAmount, transferFee]);
+
   const {
     bankAccounts,
     accountsSummary,
@@ -49,7 +56,6 @@ const BankAccountsScreen = () => {
     error,
     getBankAccounts,
     deleteBankAccount,
-    formatAccountNumber,
   } = useBankAccounts();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -157,15 +163,8 @@ const BankAccountsScreen = () => {
   };
 
   // Map hook data to match current component expectations
-  const maskedAccounts = useMemo(() => {
-    return bankAccounts.map((account) => ({
-      ...account,
-      maskedNumber: formatAccountNumber(account.accountNumber),
-    }));
-  }, [bankAccounts, formatAccountNumber]);
-
   const summary = accountsSummary;
-  const accounts = maskedAccounts;
+  const accounts = bankAccounts;
   const canAddMore = summary?.canAddMore !== false;
 
   const selectedDeleting = useMemo(
@@ -314,10 +313,7 @@ const BankAccountsScreen = () => {
     hideError();
     setTransferLoading(true);
 
-    // Calculate amountNumber as calculatedNetAmount
-    const transferAmountNum = parseFloat(transferAmount || '0');
-    const transferFeeNum = parseFloat(transferFee || '0');
-    const calculatedNetAmount = transferAmountNum - transferFeeNum;
+    // Use the already calculated calculatedNetAmount
     const amountNumber = calculatedNetAmount;
 
     if (!amountNumber || amountNumber <= 0) {
@@ -697,7 +693,7 @@ const BankAccountsScreen = () => {
       {/* Fiat Withdrawal Receipt Modal */}
       <FiatWithdrawalReceiptModal
         visible={showReceipt}
-        onClose={() => setShowReceipt(false)} // or: () => { setShowReceipt(false); router.replace('/history'); }
+        onClose={() => setShowReceipt(false)}
         tx={receiptTx}
         raw={receiptRaw}
       />
@@ -856,7 +852,6 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   accountCardDisabled: { opacity: 0.7 },
-  // Subtle selectable state: no purple border, keep the same border and add a tiny lift
   accountCardSelectable: {
     borderColor: '#E5E7EB',
     borderWidth: 1,
@@ -929,7 +924,6 @@ const styles = StyleSheet.create({
   },
   addButtonTextDisabled: { color: '#9CA3AF' },
 
-  // Loading overlay
   loadingOverlay: {
     position: 'absolute',
     top: 0,
@@ -942,15 +936,13 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
 
-  // ===== Modal styles (match 2FA modal sizing) =====
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // same as 2FA overlay
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20, // same as 2FA overlay
+    paddingHorizontal: 20,
   },
-  // Match TwoFactorAuthModal: width: 320, radius: 16, white bg, padding 24
   deleteModalContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
