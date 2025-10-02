@@ -21,7 +21,8 @@ import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 
-// Brand/logo
+// Icons
+import backIcon from '../../components/icons/backy.png';
 import successImage from '../../components/icons/logo1.png';
 
 type TokenDetails = {
@@ -326,84 +327,83 @@ const generateTransactionReceiptHTML = (
             * { margin: 0; padding: 0; box-sizing: border-box; }
             @page {
                 size: A4;
-                margin: 20mm;
+                margin: 0;
             }
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                background: #FFFFFF;
+                background: #F3F0FF;
                 color: #111827;
                 line-height: 1.5;
                 -webkit-font-smoothing: antialiased;
-                font-size: 20px;
+                font-size: 21px;
                 width: 100%;
-                max-width: none;
+                margin: 0;
+                padding: 0;
             }
             .container {
                 width: 100%;
-                max-width: none;
                 margin: 0;
-                background: #FFFFFF;
+                background: #F3F0FF;
                 min-height: 100vh;
             }
             
-            /* Header - exact match to your React Native design */
+            /* Header matching your screen exactly */
             .header {
                 background: #F3F0FF;
-                padding: 24px 40px;
+                padding: 24px 36px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
             }
             .header-logo {
-                width: 160px;
-                height: 70px;
+                width: 150px;
+                height: 66px;
                 object-fit: contain;
             }
             
-            /* Content area */
+            /* Content area matching screen padding */
             .content {
-                padding: 0 40px 50px 40px;
+                padding: 0 36px 48px 36px;
             }
             
-            /* Amount section - centered exactly like your design */
+            /* Amount section - matching your screen */
             .amount-section {
                 text-align: center;
-                margin: 40px 0 12px 0;
+                margin: 30px 0 9px 0;
             }
             .amount-text {
-                font-size: 32px;
+                font-size: 42px;
                 font-weight: bold;
                 color: #111827;
-                margin-bottom: 12px;
             }
             
-            /* Status pill - exact styling */
+            /* Status pill - matching your screen */
             .status-container {
                 text-align: center;
                 margin-bottom: 24px;
             }
             .status-pill {
                 display: inline-block;
-                padding: 10px 16px;
+                padding: 9px 15px;
                 border-radius: 999px;
                 border: 1px solid ${statusStyle.border};
                 background-color: ${statusStyle.bg};
                 color: ${statusStyle.text};
-                font-size: 16px;
+                font-size: 18px;
                 font-weight: 600;
             }
             
-            /* Details card - exact match */
+            /* Details card - exact match to screen */
             .details-card {
                 width: 100%;
                 background: #F8F9FA;
                 border-radius: 12px;
-                padding: 24px;
+                padding: 30px 24px;
                 border: 1px solid #E5E7EB;
-                margin-bottom: 28px;
+                margin-bottom: 30px;
             }
             
-            /* Table styling to match your Row component */
+            /* Table styling matching Row component */
             .details-table {
                 width: 100%;
                 border-collapse: collapse;
@@ -412,84 +412,107 @@ const generateTransactionReceiptHTML = (
                 border-bottom: none;
             }
             .details-table td {
-                padding: 12px 0;
+                padding: 18px 0;
                 vertical-align: center;
                 border-bottom: none;
             }
             .details-table td:first-child {
-                width: 160px;
+                width: 195px;
                 flex-shrink: 0;
                 color: #6B7280;
-                font-size: 18px;
+                font-size: 21px;
                 font-weight: normal;
             }
             .details-table td:last-child {
                 color: #111827;
-                font-size: 18px;
+                font-size: 21px;
                 font-weight: 500;
                 text-align: right;
-                word-break: break-all;
+                word-break: break-word;
             }
             
-            /* Section headers for NGNZ withdrawals */
+            /* Section headers */
             .section-header {
-                font-size: 18px !important;
+                font-size: 22px !important;
                 font-weight: 600 !important;
                 color: #374151 !important;
-                padding: 16px 0 6px 0 !important;
+                padding: 24px 0 9px 0 !important;
                 text-align: left !important;
             }
             
-            /* Footer */
-            .footer {
-                text-align: center;
-                padding-top: 40px;
-                color: #6B7280;
-                font-size: 16px;
-                border-top: 1px solid #E5E7EB;
-                margin-top: 32px;
+            /* Footer message */
+            .footer-message {
+                width: 100%;
+                margin-bottom: 30px;
+                padding: 0 36px;
             }
-            .generated-date {
-                margin-top: 0px;
-                font-size: 15px;
+            .footer-text {
+                font-size: 19px;
+                color: #6B7280;
+                line-height: 1.5;
+                margin: 0;
+                text-align: left;
+            }
+            
+            /* Generation date footer */
+            .generation-footer {
+                text-align: center;
+                padding: 30px 36px;
                 color: #9CA3AF;
+                font-size: 18px;
+                border-top: 1px solid #E5E7EB;
+                margin-top: 30px;
             }
             
             /* Print optimization */
             @media print {
-                body { background: white; }
-                .container { box-shadow: none; }
+                body { 
+                    background: #F3F0FF;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                .container { 
+                    box-shadow: none;
+                    background: #F3F0FF;
+                }
+                @page { margin: 0; }
             }
         </style>
     </head>
     <body>
         <div class="container">
-            <!-- Header matching your design exactly -->
+            <!-- Header matching your screen -->
             <div class="header">
                 <img src="${logoBase64}" alt="Logo" class="header-logo">
             </div>
             
             <div class="content">
-                <!-- Amount section matching your centered design -->
+                <!-- Amount matching your screen -->
                 <div class="amount-section">
                     <div class="amount-text">${transaction.amount}</div>
                 </div>
                 
-                <!-- Status pill matching your centered design -->
+                <!-- Status pill matching your screen -->
                 <div class="status-container">
                     <span class="status-pill">${transaction.status}</span>
                 </div>
                 
-                <!-- Details card matching your exact styling -->
+                <!-- Details card matching your screen -->
                 <div class="details-card">
                     <table class="details-table">
                         ${detailRows.join('')}
                     </table>
                 </div>
-                
-                <div class="footer">
-                    <div class="generated-date">Generated on: ${currentDate}</div>
-                </div>
+            </div>
+            
+            <!-- Footer message -->
+            <div class="footer-message">
+                <p class="footer-text">Thank you for choosing ZeusODX.</p>
+            </div>
+            
+            <!-- Generation date -->
+            <div class="generation-footer">
+                Generated on: ${currentDate}
             </div>
         </div>
     </body>
@@ -743,8 +766,14 @@ export default function TransactionReceiptScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>←</Text>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+            delayPressIn={0}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          >
+            <Image source={backIcon} style={styles.backIcon} />
           </TouchableOpacity>
           <Image source={successImage} style={styles.headerLogo} resizeMode="contain" />
           <View style={styles.headerRight} />
@@ -772,8 +801,14 @@ export default function TransactionReceiptScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header — logo (bigger) where the Type text used to be */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+          delayPressIn={0}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          <Image source={backIcon} style={styles.backIcon} />
         </TouchableOpacity>
         <Image source={successImage} style={styles.headerLogo} resizeMode="contain" />
         <View style={styles.headerRight} />
@@ -908,6 +943,11 @@ export default function TransactionReceiptScreen() {
           )}
         </View>
 
+        {/* Footer message */}
+        <View style={styles.footerMessage}>
+          <Text style={styles.footerText}>Thank you for choosing ZeusODX.</Text>
+        </View>
+
         <View style={styles.ctaRow}>
           <TouchableOpacity
             style={styles.primaryButton}
@@ -989,8 +1029,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: '#F3F0FF',
   },
-  backButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  backButtonText: { fontSize: 24, color: '#1F2937', fontWeight: '400' },
+  backButton: { 
+    width: 40, 
+    height: 40, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
   // ⬆️ Increased logo size, centered where the Type used to be
   headerLogo: { width: 100, height: 44 },
   headerRight: { width: 44 },
@@ -1011,7 +1061,7 @@ const styles = StyleSheet.create({
   },
   amountText: {
     fontFamily: Typography.bold || 'System',
-    fontSize: 20,
+    fontSize: 28,
     color: Colors.text?.primary || '#111827',
   },
 
@@ -1028,32 +1078,44 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#F8F9FA',
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 20,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     marginBottom: Layout?.spacing?.lg || 16,
   },
 
   sectionHeader: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: '#374151',
-    marginTop: 12,
-    marginBottom: 4,
+    marginTop: 16,
+    marginBottom: 6,
     fontFamily: Typography.medium || 'System',
   },
 
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, gap: 8 },
+  footerMessage: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  footerText: {
+    fontSize: 13,
+    color: '#6B7280',
+    fontFamily: Typography.regular || 'System',
+    lineHeight: 20,
+    textAlign: 'left',
+  },
+
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 8 },
   rowLabel: {
     flexShrink: 0,
     width: 130,
     color: '#6B7280',
     fontFamily: Typography.regular || 'System',
-    fontSize: 13,
+    fontSize: 14,
   },
   rowValueWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'flex-end' },
-  rowValue: { color: '#111827', fontFamily: Typography.medium || 'System', fontSize: 13, textAlign: 'right', flexShrink: 1 },
+  rowValue: { color: '#111827', fontFamily: Typography.medium || 'System', fontSize: 14, textAlign: 'right', flexShrink: 1 },
   
   // NEW: Link styling for hash
   linkText: {

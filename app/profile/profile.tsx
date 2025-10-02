@@ -11,6 +11,7 @@ import {
   ScrollView,
   Switch,
   Alert,
+  AppState,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
@@ -40,6 +41,8 @@ import kycIcon from '../../components/icons/kyc.png';
 import logoutIcon from '../../components/icons/logout.png';
 import deleteIcon from '../../components/icons/delete.png';
 
+const BIOMETRIC_ENABLED_KEY = 'biometricEnabled';
+
 const ProfileScreen = () => {
   const router = useRouter();
 
@@ -62,22 +65,75 @@ const ProfileScreen = () => {
     onError: (e) => Alert.alert('Logout failed', e?.message || 'Could not log out.'),
   });
 
-  const { isBiometricSupported, isEnrolled, getBiometricTypeName, openBiometricSettings, getSetupInstructions } =
-    useBiometricAuth();
+  const { 
+    isBiometricSupported, 
+    isEnrolled, 
+    getBiometricTypeName, 
+    openBiometricSettings, 
+    getSetupInstructions,
+    authenticate 
+  } = useBiometricAuth();
 
-  const { isPermissionGranted, isInitialized, turnOffNotifications, turnOnNotifications, isLoading: isNotificationLoading } =
-    useNotifications();
+  const { 
+    isPermissionGranted, 
+    isInitialized, 
+    turnOffNotifications, 
+    turnOnNotifications, 
+    isLoading: isNotificationLoading 
+  } = useNotifications();
 
   const isAnyOperationInProgress = loggingOut || isNotificationLoading || isProfileLoading;
 
-  const [notificationEnabled, setNotificationEnabled] = useState(true);
-  const [fingerprintEnabled, setFingerprintEnabled] = useState(isEnrolled);
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+  const [fingerprintEnabled, setFingerprintEnabled] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isBiometricLoading, setIsBiometricLoading] = useState(false);
+
+  // Load biometric preference from storage
+  useEffect(() => {
+    const loadBiometricPreference = async () => {
+      try {
+        const stored = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY);
+        const isEnabled = stored === 'true';
+        setFingerprintEnabled(isEnabled && isEnrolled);
+      } catch (error) {
+        console.error('Failed to load biometric preference:', error);
+        setFingerprintEnabled(false);
+      }
+    };
+
+    loadBiometricPreference();
+  }, [isEnrolled]);
 
   // Sync notification toggle with actual permission status
   useEffect(() => {
-    setNotificationEnabled(isPermissionGranted && isInitialized);
+    if (isInitialized) {
+      setNotificationEnabled(isPermissionGranted);
+    }
   }, [isPermissionGranted, isInitialized]);
+
+  // Sync fingerprint state when enrollment status changes
+  useEffect(() => {
+    if (!isEnrolled) {
+      setFingerprintEnabled(false);
+    }
+  }, [isEnrolled]);
+
+  // Listen for app state changes (when user returns from settings)
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      if (nextAppState === 'active') {
+        // Re-check biometric enrollment when app becomes active
+        const stored = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY);
+        const isEnabled = stored === 'true';
+        setFingerprintEnabled(isEnabled && isEnrolled);
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [isEnrolled]);
 
   const handleGoBack = () => {
     if (isAnyOperationInProgress) return;
@@ -113,54 +169,128 @@ const ProfileScreen = () => {
     setShowDeleteModal(true);
   };
 
-  const handleNotificationToggle = async (value) => {
+  const handleNotificationToggle = async (value: boolean) => {
     if (isAnyOperationInProgress) return;
 
     try {
       if (value) {
+        // Turning ON notifications
         const success = await turnOnNotifications();
-        setNotificationEnabled(success);
-        if (!success)
-          Alert.alert('Unable to Enable Notifications', 'Please check device settings.');
+        if (success) {
+          setNotificationEnabled(true);
+        } else {
+          setNotificationEnabled(false);
+          Alert.alert(
+            'Unable to Enable Notifications',
+            'Please enable notifications in your device settings.'
+          );
+        }
       } else {
+        // Turning OFF notifications
         const success = await turnOffNotifications();
-        setNotificationEnabled(!success);
-        if (!success) Alert.alert('Failed to disable notifications.');
+        if (success) {
+          setNotificationEnabled(false);
+        } else {
+          // Keep it enabled if we failed to turn it off
+          setNotificationEnabled(true);
+          Alert.alert(
+            'Failed to Disable Notifications',
+            'Could not disable notifications. Please try again.'
+          );
+        }
       }
-    } catch {
+    } catch (error) {
+      // Revert to previous state on error
       setNotificationEnabled(!value);
+      Alert.alert('Error', 'An error occurred while changing notification settings.');
     }
   };
 
-  const handleBiometricToggle = async (value) => {
-    if (isAnyOperationInProgress) return;
+  const handleBiometricToggle = async (value: boolean) => {
+    if (isAnyOperationInProgress || isBiometricLoading) return;
 
+    // Check if biometric is supported
     if (!isBiometricSupported) {
-      Alert.alert('Not Supported', 'Biometric authentication is not supported on this device.');
-      return;
-    }
-
-    if (!isEnrolled && value) {
-      const biometricType = getBiometricTypeName();
-      const instructions = getSetupInstructions();
       Alert.alert(
-        'Biometric Setup Required',
-        `${biometricType} not set up.\n\n${instructions}\n\nOpen Settings?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Open Settings',
-            onPress: async () => {
-              const opened = await openBiometricSettings();
-              if (!opened) Alert.alert('Settings', `Please open Settings to set up ${biometricType}.`);
-            },
-          },
-        ]
+        'Not Supported',
+        'Biometric authentication is not supported on this device.'
       );
       return;
     }
 
-    setFingerprintEnabled(value);
+    if (value) {
+      // Turning ON biometrics
+      if (!isEnrolled) {
+        // Biometrics not set up on device
+        const biometricType = getBiometricTypeName();
+        const instructions = getSetupInstructions();
+        Alert.alert(
+          'Biometric Setup Required',
+          `${biometricType} is not set up on your device.\n\n${instructions}\n\nWould you like to open Settings?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Open Settings',
+              onPress: async () => {
+                const opened = await openBiometricSettings();
+                if (!opened) {
+                  Alert.alert(
+                    'Settings',
+                    `Please open Settings manually to set up ${biometricType}.`
+                  );
+                }
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      // Authenticate before enabling
+      setIsBiometricLoading(true);
+      try {
+        const authResult = await authenticate({
+          promptMessage: 'Authenticate to enable biometric login',
+        });
+
+        if (authResult.success) {
+          // Save preference
+          await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, 'true');
+          setFingerprintEnabled(true);
+        } else {
+          setFingerprintEnabled(false);
+          if (!authResult.error?.includes('cancel')) {
+            Alert.alert('Authentication Failed', 'Could not verify your identity.');
+          }
+        }
+      } catch (error) {
+        setFingerprintEnabled(false);
+        Alert.alert('Error', 'An error occurred during authentication.');
+      } finally {
+        setIsBiometricLoading(false);
+      }
+    } else {
+      // Turning OFF biometrics - require authentication
+      setIsBiometricLoading(true);
+      try {
+        const authResult = await authenticate({
+          promptMessage: 'Authenticate to disable biometric login',
+        });
+
+        if (authResult.success) {
+          await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, 'false');
+          setFingerprintEnabled(false);
+        } else {
+          // Keep it enabled if authentication failed
+          setFingerprintEnabled(true);
+        }
+      } catch (error) {
+        setFingerprintEnabled(true);
+        Alert.alert('Error', 'An error occurred during authentication.');
+      } finally {
+        setIsBiometricLoading(false);
+      }
+    }
   };
 
   const getBiometricOption = () => ({
@@ -168,7 +298,7 @@ const ProfileScreen = () => {
     title: 'Biometrics',
     iconSrc: fingerprintIcon,
     hasToggle: true,
-    toggleValue: isEnrolled && fingerprintEnabled,
+    toggleValue: fingerprintEnabled && isEnrolled,
     onToggle: handleBiometricToggle,
   });
 
@@ -260,18 +390,27 @@ const ProfileScreen = () => {
   const renderProfileOption = (option) => (
     <TouchableOpacity
       key={option.id}
-      style={[styles.optionContainer, isAnyOperationInProgress && styles.optionContainerDisabled]}
+      style={[
+        styles.optionContainer, 
+        (isAnyOperationInProgress || isBiometricLoading) && styles.optionContainerDisabled
+      ]}
       onPress={option.onPress}
-      activeOpacity={isAnyOperationInProgress ? 1 : 0.7}
-      disabled={isAnyOperationInProgress}
+      activeOpacity={(isAnyOperationInProgress || isBiometricLoading) ? 1 : 0.7}
+      disabled={isAnyOperationInProgress || isBiometricLoading}
     >
       <View style={styles.optionContent}>
-        <Image source={option.iconSrc} style={[styles.optionIcon, isAnyOperationInProgress && styles.optionIconDisabled]} />
+        <Image 
+          source={option.iconSrc} 
+          style={[
+            styles.optionIcon, 
+            (isAnyOperationInProgress || isBiometricLoading) && styles.optionIconDisabled
+          ]} 
+        />
         <Text
           style={[
             styles.optionTitle,
             option.isDestructive && styles.optionTitleDestructive,
-            isAnyOperationInProgress && styles.optionTitleDisabled,
+            (isAnyOperationInProgress || isBiometricLoading) && styles.optionTitleDisabled,
           ]}
         >
           {option.title}
@@ -286,14 +425,17 @@ const ProfileScreen = () => {
             trackColor={{ false: '#E5E7EB', true: '#10B981' }}
             thumbColor="#FFFFFF"
             ios_backgroundColor="#E5E7EB"
-            disabled={isAnyOperationInProgress}
-            style={isAnyOperationInProgress ? { opacity: 0.5 } : {}}
+            disabled={isAnyOperationInProgress || isBiometricLoading}
+            style={(isAnyOperationInProgress || isBiometricLoading) ? { opacity: 0.5 } : {}}
           />
         )}
         {option.hasChevron && (
           <Image
             source={chevronRightIcon}
-            style={[styles.chevronIcon, isAnyOperationInProgress && styles.chevronIconDisabled]}
+            style={[
+              styles.chevronIcon, 
+              (isAnyOperationInProgress || isBiometricLoading) && styles.chevronIconDisabled
+            ]}
           />
         )}
       </View>
@@ -319,13 +461,16 @@ const ProfileScreen = () => {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar backgroundColor="#35297F" barStyle="light-content" />
 
-        <View style={[styles.headerSection, isAnyOperationInProgress && styles.headerSectionDisabled]}>
+        <View style={[
+          styles.headerSection, 
+          (isAnyOperationInProgress || isBiometricLoading) && styles.headerSectionDisabled
+        ]}>
           <View style={styles.headerContainer}>
             <TouchableOpacity
               style={styles.backButton}
               onPress={handleGoBack}
-              activeOpacity={isAnyOperationInProgress ? 1 : 0.7}
-              disabled={isAnyOperationInProgress}
+              activeOpacity={(isAnyOperationInProgress || isBiometricLoading) ? 1 : 0.7}
+              disabled={isAnyOperationInProgress || isBiometricLoading}
               hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             >
               <Image source={backIcon} style={styles.backIcon} />
@@ -346,13 +491,16 @@ const ProfileScreen = () => {
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
-          scrollEnabled={!isAnyOperationInProgress}
+          scrollEnabled={!(isAnyOperationInProgress || isBiometricLoading)}
         >
           {profileSections.map(renderProfileSection)}
         </ScrollView>
       </SafeAreaView>
 
-      <DeleteAccountModal visible={showDeleteModal && !isAnyOperationInProgress} onClose={() => setShowDeleteModal(false)} />
+      <DeleteAccountModal 
+        visible={showDeleteModal && !(isAnyOperationInProgress || isBiometricLoading)} 
+        onClose={() => setShowDeleteModal(false)} 
+      />
 
       <BottomTabNavigator activeTab="profile" />
     </View>

@@ -8,7 +8,6 @@ import {
   SafeAreaView,
   Image,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
 // Import your custom icons
@@ -24,7 +23,6 @@ interface Service {
   id: string;
   title: string;
   icon: any;
-  color: string;
   route: string;
 }
 
@@ -35,42 +33,36 @@ const UtilitiesScreen: React.FC = () => {
       id: 'airtime',
       title: 'Buy Airtime',
       icon: AirtimeIcon,
-      color: '#FFFFFF',
       route: 'Airtime'
     },
     {
       id: 'data',
       title: 'Buy Data',
       icon: DataIcon,
-      color: '#FFFFFF',
       route: 'Data'
     },
     {
       id: 'electricity',
       title: 'Electricity',
       icon: ElectricityIcon,
-      color: '#FFFFFF',
       route: 'Electricity'
     },
     {
       id: 'betting',
       title: 'Betting',
       icon: BettingIcon,
-      color: '#FFFFFF',
       route: 'Betting'
     },
     {
       id: 'cable_tv',
       title: 'Cable TV',
       icon: CableTVIcon,
-      color: '#FFFFFF',
       route: 'CableTV'
     },
     {
       id: 'gift_cards',
       title: 'Gift Cards',
       icon: GiftCardIcon,
-      color: '#FFFFFF',
       route: 'Giftcard'
     }
   ];
@@ -79,38 +71,34 @@ const UtilitiesScreen: React.FC = () => {
     router.push(`user/${service.route}`);
   };
 
-  const renderServiceItem = (service: Service, containerStyle: any, textStyle: any, isLast: boolean = false): JSX.Element => (
+  const renderServiceItem = (service: Service): JSX.Element => (
     <TouchableOpacity 
       key={service.id}
-      style={[styles.serviceItem, isLast && styles.lastServiceItem]}
+      style={styles.serviceItem}
       onPress={() => handleServicePress(service)}
-      activeOpacity={0.8}
+      activeOpacity={0.7}
     >
-      <View style={[containerStyle, { backgroundColor: service.color }]}>
-        <Image 
-          source={service.icon}
-          style={styles.iconImage}
-          resizeMode="contain"
-        />
-      </View>
-      <Text style={textStyle}>{service.title}</Text>
+      <Image 
+        source={service.icon}
+        style={styles.iconImage}
+        resizeMode="contain"
+      />
+      <Text style={styles.serviceText}>{service.title}</Text>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#352F7F" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
-      <LinearGradient
-        colors={['#352F7F', '#4536A4', '#352F7F']}
-        style={styles.phoneContainer}
-      >
+      <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerText}>See more</Text>
           <TouchableOpacity 
             style={styles.closeButton}
             onPress={() => router.push('/user/dashboard')}
+            activeOpacity={0.7}
           >
             <Image 
               source={CloseIcon}
@@ -124,19 +112,19 @@ const UtilitiesScreen: React.FC = () => {
         <View style={styles.servicesContent}>
           {/* First Row - Buy Airtime, Buy Data, Electricity */}
           <View style={styles.serviceRow}>
-            {renderServiceItem(services[0], styles.frame257, styles.textWrapper369)}
-            {renderServiceItem(services[1], styles.frame257, styles.textWrapper369)}
-            {renderServiceItem(services[2], styles.frame257, styles.textWrapper369, true)}
+            {renderServiceItem(services[0])}
+            {renderServiceItem(services[1])}
+            {renderServiceItem(services[2])}
           </View>
 
           {/* Second Row - Betting, Cable TV, Gift Cards */}
           <View style={styles.serviceRow}>
-            {renderServiceItem(services[3], styles.frame257, styles.textWrapper368)}
-            {renderServiceItem(services[4], styles.frame257, styles.textWrapper369)}
-            {renderServiceItem(services[5], styles.frame257, styles.textWrapper369, true)}
+            {renderServiceItem(services[3])}
+            {renderServiceItem(services[4])}
+            {renderServiceItem(services[5])}
           </View>
         </View>
-      </LinearGradient>
+      </View>
     </SafeAreaView>
   );
 };
@@ -144,10 +132,11 @@ const UtilitiesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#352F7F',
+    backgroundColor: '#FFFFFF',
   },
-  phoneContainer: {
+  content: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
@@ -157,12 +146,12 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#F4F2FF',
+    borderBottomColor: '#E5E7EB',
     marginHorizontal: 31,
     position: 'relative',
   },
   headerText: {
-    color: '#FFFFFF',
+    color: '#111827',
     fontSize: 16,
     fontWeight: '400',
     textAlign: 'center',
@@ -172,13 +161,14 @@ const styles = StyleSheet.create({
     height: 27,
     position: 'absolute',
     right: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   closeIcon: {
     width: 24,
     height: 24,
-    tintColor: '#FFFFFF',
+    tintColor: '#111827',
   },
-  
   servicesContent: {
     flex: 1,
     justifyContent: 'flex-start',
@@ -198,37 +188,13 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     flex: 1,
   },
-  lastServiceItem: {
-    marginRight: 0,
-  },
-  frame257: {
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
   iconImage: {
-    width: 30,
-    height: 30,
-    resizeMode: 'contain',
+    width: 50,
+    height: 50,
+    marginBottom: 10,
   },
-  textWrapper368: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '400',
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  textWrapper369: {
-    color: '#FFFFFF',
+  serviceText: {
+    color: '#111827',
     fontSize: 12,
     fontWeight: '400',
     textAlign: 'center',
