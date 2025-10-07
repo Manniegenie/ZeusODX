@@ -1,3 +1,6 @@
+// IMPORTANT: This must be the first import!
+import 'react-native-gesture-handler';
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { Stack } from 'expo-router';
 import {
@@ -11,6 +14,7 @@ import {
   BricolageGrotesque_800ExtraBold,
 } from '@expo-google-fonts/bricolage-grotesque';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthProvider, AuthContext } from '../hooks/useAuth';
 import ProfessionalSplashScreen from '../components/ProfessionalSplashScreen';
 
@@ -75,19 +79,24 @@ export default function RootLayout() {
 
   // Main app layout
   return (
-    <SafeAreaProvider>
-      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#F4F2FF' }}>
-        <AuthProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: 'transparent' },
-            }}
-          />
-          {/* Optional: hidden prefetcher that warms up Tawk for instant open */}
-          <TawkPrefetcher directLink={TAWK_DIRECT_LINK} />
-        </AuthProvider>
-      </SafeAreaView>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#F4F2FF' }}>
+          <AuthProvider>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: 'transparent' },
+                gestureEnabled: true,
+                gestureDirection: 'horizontal',
+                animation: 'slide_from_right',
+              }}
+            />
+            {/* Optional: hidden prefetcher that warms up Tawk for instant open */}
+            <TawkPrefetcher directLink={TAWK_DIRECT_LINK} />
+          </AuthProvider>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

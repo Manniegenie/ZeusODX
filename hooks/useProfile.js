@@ -1,16 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { userProfileService } from '../services/profileService';
+import { useAuth } from './useAuth';
 
 export function useUserProfile(options = {}) {
   const { auto = true, onSuccess, onError } = options;
+  const { isAuthenticated, loading: authLoading } = useAuth();
 
   const abortRef = useRef(null);
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(Boolean(auto));
+  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
   const load = useCallback(async ({ refreshingRun = false } = {}) => {
+    // Guard: Don't fetch if not authenticated
+    if (!isAuthenticated) {
+      console.log('⏸️ Skipping profile fetch - not authenticated');
+      return;
+    }
+
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -32,18 +40,21 @@ export function useUserProfile(options = {}) {
     } finally {
       refreshingRun ? setRefreshing(false) : setLoading(false);
     }
-  }, [onSuccess, onError]);
+  }, [isAuthenticated, onSuccess, onError]);
 
   const refetch = useCallback(async () => {
     await load({ refreshingRun: true });
   }, [load]);
 
   useEffect(() => {
-    if (auto) load();
+    // Only auto-fetch if authenticated and auth is done loading
+    if (auto && !authLoading && isAuthenticated) {
+      load();
+    }
     return () => {
       if (abortRef.current) abortRef.current.abort();
     };
-  }, [auto, load]);
+  }, [auto, authLoading, isAuthenticated, load]);
 
   const displayName = useMemo(() => {
     if (!profile) return '';

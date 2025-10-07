@@ -10,29 +10,6 @@ import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
 import emptyStateIcon from '../../components/icons/empty-black.png';
 
-type TokenDetails = {
-  transactionId?: string;
-  currency?: string;
-  network?: string;
-  address?: string;
-  hash?: string;
-  fee?: number | string;
-  narration?: string;
-  category?: 'token';
-};
-
-type APIDetail = TokenDetails | (Record<string, any> & { category?: 'token' });
-
-type APITransaction = {
-  id: string;
-  type: string;
-  status: string;
-  amount: string;
-  date: string;
-  createdAt?: string;
-  details?: APIDetail;
-};
-
 const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const TransactionHistoryScreen = () => {
@@ -66,7 +43,6 @@ const TransactionHistoryScreen = () => {
     error,
     refreshTransactions,
     hasTransactions,
-    mapCategoryToType,
   } = useHistory((currency as string) || 'AVAX', { defaultPageSize: 50 });
 
   // Month range → ISO
@@ -148,7 +124,7 @@ const TransactionHistoryScreen = () => {
     { id: 'failed', label: 'Failed' },
   ];
 
-  // ----- Helpers for list + receipt mapping -----
+  // ----- Helpers for display -----
   const mapServiceTypeToUI = (t: string) => {
     switch (t) {
       case 'DEPOSIT': return 'Deposit';
@@ -205,58 +181,70 @@ const TransactionHistoryScreen = () => {
   };
 
   const extractAmountValue = (tx: any) => {
+    // First try the numeric amount field
+    if (typeof tx?.amount === 'number' && !isNaN(tx.amount)) {
+      return Math.abs(tx.amount);
+    }
+    
+    // Try formattedAmount
     if (tx?.formattedAmount) {
       const clean = tx.formattedAmount.replace(/[+\-₦,\s]/g, '').replace(/[A-Z]/g, '').trim();
       const n = parseFloat(clean);
-      if (!isNaN(n)) return n;
+      if (!isNaN(n)) return Math.abs(n);
     }
-    const candidates = [tx?.amount, tx?.amountNaira, tx?.amountNGNB, tx?.amountNGNZ];
+    
+    // Try other fields
+    const candidates = [tx?.amountNaira, tx?.amountNGNB, tx?.amountNGNZ];
     for (const c of candidates) {
-      if (typeof c === 'number' && !isNaN(c)) return c;
+      if (typeof c === 'number' && !isNaN(c)) return Math.abs(c);
       if (typeof c === 'string') {
         const n = parseFloat(c);
-        if (!isNaN(n)) return n;
+        if (!isNaN(n)) return Math.abs(n);
       }
     }
     return 0;
   };
 
-  const toAPITransaction = (tx: any): APITransaction => {
+  // ✅ NEW: Prepare transaction for receipt screen - preserves all service data
+  const prepareForReceipt = (tx: any) => {
+    // Get display values for UI
     const serviceType = String(tx?.type || '');
     const serviceStatus = String(tx?.status || '');
-    const amountNum = extractAmountValue(tx);
-    const symbol = tx?.currency || tx?.symbol || tx?.asset || 'NGN';
-    const prettyAmt = formatAmountForDisplay(amountNum, symbol);
-    const sign = getTransactionPrefix(serviceType, tx?.formattedAmount);
+    const humanType = mapServiceTypeToUI(serviceType);
+    const humanStatus = mapServiceStatusToUI(serviceStatus);
+    
+    // Use formattedDate if available, otherwise format createdAt
+    let displayDate = tx?.formattedDate;
+    if (!displayDate && tx?.createdAt) {
+      try {
+        displayDate = new Date(tx.createdAt).toLocaleString('en-NG');
+      } catch {
+        displayDate = '—';
+      }
+    }
+    displayDate = displayDate || '—';
 
-    const isNaira = ['NGN','NGNB','NGNZ'].includes(String(symbol).toUpperCase());
-    const amountStr = isNaira ? `${sign}₦${prettyAmt}` : `${sign}${prettyAmt} ${symbol}`;
-    const dateText = tx?.formattedDate || (tx?.createdAt ? new Date(tx.createdAt).toLocaleString('en-NG') : '—');
+    // Use formattedAmount if available, otherwise construct it
+    let displayAmount = tx?.formattedAmount;
+    if (!displayAmount) {
+      const amountNum = extractAmountValue(tx);
+      const symbol = tx?.currency || tx?.symbol || tx?.asset || 'NGN';
+      const prettyAmt = formatAmountForDisplay(amountNum, symbol);
+      const prefix = getTransactionPrefix(serviceType);
+      const isNaira = ['NGN','NGNB','NGNZ'].includes(String(symbol).toUpperCase());
+      displayAmount = isNaira ? `${prefix}₦${prettyAmt}` : `${prefix}${prettyAmt} ${symbol}`;
+    }
 
-    const d = tx?.details || {};
-    const details: TokenDetails = {
-      category: 'token',
-      transactionId: d.transactionId || tx?.transactionId || tx?.txId || tx?.externalId || tx?.reference || tx?.id || tx?._id,
-      currency: symbol,
-      network: d.network || tx?.network || tx?.chain || tx?.blockchain,
-      address: d.address || tx?.address || tx?.walletAddress || tx?.to || tx?.toAddress || tx?.receivingAddress,
-      hash: d.hash || tx?.hash || tx?.txHash || tx?.transactionHash,
-      fee: d.fee || tx?.fee || tx?.networkFee || tx?.gasFee || tx?.txFee,
-      narration: d.narration || tx?.narration || tx?.note || tx?.description || tx?.memo || tx?.reason,
-    };
-
+    // Return transaction with UI-friendly display fields
+    // but preserve ALL original data including NGNZ withdrawal fields
     return {
-      id: (tx?.id || tx?._id || tx?.transactionId || tx?.reference || tx?.externalId || '') + '',
-      type: mapServiceTypeToUI(serviceType),
-      status: mapServiceStatusToUI(serviceStatus),
-      amount: amountStr,
-      date: dateText,
-      createdAt: tx?.createdAt,
-      details,
+      ...tx, // ✅ Keep everything from service (bankName, accountNumber, etc.)
+      type: humanType,
+      status: humanStatus,
+      amount: displayAmount,
+      date: displayDate,
     };
   };
-
-  // REMOVED: Client-side filtering since backend should handle it properly now
 
   // Filter sheet component
   const FilterModal = ({
@@ -330,7 +318,6 @@ const TransactionHistoryScreen = () => {
       );
     }
 
-    // Use transactions directly from hook since backend filtering should work
     const list = transactions;
     if (list.length === 0) {
       return (
@@ -356,11 +343,12 @@ const TransactionHistoryScreen = () => {
               style={styles.transactionItem}
               activeOpacity={0.85}
               onPress={() => {
-                const apiTx = toAPITransaction(tx);
+                // ✅ FIXED: Pass the full formatted transaction from service
+                const receiptTx = prepareForReceipt(tx);
                 router.push({
                   pathname: '/history/TransactionReceipt',
                   params: {
-                    tx: encodeURIComponent(JSON.stringify(apiTx)),
+                    tx: encodeURIComponent(JSON.stringify(receiptTx)),
                     raw: encodeURIComponent(JSON.stringify(tx)),
                   },
                 });
@@ -453,7 +441,6 @@ const TransactionHistoryScreen = () => {
   );
 };
 
-// Styles remain the same...
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F0FF' },
   safeArea: { flex: 1 },
