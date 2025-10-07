@@ -8,14 +8,13 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/authService';
 import ErrorDisplay from '../../components/ErrorDisplay';
-import { useBiometricAuth } from '../../hooks/usebiometric'; // 👈 add hook
+import * as LocalAuthentication from 'expo-local-authentication';
 
 export default function SimpleLoginPinScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { login } = useAuth();
 
-  const { isBiometricSupported, isEnrolled, authenticateWithBiometrics } = useBiometricAuth(); // 👈 hook usage
   const bioTriedRef = useRef(false);
   const [biometricFailed, setBiometricFailed] = useState(false);
 
@@ -47,22 +46,72 @@ export default function SimpleLoginPinScreen() {
     inputRefs[0].current?.focus();
   }, [params.phonenumber]);
 
-  // 🔐 Try biometrics once per screen load if set up; on failure, force PIN
+  // Try biometrics once per screen load if available
   useEffect(() => {
     const tryBiometric = async () => {
       if (bioTriedRef.current || biometricFailed) return;
-      if (!isBiometricSupported || !isEnrolled) return;
 
-      bioTriedRef.current = true;
-      const res = await authenticateWithBiometrics({});
-      if (res?.success) {
-        router.push('/user/dashboard');
-      } else {
-        setBiometricFailed(true); // only once; then user must use PIN
+      try {
+        // Check if device supports biometrics
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+        
+        if (!hasHardware || !isEnrolled) {
+          console.log('Biometric hardware not available or not enrolled');
+          return;
+        }
+
+        // Check if we have a stored PIN for biometric
+        const hasBiometricPin = await authService.hasBiometricPin();
+        if (!hasBiometricPin) {
+          console.log('No biometric PIN stored, skipping biometric auth');
+          return;
+        }
+
+        bioTriedRef.current = true;
+        setIsLoading(true);
+
+        // Prompt for biometric authentication
+        const bioResult = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Authenticate to login',
+          disableDeviceFallback: false,
+          cancelLabel: 'Use PIN',
+        });
+
+        if (bioResult.success) {
+          console.log('Biometric verification successful, authenticating with server...');
+          
+          // Actually authenticate with the server using stored PIN
+          const loginResult = await authService.loginWithBiometric();
+          
+          if (loginResult.success) {
+            console.log('Server authentication successful');
+            router.push('/user/dashboard');
+          } else {
+            console.log('Server authentication failed:', loginResult.error);
+            setBiometricFailed(true);
+            setError({
+              show: true,
+              type: 'auth',
+              title: 'Authentication Failed',
+              message: 'Please enter your PIN to continue.',
+            });
+            setTimeout(() => setError({ show: false, type: 'general' }), 3000);
+          }
+        } else {
+          console.log('Biometric verification cancelled or failed');
+          setBiometricFailed(true);
+        }
+      } catch (err) {
+        console.error('Biometric authentication error:', err);
+        setBiometricFailed(true);
+      } finally {
+        setIsLoading(false);
       }
     };
+    
     tryBiometric();
-  }, [isBiometricSupported, isEnrolled, biometricFailed, authenticateWithBiometrics, router]);
+  }, [biometricFailed, router]);
 
   const initializeScreen = async () => {
     if (params.phonenumber && typeof params.phonenumber === 'string') {
@@ -112,9 +161,14 @@ export default function SimpleLoginPinScreen() {
     setError({ show: false, type: 'general' });
 
     try {
-      const result = await authService.loginWithPin(pinCode);
+      // Use useAuth login hook which calls authService.login
+      const result = await login({
+        phonenumber: phoneNumber,
+        passwordpin: pinCode,
+      });
 
       if (result.success) {
+        console.log('PIN login successful');
         router.push('/user/dashboard');
       } else {
         let errorType: 'network' | 'validation' | 'auth' | 'server' | 'general' = 'auth';
@@ -122,26 +176,31 @@ export default function SimpleLoginPinScreen() {
         let errorTitle = 'Invalid PIN';
 
         if (result.error) {
-          const serverMessage = result.error;
-          const statusCode = result.status ?? 0;
+          const serverMessage = String(result.error);
 
-          if (statusCode === 404 || serverMessage.toLowerCase().includes('not found')) {
+          if (serverMessage.toLowerCase().includes('not found')) {
             errorType = 'auth';
             errorTitle = 'User Not Found';
             errorMessage = serverMessage;
-          } else if (statusCode === 401 || serverMessage.toLowerCase().includes('invalid') || serverMessage.toLowerCase().includes('incorrect')) {
+          } else if (
+            serverMessage.toLowerCase().includes('invalid') ||
+            serverMessage.toLowerCase().includes('incorrect')
+          ) {
             errorType = 'auth';
             errorTitle = 'Invalid PIN';
             errorMessage = serverMessage;
-          } else if (statusCode === 429 || serverMessage.toLowerCase().includes('locked') || serverMessage.toLowerCase().includes('too many')) {
+          } else if (
+            serverMessage.toLowerCase().includes('locked') ||
+            serverMessage.toLowerCase().includes('too many')
+          ) {
             errorType = 'auth';
             errorTitle = 'Account Locked';
             errorMessage = serverMessage;
-          } else if (statusCode >= 500) {
+          } else if (serverMessage.toLowerCase().includes('server')) {
             errorType = 'server';
             errorTitle = 'Server Error';
             errorMessage = serverMessage;
-          } else if (statusCode === 0) {
+          } else if (serverMessage.toLowerCase().includes('network') || serverMessage.toLowerCase().includes('connection')) {
             errorType = 'network';
             errorTitle = 'Connection Error';
             errorMessage = serverMessage;
@@ -163,7 +222,7 @@ export default function SimpleLoginPinScreen() {
         setPin(['', '', '', '', '', '']);
         inputRefs[0].current?.focus();
       }
-    } catch {
+    } catch (err) {
       setError({
         show: true,
         type: 'network',
@@ -181,7 +240,6 @@ export default function SimpleLoginPinScreen() {
 
   const handleDismissError = () => setError({ show: false, type: 'general' });
 
-  // Implemented: navigate to ForgotPinScreen and pass phone as "phonenumber" param
   const handleForgotPin = () => {
     try {
       router.push({
@@ -191,7 +249,6 @@ export default function SimpleLoginPinScreen() {
       console.log('Navigating to ForgotPinScreen with phone:', phoneNumber);
     } catch (err) {
       console.warn('Failed to navigate to ForgotPinScreen', err);
-      // fallback to query-string style navigation
       router.push(`/auth/forgot-pin?phonenumber=${encodeURIComponent(phoneNumber || '')}`);
     }
   };

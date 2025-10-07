@@ -27,7 +27,6 @@ interface TransferScreenProps {
 export default function TransferScreen({ onBack, onTransfer }: TransferScreenProps) {
   const router = useRouter();
   const [amount, setAmount] = useState('0');
-  const [transactionFee, setTransactionFee] = useState(0);
 
   // === Hooks for NGNZ balance & USD rate ===
   const { getNGNZBalance, getNGNZRate } = useNGNZ();
@@ -89,32 +88,27 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
       return;
     }
 
-    // Set fixed fee (for display/navigation payload)
-    setTransactionFee(FEE_NGNZ);
-
+    // Do NOT deduct fee on the frontend. Send full amount + fee info for backend processing.
     router.push({
       pathname: '/user/BankAccountsScreen',
       params: {
         transferAmount: rawAmount.toString(), // Send full amount - backend handles deductions
         transferFee: FEE_NGNZ.toString(),
-        netAmount: rawAmount.toString(), // Send full amount - backend handles deductions
         mode: 'select'
       }
     });
   };
 
-  // Display the amount after fee for information only
+  // Display the amount after fee for information only (frontend-only display)
   const getAmountAfterFee = (): string => {
     const rawAmount = safeParseAmount(amount);
     const netAmount = rawAmount - FEE_NGNZ;
     return netAmount > 0 ? formatWithCommas(netAmount.toFixed(2)) : '0';
   };
 
-  // Keep the displayed fee at 100 when the user has a positive amount
-  useEffect(() => {
-    const rawAmount = safeParseAmount(amount);
-    setTransactionFee(rawAmount > 0 ? FEE_NGNZ : 0);
-  }, [amount]);
+  // fee for display only (100 NGNZ shown when user has entered a positive amount)
+  const rawAmountNum = safeParseAmount(amount);
+  const feeForDisplay = rawAmountNum > 0 ? FEE_NGNZ : 0;
 
   // Clamp to spendable on blur to avoid impossible values keeping the button disabled
   const handleBlur = () => {
@@ -127,7 +121,6 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
     setAmount(formatWithCommas(clamped.toString()));
   };
 
-  const rawAmountNum = safeParseAmount(amount);
   const isTransferDisabled =
     rawAmountNum <= 0 ||
     rawAmountNum < minimumAmount ||
@@ -190,7 +183,7 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
           <View style={styles.feeContainer}>
             <View style={styles.feeRow}>
               <Text style={styles.feeLabel}>Transaction fee:</Text>
-              <Text style={styles.feeValue}>{transactionFee.toFixed(2)} NGNZ</Text>
+              <Text style={styles.feeValue}>{feeForDisplay.toFixed(2)} NGNZ</Text>
             </View>
             <View style={styles.feeRow}>
               <Text style={styles.feeLabel}>You will get:</Text>

@@ -7,6 +7,7 @@ export const authService = {
   PHONE_NUMBER_KEY: 'saved_phone_number',
   USERNAME_KEY: 'saved_username',
   REFRESH_TOKEN_KEY: 'refresh_token',
+  BIOMETRIC_PIN_KEY: 'biometric_pin', // Store PIN for biometric unlock
 
   // Save phone number to AsyncStorage (non-sensitive convenience data)
   async savePhoneNumber(phoneNumber) {
@@ -87,6 +88,49 @@ export const authService = {
     }
   },
 
+  // NEW: Store PIN securely for biometric unlock
+  async savePinForBiometric(pin) {
+    try {
+      await SecureStore.setItemAsync(this.BIOMETRIC_PIN_KEY, pin);
+      console.log('✅ PIN stored securely for biometric unlock');
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error storing PIN for biometric:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // NEW: Retrieve PIN for biometric unlock
+  async getPinForBiometric() {
+    try {
+      const pin = await SecureStore.getItemAsync(this.BIOMETRIC_PIN_KEY);
+      return pin;
+    } catch (error) {
+      console.error('❌ Error retrieving PIN for biometric:', error);
+      return null;
+    }
+  },
+
+  // NEW: Clear stored PIN (e.g., on logout or when user disables biometric)
+  async clearBiometricPin() {
+    try {
+      await SecureStore.deleteItemAsync(this.BIOMETRIC_PIN_KEY);
+      console.log('✅ Biometric PIN cleared');
+    } catch (error) {
+      console.error('❌ Error clearing biometric PIN:', error);
+    }
+  },
+
+  // NEW: Check if PIN is stored for biometric unlock
+  async hasBiometricPin() {
+    try {
+      const pin = await SecureStore.getItemAsync(this.BIOMETRIC_PIN_KEY);
+      return !!pin;
+    } catch (error) {
+      return false;
+    }
+  },
+
   async login(credentials) {
     // Use saved phone number if none provided
     let phoneNumber = credentials.phonenumber;
@@ -132,6 +176,11 @@ export const authService = {
       // Store refresh token securely
       if (response.data.refreshToken) {
         await this.setRefreshToken(response.data.refreshToken);
+      }
+      
+      // NEW: Store PIN for biometric unlock if provided
+      if (credentials.passwordpin && credentials.enableBiometric !== false) {
+        await this.savePinForBiometric(credentials.passwordpin);
       }
       
       // Store user data in AsyncStorage (non-sensitive)
@@ -190,6 +239,9 @@ export const authService = {
       
       // Clear refresh token securely
       await this.clearRefreshToken();
+      
+      // Clear biometric PIN
+      await this.clearBiometricPin();
       
       // Clear non-sensitive data from AsyncStorage
       await AsyncStorage.multiRemove([
@@ -295,5 +347,39 @@ export const authService = {
       passwordpin: pin
       // phonenumber will be retrieved from storage automatically
     });
+  },
+
+  // NEW: Login with biometric authentication
+  async loginWithBiometric() {
+    console.log('🔐 Attempting biometric login');
+    
+    try {
+      // Retrieve stored PIN
+      const pin = await this.getPinForBiometric();
+      
+      if (!pin) {
+        return {
+          success: false,
+          error: 'No PIN stored for biometric authentication'
+        };
+      }
+      
+      // Actually authenticate with the server
+      const result = await this.loginWithPin(pin);
+      
+      if (result.success) {
+        console.log('✅ Biometric login successful');
+      } else {
+        console.log('❌ Biometric login failed:', result.error);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Error during biometric login:', error);
+      return {
+        success: false,
+        error: error.message || 'Biometric login failed'
+      };
+    }
   },
 };

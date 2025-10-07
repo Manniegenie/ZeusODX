@@ -12,6 +12,7 @@ import {
   Switch,
   Alert,
   AppState,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
@@ -22,6 +23,7 @@ import { useUserProfile } from '../../hooks/useProfile';
 import { useBiometricAuth } from '../../hooks/usebiometric';
 import useLogout from '../../hooks/useLogout';
 import { useNotifications } from '../../hooks/usenotification';
+import { authService } from '../../services/authService';
 
 // Delete Account modal
 import DeleteAccountModal from '../../components/DeleteAccount';
@@ -41,7 +43,58 @@ import kycIcon from '../../components/icons/kyc.png';
 import logoutIcon from '../../components/icons/logout.png';
 import deleteIcon from '../../components/icons/delete.png';
 
-const BIOMETRIC_ENABLED_KEY = 'biometricEnabled';
+// Biometric Modal Component
+const BiometricModal = ({ visible, onClose, config }) => {
+  if (!config) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={modalStyles.overlay}>
+        <View style={modalStyles.container}>
+          <Text style={modalStyles.title}>{config.title}</Text>
+          <Text style={modalStyles.message}>{config.message}</Text>
+          
+          <View style={modalStyles.buttonContainer}>
+            {config.cancelText && (
+              <TouchableOpacity
+                style={[modalStyles.button, modalStyles.cancelButton]}
+                onPress={onClose}
+              >
+                <Text style={modalStyles.cancelButtonText}>{config.cancelText}</Text>
+              </TouchableOpacity>
+            )}
+            
+            {config.confirmText && (
+              <TouchableOpacity
+                style={[
+                  modalStyles.button,
+                  modalStyles.confirmButton,
+                  config.isDestructive && modalStyles.destructiveButton
+                ]}
+                onPress={() => {
+                  onClose();
+                  if (config.onConfirm) config.onConfirm();
+                }}
+              >
+                <Text style={[
+                  modalStyles.confirmButtonText,
+                  config.isDestructive && modalStyles.destructiveButtonText
+                ]}>
+                  {config.confirmText}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 const ProfileScreen = () => {
   const router = useRouter();
@@ -88,21 +141,22 @@ const ProfileScreen = () => {
   const [fingerprintEnabled, setFingerprintEnabled] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
+  const [biometricModalConfig, setBiometricModalConfig] = useState(null);
+  const [showBiometricModal, setShowBiometricModal] = useState(false);
 
-  // Load biometric preference from storage
+  // Load biometric state from authService (source of truth)
   useEffect(() => {
-    const loadBiometricPreference = async () => {
+    const loadBiometricState = async () => {
       try {
-        const stored = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY);
-        const isEnabled = stored === 'true';
-        setFingerprintEnabled(isEnabled && isEnrolled);
+        const hasPinStored = await authService.hasBiometricPin();
+        setFingerprintEnabled(hasPinStored && isEnrolled);
       } catch (error) {
-        console.error('Failed to load biometric preference:', error);
+        console.error('Failed to load biometric state:', error);
         setFingerprintEnabled(false);
       }
     };
 
-    loadBiometricPreference();
+    loadBiometricState();
   }, [isEnrolled]);
 
   // Sync notification toggle with actual permission status
@@ -119,14 +173,12 @@ const ProfileScreen = () => {
     }
   }, [isEnrolled]);
 
-  // Listen for app state changes (when user returns from settings)
+  // Listen for app state changes
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
       if (nextAppState === 'active') {
-        // Re-check biometric enrollment when app becomes active
-        const stored = await SecureStore.getItemAsync(BIOMETRIC_ENABLED_KEY);
-        const isEnabled = stored === 'true';
-        setFingerprintEnabled(isEnabled && isEnrolled);
+        const hasPinStored = await authService.hasBiometricPin();
+        setFingerprintEnabled(hasPinStored && isEnrolled);
       }
     });
 
@@ -134,6 +186,16 @@ const ProfileScreen = () => {
       subscription.remove();
     };
   }, [isEnrolled]);
+
+  const showBiometricInfo = (config) => {
+    setBiometricModalConfig(config);
+    setShowBiometricModal(true);
+  };
+
+  const closeBiometricModal = () => {
+    setShowBiometricModal(false);
+    setBiometricModalConfig(null);
+  };
 
   const handleGoBack = () => {
     if (isAnyOperationInProgress) return;
@@ -174,119 +236,140 @@ const ProfileScreen = () => {
 
     try {
       if (value) {
-        // Turning ON notifications
         const success = await turnOnNotifications();
         if (success) {
           setNotificationEnabled(true);
         } else {
           setNotificationEnabled(false);
-          Alert.alert(
-            'Unable to Enable Notifications',
-            'Please enable notifications in your device settings.'
-          );
+          showBiometricInfo({
+            title: 'Unable to Enable Notifications',
+            message: 'Please enable notifications in your device settings.',
+            confirmText: 'OK',
+          });
         }
       } else {
-        // Turning OFF notifications
         const success = await turnOffNotifications();
         if (success) {
           setNotificationEnabled(false);
         } else {
-          // Keep it enabled if we failed to turn it off
           setNotificationEnabled(true);
-          Alert.alert(
-            'Failed to Disable Notifications',
-            'Could not disable notifications. Please try again.'
-          );
+          showBiometricInfo({
+            title: 'Failed to Disable Notifications',
+            message: 'Could not disable notifications. Please try again.',
+            confirmText: 'OK',
+          });
         }
       }
     } catch (error) {
-      // Revert to previous state on error
       setNotificationEnabled(!value);
-      Alert.alert('Error', 'An error occurred while changing notification settings.');
+      showBiometricInfo({
+        title: 'Error',
+        message: 'An error occurred while changing notification settings.',
+        confirmText: 'OK',
+      });
     }
   };
 
   const handleBiometricToggle = async (value: boolean) => {
     if (isAnyOperationInProgress || isBiometricLoading) return;
 
-    // Check if biometric is supported
     if (!isBiometricSupported) {
-      Alert.alert(
-        'Not Supported',
-        'Biometric authentication is not supported on this device.'
-      );
+      showBiometricInfo({
+        title: 'Not Supported',
+        message: 'Biometric authentication is not supported on this device.',
+        confirmText: 'OK',
+      });
       return;
     }
 
     if (value) {
-      // Turning ON biometrics
+      // ENABLING biometric
       if (!isEnrolled) {
-        // Biometrics not set up on device
         const biometricType = getBiometricTypeName();
         const instructions = getSetupInstructions();
-        Alert.alert(
-          'Biometric Setup Required',
-          `${biometricType} is not set up on your device.\n\n${instructions}\n\nWould you like to open Settings?`,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            {
-              text: 'Open Settings',
-              onPress: async () => {
-                const opened = await openBiometricSettings();
-                if (!opened) {
-                  Alert.alert(
-                    'Settings',
-                    `Please open Settings manually to set up ${biometricType}.`
-                  );
-                }
-              },
-            },
-          ]
-        );
+        showBiometricInfo({
+          title: 'Biometric Setup Required',
+          message: `${biometricType} is not set up on your device.\n\n${instructions}\n\nWould you like to open Settings?`,
+          cancelText: 'Cancel',
+          confirmText: 'Open Settings',
+          onConfirm: async () => {
+            const opened = await openBiometricSettings();
+            if (!opened) {
+              showBiometricInfo({
+                title: 'Settings',
+                message: `Please open Settings manually to set up ${biometricType}.`,
+                confirmText: 'OK',
+              });
+            }
+          },
+        });
         return;
       }
 
-      // Authenticate before enabling
+      const biometricType = getBiometricTypeName();
+      showBiometricInfo({
+        title: `Enable ${biometricType} Login`,
+        message: `To enable ${biometricType} authentication, you need to log in with your PIN. You will be logged out and can enable it on your next login.`,
+        cancelText: 'Cancel',
+        confirmText: 'Log Out & Enable',
+        onConfirm: async () => {
+          try {
+            const [userId, refreshToken] = await Promise.all([
+              SecureStore.getItemAsync('userId'),
+              SecureStore.getItemAsync('refreshToken'),
+            ]);
+            if (userId && refreshToken) {
+              await logout({ userId, refreshToken });
+            } else {
+              await SecureStore.deleteItemAsync('accessToken');
+              await SecureStore.deleteItemAsync('refreshToken');
+              await SecureStore.deleteItemAsync('userId');
+              router.replace('/login/login-phone');
+            }
+          } catch {
+            showBiometricInfo({
+              title: 'Logout Failed',
+              message: 'Please try again.',
+              confirmText: 'OK',
+            });
+          }
+        },
+      });
+    } else {
+      // DISABLING biometric
+      const biometricType = getBiometricTypeName();
+      
       setIsBiometricLoading(true);
       try {
         const authResult = await authenticate({
-          promptMessage: 'Authenticate to enable biometric login',
+          promptMessage: `Authenticate to disable ${biometricType} login`,
         });
 
         if (authResult.success) {
-          // Save preference
-          await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, 'true');
-          setFingerprintEnabled(true);
-        } else {
+          await authService.clearBiometricPin();
           setFingerprintEnabled(false);
+          showBiometricInfo({
+            title: 'Success',
+            message: `${biometricType} login has been disabled.`,
+            confirmText: 'OK',
+          });
+        } else {
+          setFingerprintEnabled(true);
           if (!authResult.error?.includes('cancel')) {
-            Alert.alert('Authentication Failed', 'Could not verify your identity.');
+            showBiometricInfo({
+              title: 'Authentication Failed',
+              message: 'Could not verify your identity.',
+              confirmText: 'OK',
+            });
           }
         }
       } catch (error) {
-        setFingerprintEnabled(false);
-        Alert.alert('Error', 'An error occurred during authentication.');
-      } finally {
-        setIsBiometricLoading(false);
-      }
-    } else {
-      // Turning OFF biometrics - require authentication
-      setIsBiometricLoading(true);
-      try {
-        const authResult = await authenticate({
-          promptMessage: 'Authenticate to disable biometric login',
-        });
-
-        if (authResult.success) {
-          await SecureStore.setItemAsync(BIOMETRIC_ENABLED_KEY, 'false');
-          setFingerprintEnabled(false);
-        } else {
-          // Keep it enabled if authentication failed
-          setFingerprintEnabled(true);
-        }
-      } catch (error) {
         setFingerprintEnabled(true);
-        Alert.alert('Error', 'An error occurred during authentication.');
+        showBiometricInfo({
+          title: 'Error',
+          message: 'An error occurred during authentication.',
+          confirmText: 'OK',
+        });
       } finally {
         setIsBiometricLoading(false);
       }
@@ -497,6 +580,12 @@ const ProfileScreen = () => {
         </ScrollView>
       </SafeAreaView>
 
+      <BiometricModal 
+        visible={showBiometricModal}
+        onClose={closeBiometricModal}
+        config={biometricModalConfig}
+      />
+
       <DeleteAccountModal 
         visible={showDeleteModal && !(isAnyOperationInProgress || isBiometricLoading)} 
         onClose={() => setShowDeleteModal(false)} 
@@ -506,6 +595,81 @@ const ProfileScreen = () => {
     </View>
   );
 };
+
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  container: {
+    backgroundColor: Colors.surface || '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  title: {
+    fontFamily: Typography.bold || 'System',
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.text?.primary || '#111827',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  message: {
+    fontFamily: Typography.regular || 'System',
+    fontSize: 15,
+    fontWeight: '400',
+    color: Colors.text?.secondary || '#6B7280',
+    lineHeight: 22,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#F3F4F6',
+  },
+  confirmButton: {
+    backgroundColor: Colors.primary || '#35297F',
+  },
+  destructiveButton: {
+    backgroundColor: '#EF4444',
+  },
+  cancelButtonText: {
+    fontFamily: Typography.medium || 'System',
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.text?.primary || '#111827',
+  },
+  confirmButtonText: {
+    fontFamily: Typography.medium || 'System',
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  destructiveButtonText: {
+    color: '#FFFFFF',
+  },
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },

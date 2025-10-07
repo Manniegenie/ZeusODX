@@ -5,14 +5,6 @@ const DEBUG_HISTORY = true;
 const dbg = (...args) => { if (DEBUG_HISTORY) console.log('[historyService]', ...args); };
 
 export const transactionService = {
-  // ALL EXISTING METHODS STAY EXACTLY THE SAME...
-  
-  /**
-   * Fetch transaction history for a specific currency using /token-specific endpoint
-   * @param {string} currency - Currency symbol (e.g., 'AVAX', 'BTC', 'ETH')
-   * @param {Object} params - Filter parameters
-   * @returns {Promise<Object>} Transaction history response
-   */
   async getTransactionHistory(currency, params = {}) {
     try {
       if (!currency) {
@@ -31,12 +23,10 @@ export const transactionService = {
         sortOrder: params.sortOrder || 'desc'
       };
 
-      // Map type values (only include if valid)
       if (params.type && ['DEPOSIT', 'WITHDRAWAL', 'SWAP', 'GIFTCARD'].includes(params.type.toUpperCase())) {
         requestBody.type = params.type.toUpperCase();
       }
 
-      // Map status values to backend format
       if (params.status) {
         const statusMap = {
           PENDING: 'pending',
@@ -52,7 +42,6 @@ export const transactionService = {
         if (mappedStatus) requestBody.status = mappedStatus;
       }
 
-      // Date range
       if (params.startDate) requestBody.dateFrom = params.startDate.split('T')[0];
       if (params.endDate) requestBody.dateTo = params.endDate.split('T')[0];
 
@@ -62,7 +51,6 @@ export const transactionService = {
 
       if (response.data?.success && response.data?.data) {
         const { transactions, pagination } = response.data.data;
-
         const mapped = transactions.map(tx => this.formatTransaction(tx, currency));
         dbg('getTransactionHistory → mapped sample', mapped?.[0]);
 
@@ -182,7 +170,6 @@ export const transactionService = {
     }
   },
 
-  // FIXED: Updated to pass the type parameter to backend
   async getCompleteTransactionHistory(params = {}) {
     try {
       const requestBody = {
@@ -193,7 +180,6 @@ export const transactionService = {
         sortOrder: params.sortOrder || 'desc'
       };
 
-      // ADDED: Pass the type parameter for category filtering
       if (params.type && ['DEPOSIT', 'WITHDRAWAL', 'SWAP', 'GIFTCARD'].includes(params.type.toUpperCase())) {
         requestBody.type = params.type.toUpperCase();
       }
@@ -257,7 +243,6 @@ export const transactionService = {
     }
   },
 
-  // Fetch utility transactions
   async getBillTransactions(params = {}) {
     try {
       const requestBody = {
@@ -267,7 +252,6 @@ export const transactionService = {
         sortOrder: params.sortOrder || 'desc'
       };
 
-      // Map bill categories to backend utilityType
       if (params.billType) {
         const billTypeMap = {
           'Airtime': 'airtime',
@@ -279,7 +263,6 @@ export const transactionService = {
         if (mappedType) requestBody.utilityType = mappedType;
       }
 
-      // Map status values to backend format
       if (params.status) {
         const statusMap = {
           'PENDING': 'pending',
@@ -290,7 +273,6 @@ export const transactionService = {
         if (mappedStatus) requestBody.status = mappedStatus;
       }
 
-      // Date range
       if (params.startDate) requestBody.dateFrom = params.startDate.split('T')[0];
       if (params.endDate) requestBody.dateTo = params.endDate.split('T')[0];
 
@@ -335,7 +317,6 @@ export const transactionService = {
     }
   },
 
-  // Fetch gift card transactions
   async getGiftCardTransactions(params = {}) {
     try {
       const requestBody = {
@@ -345,7 +326,6 @@ export const transactionService = {
         sortOrder: params.sortOrder || 'desc'
       };
 
-      // Map status values to backend format
       if (params.status) {
         const statusMap = {
           'PENDING': 'pending',
@@ -356,7 +336,6 @@ export const transactionService = {
         if (mappedStatus) requestBody.status = mappedStatus;
       }
 
-      // Date range
       if (params.startDate) requestBody.dateFrom = params.startDate.split('T')[0];
       if (params.endDate) requestBody.dateTo = params.endDate.split('T')[0];
 
@@ -401,7 +380,6 @@ export const transactionService = {
     }
   },
 
-  // NEW: Fetch NGNZ withdrawals with enhanced receipt data
   async getNGNZWithdrawals(params = {}) {
     try {
       const requestBody = {
@@ -411,7 +389,6 @@ export const transactionService = {
         sortOrder: params.sortOrder || 'desc'
       };
 
-      // Map status values to backend format
       if (params.status) {
         const statusMap = {
           'PENDING': 'pending',
@@ -422,7 +399,6 @@ export const transactionService = {
         if (mappedStatus) requestBody.status = mappedStatus;
       }
 
-      // Date range
       if (params.startDate) requestBody.dateFrom = params.startDate.split('T')[0];
       if (params.endDate) requestBody.dateTo = params.endDate.split('T')[0];
 
@@ -467,10 +443,45 @@ export const transactionService = {
     }
   },
 
-  // ALL EXISTING HELPER METHODS STAY THE SAME...
-  
+  // ✅ NEW: Detect if transaction is an NGNZ withdrawal
+  detectNGNZWithdrawal(transaction) {
+    if (!transaction) return false;
+    
+    const details = transaction.details || {};
+    
+    // Check multiple indicators
+    const indicators = [
+      details.isNGNZWithdrawal === true,
+      details.category === 'withdrawal' && details.currency === 'NGNZ',
+      details.address === 'NGNZ_WITHDRAWAL',
+      !!(details.destination?.bankName || details.bankName),
+      !!(details.withdrawalReference || details.reference?.includes('NGNZ_WD')),
+      details.provider === 'OBIEX' && !!details.providerStatus,
+      details.hasReceiptData === true,
+      details.receiptDetails?.category === 'withdrawal'
+    ];
+    
+    const trueCount = indicators.filter(Boolean).length;
+    const isNGNZ = trueCount >= 2;
+    
+    if (isNGNZ) {
+      dbg('detectNGNZWithdrawal: NGNZ withdrawal detected', { id: transaction.id, indicators: trueCount });
+    }
+    
+    return isNGNZ;
+  },
+
+  // ✅ UPDATED: formatTransaction now detects and delegates NGNZ withdrawals
   formatTransaction(transaction, currency) {
     if (!transaction) return null;
+
+    // CRITICAL: Detect NGNZ withdrawals early
+    const isNGNZWithdrawal = this.detectNGNZWithdrawal(transaction);
+    
+    if (isNGNZWithdrawal) {
+      dbg('formatTransaction: Detected NGNZ withdrawal, delegating to formatNGNZWithdrawal');
+      return this.formatNGNZWithdrawal(transaction);
+    }
 
     const txCurrency = currency || transaction.details?.currency || 'UNKNOWN';
 
@@ -489,53 +500,36 @@ export const transactionService = {
     };
     const mappedType = typeMap[transaction.type] || transaction.type;
 
-    const createdAtRaw =
-      transaction.details?.createdAt ||
-      transaction.createdAt ||
-      null;
-
-    const parsedISO =
-      this.tryParseToISO(createdAtRaw) ||
-      this.tryParseToISO(transaction.date) ||
-      null;
-
-    const formattedDate =
-      transaction.date ||
-      (parsedISO ? this.formatDate(parsedISO) : 'N/A');
+    const createdAtRaw = transaction.details?.createdAt || transaction.createdAt || null;
+    const parsedISO = this.tryParseToISO(createdAtRaw) || this.tryParseToISO(transaction.date) || null;
+    const formattedDate = transaction.date || (parsedISO ? this.formatDate(parsedISO) : 'N/A');
 
     const baseTransaction = {
       id: transaction.id,
       type: mappedType,
       status: mappedStatus,
-
       amount: this.extractAmountFromString(transaction.amount, txCurrency),
       fee: 0,
       obiexFee: 0,
       currency: txCurrency,
-
       createdAt: parsedISO,
       updatedAt: parsedISO,
       completedAt: null,
-
       formattedAmount: transaction.amount,
       formattedFee: this.formatAmount(0, txCurrency),
       formattedDate,
       formattedStatus: this.formatTransactionStatus(mappedStatus),
-
       netAmount: this.extractAmountFromString(transaction.amount, txCurrency),
       isConfirmed: mappedStatus === 'SUCCESSFUL',
       estimatedTime: mappedStatus === 'SUCCESSFUL' ? 'Completed' : 'Pending',
-
       blockExplorerUrl: this.getBlockExplorerUrl(
         transaction.details?.hash,
         transaction.details?.network,
         txCurrency
       ),
-
       details: transaction.details
     };
 
-    // Add gift card specific fields if it's a gift card transaction
     if (mappedType === 'GIFTCARD') {
       baseTransaction.cardType = transaction.cardType;
       baseTransaction.cardFormat = transaction.cardFormat;
@@ -546,18 +540,59 @@ export const transactionService = {
     return baseTransaction;
   },
 
-  // NEW: Format NGNZ withdrawal with enhanced receipt data
+  // ✅ UPDATED: Enhanced to extract from all possible locations
   formatNGNZWithdrawal(transaction) {
     if (!transaction) return null;
 
-    const parsedISO = this.tryParseToISO(transaction.createdAt);
+    const parsedISO = this.tryParseToISO(transaction.createdAt || transaction.details?.createdAt);
+    const details = transaction.details || {};
+    const destination = details.destination || {};
+    const receiptDetails = details.receiptDetails || {};
+    const obiexDetails = details.obiexDetails || {};
+
+    // Extract from multiple locations with priority
+    const withdrawalReference = transaction.withdrawalReference || 
+                                details.withdrawalReference || 
+                                details.reference || 
+                                details.transactionId ||
+                                receiptDetails.reference ||
+                                obiexDetails.reference;
+
+    const bankName = transaction.bankName || 
+                    details.bankName || 
+                    destination.bankName || 
+                    receiptDetails.bankName;
+
+    const accountName = transaction.accountName || 
+                       details.accountName || 
+                       destination.accountName || 
+                       receiptDetails.accountName;
+
+    const accountNumber = transaction.accountNumber || 
+                         details.accountNumber || 
+                         destination.accountNumberMasked || 
+                         destination.accountNumberLast4 ||
+                         receiptDetails.accountNumber;
+
+    const amountSentToBank = transaction.amountSentToBank || 
+                            details.amountSentToBank || 
+                            details.bankAmount || 
+                            receiptDetails.bankAmount;
+
+    const withdrawalFee = transaction.withdrawalFee || 
+                         details.withdrawalFee || 
+                         details.fee ||
+                         receiptDetails.withdrawalFee;
+
+    const provider = transaction.provider || details.provider || obiexDetails.provider;
+    const providerStatus = transaction.providerStatus || details.providerStatus || obiexDetails.status;
 
     return {
       id: transaction.id,
       type: 'WITHDRAWAL',
       status: this.mapNGNZWithdrawalStatus(transaction.status),
       amount: this.extractAmountFromString(transaction.amount, 'NGNZ'),
-      currency: transaction.currency || 'NGNZ',
+      currency: details.currency || transaction.currency || 'NGNZ',
       
       createdAt: parsedISO,
       updatedAt: parsedISO,
@@ -566,31 +601,31 @@ export const transactionService = {
       formattedDate: transaction.date,
       formattedStatus: this.formatTransactionStatus(this.mapNGNZWithdrawalStatus(transaction.status)),
       
-      // NGNZ withdrawal specific fields
+      // Promote all fields to top level
       isNGNZWithdrawal: true,
-      withdrawalReference: transaction.withdrawalReference,
-      bankName: transaction.bankName,
-      accountName: transaction.accountName,
-      accountNumber: transaction.accountNumber,
-      amountSentToBank: transaction.amountSentToBank,
-      withdrawalFee: transaction.withdrawalFee,
-      provider: transaction.provider,
-      providerStatus: transaction.providerStatus,
-      receiptData: transaction.receiptData,
+      withdrawalReference,
+      bankName,
+      accountName,
+      accountNumber,
+      amountSentToBank,
+      withdrawalFee,
+      provider,
+      providerStatus,
+      receiptData: transaction.receiptData || details.receiptDetails,
       
       details: {
-        ...transaction.details,
+        ...details,
         category: 'withdrawal',
         isNGNZWithdrawal: true,
         hasReceiptData: true,
-        withdrawalReference: transaction.withdrawalReference,
-        bankName: transaction.bankName,
-        accountName: transaction.accountName,
-        accountNumber: transaction.accountNumber,
-        amountSentToBank: transaction.amountSentToBank,
-        withdrawalFee: transaction.withdrawalFee,
-        provider: transaction.provider,
-        providerStatus: transaction.providerStatus
+        withdrawalReference,
+        bankName,
+        accountName,
+        accountNumber,
+        amountSentToBank,
+        withdrawalFee,
+        provider,
+        providerStatus
       }
     };
   },
@@ -606,17 +641,13 @@ export const transactionService = {
       status: this.mapBillStatus(transaction.status),
       amount: this.extractAmountFromString(transaction.amount, 'NGN'),
       currency: 'NGN',
-      
       createdAt: parsedISO,
       updatedAt: parsedISO,
-      
       formattedAmount: transaction.amount,
       formattedDate: transaction.date,
       formattedStatus: this.formatTransactionStatus(this.mapBillStatus(transaction.status)),
-      
       billType: transaction.type,
       utilityType: transaction.details?.billType,
-      
       details: {
         ...transaction.details,
         category: 'utility',
@@ -636,19 +667,15 @@ export const transactionService = {
       status: this.mapGiftCardStatus(transaction.status),
       amount: this.extractAmountFromString(transaction.amount, transaction.currency),
       currency: transaction.currency || 'USD',
-      
       createdAt: parsedISO,
       updatedAt: parsedISO,
-      
       formattedAmount: transaction.amount,
       formattedDate: transaction.date,
       formattedStatus: this.formatTransactionStatus(this.mapGiftCardStatus(transaction.status)),
-      
       cardType: transaction.cardType,
       cardFormat: transaction.cardFormat,
       cardRange: transaction.cardRange,
       country: transaction.country,
-      
       details: {
         ...transaction.details,
         category: 'giftcard',
@@ -674,24 +701,13 @@ export const transactionService = {
 
     const parsedISO = this.tryParseToISO(transaction.createdAt);
     
+    // Check for NGNZ withdrawal using detection method
+    if (this.detectNGNZWithdrawal(transaction)) {
+      return this.formatNGNZWithdrawal(transaction);
+    }
+    
     if (transaction.details?.category === 'utility') {
-      return {
-        id: transaction.id,
-        type: 'BILL_PAYMENT',
-        status: this.mapBillStatus(transaction.status),
-        amount: this.extractAmountFromString(transaction.amount, 'NGN'),
-        currency: 'NGN',
-        
-        createdAt: parsedISO,
-        updatedAt: parsedISO,
-        
-        formattedAmount: transaction.amount,
-        formattedDate: transaction.date,
-        formattedStatus: this.formatTransactionStatus(this.mapBillStatus(transaction.status)),
-        
-        billType: transaction.type,
-        details: transaction.details
-      };
+      return this.formatBillTransaction(transaction);
     }
     
     if (transaction.details?.category === 'giftcard') {
@@ -722,7 +738,6 @@ export const transactionService = {
     return statusMap[status] || 'PENDING';
   },
 
-  // NEW: Map NGNZ withdrawal status
   mapNGNZWithdrawalStatus(status) {
     const statusMap = {
       'Successful': 'SUCCESSFUL',
@@ -734,8 +749,6 @@ export const transactionService = {
     return statusMap[status] || 'PENDING';
   },
 
-  // ALL OTHER EXISTING HELPER METHODS STAY EXACTLY THE SAME...
-  
   tryParseToISO(dateLike) {
     if (!dateLike) return null;
     const d = new Date(dateLike);
@@ -807,13 +820,11 @@ export const transactionService = {
       avgDepositAmount: parseFloat(summary.avgDepositAmount || 0),
       avgWithdrawalAmount: parseFloat(summary.avgWithdrawalAmount || 0),
       statusBreakdown: summary.statusBreakdown || {},
-
       formattedTotalDeposits: this.formatAmount(summary.totalDeposits, currency),
       formattedTotalWithdrawals: this.formatAmount(summary.totalWithdrawals, currency),
       formattedTotalFees: this.formatAmount(summary.totalFees, currency),
       formattedAvgDeposit: this.formatAmount(summary.avgDepositAmount, currency),
       formattedAvgWithdrawal: this.formatAmount(summary.avgWithdrawalAmount, currency),
-
       netBalance: this.calculateNetBalance(summary),
       totalTransactions: (summary.depositCount || 0) + (summary.withdrawalCount || 0),
       formattedNetBalance: this.formatAmount(this.calculateNetBalance(summary), currency)
@@ -892,7 +903,8 @@ export const transactionService = {
       ADA: { decimals: 6, name: 'Cardano', networks: ['CARDANO'], confirmations: 15 },
       SOL: { decimals: 9, name: 'Solana', networks: ['SOLANA'], confirmations: 1 },
       DOT: { decimals: 10, name: 'Polkadot', networks: ['POLKADOT'], confirmations: 12 },
-      MATIC: { decimals: 8, name: 'Polygon', networks: ['POLYGON', 'ETHEREUM'], confirmations: 20 }
+      MATIC: { decimals: 8, name: 'Polygon', networks: ['POLYGON', 'ETHEREUM'], confirmations: 20 },
+      NGNZ: { decimals: 2, name: 'NGNZ', networks: ['OBIEX'], confirmations: 1 }
     };
     return configs[currency?.toUpperCase()] || { decimals: 8, name: currency || 'Unknown', networks: [], confirmations: 12 };
   },

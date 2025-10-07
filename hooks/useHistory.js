@@ -68,6 +68,27 @@ export const useHistory = (currency, options = {}) => {
     return apiParams;
   };
 
+  // Build API params for NGNZ withdrawals
+  const buildNGNZApiParams = (filterParams = {}) => {
+    const { status, startDate: customStartDate, endDate: customEndDate, month, page, limit, ...otherFilters } = filterParams;
+    const apiParams = { page: page || 1, limit: limit || defaultPageSize, ...otherFilters };
+
+    if (customStartDate && customEndDate) {
+      apiParams.startDate = customStartDate;
+      apiParams.endDate = customEndDate;
+    } else if (month) {
+      const r = getMonthDateRange(month);
+      apiParams.startDate = r.startDate;
+      apiParams.endDate = r.endDate;
+    }
+
+    if (status && status !== 'All Status') {
+      const mapped = mapStatusToService(status);
+      if (mapped) apiParams.status = mapped;
+    }
+    return apiParams;
+  };
+
   const fetchBillPayments = useCallback(async (filterParams = {}) => {
     setLoading(true);
     setError(null);
@@ -96,37 +117,23 @@ export const useHistory = (currency, options = {}) => {
     }
   }, [defaultPageSize]);
 
-  // NEW: NGNZ Withdrawals fetch function
   const fetchNGNZWithdrawals = useCallback(async (filterParams = {}) => {
     setLoading(true);
     setError(null);
     try {
-      const { status, startDate: customStartDate, endDate: customEndDate, month, page, limit, ...otherFilters } = filterParams;
-      const apiParams = { page: page || 1, limit: limit || defaultPageSize, ...otherFilters };
-
-      if (customStartDate && customEndDate) {
-        apiParams.startDate = customStartDate;
-        apiParams.endDate = customEndDate;
-      } else if (month) {
-        const r = getMonthDateRange(month);
-        apiParams.startDate = r.startDate;
-        apiParams.endDate = r.endDate;
-      }
-
-      if (status && status !== 'All Status') {
-        const mapped = mapStatusToService(status);
-        if (mapped) apiParams.status = mapped;
-      }
-
+      const apiParams = buildNGNZApiParams(filterParams);
       const result = await transactionService.getNGNZWithdrawals(apiParams);
+      
       if (result.success && result.data) {
         setTransactions(result.data.transactions || []);
         setPagination(result.data.pagination || null);
+        setSummary(null); // NGNZ withdrawals don't have summary
         setError(null);
       } else {
         setError(result.message || 'Failed to fetch NGNZ withdrawals');
         setTransactions([]);
         setPagination(null);
+        setSummary(null);
       }
       return result;
     } catch (e) {
@@ -135,6 +142,7 @@ export const useHistory = (currency, options = {}) => {
       setError(msg);
       setTransactions([]);
       setPagination(null);
+      setSummary(null);
       return { success: false, error: 'NETWORK_ERROR', message: msg };
     } finally {
       setLoading(false);
@@ -147,11 +155,12 @@ export const useHistory = (currency, options = {}) => {
     try {
       const { category } = filterParams;
       
-      // NEW: Check if this is specifically for NGNZ withdrawals
+      // Check if this is specifically for NGNZ withdrawals
       if (normalizedCurrency === 'NGNZ' && category === 'Transfer') {
         return fetchNGNZWithdrawals(filterParams);
       }
       
+      // Check if this is a bill payment category
       if (category && BILL_CATEGORIES.includes(category)) {
         return fetchBillPayments(filterParams);
       }
@@ -214,9 +223,10 @@ export const useHistory = (currency, options = {}) => {
       const isNGNZWithdrawal = normalizedCurrency === 'NGNZ' && filterParams?.category === 'Transfer';
       const nextPage = (pagination.currentPage || 1) + 1;
 
+      // Handle bill payments pagination
       if (isBill) {
-        const baseParams = buildBillApiParams(filterParams);
-        const result = await transactionService.getBillTransactions({ ...baseParams, page: nextPage, limit: defaultPageSize });
+        const apiParams = buildBillApiParams({ ...filterParams, page: nextPage, limit: defaultPageSize });
+        const result = await transactionService.getBillTransactions(apiParams);
         if (result.success && result.data) {
           setTransactions(prev => [...prev, ...(result.data.transactions || [])]);
           setPagination(result.data.pagination || null);
@@ -224,26 +234,10 @@ export const useHistory = (currency, options = {}) => {
         return result;
       }
 
-      // NEW: Handle NGNZ withdrawal pagination
+      // Handle NGNZ withdrawal pagination
       if (isNGNZWithdrawal) {
-        const { month, startDate: customStartDate, endDate: customEndDate, status } = filterParams;
-        const nextParams = { ...filterParams, page: nextPage, limit: defaultPageSize };
-
-        if (customStartDate && customEndDate) {
-          nextParams.startDate = customStartDate;
-          nextParams.endDate = customEndDate;
-        } else if (month) {
-          const r = getMonthDateRange(month);
-          nextParams.startDate = r.startDate;
-          nextParams.endDate = r.endDate;
-        }
-
-        if (status && status !== 'All Status') {
-          const mapped = mapStatusToService(status);
-          if (mapped) nextParams.status = mapped;
-        }
-
-        const result = await transactionService.getNGNZWithdrawals(nextParams);
+        const apiParams = buildNGNZApiParams({ ...filterParams, page: nextPage, limit: defaultPageSize });
+        const result = await transactionService.getNGNZWithdrawals(apiParams);
         if (result.success && result.data) {
           setTransactions(prev => [...prev, ...(result.data.transactions || [])]);
           setPagination(result.data.pagination || null);
@@ -251,8 +245,9 @@ export const useHistory = (currency, options = {}) => {
         return result;
       }
 
-      const { month, startDate: customStartDate, endDate: customEndDate, status } = filterParams;
-      const nextParams = { ...filterParams, page: nextPage, limit: defaultPageSize };
+      // Handle regular token transactions pagination
+      const { month, startDate: customStartDate, endDate: customEndDate, status, category } = filterParams;
+      const nextParams = { page: nextPage, limit: defaultPageSize };
 
       if (customStartDate && customEndDate) {
         nextParams.startDate = customStartDate;
@@ -261,6 +256,11 @@ export const useHistory = (currency, options = {}) => {
         const r = getMonthDateRange(month);
         nextParams.startDate = r.startDate;
         nextParams.endDate = r.endDate;
+      }
+
+      if (category && category !== 'All Categories') {
+        const t = mapCategoryToType(category);
+        if (t) nextParams.type = t;
       }
 
       if (status && status !== 'All Status') {
@@ -295,16 +295,33 @@ export const useHistory = (currency, options = {}) => {
     });
   }, [transactions]);
 
-  useEffect(() => { if (autoFetch) fetchTransactions(); }, [autoFetch, fetchTransactions]);
+  // Helper to check if current view is NGNZ withdrawals
+  const isNGNZWithdrawalView = useCallback((filterParams = {}) => {
+    return normalizedCurrency === 'NGNZ' && filterParams?.category === 'Transfer';
+  }, [normalizedCurrency]);
+
+  useEffect(() => { 
+    if (autoFetch) fetchTransactions(); 
+  }, [autoFetch, fetchTransactions]);
 
   return {
-    loading, error, transactions, pagination, summary,
+    loading, 
+    error, 
+    transactions, 
+    pagination, 
+    summary,
     hasTransactions: transactions.length > 0,
     hasNextPage: pagination?.hasNextPage || false,
     totalTransactions: pagination?.totalCount || 0,
-    refreshTransactions, fetchTransactions, fetchBillPayments, 
-    fetchNGNZWithdrawals, // NEW: Expose NGNZ withdrawals method
-    loadMoreTransactions, getFilteredByBillType,
-    getMonthDateRange, mapCategoryToType, mapStatusToService,
+    refreshTransactions, 
+    fetchTransactions, 
+    fetchBillPayments, 
+    fetchNGNZWithdrawals,
+    loadMoreTransactions, 
+    getFilteredByBillType,
+    isNGNZWithdrawalView,
+    getMonthDateRange, 
+    mapCategoryToType, 
+    mapStatusToService,
   };
 };
