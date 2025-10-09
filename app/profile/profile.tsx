@@ -1,4 +1,3 @@
-// app/profile/profile.tsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -25,10 +24,8 @@ import useLogout from '../../hooks/useLogout';
 import { useNotifications } from '../../hooks/usenotification';
 import { authService } from '../../services/authService';
 
-// Delete Account modal
 import DeleteAccountModal from '../../components/DeleteAccount';
 
-// Icons
 import backIcon from '../../components/icons/backy.png';
 import profileAvatarIcon from '../../components/icons/profile-avatar.png';
 import chevronRightIcon from '../../components/icons/chevron-right.png';
@@ -43,7 +40,6 @@ import kycIcon from '../../components/icons/kyc.png';
 import logoutIcon from '../../components/icons/logout.png';
 import deleteIcon from '../../components/icons/delete.png';
 
-// Biometric Modal Component
 const BiometricModal = ({ visible, onClose, config }) => {
   if (!config) return null;
 
@@ -128,14 +124,11 @@ const ProfileScreen = () => {
   } = useBiometricAuth();
 
   const { 
-    isPermissionGranted, 
-    isInitialized, 
-    turnOffNotifications, 
-    turnOnNotifications, 
-    isLoading: isNotificationLoading 
+    isEnabled: isNotificationEnabled, 
+    isLoading: isNotificationLoading,
+    enable: enableNotifications,
+    openSettings: openNotificationSettings,
   } = useNotifications();
-
-  const isAnyOperationInProgress = loggingOut || isNotificationLoading || isProfileLoading;
 
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [fingerprintEnabled, setFingerprintEnabled] = useState(false);
@@ -144,7 +137,12 @@ const ProfileScreen = () => {
   const [biometricModalConfig, setBiometricModalConfig] = useState(null);
   const [showBiometricModal, setShowBiometricModal] = useState(false);
 
-  // Load biometric state from authService (source of truth)
+  useEffect(() => {
+    setNotificationEnabled(isNotificationEnabled);
+  }, [isNotificationEnabled]);
+
+  const isAnyOperationInProgress = loggingOut || isNotificationLoading || isProfileLoading || isBiometricLoading;
+
   useEffect(() => {
     const loadBiometricState = async () => {
       try {
@@ -159,21 +157,12 @@ const ProfileScreen = () => {
     loadBiometricState();
   }, [isEnrolled]);
 
-  // Sync notification toggle with actual permission status
-  useEffect(() => {
-    if (isInitialized) {
-      setNotificationEnabled(isPermissionGranted);
-    }
-  }, [isPermissionGranted, isInitialized]);
-
-  // Sync fingerprint state when enrollment status changes
   useEffect(() => {
     if (!isEnrolled) {
       setFingerprintEnabled(false);
     }
   }, [isEnrolled]);
 
-  // Listen for app state changes
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
       if (nextAppState === 'active') {
@@ -206,71 +195,70 @@ const ProfileScreen = () => {
     if (isAnyOperationInProgress) return;
     router.push('/profile/personal-details');
   };
+
   const handleReferEarn = () => {
     if (isAnyOperationInProgress) return;
     router.push('/profile/refer-earn');
   };
+
   const handleBankDetails = () => {
     if (isAnyOperationInProgress) return;
     router.push('/profile/bank-details');
   };
+
   const handleResetPin = () => {
     if (isAnyOperationInProgress) return;
     router.push('/profile/pin-reset');
   };
+
   const handleUpdateKYC = () => {
     if (isAnyOperationInProgress) return;
     router.push('/kyc/kyc-upgrade');
   };
+
   const handle2FAToggle = (value) => {
     if (isAnyOperationInProgress) return;
     if (value) router.push('/profile/2FA');
   };
+
   const handleDeleteAccount = () => {
     if (isAnyOperationInProgress) return;
     setShowDeleteModal(true);
   };
 
-  const handleNotificationToggle = async (value: boolean) => {
+  const handleNotificationToggle = async (value) => {
     if (isAnyOperationInProgress) return;
 
-    try {
-      if (value) {
-        const success = await turnOnNotifications();
-        if (success) {
-          setNotificationEnabled(true);
-        } else {
-          setNotificationEnabled(false);
-          showBiometricInfo({
-            title: 'Unable to Enable Notifications',
-            message: 'Please enable notifications in your device settings.',
-            confirmText: 'OK',
-          });
-        }
+    if (value) {
+      const result = await enableNotifications();
+      
+      if (result.success) {
+        showBiometricInfo({
+          title: 'Notifications Enabled',
+          message: 'You will now receive notifications.',
+          confirmText: 'OK',
+        });
       } else {
-        const success = await turnOffNotifications();
-        if (success) {
-          setNotificationEnabled(false);
-        } else {
-          setNotificationEnabled(true);
-          showBiometricInfo({
-            title: 'Failed to Disable Notifications',
-            message: 'Could not disable notifications. Please try again.',
-            confirmText: 'OK',
-          });
-        }
+        showBiometricInfo({
+          title: 'Unable to Enable Notifications',
+          message: result.message || 'Please enable notifications in Settings.',
+          cancelText: 'Cancel',
+          confirmText: 'Open Settings',
+          onConfirm: openNotificationSettings,
+        });
       }
-    } catch (error) {
-      setNotificationEnabled(!value);
+    } else {
       showBiometricInfo({
-        title: 'Error',
-        message: 'An error occurred while changing notification settings.',
-        confirmText: 'OK',
+        title: 'Disable Notifications',
+        message: 'To disable notifications, please turn them off in your device Settings.',
+        cancelText: 'Cancel',
+        confirmText: 'Open Settings',
+        onConfirm: openNotificationSettings,
       });
     }
   };
 
-  const handleBiometricToggle = async (value: boolean) => {
+  const handleBiometricToggle = async (value) => {
     if (isAnyOperationInProgress || isBiometricLoading) return;
 
     if (!isBiometricSupported) {
@@ -283,7 +271,6 @@ const ProfileScreen = () => {
     }
 
     if (value) {
-      // ENABLING biometric
       if (!isEnrolled) {
         const biometricType = getBiometricTypeName();
         const instructions = getSetupInstructions();
@@ -326,7 +313,8 @@ const ProfileScreen = () => {
               await SecureStore.deleteItemAsync('userId');
               router.replace('/login/login-phone');
             }
-          } catch {
+          } catch (error) {
+            console.error('Logout error:', error);
             showBiometricInfo({
               title: 'Logout Failed',
               message: 'Please try again.',
@@ -336,42 +324,88 @@ const ProfileScreen = () => {
         },
       });
     } else {
-      // DISABLING biometric
       const biometricType = getBiometricTypeName();
+      const wasEnabled = fingerprintEnabled;
+      
+      console.log('🔐 [Biometric] Starting disable process, current state:', wasEnabled);
       
       setIsBiometricLoading(true);
+      
       try {
+        console.log('🔐 [Biometric] Requesting authentication...');
+        
         const authResult = await authenticate({
           promptMessage: `Authenticate to disable ${biometricType} login`,
         });
 
+        console.log('🔐 [Biometric] Auth result:', authResult);
+
         if (authResult.success) {
-          await authService.clearBiometricPin();
-          setFingerprintEnabled(false);
-          showBiometricInfo({
-            title: 'Success',
-            message: `${biometricType} login has been disabled.`,
-            confirmText: 'OK',
-          });
+          console.log('✅ [Biometric] Authentication successful');
+          
+          try {
+            const clearResult = await authService.clearBiometricPin();
+            
+            if (!clearResult.success) {
+              console.error('❌ [Biometric] Failed to clear PIN:', clearResult.error);
+              throw new Error(clearResult.error || 'Failed to clear biometric PIN');
+            }
+            
+            console.log('✅ [Biometric] PIN cleared from secure store');
+            
+            const stillHasPin = await authService.hasBiometricPin();
+            
+            if (stillHasPin) {
+              console.error('❌ [Biometric] PIN still exists after clearing!');
+              throw new Error('Failed to clear biometric PIN');
+            }
+            
+            console.log('✅ [Biometric] Verified PIN is cleared');
+            
+            setFingerprintEnabled(false);
+            
+            showBiometricInfo({
+              title: 'Success',
+              message: `${biometricType} login has been disabled.`,
+              confirmText: 'OK',
+            });
+          } catch (clearError) {
+            console.error('❌ [Biometric] Error clearing PIN:', clearError);
+            
+            setFingerprintEnabled(wasEnabled);
+            
+            showBiometricInfo({
+              title: 'Error',
+              message: 'Failed to disable biometric login. Please try again.',
+              confirmText: 'OK',
+            });
+          }
         } else {
-          setFingerprintEnabled(true);
-          if (!authResult.error?.includes('cancel')) {
+          console.log('❌ [Biometric] Authentication failed or cancelled');
+          
+          setFingerprintEnabled(wasEnabled);
+          
+          if (authResult.error && !authResult.error.toLowerCase().includes('cancel')) {
             showBiometricInfo({
               title: 'Authentication Failed',
-              message: 'Could not verify your identity.',
+              message: 'Could not verify your identity. Please try again.',
               confirmText: 'OK',
             });
           }
         }
       } catch (error) {
-        setFingerprintEnabled(true);
+        console.error('❌ [Biometric] Unexpected error:', error);
+        
+        setFingerprintEnabled(wasEnabled);
+        
         showBiometricInfo({
           title: 'Error',
-          message: 'An error occurred during authentication.',
+          message: 'An error occurred. Please try again.',
           confirmText: 'OK',
         });
       } finally {
         setIsBiometricLoading(false);
+        console.log('🔐 [Biometric] Process complete');
       }
     }
   };
