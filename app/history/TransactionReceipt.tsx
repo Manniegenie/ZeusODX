@@ -1,25 +1,25 @@
 // screens/history/TransactionReceiptScreen.tsx
-import React, { useMemo, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  Alert,
-  Share,
-  ScrollView,
-  Platform,
-  Linking,
-} from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import * as Print from 'expo-print';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Typography } from '../../constants/Typography';
+import React, { useEffect, useMemo } from 'react';
+import {
+  Alert,
+  Image,
+  Linking,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
+import { Typography } from '../../constants/Typography';
 
 // Icons
 import backIcon from '../../components/icons/backy.png';
