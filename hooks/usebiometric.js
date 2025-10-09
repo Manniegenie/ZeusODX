@@ -225,6 +225,7 @@ export const useBiometricAuth = () => {
     isEnrolled,
     biometricType,
     authenticateWithBiometrics,
+    authenticate: authenticateWithBiometrics, // ✅ Added alias for compatibility
     getBiometricTypeName,
     checkBiometricSupport,
     getSetupInstructions,

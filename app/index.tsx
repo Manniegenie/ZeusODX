@@ -10,18 +10,16 @@ export default function HomeScreen() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   
-  // Use the notifications hook
+  // ========== CORRECTED: Use simplified notification hook ==========
   const {
-    initialize: initializeNotifications,
+    checkStatus,
+    enable,
+    openSettings,
     setupListeners,
     removeListeners,
     clearBadge,
-    turnOffNotifications,
-    turnOnNotifications,
-    isInitialized,
-    isPermissionGranted,
-    pushToken,
-    error: notificationError,
+    isEnabled,
+    isLoading: isNotificationLoading,
   } = useNotifications();
 
   useEffect(() => {
@@ -50,7 +48,7 @@ export default function HomeScreen() {
     setIsLoading(true);
     
     try {
-      console.log('🔍 Initializing notifications');
+      console.log('🔍 Setting up notifications');
       await setupNotifications();
       console.log('🔍 Determining initial route');
       await determineInitialRoute();
@@ -65,32 +63,39 @@ export default function HomeScreen() {
   };
 
   const setupNotifications = async () => {
-    console.log('🔔 Starting notification initialization');
+    console.log('🔔 Starting notification setup');
     try {
-      const success = await initializeNotifications();
-      if (success) {
+      // Check current notification status
+      const enabled = await checkStatus();
+      console.log('📊 Notification status:', enabled ? 'Enabled' : 'Disabled');
+      
+      if (enabled) {
         console.log('🔧 Setting up notification listeners');
         setupListeners(
+          // Notification received while app is open
           (notification) => {
             console.log('📨 Received notification while app is open:', JSON.stringify(notification, null, 2));
+            // You can show an in-app notification banner here if you want
           },
+          // Notification tapped
           (response) => {
             console.log('👆 Handling notification tap');
             handleNotificationTap(response);
           }
         );
+        
         console.log('🔍 Clearing notification badge');
         await clearBadge();
-        console.log('✅ Notification initialization complete');
+        console.log('✅ Notification setup complete');
       } else {
-        console.log('❌ Notification initialization failed');
+        console.log('ℹ️ Notifications not enabled, skipping listener setup');
       }
     } catch (error) {
       console.error('❌ Error setting up notifications:', error.message, error.stack);
     }
   };
 
-  const handleNotificationTap = async (response: any) => {
+  const handleNotificationTap = async (response) => {
     console.log('🔍 Processing notification tap:', JSON.stringify(response, null, 2));
     const data = response.notification.request.content.data;
     const actionId = response.actionIdentifier;
@@ -140,10 +145,13 @@ export default function HomeScreen() {
       switch (data.action) {
         case 'refresh_data':
           console.log('🔄 Refreshing data from notification');
+          // Trigger data refresh here
           break;
         case 'open_url':
           if (data.url) {
             console.log('🔗 Opening URL:', data.url);
+            // Uncomment if you want to open URLs:
+            // import { Linking } from 'react-native';
             // Linking.openURL(data.url);
           } else {
             console.log('❌ No URL provided for open_url action');
@@ -185,25 +193,28 @@ export default function HomeScreen() {
     }
   };
 
-  // Example functions you can call from anywhere in your app
-  const handleTurnOffNotifications = async () => {
-    console.log('🔕 User requested to turn off notifications');
-    const success = await turnOffNotifications();
-    if (success) {
-      console.log('✅ Notifications turned off successfully');
+  // ========== EXAMPLE: Functions you can call from anywhere in your app ==========
+  
+  // To enable notifications (requests permission)
+  const handleEnableNotifications = async () => {
+    console.log('🔔 User requested to enable notifications');
+    const result = await enable();
+    if (result.success) {
+      console.log('✅ Notifications enabled successfully');
+      // Setup listeners after enabling
+      setupListeners(
+        (notification) => console.log('📨 Notification received:', notification),
+        (response) => handleNotificationTap(response)
+      );
     } else {
-      console.log('❌ Failed to turn off notifications');
+      console.log('❌ Failed to enable notifications:', result.message);
     }
   };
 
-  const handleTurnOnNotifications = async () => {
-    console.log('🔔 User requested to turn on notifications');
-    const success = await turnOnNotifications();
-    if (success) {
-      console.log('✅ Notifications turned on successfully');
-    } else {
-      console.log('❌ Failed to turn on notifications');
-    }
+  // To open settings (when user wants to disable or change permissions)
+  const handleOpenNotificationSettings = async () => {
+    console.log('⚙️ Opening notification settings');
+    await openSettings();
   };
 
   return (

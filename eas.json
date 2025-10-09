@@ -4,13 +4,18 @@
     "appVersionSource": "remote"
   },
   "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
+    "base": {
       "node": "20.18.0",
       "env": {
-        "NODE_ENV": "development",
         "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+      }
+    },
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "NODE_ENV": "development"
       },
       "channel": "development",
       "android": {
@@ -18,11 +23,10 @@
       }
     },
     "preview": {
+      "extends": "base",
       "distribution": "internal",
-      "node": "20.18.0",
       "env": {
-        "NODE_ENV": "staging",
-        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+        "NODE_ENV": "staging"
       },
       "channel": "preview",
       "android": {
@@ -30,11 +34,10 @@
       }
     },
     "production": {
+      "extends": "base",
       "autoIncrement": true,
-      "node": "20.18.0",
       "env": {
-        "NODE_ENV": "production",
-        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+        "NODE_ENV": "production"
       },
       "channel": "production",
       "android": {
@@ -43,11 +46,6 @@
     },
     "android-prod": {
       "extends": "production",
-      "node": "20.18.0",
-      "env": {
-        "NODE_ENV": "production",
-        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
-      },
       "android": {
         "buildType": "apk"
       }

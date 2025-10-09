@@ -117,7 +117,8 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
   const handleQuickAction = (actionId) => {
     if (actionId === 'deposit') {
-      setShowNetworkModal(true);
+      // Updated to route directly to NGNZ deposit screen
+      router.push('/deposits/ngnz');
     } else if (actionId === 'transfer') {
       setShowTransferMethodModal(true);
     } else if (actionId === 'buy-sell') {
