@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   TouchableWithoutFeedback,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Typography } from '../../constants/Typography';
@@ -21,16 +22,27 @@ import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { useTokens } from '../../hooks/useTokens';
 import { useBalance } from '../../hooks/useWallet';
-import { useNetworks } from '../../hooks/useNetwork'; // For networks/currencies
-import { useWithdrawal } from '../../hooks/useexternalWithdrawal'; // For withdrawals only
+import { useNetworks } from '../../hooks/useNetwork';
+import { useWithdrawal } from '../../hooks/useexternalWithdrawal';
 import PinEntryModal from '../../components/PinEntry';
 import TwoFactorAuthModal from '../../components/2FA';
 import ErrorDisplay from '../../components/ErrorDisplay';
 
-// Icons - replace with actual paths
+// Icons - Updated to match BTC-BSC screen
+import backIcon from '../../components/icons/backy.png';
 import arrowDownIcon from '../../components/icons/arrow-down.png';
 
-// Type definitions for transaction receipt
+const { width: screenWidth } = Dimensions.get('window');
+
+const getHorizontalPadding = (): number => {
+  if (screenWidth < 350) return 20;
+  else if (screenWidth < 400) return 24;
+  else return 28;
+};
+
+const horizontalPadding = getHorizontalPadding();
+
+// Type definitions (keep all existing type definitions)
 interface TokenDetails {
   transactionId?: string;
   currency?: string;
@@ -62,10 +74,10 @@ type APIDetail =
 
 interface APITransaction {
   id: string;
-  type: string;      // "Deposit" | "Withdrawal" | "Swap" | bill label
-  status: string;    // "Successful" | "Failed" | "Pending"
-  amount: string;    // "+₦10,000" | "-0.1 BTC"
-  date: string;      // human-readable
+  type: string;
+  status: string;
+  amount: string;
+  date: string;
   createdAt?: string;
   details?: APIDetail;
 }
@@ -167,7 +179,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
     error: balanceError
   } = useBalance();
 
-  // Get networks hook (for currencies and networks)
+  // Get networks hook
   const {
     availableNetworks,
     isFetchingNetworks,
@@ -175,7 +187,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
     fetchNetworksForCurrency
   } = useNetworks();
 
-  // Get withdrawal hook (for withdrawal operations only)
+  // Get withdrawal hook
   const {
     calculateFee,
     initiateWithdrawal,
@@ -189,7 +201,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
     resetFeeCalculation
   } = useWithdrawal();
 
-  // Create tokenMap with the same pattern as TransferBottomSheet
+  // Create tokenMap (keep existing implementation)
   const tokenMap = useMemo((): { [key: string]: TokenOption } => {
     const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'TRX', 'BNB', 'MATIC', 'BTC'];
     
@@ -287,7 +299,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
     }
   }, [selectedNetwork, amount, selectedToken?.symbol, calculateFee, resetFeeCalculation]);
 
-  // Helper functions
+  // Helper functions (keep all existing helper functions)
   const showErrorMessage = (errorData: ErrorDisplayData): void => {
     setErrorDisplayData(errorData);
     setShowErrorDisplay(true);
@@ -322,7 +334,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
     }
   };
 
-  // Network modal handlers
   const handleNetworkSelect = (network: NetworkOption) => {
     setSelectedNetwork(network);
     console.log('Selected network:', network);
@@ -337,7 +348,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
     setShowNetworkModal(true);
   };
 
-  // Form validation
   const validateForm = (): boolean => {
     clearWithdrawalErrors();
     
@@ -417,22 +427,18 @@ const ExternalWalletTransferScreen: React.FC = () => {
     }
   };
 
-  // Helper function to format amounts for display based on token type
   const formatAmountForDisplay = (value: number, symbol?: string): string => {
     if (!symbol) return value.toString();
     
     switch (symbol) {
       case 'BTC':
-        // For BTC, show up to 8 decimals but remove trailing zeros
         return Number(value.toFixed(8)).toString();
       case 'ETH':
-        // For ETH, show up to 6 decimals but remove trailing zeros
         return Number(value.toFixed(6)).toString();
       case 'USDT':
       case 'USDC':
         return value.toFixed(2);
       default:
-        // Smart formatting for other tokens
         if (value >= 1000) {
           return value.toFixed(2);
         } else if (value >= 1) {
@@ -442,7 +448,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
         } else if (value >= 0.001) {
           return Number(value.toFixed(6)).toString();
         } else {
-          // For very small amounts, find the first 3 significant digits
           const str = value.toPrecision(3);
           return Number(str).toString();
         }
@@ -464,7 +469,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
     }
   };
 
-  // Modal handlers
   const handlePinSubmit = (pin: string): void => {
     setPasswordPin(pin);
     setShowPinModal(false);
@@ -508,7 +512,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
         setPasswordPin('');
         setTwoFactorCode('');
         
-        // Create transaction data for withdrawal receipt screen
         const transactionData: APITransaction = {
           id: result.transactionId || result.id || Date.now().toString(),
           type: 'Withdrawal',
@@ -534,7 +537,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
           } as TokenDetails
         };
 
-        // Create raw transaction data (for additional context)
         const rawTransactionData = {
           id: result.transactionId || result.id,
           transactionId: result.transactionId || result.id,
@@ -574,7 +576,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
           }
         };
 
-        // Navigate to withdrawal receipt screen
         router.push({
           pathname: '/history/WithdrawalReceipt',
           params: {
@@ -639,11 +640,9 @@ const ExternalWalletTransferScreen: React.FC = () => {
     setShowPinModal(true);
   };
 
-  // Combine loading and error states
   const loading = tokensLoading || balanceLoading;
   const error = tokensError || balanceError;
 
-  // Form validation
   const isFormValid: boolean = !!(
     walletAddress.trim() && 
     walletAddress.length >= 10 &&
@@ -654,7 +653,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
     !feeError
   );
 
-  // Show loading state
   if (loading) {
     return (
       <View style={styles.container}>
@@ -668,7 +666,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <View style={styles.container}>
@@ -685,7 +682,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
     );
   }
 
-  // Network Selection Modal Component
   const NetworkSelectionModal = () => {
     const handleNetworkPress = (network: NetworkOption) => {
       handleNetworkSelect(network);
@@ -797,7 +793,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
 
-        {/* Error Display */}
         {showErrorDisplay && errorDisplayData && (
           <ErrorDisplay
             type={errorDisplayData.type}
@@ -817,20 +812,28 @@ const ExternalWalletTransferScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header Section */}
+          {/* Header Section - Updated to match BTC-BSC */}
           <View style={styles.headerSection}>
-            <TouchableOpacity 
-              style={styles.backButton} 
-              onPress={() => router.back()}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.backButtonText}>←</Text>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={() => router.back()}
+                activeOpacity={0.7}
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
+              </TouchableOpacity>
 
-          {/* Title Section */}
-          <View style={styles.titleSection}>
-            <Text style={styles.headerTitle}>Transfer to external wallet</Text>
+              <View style={styles.headerGroup}>
+                <Text style={styles.headerTitle}>Transfer to external wallet</Text>
+                <Text style={styles.headerSubtitle}>
+                  {selectedToken?.symbol ? `${selectedToken.name} (${selectedToken.symbol})` : ''}
+                </Text>
+              </View>
+
+              <View style={styles.headerRight} />
+            </View>
           </View>
 
           {/* Subtitle */}
@@ -953,10 +956,8 @@ const ExternalWalletTransferScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Network Selection Modal */}
         <NetworkSelectionModal />
 
-        {/* PIN Entry Modal */}
         <PinEntryModal
           visible={showPinModal}
           onClose={handlePinModalClose}
@@ -966,7 +967,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
           subtitle="Please enter your 6-digit password PIN to continue with the withdrawal"
         />
 
-        {/* Two-Factor Authentication Modal */}
         <TwoFactorAuthModal
           visible={showTwoFactorModal}
           onClose={handleTwoFactorModalClose}
@@ -1029,44 +1029,54 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Header styles
+  // Header - Updated to match BTC-BSC
   headerSection: {
+    paddingHorizontal: horizontalPadding,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
+    justifyContent: 'space-between',
   },
-  backButton: {
+  backButton: { 
     width: 40,
     height: 40,
-    justifyContent: 'center',
+    justifyContent: 'center', 
     alignItems: 'center',
     borderRadius: 20,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: Colors.text?.primary || '#111827',
-    fontWeight: '500',
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
-
-  // Title styles
-  titleSection: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
+  headerGroup: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerRight: {
+    width: 40,
   },
   headerTitle: {
-    color: Colors.primary || '#35297F',
+    color: Colors.text?.primary || '#111827',
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
+    textAlign: 'center',
     fontWeight: '600',
-    textAlign: 'left',
+  },
+  headerSubtitle: {
+    color: Colors.text?.secondary || '#6B7280',
+    fontFamily: Typography.regular || 'System',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 2,
   },
 
   // Subtitle styles
   subtitleSection: {
-    paddingHorizontal: 16,
+    paddingHorizontal: horizontalPadding,
     paddingTop: 8,
     paddingBottom: 20,
   },
@@ -1080,7 +1090,7 @@ const styles = StyleSheet.create({
 
   // Section styles
   section: {
-    paddingHorizontal: 16,
+    paddingHorizontal: horizontalPadding,
     marginBottom: 24,
   },
   sectionTitle: {
@@ -1217,7 +1227,7 @@ const styles = StyleSheet.create({
 
   // Summary styles
   summarySection: {
-    paddingHorizontal: 16,
+    paddingHorizontal: horizontalPadding,
     marginBottom: 24,
   },
   summaryCard: {
@@ -1251,7 +1261,7 @@ const styles = StyleSheet.create({
 
   // Button styles
   buttonContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: horizontalPadding,
     paddingVertical: 24,
     backgroundColor: Colors.background || '#F8F9FA',
   },
@@ -1366,7 +1376,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   
-  // Loading state styles for modal
   networkLoadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1380,7 +1389,6 @@ const styles = StyleSheet.create({
     marginTop: Layout?.spacing?.md || 12,
   },
   
-  // Empty state styles for modal
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
