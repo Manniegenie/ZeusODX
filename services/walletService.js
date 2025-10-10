@@ -73,7 +73,7 @@ export const balanceService = {
         return { success: false, error: 'Invalid types array provided' };
       }
 
-      // FIXED: Validate types against allowed fields (using NGNZ not NGNB)
+      // Updated allowed fields - TRX instead of AVAX
       const allowedFields = [
         'solBalance', 'solBalanceUSD', 'solPendingBalance',
         'btcBalance', 'btcBalanceUSD', 'btcPendingBalance',
@@ -82,8 +82,8 @@ export const balanceService = {
         'ethBalance', 'ethBalanceUSD', 'ethPendingBalance',
         'bnbBalance', 'bnbBalanceUSD', 'bnbPendingBalance',
         'maticBalance', 'maticBalanceUSD', 'maticPendingBalance',
-        'avaxBalance', 'avaxBalanceUSD', 'avaxPendingBalance',
-        'ngnzBalance', 'ngnzBalanceUSD', 'ngnzPendingBalance', // FIXED: was ngnbBalance
+        'trxBalance', 'trxBalanceUSD', 'trxPendingBalance',
+        'ngnzBalance', 'ngnzBalanceUSD', 'ngnzPendingBalance',
         'totalPortfolioBalance'
       ];
 
@@ -123,7 +123,7 @@ export const balanceService = {
       const balances = balanceResult.data;
       const totalPortfolioBalance = balances.totalPortfolioBalance || 0;
 
-      // FIXED: Calculate individual token values (using NGNZ not NGNB)
+      // Updated token balances - TRX instead of AVAX
       const tokenBalances = {
         sol: {
           balance: balances.solBalance || 0,
@@ -167,13 +167,13 @@ export const balanceService = {
           formatted: this.formatTokenBalance(balances.maticBalance || 0, 'MATIC'),
           formattedUSD: this.formatCurrency(balances.maticBalanceUSD || 0)
         },
-        avax: {
-          balance: balances.avaxBalance || 0,
-          balanceUSD: balances.avaxBalanceUSD || 0,
-          formatted: this.formatTokenBalance(balances.avaxBalance || 0, 'AVAX'),
-          formattedUSD: this.formatCurrency(balances.avaxBalanceUSD || 0)
+        trx: {
+          balance: balances.trxBalance || 0,
+          balanceUSD: balances.trxBalanceUSD || 0,
+          formatted: this.formatTokenBalance(balances.trxBalance || 0, 'TRX'),
+          formattedUSD: this.formatCurrency(balances.trxBalanceUSD || 0)
         },
-        ngnz: {  // FIXED: changed from ngnb to ngnz
+        ngnz: {
           balance: balances.ngnzBalance || 0,
           balanceUSD: balances.ngnzBalanceUSD || 0,
           formatted: this.formatTokenBalance(balances.ngnzBalance || 0, 'NGNZ'),
@@ -204,11 +204,10 @@ export const balanceService = {
   async getUSDBalances() {
     try {
       console.log('💵 Getting USD balances...');
-      // FIXED: Updated to use NGNZ not NGNB
       const types = [
         'solBalanceUSD', 'btcBalanceUSD', 'usdtBalanceUSD', 
         'usdcBalanceUSD', 'ethBalanceUSD', 'bnbBalanceUSD',
-        'maticBalanceUSD', 'avaxBalanceUSD', 'ngnzBalanceUSD', 
+        'maticBalanceUSD', 'trxBalanceUSD', 'ngnzBalanceUSD', 
         'totalPortfolioBalance'
       ];
       
@@ -225,11 +224,10 @@ export const balanceService = {
   async getTokenBalances() {
     try {
       console.log('🪙 Getting token balances...');
-      // FIXED: Updated to use NGNZ not NGNB
       const types = [
         'solBalance', 'btcBalance', 'usdtBalance', 
         'usdcBalance', 'ethBalance', 'bnbBalance',
-        'maticBalance', 'avaxBalance', 'ngnzBalance'
+        'maticBalance', 'trxBalance', 'ngnzBalance'
       ];
       
       return await this.getSpecificBalances(types);
@@ -363,11 +361,11 @@ export const balanceService = {
       return balance.toFixed(2); // 2 decimal places for stablecoins
     }
     
-    // FIXED: Updated to handle NGNZ not NGNB
     if (symbol === 'NGNZ') {
       return balance.toFixed(0); // No decimals for NGNZ
     }
     
+    // TRX, BNB, MATIC and others use default 4 decimals
     return balance.toFixed(4); // Default 4 decimal places
   },
 

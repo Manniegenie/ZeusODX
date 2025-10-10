@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Vibration } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Vibration, Image } from 'react-native';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
@@ -7,9 +7,12 @@ import { useState } from 'react';
 import { passwordPinService } from '../../services/passwordpinService';
 import ErrorDisplay from '../../components/ErrorDisplay';
 
+// Back icon - matching btc-bsc screen
+import backIcon from '../../components/icons/backy.png';
+
 export default function ConfirmPinScreen() {
   const router = useRouter();
-  const { setupPin } = useLocalSearchParams(); // Removed pendingUserId - service will get it
+  const { setupPin } = useLocalSearchParams();
   
   const [pin, setPin] = useState('');
   const [isError, setIsError] = useState(false);
@@ -39,9 +42,8 @@ export default function ConfirmPinScreen() {
     setShowMessage(true);
     setIsError(false);
     
-    // Auto-navigate after success message shows for 2 seconds
     setTimeout(() => {
-      router.replace('/signup/username'); // Update this to your main app route
+      router.replace('/signup/username');
     }, 2000);
   };
 
@@ -67,21 +69,18 @@ export default function ConfirmPinScreen() {
     }
 
     if (pin !== setupPin) {
-      // PIN doesn't match - show validation error
       setPin('');
       showError('PINs do not match. Please try again.', 'auth');
       Vibration.vibrate([100, 50, 100]);
       return;
     }
 
-    // PIN matches - create account using quickSetupPin (no pendingUserId needed)
     setIsLoading(true);
     clearMessage();
 
     try {
       console.log('🔐 Creating account with confirmed PIN...');
       
-      // Use quickSetupPin - it automatically gets pendingUserId from storage
       const result = await passwordPinService.quickSetupPin(
         setupPin as string,
         pin
@@ -89,19 +88,15 @@ export default function ConfirmPinScreen() {
 
       if (result.success) {
         console.log('✅ Pin created successfully');
-        
-        // Show success message using ErrorDisplay
         showSuccess('Your PIN has been created successfully and your account is ready!', 'PIN Created!');
       } else {
-        // Handle error case - result.success is false, so error should exist
         const errorMessage = 'error' in result ? result.error : 'Failed to create account';
         console.log('❌ Account creation failed:', errorMessage);
         
-        // Determine error type based on error message
         let type: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' = 'general';
         if (errorMessage?.includes('match') || errorMessage?.includes('digits')) {
           type = 'validation';
-          setPin(''); // Clear PIN for validation errors
+          setPin('');
         } else if (errorMessage?.includes('verified') || errorMessage?.includes('OTP')) {
           type = 'auth';
         } else if (errorMessage?.includes('server') || errorMessage?.includes('Server')) {
@@ -121,10 +116,6 @@ export default function ConfirmPinScreen() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleBack = () => {
-    router.back();
   };
 
   const renderPinDots = () => {
@@ -185,23 +176,28 @@ export default function ConfirmPinScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Message Display */}
       {message && showMessage && (
         <ErrorDisplay
           type={messageType}
           title={messageType === 'success' ? 'PIN Created!' : undefined}
           message={message}
           onDismiss={clearMessage}
-          autoHide={messageType !== 'success'} // Success messages don't auto-hide, we control navigation
+          autoHide={messageType !== 'success'}
           duration={messageType === 'success' ? 2000 : 4000}
         />
       )}
       
       <View style={styles.content}>
-        {/* Header */}
+        {/* Header - Updated to match btc-bsc screen */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Text style={styles.backText}>← Back</Text>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+            delayPressIn={0}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          >
+            <Image source={backIcon} style={styles.backIcon} />
           </TouchableOpacity>
           
           <Text style={styles.title}>Confirm your PIN</Text>
@@ -258,13 +254,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
     alignSelf: 'flex-start',
     marginBottom: Layout.spacing.md,
-    padding: Layout.spacing.xs,
   },
-  backText: {
-    ...Typography.styles.body,
-    color: Colors.primary,
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   title: {
     fontFamily: Typography.bold,
@@ -319,7 +320,7 @@ const styles = StyleSheet.create({
   numberButton: {
     width: 70,
     height: 70,
-    borderRadius: 8, // Changed from 35 to 8 for box corners
+    borderRadius: 8,
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
