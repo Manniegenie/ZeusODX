@@ -1,6 +1,4 @@
 import * as SecureStore from 'expo-secure-store';
-import * as Updates from 'expo-updates';
-import { Alert } from 'react-native';
 
 class ApiClient {
   constructor() {
@@ -12,8 +10,6 @@ class ApiClient {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
-
-    this.isRestarting = false; // Prevent multiple restart attempts
   }
 
   async getAuthToken() {
@@ -46,47 +42,6 @@ class ApiClient {
     }
   }
 
-  async handleAuthError(status) {
-    // Prevent multiple simultaneous restart attempts
-    if (this.isRestarting) {
-      console.log('⏳ Restart already in progress...');
-      return;
-    }
-
-    this.isRestarting = true;
-    console.log(`🔒 Authentication error (${status}) - Restarting app...`);
-
-    try {
-      // Clear the auth token
-      await this.clearAuthToken();
-      
-      // Show alert to user
-      Alert.alert(
-        'Session Expired',
-        'Your session has expired. The app will restart and you will need to log in again.',
-        [
-          {
-            text: 'OK',
-            onPress: async () => {
-              try {
-                // Reload the app
-                await Updates.reloadAsync();
-              } catch (error) {
-                console.error('❌ Error reloading app:', error);
-                // Fallback: just reset the flag
-                this.isRestarting = false;
-              }
-            }
-          }
-        ],
-        { cancelable: false }
-      );
-    } catch (error) {
-      console.error('❌ Error handling auth error:', error);
-      this.isRestarting = false;
-    }
-  }
-
   async request(endpoint, options = {}) {
     try {
       const token = await this.getAuthToken();
@@ -107,24 +62,6 @@ class ApiClient {
       console.log(`🌐 API Request: ${this.baseURL}${endpoint}`);
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
       
-      // Check for authentication errors BEFORE parsing response
-      if (response.status === 401 || response.status === 403) {
-        console.error(`🔒 Authentication error ${response.status} on ${endpoint}`);
-        
-        // Handle auth error (clear token and restart)
-        await this.handleAuthError(response.status);
-        
-        // Return error response
-        return { 
-          success: false, 
-          error: response.status === 401 
-            ? 'Unauthorized - Session expired' 
-            : 'Forbidden - Access denied',
-          status: response.status,
-          authError: true
-        };
-      }
-
       // Better error handling - get the response body even for errors
       const responseText = await response.text();
       let data;
