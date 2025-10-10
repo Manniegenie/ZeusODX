@@ -18,6 +18,8 @@ import { useNGNZ } from '../../hooks/useNGNZ';
 
 // Asset imports
 const ngnzIcon = require('../../components/icons/NGNZ.png');
+// Back icon - matching btc-bsc screen
+import backIcon from '../../components/icons/backy.png';
 
 interface TransferScreenProps {
   onBack?: () => void;
@@ -129,10 +131,16 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
+        {/* Header - Updated to match btc-bsc screen */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>←</Text>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+            delayPressIn={0}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          >
+            <Image source={backIcon} style={styles.backIcon} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Transfer to bank account</Text>
           <View style={styles.backButton} />
@@ -221,8 +229,18 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  backButtonText: { fontSize: 24, color: Colors.text.primary },
+  backButton: { 
+    width: 40, 
+    height: 40, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
   headerTitle: { fontFamily: Typography.medium, fontSize: 18, color: '#35297F', fontWeight: '600' },
   scrollView: { flex: 1 },
   scrollViewContent: { paddingHorizontal: Layout.spacing.lg, paddingBottom: 120, paddingTop: Layout.spacing.lg },

@@ -14,9 +14,9 @@ export function useBalance() {
   const balances = useMemo(() => balanceResponse?.data || {}, [balanceResponse]);
 
   // Raw on-chain balances & USD values
-  const avaxBalance           = balances.avaxBalance           || 0;
-  const avaxBalanceUSD        = balances.avaxBalanceUSD        || 0;
-  const avaxPendingBalance    = balances.avaxPendingBalance    || 0;
+  const trxBalance            = balances.trxBalance            || 0;
+  const trxBalanceUSD         = balances.trxBalanceUSD         || 0;
+  const trxPendingBalance     = balances.trxPendingBalance     || 0;
 
   const bnbBalance            = balances.bnbBalance            || 0;
   const bnbBalanceUSD         = balances.bnbBalanceUSD         || 0;
@@ -53,7 +53,7 @@ export function useBalance() {
   const totalPortfolioBalance = balances.totalPortfolioBalance   || 0;
 
   // Formatted token balances
-  const formattedAvaxBalance  = useMemo(() => balanceService.formatTokenBalance(avaxBalance, 'AVAX'),  [avaxBalance]);
+  const formattedTrxBalance   = useMemo(() => balanceService.formatTokenBalance(trxBalance,  'TRX'),   [trxBalance]);
   const formattedBnbBalance   = useMemo(() => balanceService.formatTokenBalance(bnbBalance,  'BNB'),   [bnbBalance]);
   const formattedBtcBalance   = useMemo(() => balanceService.formatTokenBalance(btcBalance,  'BTC'),   [btcBalance]);
   const formattedEthBalance   = useMemo(() => balanceService.formatTokenBalance(ethBalance,  'ETH'),   [ethBalance]);
@@ -64,7 +64,7 @@ export function useBalance() {
   const formattedUsdtBalance  = useMemo(() => balanceService.formatTokenBalance(usdtBalance, 'USDT'),  [usdtBalance]);
 
   // Formatted USD amounts (directly from the service)
-  const formattedAvaxBalanceUSD  = useMemo(() => balanceService.formatCurrency(avaxBalanceUSD),  [avaxBalanceUSD]);
+  const formattedTrxBalanceUSD   = useMemo(() => balanceService.formatCurrency(trxBalanceUSD),   [trxBalanceUSD]);
   const formattedBnbBalanceUSD   = useMemo(() => balanceService.formatCurrency(bnbBalanceUSD),   [bnbBalanceUSD]);
   const formattedBtcBalanceUSD   = useMemo(() => balanceService.formatCurrency(btcBalanceUSD),   [btcBalanceUSD]);
   const formattedEthBalanceUSD   = useMemo(() => balanceService.formatCurrency(ethBalanceUSD),   [ethBalanceUSD]);
@@ -80,17 +80,17 @@ export function useBalance() {
 
   // Token-by-token summary
   const tokenBalanceSummary = useMemo(() => ({
-    avax: { balance: avaxBalance, balanceUSD: avaxBalanceUSD, pending: avaxPendingBalance },
+    trx:  { balance: trxBalance,  balanceUSD: trxBalanceUSD,  pending: trxPendingBalance },
     bnb:  { balance: bnbBalance,  balanceUSD: bnbBalanceUSD,  pending: bnbPendingBalance },
     btc:  { balance: btcBalance,  balanceUSD: btcBalanceUSD,  pending: btcPendingBalance },
     eth:  { balance: ethBalance,  balanceUSD: ethBalanceUSD,  pending: ethPendingBalance },
     matic:{ balance: maticBalance,balanceUSD: maticBalanceUSD,pending: maticPendingBalance },
     ngnz: { balance: ngnzBalance, balanceUSD: ngnzBalanceUSD, pending: ngnzPendingBalance },
     sol:  { balance: solBalance,  balanceUSD: solBalanceUSD,  pending: solPendingBalance },
-    usdc:{ balance: usdcBalance,balanceUSD: usdcBalanceUSD,pending: usdcPendingBalance },
-    usdt:{ balance: usdtBalance,balanceUSD: usdtBalanceUSD,pending: usdtPendingBalance },
+    usdc: { balance: usdcBalance, balanceUSD: usdcBalanceUSD, pending: usdcPendingBalance },
+    usdt: { balance: usdtBalance, balanceUSD: usdtBalanceUSD, pending: usdtPendingBalance },
   }), [
-    avaxBalance,  avaxBalanceUSD,  avaxPendingBalance,
+    trxBalance,   trxBalanceUSD,   trxPendingBalance,
     bnbBalance,   bnbBalanceUSD,   bnbPendingBalance,
     btcBalance,   btcBalanceUSD,   btcPendingBalance,
     ethBalance,   ethBalanceUSD,   ethPendingBalance,
@@ -112,22 +112,22 @@ export function useBalance() {
 
   return {
     // raw
-    avaxBalance, bnbBalance, btcBalance, ethBalance,
+    trxBalance, bnbBalance, btcBalance, ethBalance,
     maticBalance, ngnzBalance, solBalance,
     usdcBalance, usdtBalance, totalPortfolioBalance,
 
     // pending
-    avaxPendingBalance, bnbPendingBalance, btcPendingBalance,
+    trxPendingBalance, bnbPendingBalance, btcPendingBalance,
     ethPendingBalance, maticPendingBalance, ngnzPendingBalance,
     solPendingBalance, usdcPendingBalance, usdtPendingBalance,
 
     // formatted balances
-    formattedAvaxBalance,  formattedBnbBalance,   formattedBtcBalance,
+    formattedTrxBalance,  formattedBnbBalance,   formattedBtcBalance,
     formattedEthBalance,   formattedMaticBalance, formattedNgnzBalance,
     formattedSolBalance,   formattedUsdcBalance,  formattedUsdtBalance,
 
     // formatted USD
-    formattedAvaxBalanceUSD, formattedBnbBalanceUSD, formattedBtcBalanceUSD,
+    formattedTrxBalanceUSD, formattedBnbBalanceUSD, formattedBtcBalanceUSD,
     formattedEthBalanceUSD,  formattedMaticBalanceUSD,formattedNgnzBalanceUSD,
     formattedSolBalanceUSD,  formattedUsdcBalanceUSD, formattedUsdtBalanceUSD,
 
