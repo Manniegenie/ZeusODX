@@ -20,12 +20,12 @@ import { useBankAccounts } from '../../hooks/usebankAccount';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import FiatTransferConfirmationModal from '../../components/FiatConfirm';
 
-// ↓↓↓ Added: PIN + 2FA modals and withdrawal hook ↓↓↓
+// PIN + 2FA modals and withdrawal hook
 import PinEntryModal from '../../components/PinEntry';
 import TwoFactorAuthModal from '../../components/2FA';
 import { useNGNZWithdrawal } from '../../hooks/useNGNZService';
 
-// ↓↓↓ Added: Fiat Withdrawal Receipt Modal ↓↓↓
+// Fiat Withdrawal Receipt Modal
 import FiatWithdrawalReceiptModal, {
   APITransaction as ReceiptTx,
 } from '../../components/FiatTransactionReciept';
@@ -42,7 +42,7 @@ const BankAccountsScreen = () => {
 
   const isSelectionMode = mode === 'select';
 
-  // ↓↓↓ FIX: Calculate calculatedNetAmount at component level ↓↓↓
+  // Calculate calculatedNetAmount at component level
   const calculatedNetAmount = useMemo(() => {
     const transferAmountNum = parseFloat(transferAmount || '0');
     const transferFeeNum = parseFloat(transferFee || '0');
@@ -83,7 +83,7 @@ const BankAccountsScreen = () => {
     type: 'general',
   });
 
-  // ↓↓↓ Added: NGNZ withdrawal hook + auth modal states ↓↓↓
+  // NGNZ withdrawal hook + auth modal states
   const { loading: wdLoading, submit } = useNGNZWithdrawal({ autoPoll: true, pollMs: 8000 });
 
   const [showPinModal, setShowPinModal] = useState(false);
@@ -91,7 +91,7 @@ const BankAccountsScreen = () => {
   const [passwordPin, setPasswordPin] = useState('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
 
-  // ↓↓↓ Added: Receipt modal state ↓↓↓
+  // Receipt modal state
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptTx, setReceiptTx] = useState<ReceiptTx | undefined>(undefined);
   const [receiptRaw, setReceiptRaw] = useState<any | undefined>(undefined);
@@ -286,7 +286,7 @@ const BankAccountsScreen = () => {
       : 'Here are all the bank details you added for crypto to cash payment.';
   };
 
-  // ----- PIN modal handlers -----
+  // PIN modal handlers
   const handlePinModalClose = () => {
     setShowPinModal(false);
     setPasswordPin('');
@@ -298,7 +298,7 @@ const BankAccountsScreen = () => {
     setShowTwoFactorModal(true);
   };
 
-  // ----- 2FA modal handlers -----
+  // 2FA modal handlers
   const handleTwoFactorModalClose = () => {
     setShowTwoFactorModal(false);
     setTwoFactorCode('');
@@ -453,7 +453,7 @@ const BankAccountsScreen = () => {
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>You will receive:</Text>
                     <Text style={[styles.summaryValue, styles.summaryHighlight]}>
-                      {calculatedNetAmount.toLocaleString()} NGNZ
+                      ₦{calculatedNetAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Text>
                   </View>
                 )}
@@ -618,7 +618,7 @@ const BankAccountsScreen = () => {
           transferData={{
             amount: transferAmount || '0',
             fee: transferFee || '0',
-            netAmount: calculatedNetAmount.toLocaleString() || '0',
+            netAmount: String(calculatedNetAmount),
             bank: selectedBankForTransfer,
             currency: 'NGN',
           }}
@@ -670,7 +670,7 @@ const BankAccountsScreen = () => {
         </View>
       </Modal>
 
-      {/* PIN Entry Modal — same as airtime.js */}
+      {/* PIN Entry Modal */}
       <PinEntryModal
         visible={showPinModal}
         onClose={handlePinModalClose}
@@ -680,7 +680,7 @@ const BankAccountsScreen = () => {
         subtitle="Please enter your 6-digit password PIN to continue"
       />
 
-      {/* Two-Factor Authentication Modal — same as airtime.js */}
+      {/* Two-Factor Authentication Modal */}
       <TwoFactorAuthModal
         visible={showTwoFactorModal}
         onClose={handleTwoFactorModalClose}
