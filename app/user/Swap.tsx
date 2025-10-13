@@ -1,27 +1,27 @@
 // app/user/Swap.tsx
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
+import { useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
   Image,
   SafeAreaView,
   ScrollView,
-  TextInput
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
-import { Layout } from '../../constants/Layout';
-import { useDashboard } from '../../hooks/useDashboard';
-import { useSwap } from '../../hooks/useSwap';
-import { useNGNZ } from '../../hooks/useNGNZ';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ChooseTokenModal from '../../components/ChooseTokenModal';
-import SwapSuccessfulScreen from '../../components/SwapSuccess';
-import SwapPreviewModal from '../../components/SwapPreview';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import SwapPreviewModal from '../../components/SwapPreview';
+import SwapSuccessfulScreen from '../../components/SwapSuccess';
+import { Colors } from '../../constants/Colors';
+import { Layout } from '../../constants/Layout';
+import { Typography } from '../../constants/Typography';
+import { useDashboard } from '../../hooks/useDashboard';
+import { useNGNZ } from '../../hooks/useNGNZ';
+import { useSwap } from '../../hooks/useSwap';
 
 // Asset imports
 const btcIcon = require('../../components/icons/btc-icon.png');
@@ -266,8 +266,9 @@ export default function SwapScreen({
         MATIC: { id: 'matic', name: 'Polygon', symbol: 'MATIC', icon: maticIcon, price: 0, balance: 0 },
       };
       
-      if (defaultToken && tokenMap[defaultToken]) {
-        setSelectedFromToken(tokenMap[defaultToken]);
+      const defaultTokenKey = defaultToken as keyof typeof tokenMap;
+      if (defaultToken && tokenMap[defaultTokenKey]) {
+        setSelectedFromToken(tokenMap[defaultTokenKey]);
       } else if (btcPrice > 0) {
         setSelectedFromToken(tokenMap['BTC']);
       }
@@ -299,52 +300,42 @@ export default function SwapScreen({
   
   const unformat = (value: string): string => value.replace(/,/g, '');
 
-  // Updated formatDisplayAmount function to show precise decimals without rounding
-  const formatDisplayAmount = (amount: string | number): string => {
+  // Enhanced formatDisplayAmount function with consistent decimal handling
+  const formatDisplayAmount = (amount: string | number, token?: string): string => {
     const num = parseFloat(String(amount));
     
     // Return '0' if amount is invalid or zero
     if (!num || num === 0 || isNaN(num)) return '0';
-    
-    // For whole numbers, show as integer (e.g., 5 shows as "5")
-    if (Number.isInteger(num)) {
-      return num.toString();
-    }
-    
-    const numStr = num.toString();
-    const [integerPart, decimalPart] = numStr.split('.');
-    
-    if (!decimalPart) return numStr;
-    
-    // For numbers less than 1, show more significant digits
-    if (Math.abs(num) < 1) {
-      // Find first non-zero digit position
-      let firstNonZeroIndex = -1;
-      for (let i = 0; i < decimalPart.length; i++) {
-        if (decimalPart[i] !== '0') {
-          firstNonZeroIndex = i;
-          break;
-        }
-      }
+
+    // Get token-specific decimal places
+    const getTokenDecimals = (symbol?: string) => {
+      if (!symbol) return 2; // Default to 2 decimals
       
-      if (firstNonZeroIndex !== -1) {
-        // For very small numbers (< 0.0001), show first significant digit
-        if (Math.abs(num) < 0.0001) {
-          const truncatedDecimals = decimalPart.substring(0, firstNonZeroIndex + 1);
-          return `${integerPart}.${truncatedDecimals}`;
-        }
-        // For small numbers (< 1 but >= 0.0001), show more digits for readability
-        // e.g., 0.003935... -> 0.003935, 0.123456 -> 0.123456
-        const endIndex = Math.min(firstNonZeroIndex + 6, decimalPart.length);
-        const truncatedDecimals = decimalPart.substring(0, endIndex);
-        return `${integerPart}.${truncatedDecimals}`;
-      }
-    }
+      const decimalsMap: { [key: string]: number } = {
+        'BTC': 8,
+        'ETH': 6,
+        'SOL': 6,
+        'USDT': 2,
+        'USDC': 2,
+        'NGNZ': 2,
+        'TRX': 6,
+        'BNB': 4,
+        'MATIC': 4
+      };
+      
+      return decimalsMap[symbol] ?? 2;
+    };
+
+    const decimals = getTokenDecimals(token);
     
-    // For numbers >= 1, truncate to first decimal place without rounding
-    // (e.g., 1.789 -> 1.7, 12.456 -> 12.4)
-    const truncatedDecimals = decimalPart.substring(0, 1);
-    return `${integerPart}.${truncatedDecimals}`;
+    // Format the number with the appropriate decimals
+    const formatted = Number(num).toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+      useGrouping: true // This ensures thousands separators
+    });
+    
+    return formatted;
   };
 
   // Format the exact max amount for display (trim trailing zeros but keep up to 8 decimals)
@@ -397,22 +388,23 @@ export default function SwapScreen({
     return `${display} ${token.symbol}`;
   };
 
-  // NEW: handle when user presses MAX => keep raw precise number in fromAmountRaw but show a friendly formatted string
+  // Handle when user presses MAX => keep raw precise number in fromAmountRaw but show a friendly formatted string
   const handleMax = () => {
     if (!selectedFromToken) return;
     const balance = getTokenBalance(selectedFromToken.symbol) || 0;
 
-    // Set raw value to exact balance (used for quoting & submission)
-    setFromAmountRaw(balance);
+    // Only clear quote if amount actually changed
+    const currentAmount = (fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0;
+    if (balance !== currentAmount) {
+      // Set raw value to exact balance (used for quoting & submission)
+      setFromAmountRaw(balance);
 
-    // Format friendly display string (with commas + trimmed decimals)
-    const displayStr = formatMaxAmount(balance);
-    setFromAmount(formatWithCommas(displayStr));
+      // Format friendly display string (with commas + trimmed decimals)
+      const displayStr = formatMaxAmount(balance);
+      setFromAmount(formatWithCommas(displayStr));
 
-    // clear quote & preview so a fresh quote will be created using the full balance
-    clearQuote();
-    setToAmount('0');
-    setToAmountRaw(null);
+      clearQuote();
+    }
 
     // Also update selectedFromToken.balance to latest
     setSelectedFromToken(prev => prev ? { ...prev, balance } : prev);
@@ -433,10 +425,11 @@ export default function SwapScreen({
       setFromAmountRaw(null);
     }
 
-    // when user types, clear quote / preview
-    clearQuote();
-    setToAmount('0');
-    setToAmountRaw(null);
+    // Only clear quote if amount actually changed
+    const currentAmount = (fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0;
+    if (numeric !== currentAmount) {
+      clearQuote();
+    }
     clearMessage();
   };
 
@@ -476,6 +469,13 @@ export default function SwapScreen({
     }
 
     try {
+      console.log('Creating quote with:', { 
+        fromToken: selectedFromToken.symbol, 
+        toToken: selectedToToken.symbol, 
+        amount: rawAmount,
+        isNGNZ: isNGNZOperation()
+      });
+
       let quoteResult = isNGNZOperation()
         ? await createNGNZQuote(selectedFromToken.symbol, selectedToToken.symbol, rawAmount, 'SELL')
         : await createCryptoQuote(selectedFromToken.symbol, selectedToToken.symbol, rawAmount, 'SELL');
@@ -500,12 +500,13 @@ export default function SwapScreen({
       }
 
       // Extract amountReceived - try multiple possible paths
-      let receiveAmount = quoteResult.data?.data?.amountReceived
-        || quoteResult.data?.amountReceived
-        || quoteResult.data?.data?.data?.amountReceived
-        || quoteResult.amountReceived
-        || quoteResult.data?.amount_received
-        || quoteResult.data?.data?.amount_received;
+      const result = quoteResult as any;
+      let receiveAmount = result.data?.data?.amountReceived
+        || result.data?.amountReceived
+        || result.data?.data?.data?.amountReceived
+        || result.amountReceived
+        || result.data?.amount_received
+        || result.data?.data?.amount_received;
 
       console.log('Extracted receiveAmount:', receiveAmount); // Debug log
 
@@ -535,7 +536,8 @@ export default function SwapScreen({
       return;
     }
     
-    const quoteId = currentQuote.data?.data?.id || currentQuote.data?.id || currentQuote.id;
+    const quote = currentQuote as any;
+    const quoteId = quote.data?.data?.id || quote.data?.id || quote.id;
     if (!quoteId) {
       showError('Quote ID not found.', 'validation', 'Invalid Quote');
       return;
@@ -550,8 +552,8 @@ export default function SwapScreen({
         onSwap?.();
         
         // Show success message
-        const displayFrom = formatDisplayAmount(((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0));
-        const displayTo = formatDisplayAmount(((toAmountRaw ?? parseFloat(unformat(toAmount))) || 0));
+        const displayFrom = formatDisplayAmount(((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0), selectedFromToken?.symbol);
+        const displayTo = formatDisplayAmount(((toAmountRaw ?? parseFloat(unformat(toAmount))) || 0), selectedToToken?.symbol);
         showSuccess(
           `Successfully swapped ${displayFrom} ${selectedFromToken?.symbol} to ${displayTo} ${selectedToToken?.symbol}`,
           'Swap Successful!'
@@ -752,22 +754,27 @@ export default function SwapScreen({
       {/* Preview Modal: Pass the exact amounts as they appear in the input fields */}
       <SwapPreviewModal 
         visible={showPreviewModal} 
-        onClose={() => setShowPreviewModal(false)} 
+        onClose={() => {
+          // Clear the buy field when closing
+          setToAmount('0');
+          setToAmountRaw(null);
+          setShowPreviewModal(false);
+        }} 
         onConfirm={handleAcceptQuote}
         quote={currentQuote}
         loading={currentQuoteLoading}
-        // Pass the exact amounts as displayed in the input fields without any formatting
-        fromAmount={fromAmount} 
+        // Pass the formatted display amounts
+        fromAmount={formatDisplayAmount((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0, selectedFromToken?.symbol)}
         fromToken={selectedFromToken?.symbol || ''} 
-        toAmount={toAmount === '0' ? '0' : toAmount} 
+        toAmount={formatDisplayAmount((toAmountRaw ?? parseFloat(unformat(toAmount))) || 0, selectedToToken?.symbol)}
         toToken={selectedToToken?.symbol || ''} 
-        rate={`1 ${selectedFromToken?.symbol} = ${formatDisplayAmount( (((toAmountRaw ?? parseFloat(unformat(toAmount))) || 0) / ((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 1)) )} ${selectedToToken?.symbol}`} 
+        rate={`1 ${selectedFromToken?.symbol} = ${formatDisplayAmount(((toAmountRaw ?? parseFloat(unformat(toAmount))) || 0) / ((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 1), selectedToToken?.symbol)} ${selectedToToken?.symbol}`} 
       />
 
       {/* Success Screen - Now renders as popup modal */}
       <SwapSuccessfulScreen 
         visible={showSuccessScreen} 
-        fromAmount={formatDisplayAmount((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0)} 
+        fromAmount={formatDisplayAmount((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0, selectedFromToken?.symbol)} 
         fromToken={selectedFromToken?.symbol || ''} 
         toToken={selectedToToken?.symbol || ''} 
         onContinue={handleSuccessScreenContinue} 

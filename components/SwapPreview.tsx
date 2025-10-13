@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Modal, 
-  Image
+import {
+    Image,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
@@ -21,6 +21,8 @@ interface SwapPreviewModalProps {
   toAmount: string;
   toToken: string;
   rate: string;
+  quote?: any;
+  loading?: boolean;
 }
 
 export default function SwapPreviewModal({

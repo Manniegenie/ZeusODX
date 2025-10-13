@@ -1,19 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Image,
-  SafeAreaView,
-  ScrollView,
-  TextInput,
-  Alert
-} from 'react-native';
 import { useRouter } from 'expo-router';
-import { Typography } from '../../constants/Typography';
+import React, { useMemo, useState } from 'react';
+import {
+    Alert,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
+import { Typography } from '../../constants/Typography';
 import { useNGNZ } from '../../hooks/useNGNZ';
 
 // Asset imports
@@ -66,12 +66,13 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
     return '$' + usdValue.toFixed(2);
   };
 
-  const getMaxBalanceLabel = (): string => `${ngnzBalance.toFixed(4)} NGNZ`;
+  const getMaxBalanceLabel = (): string => `${ngnzBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NGNZ`;
 
   const handleMax = () => {
     // Use full balance - backend will handle fee deductions
     const max = ngnzBalance;
-    setAmount(formatWithCommas(max.toString()));
+    const formattedMax = max.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    setAmount(formattedMax);
   };
 
   const handleContinue = () => {

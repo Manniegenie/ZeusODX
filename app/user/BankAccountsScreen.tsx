@@ -1,34 +1,50 @@
 // app/user/BankAccountsScreen.tsx
-import React, { useMemo, useState, useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  Modal,
-  Image,
   ActivityIndicator,
+  Image,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
-import naijaFlag from '../../components/icons/naija-flag.png';
-import { useBankAccounts } from '../../hooks/usebankAccount';
+import { Typography } from '../../constants/Typography';
+// @ts-ignore
 import ErrorDisplay from '../../components/ErrorDisplay';
 import FiatTransferConfirmationModal from '../../components/FiatConfirm';
+import naijaFlag from '../../components/icons/naija-flag.png';
+import { useBankAccounts } from '../../hooks/usebankAccount';
 
 // PIN + 2FA modals and withdrawal hook
-import PinEntryModal from '../../components/PinEntry';
 import TwoFactorAuthModal from '../../components/2FA';
+import PinEntryModal from '../../components/PinEntry';
 import { useNGNZWithdrawal } from '../../hooks/useNGNZService';
 
 // Fiat Withdrawal Receipt Modal
 import FiatWithdrawalReceiptModal, {
   APITransaction as ReceiptTx,
 } from '../../components/FiatTransactionReciept';
+
+interface BankAccount {
+  id: string;
+  accountNumber: string;
+  accountName: string;
+  bankName: string;
+  bankCode: string;
+}
+
+interface AccountSummary {
+  totalAccounts: number;
+  maxAllowed: number;
+  remainingSlots: number;
+  canAddMore: boolean;
+}
 
 const BankAccountsScreen = () => {
   const router = useRouter();
@@ -42,12 +58,10 @@ const BankAccountsScreen = () => {
 
   const isSelectionMode = mode === 'select';
 
-  // Calculate calculatedNetAmount at component level
-  const calculatedNetAmount = useMemo(() => {
-    const transferAmountNum = parseFloat(transferAmount || '0');
-    const transferFeeNum = parseFloat(transferFee || '0');
-    return transferAmountNum - transferFeeNum;
-  }, [transferAmount, transferFee]);
+  // Store transfer amount for display purposes only
+  const transferAmountNum = useMemo(() => {
+    return parseFloat(transferAmount || '0');
+  }, [transferAmount]);
 
   const {
     bankAccounts,
@@ -56,13 +70,20 @@ const BankAccountsScreen = () => {
     error,
     getBankAccounts,
     deleteBankAccount,
-  } = useBankAccounts();
+  } = useBankAccounts() as {
+    bankAccounts: BankAccount[];
+    accountsSummary: AccountSummary | null;
+    loading: boolean;
+    error: any;
+    getBankAccounts: () => Promise<any>;
+    deleteBankAccount: (accountId: string) => Promise<any>;
+  };
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [selectedBankForTransfer, setSelectedBankForTransfer] = useState<any>(null);
+  const [selectedBankForTransfer, setSelectedBankForTransfer] = useState<BankAccount | null>(null);
   const [transferLoading, setTransferLoading] = useState(false);
   const [errorDisplayConfig, setErrorDisplayConfig] = useState<{
     visible: boolean;
@@ -313,8 +334,8 @@ const BankAccountsScreen = () => {
     hideError();
     setTransferLoading(true);
 
-    // Use the already calculated calculatedNetAmount
-    const amountNumber = calculatedNetAmount;
+    // Use the full transfer amount - backend will handle fee deduction
+    const amountNumber = parseFloat(transferAmount || '0');
 
     if (!amountNumber || amountNumber <= 0) {
       setTransferLoading(false);
@@ -323,7 +344,7 @@ const BankAccountsScreen = () => {
     }
 
     const payload = {
-      amount: amountNumber,
+      amount: amountNumber, // Send full amount - backend handles fee deduction
       narration: 'NGNZ withdrawal to bank',
       destination: {
         bankName: selectedBankForTransfer.bankName,
@@ -345,7 +366,7 @@ const BankAccountsScreen = () => {
       setTwoFactorCode('');
 
       // Try to normalize upstream payloads (res.data | res.withdrawal | res.result | res.payload)
-      const wd: any = res.data || res.withdrawal || res.result || res.payload || {};
+      const wd = (res as any).data || (res as any).withdrawal || (res as any).result || (res as any).payload || {};
       const status = wd.status || wd.providerStatus || 'Pending';
 
       // Prefer NGN figures from the API, else fall back to the entered amount
@@ -438,14 +459,14 @@ const BankAccountsScreen = () => {
                 <View style={styles.summaryRow}>
                   <Text style={styles.summaryLabel}>Amount:</Text>
                   <Text style={styles.summaryValue}>
-                    {parseFloat(transferAmount).toLocaleString()} NGNZ
+                    {parseFloat(transferAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NGNZ
                   </Text>
                 </View>
                 {transferFee && (
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>Fee:</Text>
                     <Text style={styles.summaryValue}>
-                      {parseFloat(transferFee).toFixed(2)} NGNZ
+                      {parseFloat(transferFee).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NGNZ
                     </Text>
                   </View>
                 )}
@@ -453,7 +474,7 @@ const BankAccountsScreen = () => {
                   <View style={styles.summaryRow}>
                     <Text style={styles.summaryLabel}>You will receive:</Text>
                     <Text style={[styles.summaryValue, styles.summaryHighlight]}>
-                      ₦{calculatedNetAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ₦{transferAmountNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Text>
                   </View>
                 )}
@@ -618,7 +639,7 @@ const BankAccountsScreen = () => {
           transferData={{
             amount: transferAmount || '0',
             fee: transferFee || '0',
-            netAmount: String(calculatedNetAmount),
+            netAmount: (parseFloat(transferAmount) - parseFloat(transferFee)).toFixed(2), // Amount after fee deduction
             bank: selectedBankForTransfer,
             currency: 'NGN',
           }}
