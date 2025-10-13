@@ -168,54 +168,6 @@ export const networksService = {
   },
 
   /**
-   * Get available networks for a currency (with API integration and fallback)
-   */
-  async getAvailableNetworks(currency) {
-    try {
-      const result = await this.fetchNetworksForCurrency(currency);
-      
-      if (result.success) {
-        return result.data;
-      } else {
-        // Fallback to hardcoded networks if API fails
-        console.log('⚠️ API failed, using fallback networks for:', currency);
-        return this.getFallbackNetworks(currency);
-      }
-    } catch (error) {
-      console.log('❌ Error getting networks, using fallback:', error);
-      return this.getFallbackNetworks(currency);
-    }
-  },
-
-  /**
-   * Fallback networks (in case API is unavailable)
-   */
-  getFallbackNetworks(currency) {
-    const networks = {
-      'BTC': [{ id: 'bitcoin', name: 'Bitcoin Network', code: 'BTC', feeUsd: 5.0 }],
-      'ETH': [{ id: 'ethereum', name: 'Ethereum Network', code: 'ETH', feeUsd: 3.0 }],
-      'SOL': [{ id: 'solana', name: 'Solana Network', code: 'SOL', feeUsd: 0.5 }],
-      'USDT': [
-        { id: 'ethereum', name: 'Ethereum Network (ERC20)', code: 'ERC20', feeUsd: 3.0 },
-        { id: 'tron', name: 'TRON Network (TRC20)', code: 'TRC20', feeUsd: 1.0 },
-        { id: 'bsc', name: 'BSC (BEP20)', code: 'BEP20', feeUsd: 0.5 }
-      ],
-      'USDC': [
-        { id: 'ethereum', name: 'Ethereum Network (ERC20)', code: 'ERC20', feeUsd: 3.0 },
-        { id: 'bsc', name: 'BSC (BEP20)', code: 'BEP20', feeUsd: 0.5 }
-      ],
-      'BNB': [
-        { id: 'ethereum', name: 'Ethereum Network (ERC20)', code: 'ERC20', feeUsd: 3.0 },
-        { id: 'bsc', name: 'BSC (Binance Smart Chain)', code: 'BSC', feeUsd: 0.1 }
-      ],
-      'MATIC': [{ id: 'ethereum', name: 'Ethereum Network', code: 'ETH', feeUsd: 3.0 }],
-      'AVAX': [{ id: 'avalanche', name: 'Avalanche Network', code: 'AVAX', feeUsd: 0.5 }]
-    };
-
-    return networks[currency?.toUpperCase()] || [];
-  },
-
-  /**
    * Get networks from cache
    */
   getCachedNetworks(currency) {
@@ -252,7 +204,7 @@ export const networksService = {
    * Validate currency
    */
   validateCurrency(currency) {
-    const supportedCurrencies = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'BNB', 'MATIC', 'AVAX'];
+    const supportedCurrencies = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'BNB', 'MATIC', 'TRX', 'AVAX'];
     
     if (!currency || !currency.trim()) {
       return {

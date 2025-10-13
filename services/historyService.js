@@ -896,14 +896,12 @@ export const transactionService = {
     const configs = {
       BTC: { decimals: 8, name: 'Bitcoin', networks: ['BITCOIN'], confirmations: 6 },
       ETH: { decimals: 8, name: 'Ethereum', networks: ['ETHEREUM'], confirmations: 12 },
-      AVAX: { decimals: 8, name: 'Avalanche', networks: ['AVALANCHE_C', 'AVALANCHE_X', 'AVALANCHE_P'], confirmations: 12 },
       USDT: { decimals: 6, name: 'Tether', networks: ['ETHEREUM', 'TRON', 'BSC'], confirmations: 12 },
-      USDC: { decimals: 6, name: 'USD Coin', networks: ['ETHEREUM', 'AVALANCHE_C', 'POLYGON'], confirmations: 12 },
+      USDC: { decimals: 6, name: 'USD Coin', networks: ['ETHEREUM', 'POLYGON'], confirmations: 12 },
       BNB: { decimals: 8, name: 'Binance Coin', networks: ['BSC', 'BINANCE'], confirmations: 15 },
-      ADA: { decimals: 6, name: 'Cardano', networks: ['CARDANO'], confirmations: 15 },
       SOL: { decimals: 9, name: 'Solana', networks: ['SOLANA'], confirmations: 1 },
-      DOT: { decimals: 10, name: 'Polkadot', networks: ['POLKADOT'], confirmations: 12 },
       MATIC: { decimals: 8, name: 'Polygon', networks: ['POLYGON', 'ETHEREUM'], confirmations: 20 },
+      TRX: { decimals: 6, name: 'Tron', networks: ['TRON', 'TRC20'], confirmations: 1 },
       NGNZ: { decimals: 2, name: 'NGNZ', networks: ['OBIEX'], confirmations: 1 }
     };
     return configs[currency?.toUpperCase()] || { decimals: 8, name: currency || 'Unknown', networks: [], confirmations: 12 };
@@ -920,12 +918,10 @@ export const transactionService = {
     const explorers = {
       BTC: `https://blockstream.info/tx/${txHash}`,
       ETH: `https://etherscan.io/tx/${txHash}`,
-      AVAX: `https://snowtrace.io/tx/${txHash}`,
       BNB: `https://bscscan.com/tx/${txHash}`,
-      ADA: `https://cardanoscan.io/transaction/${txHash}`,
       SOL: `https://solscan.io/tx/${txHash}`,
-      DOT: `https://polkadot.subscan.io/extrinsic/${txHash}`,
-      MATIC: network === 'POLYGON' ? `https://polygonscan.com/tx/${txHash}` : `https://etherscan.io/tx/${txHash}`
+      MATIC: network === 'POLYGON' ? `https://polygonscan.com/tx/${txHash}` : `https://etherscan.io/tx/${txHash}`,
+      TRX: `https://tronscan.org/#/transaction/${txHash}`
     };
     return explorers[currency?.toUpperCase()] || null;
   }

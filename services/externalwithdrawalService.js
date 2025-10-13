@@ -52,7 +52,7 @@ export const withdrawalService = {
 
         return {
           success: true,
-          message: respMessage, // exact server message if present
+          message: respMessage,
           data: {
             ...feeData,
             feeFormatted: this.formatWithdrawalAmount(feeData.fee, currency),
@@ -149,7 +149,7 @@ export const withdrawalService = {
 
         return {
           success: true,
-          message: respMessage, // exact server message if present
+          message: respMessage,
           data: {
             ...wdData
           }
@@ -210,7 +210,7 @@ export const withdrawalService = {
 
         return {
           success: true,
-          message: respMessage, // exact server message if present
+          message: respMessage,
           data: {
             ...statusData,
             statusDescription: this.getStatusDescription(statusData.status),
@@ -337,8 +337,7 @@ export const withdrawalService = {
   },
 
   /**
-   * Handle withdrawal errors — preserve exact server message,
-   * provide a friendly fallback, and pass through details.
+   * Handle withdrawal errors with exact server message preservation
    */
   handleWithdrawalError(errorResponse) {
     // HTTP status
@@ -394,12 +393,12 @@ export const withdrawalService = {
 
     return {
       success: false,
-      error: errorCode,     // machine-readable code
-      message,              // exact server text when available
-      friendlyMessage,      // fallback copy
-      rawMessage: raw,      // exact text for UI/debug
+      error: errorCode,
+      message,
+      friendlyMessage,
+      rawMessage: raw,
       statusCode,
-      details               // e.g., { kycLevel, limitType, upgradeRecommendation, ... }
+      details
     };
   },
 
@@ -428,6 +427,7 @@ export const withdrawalService = {
       trackedAt: new Date().toISOString()
     });
 
+    // Cleanup old withdrawals (older than 24 hours)
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
     for (const [id, withdrawal] of this.activeWithdrawals.entries()) {
       if (new Date(withdrawal.trackedAt).getTime() < oneDayAgo) {
@@ -447,7 +447,7 @@ export const withdrawalService = {
   },
 
   /**
-   * Format withdrawal amount with proper decimals
+   * Format withdrawal amount with proper decimals for all supported tokens
    */
   formatWithdrawalAmount(amount, currency) {
     const formatters = {
@@ -458,7 +458,8 @@ export const withdrawalService = {
       USDC: (amt) => amt.toFixed(2),
       BNB: (amt) => amt.toFixed(4),
       MATIC: (amt) => amt.toFixed(4),
-      AVAX: (amt) => amt.toFixed(4)
+      TRX: (amt) => amt.toFixed(6),
+      NGNB: (amt) => amt.toFixed(2)
     };
 
     const formatter = formatters[currency?.toUpperCase()];
@@ -478,6 +479,50 @@ export const withdrawalService = {
   },
 
   /**
+   * Get supported currencies for withdrawal
+   */
+  getSupportedCurrencies() {
+    return [
+      { symbol: 'BTC', name: 'Bitcoin', decimals: 8 },
+      { symbol: 'ETH', name: 'Ethereum', decimals: 6 },
+      { symbol: 'SOL', name: 'Solana', decimals: 6 },
+      { symbol: 'USDT', name: 'Tether', decimals: 2 },
+      { symbol: 'USDC', name: 'USD Coin', decimals: 2 },
+      { symbol: 'BNB', name: 'Binance Coin', decimals: 4 },
+      { symbol: 'MATIC', name: 'Polygon', decimals: 4 },
+      { symbol: 'TRX', name: 'Tron', decimals: 6 },
+      { symbol: 'NGNB', name: 'NGNB Token', decimals: 2 }
+    ];
+  },
+
+  /**
+   * Get supported networks for a currency
+   */
+  getSupportedNetworks(currency) {
+    const networkMap = {
+      BTC: [{ code: 'BTC', name: 'Bitcoin Network' }],
+      ETH: [{ code: 'ERC20', name: 'Ethereum (ERC20)' }],
+      SOL: [{ code: 'SOL', name: 'Solana Network' }],
+      USDT: [
+        { code: 'ERC20', name: 'Ethereum (ERC20)' },
+        { code: 'TRC20', name: 'Tron (TRC20)' },
+        { code: 'BEP20', name: 'BSC (BEP20)' }
+      ],
+      USDC: [
+        { code: 'ERC20', name: 'Ethereum (ERC20)' },
+        { code: 'TRC20', name: 'Tron (TRC20)' },
+        { code: 'BEP20', name: 'BSC (BEP20)' }
+      ],
+      BNB: [{ code: 'BEP20', name: 'BSC (BEP20)' }],
+      MATIC: [{ code: 'POLYGON', name: 'Polygon Network' }],
+      TRX: [{ code: 'TRC20', name: 'Tron (TRC20)' }],
+      NGNB: [{ code: 'ERC20', name: 'Ethereum (ERC20)' }]
+    };
+
+    return networkMap[currency?.toUpperCase()] || [];
+  },
+
+  /**
    * Clear all withdrawal data
    */
   async clearAllData() {
@@ -491,7 +536,45 @@ export const withdrawalService = {
    */
   getCacheStatus() {
     return {
-      activeWithdrawalsCount: this.activeWithdrawals.size
+      activeWithdrawalsCount: this.activeWithdrawals.size,
+      activeWithdrawals: Array.from(this.activeWithdrawals.keys())
     };
+  },
+
+  /**
+   * Validate minimum withdrawal amounts (optional, can be configured per currency)
+   */
+  getMinimumWithdrawalAmount(currency) {
+    const minimums = {
+      BTC: 0.0001,
+      ETH: 0.001,
+      SOL: 0.01,
+      USDT: 10,
+      USDC: 10,
+      BNB: 0.01,
+      MATIC: 1,
+      TRX: 10,
+      NGNB: 100
+    };
+
+    return minimums[currency?.toUpperCase()] || 0;
+  },
+
+  /**
+   * Validate withdrawal amount against minimum
+   */
+  validateMinimumAmount(amount, currency) {
+    const minimum = this.getMinimumWithdrawalAmount(currency);
+    const numericAmount = Number(amount);
+
+    if (numericAmount < minimum) {
+      return {
+        success: false,
+        message: `Minimum withdrawal amount for ${currency} is ${minimum}`,
+        minimum
+      };
+    }
+
+    return { success: true };
   }
 };
