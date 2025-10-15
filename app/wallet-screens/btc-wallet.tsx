@@ -1,36 +1,42 @@
 // app/user/BitcoinWalletScreen.tsx
-import React, { useCallback, useState, useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  RefreshControl,
-  ActivityIndicator,
-  ImageBackground
+    ActivityIndicator,
+    Image,
+    ImageBackground,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
-import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import NetworkSelectionModal from '../../components/Network';
-import { Typography } from '../../constants/Typography';
+import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import { useBalance } from '../../hooks/useWallet';
+import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
+import { useBalance } from '../../hooks/useWallet';
 
+// @ts-ignore
 import btcIcon from '../../components/icons/btc-icon.png';
+// @ts-ignore
 import transferIcon from '../../components/icons/transfer-icon.png';
+// @ts-ignore
 import swapIcon from '../../components/icons/swap-icon.png';
+// @ts-ignore
 import depositIcon from '../../components/icons/deposit-icon.png';
+// @ts-ignore
 import emptyStateIcon from '../../components/icons/empty-state.png';
+// @ts-ignore
 import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
-import backIcon from '../../components/icons/backy.png';
+import ScreenHeader from '../../components/ScreenHeader';
 
 // -------------------- Types to match History/Receipt --------------------
 type TokenDetails = {
@@ -218,7 +224,12 @@ const toAPITransaction = (tx: any): APITransaction => {
 };
 
 // -------------------- Screen --------------------
-const BitcoinWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
+interface BitcoinWalletScreenProps {
+  onQuickActionPress?: (actionId: string) => void;
+  onSeeMorePress?: () => void;
+}
+
+const BitcoinWalletScreen: React.FC<BitcoinWalletScreenProps> = ({ onQuickActionPress, onSeeMorePress }) => {
   const router = useRouter();
   const { openNetworkModal } = useLocalSearchParams();
 
@@ -227,7 +238,7 @@ const BitcoinWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
   const {
     btcBalance,
-    btcBalanceUSD,
+    formattedBtcBalanceUSD: btcBalanceUSD,
     formattedBtcBalance,
     formattedBtcBalanceUSD,
     loading,
@@ -348,24 +359,13 @@ const BitcoinWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
             />
           }
         >
-          <View style={styles.headerSection}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity 
-                style={styles.backButton} 
-                onPress={handleGoBack}
-                activeOpacity={0.7}
-                delayPressIn={0}
-                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-              >
-                <Image source={backIcon} style={styles.backIcon} />
-              </TouchableOpacity>
-              <View style={styles.headerGroup}>
-                <Image source={btcIcon} style={styles.iconImage} />
-                <Text style={styles.headerTitle}>Bitcoin</Text>
-              </View>
-              <View style={styles.headerRight} />
-            </View>
-          </View>
+          <ScreenHeader
+            title="Bitcoin"
+            onBack={handleGoBack}
+            rightComponent={
+              <Image source={btcIcon} style={styles.iconImage} />
+            }
+          />
 
           {/* Balance */}
           <View style={styles.balanceSection}>
@@ -489,24 +489,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
-  headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
-  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { 
-    width: 40,
-    height: 40,
-    justifyContent: 'center', 
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  backIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
-  headerGroup: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' },
-  iconImage: { width: 28, height: 28, resizeMode: 'cover' },
-  headerTitle: { fontSize: 16, fontWeight: '600', color: Colors.text.primary },
-  headerRight: { width: 40 },
+  iconImage: { width: 28, height: 28, resizeMode: 'cover', marginRight: 8 },
 
   // Balance
   balanceSection: { 

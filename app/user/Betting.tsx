@@ -1,32 +1,31 @@
 // app/user/BettingScreen.tsx
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  TextInput,
-  Alert,
-  Image,
-  ActivityIndicator
+    ActivityIndicator,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import ErrorDisplay from '../../components/ErrorDisplay';
-import BettingProviderSelectionModal from '../../components/BettingProviderModal';
-import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
-import BettingConfirmationModal from '../../components/BettingConfirmation';
-import PinEntryModal from '../../components/PinEntry';
 import TwoFactorAuthModal from '../../components/2FA';
-import { Typography } from '../../constants/Typography';
+import BettingConfirmationModal from '../../components/BettingConfirmation';
+import BettingProviderSelectionModal from '../../components/BettingProviderModal';
+import ErrorDisplay from '../../components/ErrorDisplay';
+import PinEntryModal from '../../components/PinEntry';
+import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
 import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 import { useBetting } from '../../hooks/useBetting';
 import { useCustomer } from '../../hooks/useCustomer';
 
-// shared back icon used across screens
-import backIcon from '../../components/icons/backy.png';
+// shared header component
+import ScreenHeader from '../../components/ScreenHeader';
 
 interface BettingProvider {
   id: string;
@@ -47,7 +46,7 @@ const BettingScreen: React.FC = () => {
     formatCustomerName,
     getUserFriendlyMessage: getCustomerUserFriendlyMessage,
     getErrorAction: getCustomerErrorAction
-  } = useCustomer();
+  } = useCustomer() as any;
 
   const [selectedProvider, setSelectedProvider] = useState<BettingProvider | null>(null);
   const [userId, setUserId] = useState<string>('');
@@ -119,7 +118,7 @@ const BettingScreen: React.FC = () => {
       const normalizedProviderId = normalizeProviderId(selectedProvider.id);
       const result = await verifyBettingCustomer(userId, normalizedProviderId);
       if (!(result && result.success)) {
-        const errorAction = getCustomerErrorAction(result?.requiresAction || 'RETRY');
+        const errorAction = getCustomerErrorAction((result as any)?.requiresAction || 'RETRY');
         const friendlyMessage = getCustomerUserFriendlyMessage(result?.error, result?.message);
         showErrorMessage({
           type: errorAction ? 'validation' : 'server',
@@ -130,7 +129,7 @@ const BettingScreen: React.FC = () => {
         });
       }
     } catch (error) {
-      const friendlyMessage = getCustomerUserFriendlyMessage(customerError, error?.message);
+      const friendlyMessage = getCustomerUserFriendlyMessage(customerError, (error as any)?.message);
       showErrorMessage({
         type: 'server',
         title: 'Verification Error',
@@ -242,7 +241,7 @@ const BettingScreen: React.FC = () => {
       };
       
       const result = await fundBettingAccount(fundingData);
-      if (result.success) {
+      if ((result as any).success) {
         setShowTwoFactorModal(false);
         setShowPinModal(false);
         setPasswordPin('');
@@ -251,7 +250,7 @@ const BettingScreen: React.FC = () => {
       } else {
         setShowTwoFactorModal(false);
         
-        const errorAction = getErrorAction?.(result.requiresAction);
+        const errorAction = getErrorAction?.((result as any).requiresAction);
         if (errorAction) {
           showErrorMessage({
             type: 'server',
@@ -264,7 +263,7 @@ const BettingScreen: React.FC = () => {
           showErrorMessage({
             type: 'server',
             title: 'Funding Failed',
-            message: result.message || 'Something went wrong. Please try again.',
+            message: (result as any).message || 'Something went wrong. Please try again.',
             autoHide: true,
             duration: 4000
           });
@@ -307,24 +306,11 @@ const BettingScreen: React.FC = () => {
           <ErrorDisplay {...errorDisplayData} onDismiss={hideErrorDisplay} />
         )}
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          <View style={styles.headerSection}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={handleGoBack}
-                activeOpacity={backDisabled ? 1 : 0.7}
-                disabled={backDisabled}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <Image source={backIcon} style={styles.backIcon} />
-              </TouchableOpacity>
-
-              <Text style={styles.headerTitle}>Betting</Text>
-
-              {/* spacer to keep title centered */}
-              <View style={styles.headerSpacer} />
-            </View>
-          </View>
+          <ScreenHeader
+            title="Betting"
+            onBack={handleGoBack}
+            backDisabled={backDisabled}
+          />
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Select Betting provider</Text>
@@ -386,7 +372,7 @@ const BettingScreen: React.FC = () => {
                 style={[styles.input, styles.uneditableInput]}
                 placeholder="Account name will appear here"
                 placeholderTextColor={Colors.text?.secondary}
-                value={customerData ? formatCustomerName(customerData.customer_name) : ''}
+                value={customerData ? formatCustomerName((customerData as any).customer_name) : ''}
                 editable={false}
               />
             </View>
@@ -490,13 +476,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
-  headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
-  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backIcon: { width: 24, height: 24, resizeMode: 'contain' },
-  headerTitle: { position: 'absolute', left: 0, right: 0, color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600', textAlign: 'center', pointerEvents: 'none' },
-  headerSpacer: { width: 40 },
-
   // history removed
 
   section: { paddingHorizontal: 16, marginBottom: 24 },

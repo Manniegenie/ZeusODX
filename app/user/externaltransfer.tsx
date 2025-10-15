@@ -1,35 +1,32 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  TextInput,
-  Modal,
-  FlatList,
-  ActivityIndicator,
-  TouchableWithoutFeedback,
-  Alert,
-  Dimensions,
+    Dimensions,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
-import { Layout } from '../../constants/Layout';
-import { useTokens } from '../../hooks/useTokens';
-import { useBalance } from '../../hooks/useWallet';
-import { useNetworks } from '../../hooks/useNetwork';
-import { useWithdrawal } from '../../hooks/useexternalWithdrawal';
-import PinEntryModal from '../../components/PinEntry';
 import TwoFactorAuthModal from '../../components/2FA';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import NetworkSelectionModal from '../../components/NetworkSelectionModal';
+import PinEntryModal from '../../components/PinEntry';
+import ScreenHeader from '../../components/ScreenHeader';
+import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
+import { useNetworks } from '../../hooks/useNetwork';
+import { useTokens } from '../../hooks/useTokens';
+import { useBalance } from '../../hooks/useWallet';
+import { useWithdrawal } from '../../hooks/useexternalWithdrawal';
 
 // Icons - Updated to match BTC-BSC screen
-import backIcon from '../../components/icons/backy.png';
+// @ts-ignore
+// @ts-ignore
 import arrowDownIcon from '../../components/icons/arrow-down.png';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -203,9 +200,9 @@ const ExternalWalletTransferScreen: React.FC = () => {
 
   // Create tokenMap (keep existing implementation)
   const tokenMap = useMemo((): { [key: string]: TokenOption } => {
-    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'TRX', 'BNB', 'MATIC', 'BTC'];
+    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'TRX', 'BNB', 'MATIC', 'BTC'] as const;
     
-    const balanceMap = {
+    const balanceMap: Record<typeof targetSymbols[number], number> = {
       SOL: solBalance || 0,
       USDC: usdcBalance || 0,
       USDT: usdtBalance || 0,
@@ -216,7 +213,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
       BTC: btcBalance || 0,
     };
 
-    const usdValueMap = {
+    const usdValueMap: Record<typeof targetSymbols[number], string> = {
       SOL: formattedSolBalanceUSD || '$0.00',
       USDC: formattedUsdcBalanceUSD || '$0.00',
       USDT: formattedUsdtBalanceUSD || '$0.00',
@@ -230,33 +227,34 @@ const ExternalWalletTransferScreen: React.FC = () => {
     const tokenMapResult: { [key: string]: TokenOption } = {};
 
     allTokens
-      .filter(token => targetSymbols.includes(token.symbol))
+      .filter(token => targetSymbols.includes(token.symbol as typeof targetSymbols[number]))
       .forEach(token => {
-        const balance = balanceMap[token.symbol] || 0;
+        const symbol = token.symbol as typeof targetSymbols[number];
+        const balance = balanceMap[symbol] || 0;
         const usdValue = balance * (token.currentPrice || 0);
         const hasBalance = balance > 0;
         
         let formattedBalance = '';
-        if (token.symbol === 'BTC') {
+        if (symbol === 'BTC') {
           formattedBalance = balance.toFixed(8);
-        } else if (token.symbol === 'ETH') {
+        } else if (symbol === 'ETH') {
           formattedBalance = balance.toFixed(6);
-        } else if (token.symbol === 'USDT' || token.symbol === 'USDC') {
+        } else if (symbol === 'USDT' || symbol === 'USDC') {
           formattedBalance = balance.toFixed(2);
         } else {
           formattedBalance = balance.toFixed(4);
         }
         
-        tokenMapResult[token.symbol.toLowerCase()] = {
+        tokenMapResult[symbol.toLowerCase()] = {
           id: token.id,
           name: token.name,
-          symbol: token.symbol,
+          symbol,
           icon: token.icon,
           balance,
           usdValue,
           hasBalance,
           formattedBalance,
-          formattedUsdValue: usdValueMap[token.symbol],
+          formattedUsdValue: usdValueMap[symbol],
           currentPrice: token.currentPrice || 0,
         };
       });
@@ -333,6 +331,25 @@ const ExternalWalletTransferScreen: React.FC = () => {
         return 'general';
     }
   };
+
+  interface ErrorAction {
+    title: string;
+    message: string;
+    actionText: string;
+    route?: string;
+    priority?: 'high' | 'medium' | 'low';
+  }
+
+  interface ErrorDisplayData {
+    type?: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' | 'setup' | 'limit' | 'balance';
+    title?: string;
+    message?: string;
+    errorAction?: ErrorAction;
+    onActionPress?: () => void;
+    autoHide?: boolean;
+    duration?: number;
+    dismissible?: boolean;
+  }
 
   const handleNetworkSelect = (network: NetworkOption) => {
     setSelectedNetwork(network);
@@ -411,7 +428,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
       showErrorMessage({
         type: 'server',
         title: 'Fee Calculation Error',
-        message: feeError.message || 'Failed to calculate withdrawal fee',
+        message: (feeError as Error)?.message || 'Failed to calculate withdrawal fee',
         autoHide: true,
         duration: 3000
       });
@@ -532,7 +549,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
             network: selectedNetwork.name,
             address: walletAddress.trim(),
             hash: result.transactionHash || result.hash,
-            fee: feeCalculation?.feeAmount || feeCalculation?.fee,
+            fee: (feeCalculation as any)?.feeAmount || (feeCalculation as any)?.fee,
             narration: `External wallet transfer to ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
           } as TokenDetails
         };
@@ -553,9 +570,9 @@ const ExternalWalletTransferScreen: React.FC = () => {
           to: walletAddress.trim(),
           hash: result.transactionHash || result.hash,
           transactionHash: result.transactionHash || result.hash,
-          fee: feeCalculation?.feeAmount || feeCalculation?.fee,
-          networkFee: feeCalculation?.feeAmount || feeCalculation?.fee,
-          feeUsd: feeCalculation?.feeUsd,
+          fee: (feeCalculation as any)?.feeAmount || (feeCalculation as any)?.fee,
+          networkFee: (feeCalculation as any)?.feeAmount || (feeCalculation as any)?.fee,
+          feeUsd: (feeCalculation as any)?.feeUsd,
           narration: withdrawalData.narration,
           createdAt: new Date().toISOString(),
           formattedDate: new Date().toLocaleString('en-NG', {
@@ -571,7 +588,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
             network: selectedNetwork.code,
             address: walletAddress.trim(),
             hash: result.transactionHash || result.hash,
-            fee: feeCalculation?.feeAmount || feeCalculation?.fee,
+            fee: (feeCalculation as any)?.feeAmount || (feeCalculation as any)?.fee,
             narration: withdrawalData.narration
           }
         };
@@ -587,40 +604,40 @@ const ExternalWalletTransferScreen: React.FC = () => {
       } else {
         setShowTwoFactorModal(false);
         
-        const errorAction = getErrorAction?.(result.requiresAction);
-        const errorType = getErrorType(result.error || 'GENERAL_ERROR');
-        
-        if (errorAction) {
-          showErrorMessage({
-            type: errorType,
-            title: errorAction.title,
-            message: errorAction.message,
-            errorAction: errorAction,
-            onActionPress: () => {
-              if (errorAction.route) {
-                router.push(errorAction.route);
-              } else {
-                if (result.requiresAction === 'RETRY_PIN') {
-                  setPasswordPin('');
-                  setShowPinModal(true);
-                } else if (result.requiresAction === 'RETRY_2FA') {
-                  setTwoFactorCode('');
-                  setShowTwoFactorModal(true);
+          const errorAction = getErrorAction?.(result.requiresAction) as ErrorAction | undefined;
+          const errorType = getErrorType(result.error || 'GENERAL_ERROR');
+          
+          if (errorAction) {
+            showErrorMessage({
+              type: errorType,
+              title: errorAction.title,
+              message: errorAction.message,
+              errorAction: errorAction,
+              onActionPress: () => {
+                if (errorAction.route) {
+                  router.push(errorAction.route as any);
+                } else {
+                  if (result.requiresAction === 'RETRY_PIN') {
+                    setPasswordPin('');
+                    setShowPinModal(true);
+                  } else if (result.requiresAction === 'RETRY_2FA') {
+                    setTwoFactorCode('');
+                    setShowTwoFactorModal(true);
+                  }
                 }
-              }
-            },
-            autoHide: false,
-            dismissible: true
-          });
-        } else {
-          showErrorMessage({
-            type: errorType,
-            title: 'Withdrawal Failed',
-            message: result.message || 'Something went wrong. Please try again.',
-            autoHide: true,
-            duration: 4000
-          });
-        }
+              },
+              autoHide: false,
+              dismissible: true
+            });
+          } else {
+            showErrorMessage({
+              type: errorType,
+              title: 'Withdrawal Failed',
+              message: (result as any)?.message || 'Something went wrong. Please try again.',
+              autoHide: true,
+              duration: 4000
+            });
+          }
       }
     } catch (error) {
       setShowTwoFactorModal(false);
@@ -682,111 +699,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
     );
   }
 
-  const NetworkSelectionModal = () => {
-    const handleNetworkPress = (network: NetworkOption) => {
-      handleNetworkSelect(network);
-      setShowNetworkModal(false);
-    };
-
-    const renderNetworkOption = ({ item }: { item: NetworkOption }) => {
-      const isSelected = selectedNetwork?.id === item.id || selectedNetwork?.code === item.code;
-      
-      return (
-        <TouchableOpacity 
-          style={[
-            styles.networkItem,
-            isSelected && styles.selectedNetworkItem
-          ]}
-          onPress={() => handleNetworkPress(item)}
-          activeOpacity={0.7}
-        >
-          <View style={styles.networkInfo}>
-            <Text style={styles.networkName}>{item.name}</Text>
-            {item.feeUsd && (
-              <Text style={styles.networkFee}>Fee: ~${item.feeUsd.toFixed(2)}</Text>
-            )}
-          </View>
-          
-          {isSelected && (
-            <View style={styles.selectedIndicator}>
-              <Text style={styles.checkMark}>✓</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      );
-    };
-
-    const renderEmptyState = () => (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>
-          {networksError?.message 
-            ? `Failed to load networks${selectedToken?.symbol ? ` for ${selectedToken.symbol}` : ''}`
-            : `No networks available${selectedToken?.symbol ? ` for ${selectedToken.symbol}` : ''}`
-          }
-        </Text>
-        {networksError && (
-          <TouchableOpacity style={styles.retryButton} onPress={() => setShowNetworkModal(false)}>
-            <Text style={styles.retryButtonText}>Close</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-
-    const renderLoadingState = () => (
-      <View style={styles.networkLoadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.networkLoadingText}>Loading networks...</Text>
-      </View>
-    );
-
-    const renderContent = () => {
-      if (isFetchingNetworks) {
-        return renderLoadingState();
-      }
-
-      if (networksError || availableNetworks.length === 0) {
-        return renderEmptyState();
-      }
-
-      return (
-        <FlatList
-          data={availableNetworks}
-          renderItem={renderNetworkOption}
-          keyExtractor={(item) => item.id || item.code}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.networkList}
-        />
-      );
-    };
-
-    return (
-      <Modal
-        visible={showNetworkModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowNetworkModal(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setShowNetworkModal(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>
-                    Select Network{selectedToken?.symbol ? ` for ${selectedToken.symbol}` : ''}
-                  </Text>
-                  <TouchableOpacity onPress={() => setShowNetworkModal(false)} style={styles.closeButtonContainer}>
-                    <Text style={styles.closeButton}>✕</Text>
-                  </TouchableOpacity>
-                </View>
-                
-                {renderContent()}
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-    );
-  };
 
   return (
     <View style={styles.container}>
@@ -812,29 +724,12 @@ const ExternalWalletTransferScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header Section - Updated to match BTC-BSC */}
-          <View style={styles.headerSection}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity 
-                style={styles.backButton} 
-                onPress={() => router.back()}
-                activeOpacity={0.7}
-                delayPressIn={0}
-                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-              >
-                <Image source={backIcon} style={styles.backIcon} />
-              </TouchableOpacity>
-
-              <View style={styles.headerGroup}>
-                <Text style={styles.headerTitle}>Transfer to external wallet</Text>
-                <Text style={styles.headerSubtitle}>
-                  {selectedToken?.symbol ? `${selectedToken.name} (${selectedToken.symbol})` : ''}
-                </Text>
-              </View>
-
-              <View style={styles.headerRight} />
-            </View>
-          </View>
+          {/* Header */}
+          <ScreenHeader
+            title="Transfer to external wallet"
+            subtitle={selectedToken?.symbol ? `${selectedToken.name} (${selectedToken.symbol})` : ''}
+            onBack={() => router.back()}
+          />
 
           {/* Subtitle */}
           <View style={styles.subtitleSection}>
@@ -919,7 +814,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
                   {isCalculatingFee ? (
                     'Calculating...'
                   ) : feeCalculation ? (
-                    `${feeCalculation.feeFormatted} ${selectedToken?.symbol} (~$${feeCalculation.feeUsd.toFixed(2)})`
+                    `${(feeCalculation as any).feeFormatted} ${selectedToken?.symbol} (~$${(feeCalculation as any).feeUsd.toFixed(2)})`
                   ) : (
                     '---'
                   )}
@@ -929,7 +824,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
                 <Text style={styles.summaryLabel}>The receiver will get:</Text>
                 <Text style={styles.summaryValue}>
                   {feeCalculation ? (
-                    `${feeCalculation.receiverAmountFormatted} ${selectedToken?.symbol}`
+                    `${(feeCalculation as any).receiverAmountFormatted} ${selectedToken?.symbol}`
                   ) : (
                     `--- ${selectedToken?.symbol}`
                   )}
@@ -956,7 +851,16 @@ const ExternalWalletTransferScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        <NetworkSelectionModal />
+        <NetworkSelectionModal
+          visible={showNetworkModal}
+          onClose={() => setShowNetworkModal(false)}
+          onSelectNetwork={handleNetworkSelect}
+          selectedNetwork={selectedNetwork}
+          networks={availableNetworks}
+          isLoading={isFetchingNetworks}
+          error={networksError}
+          tokenSymbol={selectedToken?.symbol}
+        />
 
         <PinEntryModal
           visible={showPinModal}
@@ -1029,50 +933,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Header - Updated to match BTC-BSC
-  headerSection: {
-    paddingHorizontal: horizontalPadding,
-    paddingTop: 12,
-    paddingBottom: 6,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: { 
-    width: 40,
-    height: 40,
-    justifyContent: 'center', 
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  backIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
-  headerGroup: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerRight: {
-    width: 40,
-  },
-  headerTitle: {
-    color: Colors.text?.primary || '#111827',
-    fontFamily: Typography.medium || 'System',
-    fontSize: 18,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  headerSubtitle: {
-    color: Colors.text?.secondary || '#6B7280',
-    fontFamily: Typography.regular || 'System',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 2,
-  },
 
   // Subtitle styles
   subtitleSection: {
@@ -1289,119 +1149,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: Colors.surface || '#FFFFFF',
-    borderTopLeftRadius: Layout?.borderRadius?.xl || 16,
-    borderTopRightRadius: Layout?.borderRadius?.xl || 16,
-    padding: Layout?.spacing?.lg || 16,
-    width: '100%',
-    maxHeight: '70%',
-    minHeight: '45%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Layout?.spacing?.md || 12,
-    paddingBottom: Layout?.spacing?.xs || 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  modalTitle: {
-    fontFamily: Typography.bold || 'System',
-    fontSize: 14,
-    color: Colors.text?.primary || '#111827',
-    fontWeight: '600',
-    flex: 1,
-  },
-  closeButtonContainer: {
-    padding: Layout?.spacing?.xs || 8,
-  },
-  closeButton: {
-    fontSize: 14,
-    color: Colors.text?.secondary || '#6B7280',
-    fontWeight: '500',
-  },
-  networkList: {
-    paddingBottom: Layout?.spacing?.sm || 8,
-  },
-  networkItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: Layout?.spacing?.lg || 16,
-    paddingHorizontal: Layout?.spacing?.lg || 16,
-    backgroundColor: '#F0EFFF',
-    marginBottom: Layout?.spacing?.sm || 8,
-    borderRadius: Layout?.borderRadius?.md || 8,
-  },
-  selectedNetworkItem: {
-    backgroundColor: '#EEF2FF',
-    borderWidth: 1,
-    borderColor: Colors.primary || '#35297F',
-  },
-  networkInfo: {
-    flex: 1,
-  },
-  networkName: {
-    fontFamily: Typography.medium || 'System',
-    fontSize: 13,
-    color: Colors.text?.primary || '#111827',
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  networkFee: {
-    fontFamily: Typography.regular || 'System',
-    fontSize: 11,
-    color: Colors.text?.secondary || '#6B7280',
-    fontWeight: '400',
-  },
-  selectedIndicator: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Colors.primary || '#35297F',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkMark: {
-    color: Colors.surface || '#FFFFFF',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  
-  networkLoadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: Layout?.spacing?.xl || 24,
-  },
-  networkLoadingText: {
-    fontFamily: Typography.regular || 'System',
-    fontSize: 14,
-    color: Colors.text?.secondary || '#6B7280',
-    marginTop: Layout?.spacing?.md || 12,
-  },
-  
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: Layout?.spacing?.xl || 24,
-  },
-  emptyText: {
-    fontFamily: Typography.regular || 'System',
-    fontSize: 14,
-    color: Colors.text?.secondary || '#6B7280',
-    textAlign: 'center',
-    marginBottom: Layout?.spacing?.md || 12,
-  },
 });
 
 export default ExternalWalletTransferScreen;

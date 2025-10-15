@@ -1,14 +1,14 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  StatusBar,
-  SafeAreaView,
-  Image,
-} from 'react-native';
 import { useRouter } from 'expo-router';
+import React, { ReactElement } from 'react';
+import {
+    Image,
+    SafeAreaView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 // Import your custom icons
 const AirtimeIcon = require('../../components/icons/Airtimeicon.png');
@@ -68,10 +68,10 @@ const UtilitiesScreen: React.FC = () => {
   ];
 
   const handleServicePress = (service: Service): void => {
-    router.push(`user/${service.route}`);
+    router.push(`/user/${service.route}` as any);
   };
 
-  const renderServiceItem = (service: Service): JSX.Element => (
+  const renderServiceItem = (service: Service): ReactElement => (
     <TouchableOpacity 
       key={service.id}
       style={styles.serviceItem}
@@ -89,7 +89,7 @@ const UtilitiesScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <StatusBar barStyle="light-content" backgroundColor="#35297F" />
       
       <View style={styles.content}>
         {/* Header */}
@@ -132,11 +132,11 @@ const UtilitiesScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#35297F',
   },
   content: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#35297F',
   },
   header: {
     flexDirection: 'row',
@@ -146,14 +146,14 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
     marginHorizontal: 31,
     position: 'relative',
   },
   headerText: {
-    color: '#111827',
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '400',
+    fontWeight: '500',
     textAlign: 'center',
   },
   closeButton: {
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   closeIcon: {
     width: 24,
     height: 24,
-    tintColor: '#111827',
+    tintColor: '#FFFFFF',
   },
   servicesContent: {
     flex: 1,
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   serviceText: {
-    color: '#111827',
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '400',
     textAlign: 'center',

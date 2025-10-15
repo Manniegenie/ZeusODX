@@ -1,35 +1,40 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  RefreshControl,
-  ActivityIndicator,
-  ImageBackground
+    ActivityIndicator,
+    Image,
+    ImageBackground,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-
 import BottomTabNavigator from '../../components/BottomNavigator';
-import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import NetworkSelectionModal from '../../components/Network';
-import { Typography } from '../../constants/Typography';
+import ScreenHeader from '../../components/ScreenHeader';
+import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import { useBalance } from '../../hooks/useWallet';
+import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
+import { useBalance } from '../../hooks/useWallet';
 
+// @ts-ignore
 import ethIcon from '../../components/icons/eth-icon.png';
+// @ts-ignore
 import transferIcon from '../../components/icons/transfer-icon.png';
+// @ts-ignore
 import swapIcon from '../../components/icons/swap-icon.png';
+// @ts-ignore
 import depositIcon from '../../components/icons/deposit-icon.png';
+// @ts-ignore
 import emptyStateIcon from '../../components/icons/empty-state.png';
+// @ts-ignore
 import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
-import backIcon from '../../components/icons/backy.png';
 
 // -------------------- Types to match History/Receipt --------------------
 type TokenDetails = {
@@ -236,7 +241,12 @@ const toAPITransaction = (tx: any): APITransaction => {
 };
 
 // -------------------- Screen --------------------
-const EthereumWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
+interface EthereumWalletScreenProps {
+  onQuickActionPress?: (actionId: string) => void;
+  onSeeMorePress?: () => void;
+}
+
+const EthereumWalletScreen: React.FC<EthereumWalletScreenProps> = ({ onQuickActionPress, onSeeMorePress }) => {
   const router = useRouter();
   const { openNetworkModal } = useLocalSearchParams();
 
@@ -245,7 +255,7 @@ const EthereumWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
   const {
     ethBalance,
-    ethBalanceUSD,
+    formattedEthBalanceUSD: ethBalanceUSD,
     formattedEthBalance,
     formattedEthBalanceUSD,
     loading,
@@ -286,7 +296,7 @@ const EthereumWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
   const handleGoBack = () => router.back();
 
-  const handleQuickAction = (actionId) => {
+  const handleQuickAction = (actionId: string) => {
     if (actionId === 'deposit') {
       setShowNetworkModal(true);
     } else if (actionId === 'transfer') {
@@ -330,18 +340,18 @@ const EthereumWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   };
 
   // Updated: route to deposit pages for networks
-  const handleNetworkSelect = (network) => {
+  const handleNetworkSelect = (network: { id: string }) => {
     if (!network || !network.id) return;
     const id = String(network.id).toLowerCase();
 
     // Legacy / existing behavior for plain ethereum route
     if (id === 'ethereum') {
-      router.push('../deposits/eth');
+      router.push('/deposits/eth' as any);
     } else {
       // New behavior: route pattern: /deposits/ETH-<networkId>
       // e.g. /deposits/ETH-arbitrum, /deposits/ETH-base, /deposits/ETH-bsc
       const routePath = `/deposits/eth-${id}`;
-      router.push(routePath);
+      router.push(routePath as any);
     }
 
     setShowNetworkModal(false);
@@ -377,24 +387,13 @@ const EthereumWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
           }
         >
           {/* Header */}
-          <View style={styles.headerSection}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity 
-                style={styles.backButton} 
-                onPress={handleGoBack}
-                activeOpacity={0.7}
-                delayPressIn={0}
-                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-              >
-                <Image source={backIcon} style={styles.backIcon} />
-              </TouchableOpacity>
-              <View style={styles.headerGroup}>
-                <Image source={ethIcon} style={styles.iconImage} />
-                <Text style={styles.headerTitle}>Ethereum</Text>
-              </View>
-              <View style={styles.headerRight} />
-            </View>
-          </View>
+          <ScreenHeader
+            title="Ethereum"
+            onBack={handleGoBack}
+            rightComponent={
+              <Image source={ethIcon} style={styles.iconImage} />
+            }
+          />
 
           {/* Balance */}
           <View style={styles.balanceSection}>
@@ -520,24 +519,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
-  headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
-  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { 
-    width: 40,
-    height: 40,
-    justifyContent: 'center', 
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  backIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
-  headerGroup: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' },
-  iconImage: { width: 28, height: 28, resizeMode: 'cover' },
-  headerTitle: { fontSize: 16, fontWeight: '600', color: Colors.text.primary },
-  headerRight: { width: 40 },
+  iconImage: { width: 28, height: 28, resizeMode: 'cover', marginRight: 8 },
 
   // Balance
   balanceSection: { paddingHorizontal: 16, paddingBottom: 16 },

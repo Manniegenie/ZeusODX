@@ -20,6 +20,8 @@ import ErrorDisplay from '../../components/ErrorDisplay';
 import FiatTransferConfirmationModal from '../../components/FiatConfirm';
 import naijaFlag from '../../components/icons/naija-flag.png';
 import { useBankAccounts } from '../../hooks/usebankAccount';
+// Icons - Updated to match btc-bsc screen
+import backIcon from '../../components/icons/backy.png';
 
 // PIN + 2FA modals and withdrawal hook
 import TwoFactorAuthModal from '../../components/2FA';
@@ -431,24 +433,26 @@ const BankAccountsScreen = () => {
           showsVerticalScrollIndicator={false}
           scrollEnabled={!isAnyOperationInProgress}
         >
-          {/* Header Section */}
-          <View
-            style={[styles.headerSection, isAnyOperationInProgress && styles.headerSectionDisabled]}
-          >
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={handleGoBack}
-              activeOpacity={isAnyOperationInProgress ? 1 : 0.7}
-              disabled={isAnyOperationInProgress}
-            >
-              <Text
-                style={[styles.backButtonText, isAnyOperationInProgress && styles.backButtonTextDisabled]}
+          {/* Header Section - Updated to match btc-bsc screen */}
+          <View style={[styles.headerSection, isAnyOperationInProgress && styles.headerSectionDisabled]}>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={handleGoBack}
+                activeOpacity={isAnyOperationInProgress ? 1 : 0.7}
+                disabled={isAnyOperationInProgress}
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
-                ←
-              </Text>
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
-            <View style={styles.headerSpacer} />
+                <Image source={backIcon} style={[styles.backIcon, isAnyOperationInProgress && styles.backIconDisabled]} />
+              </TouchableOpacity>
+
+              <View style={styles.headerGroup}>
+                <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
+              </View>
+
+              <View style={styles.headerRight} />
+            </View>
           </View>
 
           {/* Transfer Summary (only in selection mode) */}
@@ -728,35 +732,47 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
 
   headerSection: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  headerSectionDisabled: { 
+    opacity: 0.7 
+  },
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
   },
-  headerSectionDisabled: { opacity: 0.7 },
-  backButton: {
+  backButton: { 
     width: 40,
     height: 40,
-    justifyContent: 'center',
+    justifyContent: 'center', 
     alignItems: 'center',
     borderRadius: 20,
   },
-  backButtonText: { fontSize: 20, color: Colors.text.primary, fontWeight: '500' },
-  backButtonTextDisabled: { opacity: 0.5 },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
+  backIconDisabled: {
+    opacity: 0.5,
+  },
+  headerGroup: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerRight: {
+    width: 40,
+  },
   headerTitle: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
     color: '#35297F',
     fontFamily: Typography.medium,
     fontSize: 18,
-    fontWeight: '600',
     textAlign: 'center',
-    pointerEvents: 'none',
+    fontWeight: '600',
   },
-  headerSpacer: { width: 40, height: 40 },
 
   transferSummarySection: { paddingHorizontal: 16, paddingBottom: 16 },
   summaryCard: {

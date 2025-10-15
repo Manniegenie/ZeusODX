@@ -1,12 +1,22 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableWithoutFeedback } from 'react-native';
-import { Typography } from '../constants/Typography';
+import { Animated, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { Colors } from '../constants/Colors';
+import { Typography } from '../constants/Typography';
+
+interface ErrorAction {
+  title: string;
+  message: string;
+  actionText: string;
+  route?: string;
+  priority?: 'high' | 'medium' | 'low';
+}
 
 interface ErrorDisplayProps {
   type?: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' | 'setup' | 'limit' | 'balance' | 'success';
   title?: string;
   message?: string;
+  errorAction?: ErrorAction;
+  onActionPress?: () => void;
   onDismiss?: () => void;
   autoHide?: boolean;
   duration?: number;
@@ -24,6 +34,8 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   type = 'general',
   title,
   message,
+  errorAction,
+  onActionPress,
   onDismiss,
   autoHide = true,
   duration = 4000,
@@ -106,6 +118,15 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
             <Text style={styles.message} numberOfLines={2}>
               {displayMessage}
             </Text>
+            {errorAction && onActionPress && (
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: errorContent.color }]}
+                onPress={onActionPress}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.actionButtonText}>{errorAction.actionText}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -136,7 +157,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.054)',
     minHeight: 54,
   },
-  textContainer: { flex: 1 },
+  textContainer: {
+    flex: 1,
+  },
   title: {
     fontFamily: Typography.medium || 'System',
     fontSize: 14,
@@ -149,6 +172,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.text?.secondary || '#6B7280',
     lineHeight: 16,
+    marginBottom: 0,
+  },
+  actionButton: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  actionButtonText: {
+    color: '#FFFFFF',
+    fontFamily: Typography.medium || 'System',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 

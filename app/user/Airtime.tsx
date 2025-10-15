@@ -1,40 +1,48 @@
 // app/user/BuyAirtimeScreen.tsx
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  TextInput,
-  Dimensions,
-  Alert,
-  ImageSourcePropType,
+    Dimensions,
+    Image,
+    ImageSourcePropType,
+    ImageStyle,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TextStyle,
+    TouchableOpacity,
+    View,
+    ViewStyle
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import BottomTabNavigator from '../../components/BottomNavigator';
-import AirtimeConfirmationModal from '../../components/Airtimeconfirm';
-import PinEntryModal from '../../components/PinEntry';
 import TwoFactorAuthModal from '../../components/2FA';
+import AirtimeConfirmationModal from '../../components/Airtimeconfirm';
+import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import PinEntryModal from '../../components/PinEntry';
 import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
-import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 import { useAirtime } from '../../hooks/useAirtime';
 
 // Network provider icons
+// @ts-ignore
 import mtnIcon from '../../components/icons/mtn.png';
+// @ts-ignore
 import gloIcon from '../../components/icons/glo.png';
+// @ts-ignore
 import airtelIcon from '../../components/icons/airtel.png';
+// @ts-ignore
 import nineMobileIcon from '../../components/icons/9mobile.png';
+// @ts-ignore
 import profileIcon from '../../components/icons/profile.png';
+// @ts-ignore
 import checkmarkIcon from '../../components/icons/green-checkmark.png';
 
 // use same back icon as other screens
-import backIcon from '../../components/icons/backy.png';
+import ScreenHeader from '../../components/ScreenHeader';
 
 // Get screen dimensions for responsive design
 const { width: screenWidth } = Dimensions.get('window');
@@ -52,7 +60,7 @@ const getResponsiveDimensions = () => {
     networkIconHeight: isSmallScreen ? 40 : isMediumScreen ? 48 : 53,
     
     // Quick pick cards
-    quickPickCardWidth: isSmallScreen ? '31%' : '30%',
+    quickPickCardWidth: isSmallScreen ? '31%' as const : '30%' as const,
     quickPickPadding: isSmallScreen ? 12 : 16,
     
     // Profile icon
@@ -82,8 +90,6 @@ interface ErrorDisplayData {
   type?: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' | 'setup' | 'limit' | 'balance';
   title?: string;
   message?: string;
-  errorAction?: ErrorAction;
-  onActionPress?: () => void;
   autoHide?: boolean;
   duration?: number;
   dismissible?: boolean;
@@ -365,21 +371,6 @@ const BuyAirtimeScreen: React.FC = () => {
             type: errorType,
             title: errorAction.title,
             message: errorAction.message,
-            errorAction: errorAction,
-            onActionPress: () => {
-              console.log('Error action pressed, route:', errorAction.route);
-              if (errorAction.route) {
-                router.push(errorAction.route);
-              } else {
-                if (result.requiresAction === 'RETRY_PIN') {
-                  setPasswordPin('');
-                  setShowPinModal(true);
-                } else if (result.requiresAction === 'RETRY_2FA') {
-                  setTwoFactorCode('');
-                  setShowTwoFactorModal(true);
-                }
-              }
-            },
             autoHide: false,
             dismissible: true
           });
@@ -446,8 +437,6 @@ const BuyAirtimeScreen: React.FC = () => {
             type={errorDisplayData.type}
             title={errorDisplayData.title}
             message={errorDisplayData.message}
-            errorAction={errorDisplayData.errorAction}
-            onActionPress={errorDisplayData.onActionPress}
             autoHide={errorDisplayData.autoHide !== false}
             duration={errorDisplayData.duration || 4000}
             dismissible={errorDisplayData.dismissible !== false}
@@ -462,25 +451,11 @@ const BuyAirtimeScreen: React.FC = () => {
           contentContainerStyle={styles.scrollContent}
         >
           {/* Header Section */}
-          <View style={styles.headerSection}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity 
-                style={styles.backButton} 
-                onPress={handleGoBack}
-                activeOpacity={backDisabled ? 1 : 0.7}
-                disabled={backDisabled}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <Image source={backIcon} style={styles.backIcon} />
-              </TouchableOpacity>
-
-              {/* Centered Title */}
-              <Text style={styles.headerTitle}>Buy Airtime</Text>
-
-              {/* spacer to keep centered title */}
-              <View style={styles.headerSpacer} />
-            </View>
-          </View>
+          <ScreenHeader
+            title="Buy Airtime"
+            onBack={handleGoBack}
+            backDisabled={backDisabled}
+          />
 
           {/* Network Provider Section */}
           <View style={styles.section}>
@@ -648,7 +623,41 @@ const BuyAirtimeScreen: React.FC = () => {
 };
 
 // Responsive styles
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<{
+  container: ViewStyle;
+  safeArea: ViewStyle;
+  scrollView: ViewStyle;
+  scrollContent: ViewStyle;
+  historyLink: TextStyle;
+  section: ViewStyle;
+  sectionTitle: TextStyle;
+  networkScrollView: ViewStyle;
+  networkScrollContainer: ViewStyle;
+  networkGrid: ViewStyle;
+  networkCard: ViewStyle;
+  networkCardSelected: ViewStyle;
+  networkIcon: ImageStyle;
+  checkmarkContainer: ViewStyle;
+  checkmarkIcon: ImageStyle;
+  mobileNumberSection: ViewStyle;
+  mobileInputContainer: ViewStyle;
+  mobileInput: TextStyle;
+  profileIconContainer: ViewStyle;
+  profileIcon: ImageStyle;
+  helperText: TextStyle;
+  quickPickGrid: ViewStyle;
+  quickPickCard: ViewStyle;
+  quickPickCardSelected: ViewStyle;
+  quickPickText: TextStyle;
+  quickPickTextSelected: TextStyle;
+  amountInput: TextStyle;
+  maxAmountText: TextStyle;
+  buttonContainer: ViewStyle;
+  continueButton: ViewStyle;
+  continueButtonDisabled: ViewStyle;
+  continueButtonText: TextStyle;
+  bottomSpacer: ViewStyle;
+}>({
   container: { 
     flex: 1, 
     backgroundColor: Colors.background || '#F8F9FA' 
@@ -662,42 +671,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 20,
   },
-
-  // Header styles
-  headerSection: {
-    paddingHorizontal: responsiveDims.horizontalPadding,
-    paddingTop: 12,
-    paddingBottom: 24,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  backIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
-  headerTitle: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    color: '#35297F',
-    fontFamily: Typography.medium || 'System',
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    pointerEvents: 'none',
-  },
-  headerSpacer: { width: 40 },
 
   historyLink: {
     color: '#35297F',

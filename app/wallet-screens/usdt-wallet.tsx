@@ -1,28 +1,28 @@
 // app/user/USDTWalletScreen.tsx
-import React, { useCallback, useState, useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  RefreshControl,
   ActivityIndicator,
+  Image,
   ImageBackground,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-
 import BottomTabNavigator from '../../components/BottomNavigator';
-import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import NetworkSelectionModal from '../../components/Network';
-import { Typography } from '../../constants/Typography';
+import ScreenHeader from '../../components/ScreenHeader';
+import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import { useBalance } from '../../hooks/useWallet';
+import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
+import { useBalance } from '../../hooks/useWallet';
 
 import usdtIcon from '../../components/icons/usdt-icon.png';
 import transferIcon from '../../components/icons/transfer-icon.png';
