@@ -1,15 +1,15 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
-    Alert,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
@@ -18,7 +18,7 @@ import { useNGNZ } from '../../hooks/useNGNZ';
 
 // Asset imports
 const ngnzIcon = require('../../components/icons/NGNZ.png');
-// Back icon - matching btc-bsc screen
+// Icons - Updated to match btc-bsc screen
 import backIcon from '../../components/icons/backy.png';
 
 interface TransferScreenProps {
@@ -134,17 +134,23 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
       <SafeAreaView style={styles.safeArea}>
         {/* Header - Updated to match btc-bsc screen */}
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-            delayPressIn={0}
-            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-          >
-            <Image source={backIcon} style={styles.backIcon} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Transfer to bank account</Text>
-          <View style={styles.backButton} />
+          <View style={styles.headerContainer}>
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+              delayPressIn={0}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
+              <Image source={backIcon} style={styles.backIcon} />
+            </TouchableOpacity>
+
+            <View style={styles.headerGroup}>
+              <Text style={styles.headerTitle}>Transfer to bank account</Text>
+            </View>
+
+            <View style={styles.headerRight} />
+          </View>
         </View>
 
         <ScrollView
@@ -222,17 +228,20 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   safeArea: { flex: 1 },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: Layout.spacing.lg,
-    paddingVertical: Layout.spacing.md,
+    paddingTop: 12,
+    paddingBottom: 6,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   backButton: { 
-    width: 40, 
-    height: 40, 
+    width: 40,
+    height: 40,
     justifyContent: 'center', 
     alignItems: 'center',
     borderRadius: 20,
@@ -242,7 +251,20 @@ const styles = StyleSheet.create({
     height: 24,
     resizeMode: 'contain',
   },
-  headerTitle: { fontFamily: Typography.medium, fontSize: 18, color: '#35297F', fontWeight: '600' },
+  headerGroup: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerRight: {
+    width: 40,
+  },
+  headerTitle: {
+    color: '#35297F',
+    fontFamily: Typography.medium,
+    fontSize: 18,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
   scrollView: { flex: 1 },
   scrollViewContent: { paddingHorizontal: Layout.spacing.lg, paddingBottom: 120, paddingTop: Layout.spacing.lg },
   inputContainer: { marginBottom: Layout.spacing.lg },

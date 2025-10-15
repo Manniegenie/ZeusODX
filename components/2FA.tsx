@@ -1,22 +1,31 @@
+import * as Clipboard from 'expo-clipboard';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Animated,
-  TextInput,
-  TouchableWithoutFeedback,
-  Alert,
-  Image,
+    Alert,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 import { Typography } from '../constants/Typography';
+import BaseModal from './ui/BaseModal';
 
-import copyIcon from '../components/icons/copy-icon.png';
+// Import icons
+// @ts-ignore
+import copyIcon from './icons/copy-icon.png';
 
-const TwoFactorAuthModal = ({
+interface TwoFactorAuthModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (code: string) => void;
+  loading?: boolean;
+  title?: string;
+  subtitle?: string;
+}
+
+const TwoFactorAuthModal: React.FC<TwoFactorAuthModalProps> = ({
   visible,
   onClose,
   onSubmit,
@@ -24,40 +33,20 @@ const TwoFactorAuthModal = ({
   title = 'Two-Factor Authentication',
   subtitle = 'Please enter the 6-digit code from your authenticator app'
 }) => {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
-  const codeInputRef = useRef(null);
+  const codeInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (visible) {
       setCode('');
       setError('');
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 100,
-          friction: 8,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        })
-      ]).start(() => {
-        setTimeout(() => codeInputRef.current?.focus(), 100);
-      });
-    } else {
-      Animated.parallel([
-        Animated.timing(scaleAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(opacityAnim, { toValue: 0, duration: 200, useNativeDriver: true })
-      ]).start();
+      // Focus input after modal animation
+      setTimeout(() => codeInputRef.current?.focus(), 300);
     }
-  }, [visible, scaleAnim, opacityAnim]);
+  }, [visible]);
 
-  const handleCodeChange = (value) => {
+  const handleCodeChange = (value: string) => {
     const numericValue = value.replace(/[^0-9]/g, '').slice(0, 6);
     setCode(numericValue);
     setError('');
@@ -86,10 +75,6 @@ const TwoFactorAuthModal = ({
     onSubmit(code);
   };
 
-  const handleBackdropPress = () => {
-    if (!loading) onClose();
-  };
-
   const isValid = code.length === 6;
 
   const renderCodeBoxes = () => {
@@ -106,99 +91,81 @@ const TwoFactorAuthModal = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={handleBackdropPress}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <Animated.View
-              style={[
-                styles.modalContainer,
-                { opacity: opacityAnim, transform: [{ scale: scaleAnim }] },
-              ]}
-            >
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={onClose}
-                disabled={loading}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
+    <BaseModal
+      visible={visible}
+      onClose={onClose}
+      type="center"
+      disableBackdropPress={loading}
+    >
+      <View style={styles.content}>
+        {/* Close Button */}
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={onClose}
+          disabled={loading}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.closeButtonText}>✕</Text>
+        </TouchableOpacity>
 
-              <View style={styles.titleSection}>
-                <Text style={styles.title}>{title}</Text>
-                <Text style={styles.subtitle}>{subtitle}</Text>
-              </View>
-
-              <View style={styles.inputSection}>
-                <TextInput
-                  ref={codeInputRef}
-                  style={styles.hiddenInput}
-                  value={code}
-                  onChangeText={handleCodeChange}
-                  keyboardType="numeric"
-                  maxLength={6}
-                  caretHidden
-                />
-
-                <View style={styles.codeContainer}>{renderCodeBoxes()}</View>
-
-                {/* Paste Button */}
-                <TouchableOpacity
-                  style={styles.pasteButton}
-                  onPress={handlePasteFromClipboard}
-                  disabled={loading}
-                  activeOpacity={0.8}
-                >
-                  <Image source={copyIcon} style={styles.copyIcon} resizeMode="contain" />
-                  <Text style={styles.pasteButtonText}>Paste</Text>
-                </TouchableOpacity>
-
-                {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-                <Text style={styles.helperText}>
-                  Open your authenticator app to get the code
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                style={[styles.submitButton, (!isValid || loading) && styles.submitButtonDisabled]}
-                onPress={handleSubmit}
-                disabled={!isValid || loading}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.submitButtonText}>
-                  {loading ? 'Verifying...' : 'Verify'}
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </TouchableWithoutFeedback>
+        {/* Title Section */}
+        <View style={styles.titleSection}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
-      </TouchableWithoutFeedback>
-    </Modal>
+
+        {/* Input Section */}
+        <View style={styles.inputSection}>
+          <TextInput
+            ref={codeInputRef}
+            style={styles.hiddenInput}
+            value={code}
+            onChangeText={handleCodeChange}
+            keyboardType="numeric"
+            maxLength={6}
+            caretHidden
+          />
+
+          <View style={styles.codeContainer}>{renderCodeBoxes()}</View>
+
+          {/* Paste Button */}
+          <TouchableOpacity
+            style={styles.pasteButton}
+            onPress={handlePasteFromClipboard}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            <Image source={copyIcon} style={styles.copyIcon} resizeMode="contain" />
+            <Text style={styles.pasteButtonText}>Paste</Text>
+          </TouchableOpacity>
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <Text style={styles.helperText}>
+            Open your authenticator app to get the code
+          </Text>
+        </View>
+
+        {/* Submit Button */}
+        <TouchableOpacity
+          style={[styles.submitButton, (!isValid || loading) && styles.submitButtonDisabled]}
+          onPress={handleSubmit}
+          disabled={!isValid || loading}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.submitButtonText}>
+            {loading ? 'Verifying...' : 'Verify'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </BaseModal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  modalContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+  content: {
     paddingHorizontal: 24,
     paddingVertical: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
-    width: 320,
-    alignSelf: 'center',
   },
   closeButton: {
     position: 'absolute',
@@ -242,7 +209,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
-  hiddenInput: { position: 'absolute', opacity: 0, width: 1, height: 1 },
+  hiddenInput: {
+    position: 'absolute',
+    opacity: 0,
+    width: 1,
+    height: 1,
+  },
   codeContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -270,7 +242,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#9CA3AF',
   },
-  codeTextFilled: { color: '#35297F' },
+  codeTextFilled: {
+    color: '#35297F',
+  },
   pasteButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -282,7 +256,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginBottom: 12,
   },
-  copyIcon: { width: 14, height: 14, marginRight: 6 },
+  copyIcon: {
+    width: 14,
+    height: 14,
+    marginRight: 6,
+  },
   pasteButtonText: {
     color: '#35297F',
     fontFamily: Typography.medium || 'System',
@@ -314,7 +292,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  submitButtonDisabled: { backgroundColor: '#9CA3AF' },
+  submitButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
   submitButtonText: {
     color: '#FFFFFF',
     fontFamily: Typography.medium || 'System',

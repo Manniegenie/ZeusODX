@@ -1,31 +1,42 @@
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  SafeAreaView,
-  ScrollView,
-  Image,
-  StatusBar
+    Image,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { Typography } from '../constants/Typography';
 import { Colors } from '../constants/Colors';
+import { Typography } from '../constants/Typography';
+import BaseModal from './ui/BaseModal';
 
 // Import provider icons
-import AbaIcon from '../components/icons/Aba.png';
-import AbujaceIcon from '../components/icons/Abuja.png';
-import BeninIcon from '../components/icons/Benin.png';
-import EkoIcon from '../components/icons/Eko.png';
-import EnuguIcon from '../components/icons/Enugu.png';
-import IbadanIcon from '../components/icons/Ibadan.png';
-import IkejaIcon from '../components/icons/Ikeja.png';
-import JosIcon from '../components/icons/Jos.png';
-import KadunaIcon from '../components/icons/Kaduna.png';
-import PortharcourIcon from '../components/icons/Port-Harcourt.png';
-import KanoIcon from '../components/icons/Kano.png';
-import YolaIcon from '../components/icons/Yola.png';
+// @ts-ignore
+import AbaIcon from './icons/Aba.png';
+// @ts-ignore
+import AbujaceIcon from './icons/Abuja.png';
+// @ts-ignore
+import BeninIcon from './icons/Benin.png';
+// @ts-ignore
+import EkoIcon from './icons/Eko.png';
+// @ts-ignore
+import EnuguIcon from './icons/Enugu.png';
+// @ts-ignore
+import IbadanIcon from './icons/Ibadan.png';
+// @ts-ignore
+import IkejaIcon from './icons/Ikeja.png';
+// @ts-ignore
+import JosIcon from './icons/Jos.png';
+// @ts-ignore
+import KadunaIcon from './icons/Kaduna.png';
+// @ts-ignore
+import PortharcourIcon from './icons/Port-Harcourt.png';
+// @ts-ignore
+import KanoIcon from './icons/Kano.png';
+// @ts-ignore
+import YolaIcon from './icons/Yola.png';
 
 interface ElectricityProvider {
   id: string;
@@ -47,7 +58,6 @@ const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
   onSelectProvider,
   selectedProvider
 }) => {
-  
   // Provider list with icons
   const providers: ElectricityProvider[] = [
     { id: 'aba-electric', name: 'Aba Electricity', icon: AbaIcon, region: 'Abia' },
@@ -71,95 +81,72 @@ const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
   };
 
   return (
-    <Modal
+    <BaseModal
       visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+      onClose={onClose}
+      type="bottom"
     >
-      <View style={styles.modalWrapper}>
-        <SafeAreaView style={styles.container}>
-          <StatusBar backgroundColor={Colors.surface} barStyle="dark-content" />
-          
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Choose provider</Text>
-            <TouchableOpacity 
-              style={styles.closeButton} 
-              onPress={onClose}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Provider List */}
-          <ScrollView 
-            style={styles.scrollView}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
+      <View style={styles.content}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Choose provider</Text>
+          <TouchableOpacity 
+            style={styles.closeButton} 
+            onPress={onClose}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            {providers.map((provider) => (
-              <TouchableOpacity
-                key={provider.id}
-                style={[
-                  styles.providerItem,
-                  selectedProvider?.id === provider.id && styles.providerItemSelected
-                ]}
-                onPress={() => handleProviderSelect(provider)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.providerIconContainer}>
-                  <Image 
-                    source={provider.icon} 
-                    style={styles.providerIcon}
-                    resizeMode="contain"
-                  />
-                </View>
-                <View style={styles.providerInfo}>
-                  <Text style={styles.providerName}>{provider.name}</Text>
-                  {provider.region && (
-                    <Text style={styles.providerRegion}>{provider.region}</Text>
-                  )}
-                </View>
-                {selectedProvider?.id === provider.id && (
-                  <View style={styles.selectedIndicator}>
-                    <Text style={styles.selectedCheckmark}>✓</Text>
-                  </View>
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Provider List */}
+        <ScrollView 
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {providers.map((provider) => (
+            <TouchableOpacity
+              key={provider.id}
+              style={[
+                styles.providerItem,
+                selectedProvider?.id === provider.id && styles.providerItemSelected
+              ]}
+              onPress={() => handleProviderSelect(provider)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.providerIconContainer}>
+                <Image 
+                  source={provider.icon} 
+                  style={styles.providerIcon}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={styles.providerInfo}>
+                <Text style={styles.providerName}>{provider.name}</Text>
+                {provider.region && (
+                  <Text style={styles.providerRegion}>{provider.region}</Text>
                 )}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </SafeAreaView>
+              </View>
+              {selectedProvider?.id === provider.id && (
+                <View style={styles.selectedIndicator}>
+                  <Text style={styles.selectedCheckmark}>✓</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
-    </Modal>
+    </BaseModal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalWrapper: {
-    position: 'absolute',
-    top: 224,
-    left: 1,
-    width: 393,
-    height: 630,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    opacity: 1,
-    alignSelf: 'center',
-    overflow: 'hidden',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-  },
-  container: {
+  content: {
     flex: 1,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    maxHeight: '80%',
   },
-  
-  // Header styles
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -190,17 +177,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-
-  // Scroll view styles
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingTop: 8,
-    paddingBottom: 24,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
   },
-
-  // Provider item styles
   providerItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -213,8 +196,6 @@ const styles = StyleSheet.create({
   providerItemSelected: {
     backgroundColor: '#F8F7FF',
   },
-  
-  // Provider icon styles
   providerIconContainer: {
     width: 48,
     height: 48,
@@ -223,18 +204,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F9FAFB',
     marginRight: 16,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   providerIcon: {
     width: 32,
     height: 32,
   },
-
-  // Provider info styles
   providerInfo: {
     flex: 1,
     justifyContent: 'center',
@@ -253,8 +238,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     marginTop: 2,
   },
-
-  // Selected indicator styles
   selectedIndicator: {
     width: 24,
     height: 24,

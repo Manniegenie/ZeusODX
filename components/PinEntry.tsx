@@ -1,17 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Animated,
-  TextInput,
-  TouchableWithoutFeedback,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { Typography } from '../constants/Typography';
+import BaseModal from './ui/BaseModal';
 
-const PinEntryModal = ({
+interface PinEntryModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (pin: string) => void;
+  loading?: boolean;
+  title?: string;
+  subtitle?: string;
+}
+
+const PinEntryModal: React.FC<PinEntryModalProps> = ({
   visible,
   onClose,
   onSubmit,
@@ -19,53 +26,20 @@ const PinEntryModal = ({
   title = 'Enter Password PIN',
   subtitle = 'Please enter your 6-digit password PIN to continue'
 }) => {
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
-  const pinInputRef = useRef(null);
+  const pinInputRef = useRef<TextInput>(null);
 
-  // Scale and fade animation
   useEffect(() => {
     if (visible) {
       setPin('');
       setError('');
-      
-      // Animate in
-      Animated.parallel([
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 100,
-          friction: 8,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        })
-      ]).start(() => {
-        // Focus input after animation
-        setTimeout(() => pinInputRef.current?.focus(), 100);
-      });
-    } else {
-      // Animate out
-      Animated.parallel([
-        Animated.timing(scaleAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        })
-      ]).start();
+      // Focus input after modal animation
+      setTimeout(() => pinInputRef.current?.focus(), 300);
     }
-  }, [visible, scaleAnim, opacityAnim]);
+  }, [visible]);
 
-  const handlePinChange = (value) => {
+  const handlePinChange = (value: string) => {
     // Only allow numbers and max 6 digits
     const numericValue = value.replace(/[^0-9]/g, '').slice(0, 6);
     setPin(numericValue);
@@ -78,12 +52,6 @@ const PinEntryModal = ({
       return;
     }
     onSubmit(pin);
-  };
-
-  const handleBackdropPress = () => {
-    if (!loading) {
-      onClose();
-    }
   };
 
   const isValid = pin.length === 6;
@@ -113,115 +81,82 @@ const PinEntryModal = ({
   };
 
   return (
-    <Modal
+    <BaseModal
       visible={visible}
-      transparent
-      animationType="none"
-      onRequestClose={onClose}
+      onClose={onClose}
+      type="center"
+      disableBackdropPress={loading}
     >
-      <TouchableWithoutFeedback onPress={handleBackdropPress}>
-        <View style={styles.overlay}>
-          <TouchableWithoutFeedback>
-            <Animated.View
-              style={[
-                styles.modalContainer,
-                {
-                  opacity: opacityAnim,
-                  transform: [{ scale: scaleAnim }],
-                },
-              ]}
-            >
-              {/* Close Button */}
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={onClose}
-                disabled={loading}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
+      <View style={styles.content}>
+        {/* Close Button */}
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={onClose}
+          disabled={loading}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Text style={styles.closeButtonText}>✕</Text>
+        </TouchableOpacity>
 
-              {/* Title Section */}
-              <View style={styles.titleSection}>
-                <Text style={styles.title}>{title}</Text>
-                <Text style={styles.subtitle}>{subtitle}</Text>
-              </View>
-
-              {/* PIN Input Section */}
-              <View style={styles.inputSection}>
-                {/* Hidden TextInput for keyboard input */}
-                <TextInput
-                  ref={pinInputRef}
-                  style={styles.hiddenInput}
-                  value={pin}
-                  onChangeText={handlePinChange}
-                  keyboardType="numeric"
-                  secureTextEntry={false}
-                  maxLength={6}
-                  autoFocus={false}
-                  caretHidden
-                />
-                
-                {/* PIN Boxes Display */}
-                <View style={styles.pinContainer}>
-                  {renderPinBoxes()}
-                </View>
-
-                {error ? (
-                  <Text style={styles.errorText}>{error}</Text>
-                ) : null}
-                
-                {/* Helper text */}
-                <Text style={styles.helperText}>
-                  Enter your secure 6-digit PIN
-                </Text>
-              </View>
-
-              {/* Submit Button */}
-              <TouchableOpacity
-                style={[
-                  styles.submitButton,
-                  (!isValid || loading) && styles.submitButtonDisabled
-                ]}
-                onPress={handleSubmit}
-                disabled={!isValid || loading}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.submitButtonText}>
-                  {loading ? 'Verifying...' : 'Continue'}
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </TouchableWithoutFeedback>
+        {/* Title Section */}
+        <View style={styles.titleSection}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
-      </TouchableWithoutFeedback>
-    </Modal>
+
+        {/* PIN Input Section */}
+        <View style={styles.inputSection}>
+          {/* Hidden TextInput for keyboard input */}
+          <TextInput
+            ref={pinInputRef}
+            style={styles.hiddenInput}
+            value={pin}
+            onChangeText={handlePinChange}
+            keyboardType="numeric"
+            secureTextEntry={false}
+            maxLength={6}
+            autoFocus={false}
+            caretHidden
+          />
+          
+          {/* PIN Boxes Display */}
+          <View style={styles.pinContainer}>
+            {renderPinBoxes()}
+          </View>
+
+          {error ? (
+            <Text style={styles.errorText}>{error}</Text>
+          ) : null}
+          
+          {/* Helper text */}
+          <Text style={styles.helperText}>
+            Enter your secure 6-digit PIN
+          </Text>
+        </View>
+
+        {/* Submit Button */}
+        <TouchableOpacity
+          style={[
+            styles.submitButton,
+            (!isValid || loading) && styles.submitButtonDisabled
+          ]}
+          onPress={handleSubmit}
+          disabled={!isValid || loading}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.submitButtonText}>
+            {loading ? 'Verifying...' : 'Continue'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </BaseModal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  modalContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+  content: {
     paddingHorizontal: 24,
     paddingVertical: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
-    width: 320,
-    alignSelf: 'center',
   },
   closeButton: {
     position: 'absolute',

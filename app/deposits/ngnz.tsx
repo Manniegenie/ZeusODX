@@ -1,211 +1,233 @@
-// app/deposits/ngnz.tsx
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  Clipboard,
-  Dimensions
+    ActivityIndicator,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import BottomTabNavigator from '../../components/BottomNavigator';
-import AddressCopied from '../../components/AddressCopied';
-import { Typography } from '../../constants/Typography';
+import ErrorDisplay from '../../components/ErrorDisplay';
 import { Colors } from '../../constants/Colors';
+import { Layout } from '../../constants/Layout';
+import { Typography } from '../../constants/Typography';
+import { useNGNZDeposit } from '../../hooks/useNGNZDeposit';
 
-// Icons
-import backIcon from '../../components/icons/backy.png';
-const copyIcon = require('../../components/icons/copy-icon.png');
-
-const { width: screenWidth } = Dimensions.get('window');
-
-const getHorizontalPadding = (): number => {
-  if (screenWidth < 350) return 20;
-  else if (screenWidth < 400) return 24;
-  else return 28;
-};
-
-const horizontalPadding = getHorizontalPadding();
-
-// Account details - Replace with actual data from your API
-const ACCOUNT_DETAILS = {
-  accountNumber: '7650423962',
-  bankName: 'Zenith Bank PLC',
-  accountName: 'ZO/Okoli Emmanuel',
-  transactionFee: '₦100',
-  maxDailyDeposit: '₦5,000,000',
-  depositLimit: '₦1,000 - ₦3,000,000',
-};
+// Asset imports
+const ngnzIcon = require('../../components/icons/NGNZ.png');
+const backIcon = require('../../components/icons/backy.png');
 
 export default function NGNZDepositScreen() {
   const router = useRouter();
-  const [showCopied, setShowCopied] = useState<boolean>(false);
+  const [amount, setAmount] = useState('');
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [errorType, setErrorType] = useState<'network' | 'validation' | 'server' | 'general'>('general');
+  const [depositDetails, setDepositDetails] = useState<any>(null);
 
-  const copyToClipboard = async (text: string): Promise<void> => {
+  const { loading, initializeDeposit } = useNGNZDeposit();
+
+  // Helpers
+  const formatWithCommas = (value: string): string => {
+    // Remove any non-numeric characters except decimal point
+    const cleanValue = value.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const parts = cleanValue.split('.');
+    if (parts.length > 2) return value;
+    
+    // Handle the case where user enters a decimal point
+    if (cleanValue.endsWith('.')) {
+      return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '.';
+    }
+
+    const number = parseFloat(cleanValue);
+    if (isNaN(number)) return '';
+
+    // Format with commas and handle decimals
+    const formatted = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    if (parts.length === 2) {
+      return `${formatted}.${parts[1].slice(0, 2)}`;
+    }
+    return formatted;
+  };
+
+  const unformat = (value: string): string => value.replace(/,/g, '');
+
+  const handleAmountChange = (text: string) => {
+    // Don't format empty input
+    if (!text) {
+      setAmount('');
+      return;
+    }
+
+    const formatted = formatWithCommas(text);
+    setAmount(formatted);
+    setShowError(false);
+  };
+
+  const handleDeposit = async () => {
+    const rawAmount = parseFloat(unformat(amount));
+
+    // Validation
+    if (!rawAmount || rawAmount < 1000) {
+      setErrorMessage('Minimum deposit amount is 1,000 NGNZ');
+      setErrorType('validation');
+      setShowError(true);
+      return;
+    }
+
     try {
-      await Clipboard.setString(text);
-      setShowCopied(true);
+      const result = await initializeDeposit(rawAmount);
+      if (result.success) {
+        // Show deposit details modal
+        if (result.data) {
+          // Navigate to receipt screen with bank details
+          router.push({
+            pathname: '/receipt/ngnz-deposit',
+            params: {
+              reference: result.data.reference,
+              amount: rawAmount.toString(),
+              transactionId: result.data.transactionId,
+              bankName: result.data.bankDetails?.bankName,
+              accountNumber: result.data.bankDetails?.accountNumber,
+              accountName: result.data.bankDetails?.accountName
+            }
+          });
+        }
+      } else {
+        setErrorMessage(result.message || 'Failed to initialize deposit');
+        setErrorType(result.error === 'NETWORK_ERROR' ? 'network' : 'server');
+        setShowError(true);
+      }
     } catch (error) {
-      console.error('Failed to copy:', error);
+      setErrorMessage('An error occurred. Please try again.');
+      setErrorType('general');
+      setShowError(true);
     }
   };
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
-
-        {showCopied && <AddressCopied onDismiss={() => setShowCopied(false)} />}
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+          >
+            <Image source={backIcon} style={styles.backIcon} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Deposit NGNZ</Text>
+          <View style={styles.backButton} />
+        </View>
 
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollViewContent}
         >
-          {/* Header */}
-          <View style={styles.headerSection}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity 
-                style={styles.backButton} 
-                onPress={() => router.back()}
-                activeOpacity={0.7}
-                delayPressIn={0}
-                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-              >
-                <Image source={backIcon} style={styles.backIcon} />
-              </TouchableOpacity>
-
-              <View style={styles.headerGroup}>
-                <Text style={styles.headerTitle}>Deposit NGNZ</Text>
-                <Text style={styles.headerSubtitle}>Nigerian Naira</Text>
+          {/* Amount Input */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Amount</Text>
+            <View style={styles.inputCard}>
+              <View style={styles.inputLeft}>
+                <TextInput
+                  style={styles.amountInput}
+                  value={amount}
+                  onChangeText={handleAmountChange}
+                  placeholder="0.00"
+                  keyboardType="decimal-pad"
+                  placeholderTextColor={Colors.text.secondary}
+                  maxLength={15} // Prevent extremely long numbers
+                  onFocus={() => {
+                    if (amount === '0' || amount === '0.00') {
+                      setAmount('');
+                    }
+                  }}
+                  onBlur={() => {
+                    if (!amount) {
+                      setAmount('0.00');
+                    } else if (!amount.includes('.')) {
+                      setAmount(amount + '.00');
+                    } else {
+                      const parts = amount.split('.');
+                      if (parts[1].length === 0) setAmount(amount + '00');
+                      else if (parts[1].length === 1) setAmount(amount + '0');
+                    }
+                  }}
+                />
               </View>
-
-              <View style={styles.headerRight} />
+              <View style={styles.inputRight}>
+                <View style={styles.tokenSelector}>
+                  <Image source={ngnzIcon} style={styles.tokenIcon} />
+                  <Text style={styles.tokenText}>NGNZ</Text>
+                </View>
+              </View>
             </View>
+            <Text style={styles.minimumText}>
+              Minimum amount - 1,000.00 NGNZ
+            </Text>
           </View>
 
-          {/* Subtitle */}
-          <View style={styles.subtitleSection}>
-            <Text style={styles.subtitle}>Make a transfer to your account details below</Text>
-          </View>
-
-          {/* Account Details */}
-          <View style={styles.detailsSection}>
-            {/* Account Number */}
-            <View style={styles.detailRow}>
-              <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Account Number</Text>
-                <Text style={styles.detailValue}>{ACCOUNT_DETAILS.accountNumber}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.copyButton}
-                onPress={() => copyToClipboard(ACCOUNT_DETAILS.accountNumber)}
-              >
-                <Image source={copyIcon} style={styles.copyIcon} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Bank Name */}
-            <View style={styles.detailRow}>
-              <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Bank Name</Text>
-                <Text style={styles.detailValue}>{ACCOUNT_DETAILS.bankName}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.copyButton}
-                onPress={() => copyToClipboard(ACCOUNT_DETAILS.bankName)}
-              >
-                <Image source={copyIcon} style={styles.copyIcon} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Account Name */}
-            <View style={styles.detailRow}>
-              <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Account Name</Text>
-                <Text style={styles.detailValue}>{ACCOUNT_DETAILS.accountName}</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.copyButton}
-                onPress={() => copyToClipboard(ACCOUNT_DETAILS.accountName)}
-              >
-                <Image source={copyIcon} style={styles.copyIcon} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Transaction Fee */}
-            <View style={styles.detailRow}>
-              <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Transaction Fee</Text>
-                <Text style={styles.detailValue}>{ACCOUNT_DETAILS.transactionFee}</Text>
-              </View>
-            </View>
-
-            {/* Maximum Daily Deposit */}
-            <View style={styles.detailRow}>
-              <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Maximum Daily Deposit</Text>
-                <Text style={styles.detailValue}>{ACCOUNT_DETAILS.maxDailyDeposit}</Text>
-              </View>
-            </View>
-
-            {/* Deposit Limit */}
-            <View style={[styles.detailRow, styles.lastDetailRow]}>
-              <View style={styles.detailContent}>
-                <Text style={styles.detailLabel}>Deposit Limit</Text>
-                <Text style={styles.detailValue}>{ACCOUNT_DETAILS.depositLimit}</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Share Button */}
-          <View style={styles.shareSection}>
-            <TouchableOpacity style={styles.shareButton}>
-              <Text style={styles.shareButtonText}>Share as image</Text>
+          {/* Deposit Button */}
+          <View style={styles.depositContainer}>
+            <TouchableOpacity
+              style={[styles.depositButton, loading && styles.depositButtonDisabled]}
+              onPress={handleDeposit}
+              disabled={loading || !amount}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.depositButtonText}>
+                  Deposit Now
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>
+
+        {/* Error Display */}
+        {showError && (
+          <ErrorDisplay
+            type={errorType}
+            message={errorMessage}
+            onDismiss={() => setShowError(false)}
+          />
+        )}
+
       </SafeAreaView>
-      <BottomTabNavigator activeTab="wallet" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: Colors.background 
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background
   },
-  safeArea: { 
-    flex: 1 
+  safeArea: {
+    flex: 1
   },
-  scrollView: { 
-    flex: 1 
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-
-  // Header
-  headerSection: {
-    paddingHorizontal: horizontalPadding,
-    paddingTop: 12,
-    paddingBottom: 6,
-  },
-  headerContainer: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: Layout.spacing.lg,
+    paddingVertical: Layout.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  backButton: { 
+  backButton: {
     width: 40,
     height: 40,
-    justifyContent: 'center', 
+    justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
   },
@@ -214,109 +236,102 @@ const styles = StyleSheet.create({
     height: 24,
     resizeMode: 'contain',
   },
-  headerGroup: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerRight: {
-    width: 40,
-  },
   headerTitle: {
-    color: Colors.text.primary,
     fontFamily: Typography.medium,
     fontSize: 18,
-    textAlign: 'center',
-    fontWeight: '600',
+    color: '#35297F',
+    fontWeight: '600'
   },
-  headerSubtitle: {
-    color: Colors.text.secondary,
-    fontFamily: Typography.regular,
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 2,
+  scrollView: {
+    flex: 1
   },
-
-  // Subtitle Section
-  subtitleSection: {
-    paddingHorizontal: horizontalPadding,
-    paddingVertical: 8,
-    alignItems: 'center',
+  scrollViewContent: {
+    paddingHorizontal: Layout.spacing.lg,
+    paddingBottom: 120,
+    paddingTop: Layout.spacing.lg
   },
-  subtitle: {
-    color: Colors.text.secondary,
-    fontFamily: Typography.regular,
-    fontSize: 14,
-    textAlign: 'center',
+  inputContainer: {
+    marginBottom: Layout.spacing.lg
   },
-
-  // Details Section
-  detailsSection: {
-    paddingHorizontal: horizontalPadding,
-    paddingVertical: 8,
+  inputLabel: {
+    fontFamily: Typography.medium,
+    fontSize: 16,
+    color: Colors.text.primary,
+    marginBottom: Layout.spacing.xs
   },
-  detailRow: {
+  inputCard: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: Layout.borderRadius.lg,
+    padding: Layout.spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  lastDetailRow: {
-    borderBottomWidth: 0,
-  },
-  detailContent: {
-    flex: 1,
-  },
-  detailLabel: {
-    color: Colors.text.secondary,
-    fontFamily: Typography.regular,
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  detailValue: {
-    color: Colors.text.primary,
-    fontFamily: Typography.medium,
-    fontSize: 14,
-  },
-  copyButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    overflow: 'hidden',
-    marginLeft: 12,
+    minHeight: 80,
+    width: '100%',
   },
-  copyIcon: {
-    width: 32,
-    height: 32,
-    resizeMode: 'cover',
+  inputLeft: {
+    flex: 1,
+    justifyContent: 'center',
+    minWidth: 0
   },
-
-  // Share Section
-  shareSection: {
-    paddingHorizontal: horizontalPadding,
-    paddingVertical: 15,
-    paddingBottom: 20,
+  inputRight: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    maxWidth: '50%'
   },
-  shareButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
+  amountInput: {
+    fontFamily: Typography.medium,
+    fontSize: 24,
+    color: Colors.text.primary,
+    fontWeight: '600',
+    padding: 0,
+    margin: 0,
+    flexShrink: 1,
+  },
+  tokenSelector: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#E5E7EB',
+    borderRadius: Layout.borderRadius.md,
+    paddingHorizontal: Layout.spacing.sm,
+    paddingVertical: Layout.spacing.xs,
   },
-  shareButtonText: {
-    color: Colors.surface,
+  tokenIcon: {
+    width: 18,
+    height: 18,
+    resizeMode: 'cover',
+    marginRight: Layout.spacing.sm
+  },
+  tokenText: {
+    fontFamily: Typography.medium,
+    fontSize: 12,
+    color: Colors.text.primary,
+    fontWeight: '600'
+  },
+  minimumText: {
+    fontFamily: Typography.regular,
+    fontSize: 12,
+    color: Colors.text.secondary,
+    marginTop: Layout.spacing.sm
+  },
+  depositContainer: {
+    marginTop: Layout.spacing.lg
+  },
+  depositButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: Layout.borderRadius.lg,
+    paddingVertical: Layout.spacing.md,
+    alignItems: 'center'
+  },
+  depositButtonDisabled: {
+    backgroundColor: '#E5E7EB'
+  },
+  depositButtonText: {
     fontFamily: Typography.medium,
     fontSize: 16,
-  },
+    color: Colors.surface,
+    fontWeight: '600'
+  }
 });

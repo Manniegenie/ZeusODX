@@ -1,31 +1,32 @@
 // app/user/CableTvScreen.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  TextInput,
-  Image,
   ActivityIndicator,
+  Image,
   ImageSourcePropType,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
   useWindowDimensions
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import BottomTabNavigator from '../../components/BottomNavigator';
-import PinEntryModal from '../../components/PinEntry';
 import TwoFactorAuthModal from '../../components/2FA';
-import ErrorDisplay from '../../components/ErrorDisplay';
-import CablePackageModal from '../../components/cablePackageModal';
+import BottomTabNavigator from '../../components/BottomNavigator';
 import CableTvConfirmationModal from '../../components/CabletvConfirmModal';
+import ErrorDisplay from '../../components/ErrorDisplay';
+import PinEntryModal from '../../components/PinEntry';
+import ScreenHeader from '../../components/ScreenHeader';
+import CablePackageModal from '../../components/cablePackageModal';
 import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
-import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
-import { useCableTV } from '../../hooks/useCabletv';
+import { Typography } from '../../constants/Typography';
 import { useCustomer } from '../../hooks/useCustomer';
+import { useCableTV } from '../../hooks/useCabletv';
 
 // Provider icons
 const DstvIcon = require('../../components/icons/Dstv.png');
@@ -35,8 +36,6 @@ const ShowmaxIcon = require('../../components/icons/Showmax.png');
 const checkmarkIcon = require('../../components/icons/green-checkmark.png');
 const profileIcon = require('../../components/icons/profile.png');
 
-// shared back icon
-import backIcon from '../../components/icons/backy.png';
 
 // Provider icon mapping
 const providerIcons: Record<string, ImageSourcePropType> = {
@@ -626,24 +625,11 @@ const CableTvScreen: React.FC = () => {
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Header */}
-          <View style={styles.headerSection}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={handleGoBack}
-                activeOpacity={backDisabled ? 1 : 0.7}
-                disabled={backDisabled}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <Image source={backIcon} style={styles.backIcon} />
-              </TouchableOpacity>
-
-              <Text style={styles.headerTitle}>Cable TV</Text>
-
-              {/* spacer to keep title centered */}
-              <View style={styles.headerSpacer} />
-            </View>
-          </View>
+          <ScreenHeader
+            title="Cable TV"
+            onBack={handleGoBack}
+            backDisabled={backDisabled}
+          />
 
           {/* Provider Selection Section with Dynamic Responsive Icons */}
           <View style={styles.section}>
@@ -898,40 +884,6 @@ const styles = StyleSheet.create({
   scrollView: { 
     flex: 1 
   },
-  headerSection: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 24,
-  },
-  headerContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between' 
-  },
-  backButton: { 
-    width: 40, 
-    height: 40, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    borderRadius: 20 
-  },
-  backIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
-  headerTitle: {
-    ...baseTextStyle,
-    color: '#35297F',
-    fontSize: 18,
-    fontWeight: '600',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    pointerEvents: 'none',
-  },
-  headerSpacer: { width: 40 },
   historyLink: { 
     ...baseTextStyle,
     color: '#35297F', 

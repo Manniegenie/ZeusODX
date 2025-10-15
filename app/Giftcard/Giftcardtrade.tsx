@@ -1,35 +1,35 @@
 // app/giftcards/giftcard-trade.tsx
-import React, { useMemo, useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  TextInput,
-  Modal,
-  TouchableWithoutFeedback,
-  Dimensions,
-  Platform,
-  Animated,
-} from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+    Animated,
+    Dimensions,
+    Image,
+    Modal,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
-import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 import { useGiftCard } from '../../hooks/usegiftcard';
 
 // Icons - Updated to match main screen
-import backIcon from '../../components/icons/backy.png';
 import chevronRightIcon from '../../components/icons/arrow.png';
+import backIcon from '../../components/icons/backy.png';
 import cloudUploadIcon from '../../components/icons/cloud-upload.png';
 
 // Country bottom sheet
@@ -1023,8 +1023,8 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 14,
-    minHeight: 52,
+    paddingVertical: Platform.select({ ios: 14, android: 12 }),
+    height: Platform.select({ ios: 52, android: 48 }),
     color: Colors.text?.primary || '#111827',
     fontFamily: Typography.regular || 'System',
     fontSize: 15,

@@ -1,30 +1,30 @@
 // app/electricity/index.tsx
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  TextInput,
-  Image,
-  ActivityIndicator
+    ActivityIndicator,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import TwoFactorAuthModal from '../../components/2FA';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ElectricityConfirmationModal from '../../components/ElectricityConfirmModal';
-import PinEntryModal from '../../components/PinEntry';
-import TwoFactorAuthModal from '../../components/2FA';
-import ErrorDisplay from '../../components/ErrorDisplay';
 import ProviderSelectionModal from '../../components/ElectricityProviderModal';
 import UtilityPurchaseSuccessModal from '../../components/ElectricitySuccess';
-import { Typography } from '../../constants/Typography';
+import ErrorDisplay from '../../components/ErrorDisplay';
+import PinEntryModal from '../../components/PinEntry';
+import ScreenHeader from '../../components/ScreenHeader';
 import { Colors } from '../../constants/Colors';
-import { useElectricity } from '../../hooks/useElectricity';
+import { Typography } from '../../constants/Typography';
 import { useCustomer } from '../../hooks/useCustomer';
-import backIcon from '../../components/icons/backy.png';
+import { useElectricity } from '../../hooks/useElectricity';
 
 // ---- Types ----
 interface ErrorAction {
@@ -100,7 +100,7 @@ const ElectricityScreen: React.FC = () => {
     formatCustomerName,
     getUserFriendlyMessage,
     getErrorAction: getCustomerErrorAction
-  } = useCustomer();
+  } = useCustomer() as any;
 
   // ---- Form state ----
   const [selectedProvider, setSelectedProvider] = useState<ElectricityProvider | null>(null);
@@ -347,23 +347,11 @@ const ElectricityScreen: React.FC = () => {
         )}
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          <View style={styles.headerSection}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={handleGoBack}
-                disabled={backDisabled}
-                activeOpacity={backDisabled ? 1 : 0.7}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <Image source={backIcon} style={styles.backIcon} />
-              </TouchableOpacity>
-
-              <Text style={styles.headerTitle}>Electricity</Text>
-
-              <View style={styles.headerSpacer} />
-            </View>
-          </View>
+          <ScreenHeader
+            title="Electricity"
+            onBack={handleGoBack}
+            backDisabled={backDisabled}
+          />
 
           {/* Provider Selection */}
           <View style={styles.section}>
@@ -442,7 +430,7 @@ const ElectricityScreen: React.FC = () => {
                 style={[styles.input, styles.uneditableInput]}
                 placeholder="Account name will appear here"
                 placeholderTextColor={Colors.text?.secondary}
-                value={customerData ? formatCustomerName(customerData.customer_name) : ''}
+                value={customerData ? formatCustomerName((customerData as any).customer_name) : ''}
                 editable={false}
               />
             </View>
@@ -525,7 +513,7 @@ const ElectricityScreen: React.FC = () => {
         provider={selectedProvider}
         meterNumber={meterNumber}
         customerData={customerData}
-        customerName={customerData ? formatCustomerName(customerData.customer_name) : ''}
+        customerName={customerData ? formatCustomerName((customerData as any).customer_name) : ''}
         amount={getCurrentAmount()}
       />
 
@@ -553,15 +541,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
-  headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
-  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backIcon: { width: 22, height: 22, resizeMode: 'contain' },
-  headerTitle: {
-    color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600',
-    position: 'absolute', left: 0, right: 0, textAlign: 'center', pointerEvents: 'none',
-  },
-  headerSpacer: { width: 40 },
   historyLink: { color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 14, fontWeight: '500' },
   section: { paddingHorizontal: 16, marginBottom: 24 },
   sectionTitle: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400', marginBottom: 16 },

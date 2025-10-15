@@ -1,38 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  TextInput,
-  ActivityIndicator,
-  ImageSourcePropType,
-  Dimensions
-} from 'react-native';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    Dimensions,
+    Image,
+    ImageSourcePropType,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import TwoFactorAuthModal from '../../components/2FA';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import DataConfirmationModal from '../../components/Dataconfirm';
 import DataPlansModal from '../../components/DataPlanModal';
-import PinEntryModal from '../../components/PinEntry';
-import TwoFactorAuthModal from '../../components/2FA';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import PinEntryModal from '../../components/PinEntry';
 import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
-import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 import { useData } from '../../hooks/useData';
 
 // Icons
+// @ts-ignore
 import mtnIcon from '../../components/icons/mtn.png';
+// @ts-ignore
 import gloIcon from '../../components/icons/glo.png';
+// @ts-ignore
 import airtelIcon from '../../components/icons/airtel.png';
+// @ts-ignore
 import nineMobileIcon from '../../components/icons/9mobile.png';
+// @ts-ignore
 import profileIcon from '../../components/icons/profile.png';
+// @ts-ignore
 import checkmarkIcon from '../../components/icons/green-checkmark.png';
-import backIcon from '../../components/icons/backy.png'; // shared back icon
+import ScreenHeader from '../../components/ScreenHeader'; // shared back icon
 
 // Get screen dimensions for responsive design
 const { width: screenWidth } = Dimensions.get('window');
@@ -59,7 +64,7 @@ const responsiveDims = getResponsiveDimensions();
 
 // Interfaces (keeping existing interfaces)
 interface ErrorAction { title: string; message: string; actionText: string; route?: string; priority?: 'high' | 'medium' | 'low'; }
-interface ErrorDisplayData { type?: string; title?: string; message?: string; errorAction?: ErrorAction; onActionPress?: () => void; autoHide?: boolean; duration?: number; dismissible?: boolean; }
+interface ErrorDisplayData { type?: 'setup' | 'auth' | 'limit' | 'balance' | 'validation' | 'network' | 'server' | 'general' | 'success' | 'notFound'; title?: string; message?: string; autoHide?: boolean; duration?: number; dismissible?: boolean; onActionPress?: () => void; }
 interface NetworkProvider { id: string; name: string; iconSrc: ImageSourcePropType; color: string; }
 interface DataPlan { variationId: string; variation_id?: string; name: string; description: string; price: number; dataAllowance: string; validity: string; network: string; formattedPrice: string; formattedData: string; }
 interface PurchaseData { phone: string; service_id: string; variation_id: string; amount: number; twoFactorCode: string; passwordpin: string; }
@@ -368,15 +373,15 @@ const BuyDataScreen: React.FC = () => {
       const payload: PurchaseData = {
         phone: mobileNumber,
         service_id: selectedNetwork!.id,
-        variation_id: (selectedPlan!.variation_id || selectedPlan!.variationId).toString(),
-        amount: selectedPlan!.price,
+        variation_id: selectedPlan ? ((selectedPlan as DataPlan).variation_id || (selectedPlan as DataPlan).variationId).toString() : '',
+        amount: selectedPlan ? (selectedPlan as DataPlan).price : 0,
         twoFactorCode: code,
         passwordpin: passwordPin
       };
       
       const result = await purchaseData(payload);
       
-      if (result.success) {
+      if ((result as any).success) {
         setShowTwoFactorModal(false); 
         setShowPinModal(false); 
         setShowConfirmationModal(false);
@@ -386,22 +391,21 @@ const BuyDataScreen: React.FC = () => {
         setShowSuccessModal(true);
       } else {
         setShowTwoFactorModal(false);
-        const errorAction = getErrorAction?.(result.requiresAction);
-        const errorType = getErrorType(result.error || 'GENERAL_ERROR');
+        const errorAction = getErrorAction?.((result as any).requiresAction);
+        const errorType = getErrorType((result as any).error || 'GENERAL_ERROR');
         
         if (errorAction) {
           showErrorMessage({ 
             type: errorType, 
             title: errorAction.title, 
             message: errorAction.message, 
-            errorAction, 
             onActionPress: () => {
               if (errorAction.route) router.push(errorAction.route);
-              else if (result.requiresAction === 'RETRY_PIN') { 
+              else if ((result as any).requiresAction === 'RETRY_PIN') { 
                 setPasswordPin(''); 
                 setShowPinModal(true); 
               }
-              else if (result.requiresAction === 'RETRY_2FA') { 
+              else if ((result as any).requiresAction === 'RETRY_2FA') { 
                 setTwoFactorCode(''); 
                 setShowTwoFactorModal(true); 
               }
@@ -413,7 +417,7 @@ const BuyDataScreen: React.FC = () => {
           showErrorMessage({ 
             type: errorType, 
             title: 'Purchase Failed', 
-            message: result.message || 'Try again later', 
+            message: (result as any).message || 'Try again later', 
             autoHide: true, 
             duration: 4000 
           }); 
@@ -449,7 +453,7 @@ const BuyDataScreen: React.FC = () => {
 
   const transactionData: TransactionData = {
     network: selectedNetwork,
-    amount: selectedPlan ? selectedPlan.price.toString() : '0',
+    amount: selectedPlan ? (selectedPlan as DataPlan).price.toString() : '0',
     phoneNumber: mobileNumber,
     selectedPlan: selectedPlan || null,
     rate: '1 NGNZ = 1 NGN'
@@ -471,24 +475,11 @@ const BuyDataScreen: React.FC = () => {
           contentContainerStyle={styles.scrollContent}
         >
           {/* Header */}
-          <View style={styles.headerSection}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={handleGoBack}
-                disabled={backDisabled}
-                activeOpacity={backDisabled ? 1 : 0.7}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <Image source={backIcon} style={styles.backIcon} />
-              </TouchableOpacity>
-
-              <Text style={styles.headerTitle}>Buy Data</Text>
-
-              {/* spacer to keep title centered */}
-              <View style={styles.headerSpacer} />
-            </View>
-          </View>
+          <ScreenHeader
+            title="Buy Data"
+            onBack={handleGoBack}
+            backDisabled={backDisabled}
+          />
 
           {/* Network Selection */}
           <View style={styles.section}>
@@ -563,7 +554,7 @@ const BuyDataScreen: React.FC = () => {
                 !selectedPlan && styles.dataPlanSelectorPlaceholder
               ]}>
                 {selectedPlan 
-                  ? `${selectedPlan.formattedData} - ${selectedPlan.formattedPrice}` 
+                  ? `${(selectedPlan as DataPlan).formattedData} - ${(selectedPlan as DataPlan).formattedPrice}` 
                   : selectedNetwork 
                     ? 'Select data plan' 
                     : 'Select network first'
@@ -581,10 +572,10 @@ const BuyDataScreen: React.FC = () => {
             <View style={styles.summarySection}>
               <Text style={styles.summaryTitle}>Selected Plan</Text>
               <View style={styles.summaryContent}>
-                <Text style={styles.summaryData}>{selectedPlan.formattedData}</Text>
-                <Text style={styles.summaryPrice}>{selectedPlan.formattedPrice}</Text>
+                <Text style={styles.summaryData}>{(selectedPlan as DataPlan).formattedData}</Text>
+                <Text style={styles.summaryPrice}>{(selectedPlan as DataPlan).formattedPrice}</Text>
               </View>
-              <Text style={styles.summaryValidity}>Valid for {selectedPlan.validity}</Text>
+              <Text style={styles.summaryValidity}>Valid for {(selectedPlan as DataPlan).validity}</Text>
             </View>
           )}
 
@@ -660,11 +651,11 @@ const BuyDataScreen: React.FC = () => {
       <UtilityPurchaseSuccessModal
         visible={showSuccessModal}
         utilityType="Data"
-        amount={selectedPlan?.formattedData || ''}
+        amount={selectedPlan ? (selectedPlan as DataPlan).formattedData : ''}
         phoneNumber={mobileNumber}
         network={selectedNetwork?.name || ''}
         onContinue={handleSuccessModalClose}
-        additionalInfo={selectedPlan ? `Valid for ${selectedPlan.validity}` : undefined}
+        additionalInfo={selectedPlan ? `Valid for ${(selectedPlan as DataPlan).validity}` : undefined}
       />
     </View>
   );
@@ -686,41 +677,6 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   
-  // Header styles
-  headerSection: { 
-    paddingHorizontal: responsiveDims.horizontalPadding, 
-    paddingTop: 12, 
-    paddingBottom: 24 
-  },
-  headerContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between' 
-  },
-  backButton: { 
-    width: 40, 
-    height: 40, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    borderRadius: 20 
-  },
-  backIcon: {
-    width: 22,
-    height: 22,
-    resizeMode: 'contain'
-  },
-  headerTitle: { 
-    color: '#35297F', 
-    fontFamily: Typography.medium, 
-    fontSize: 18, 
-    fontWeight: '600', 
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    pointerEvents: 'none',
-  },
-  headerSpacer: { width: 40 },
   historyLink: { 
     color: '#35297F', 
     fontFamily: Typography.medium, 
