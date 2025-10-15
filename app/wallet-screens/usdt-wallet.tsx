@@ -2,17 +2,17 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  ImageBackground,
-  RefreshControl,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Image,
+    ImageBackground,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import NetworkSelectionModal from '../../components/Network';
@@ -24,13 +24,18 @@ import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
 import { useBalance } from '../../hooks/useWallet';
 
+// @ts-ignore
 import usdtIcon from '../../components/icons/usdt-icon.png';
+// @ts-ignore
 import transferIcon from '../../components/icons/transfer-icon.png';
+// @ts-ignore
 import swapIcon from '../../components/icons/swap-icon.png';
+// @ts-ignore
 import depositIcon from '../../components/icons/deposit-icon.png';
+// @ts-ignore
 import emptyStateIcon from '../../components/icons/empty-state.png';
+// @ts-ignore
 import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
-import backIcon from '../../components/icons/backy.png';
 
 // -------------------- Types to match History/Receipt --------------------
 type TokenDetails = {
@@ -218,7 +223,12 @@ const toAPITransaction = (tx: any): APITransaction => {
 };
 
 // -------------------- Screen --------------------
-const USDTWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
+interface USDTWalletScreenProps {
+  onQuickActionPress?: (actionId: string) => void;
+  onSeeMorePress?: () => void;
+}
+
+const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({ onQuickActionPress, onSeeMorePress }) => {
   const router = useRouter();
   const { openNetworkModal } = useLocalSearchParams();
 
@@ -227,7 +237,6 @@ const USDTWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
   const {
     usdtBalance,
-    usdtBalanceUSD,
     formattedUsdtBalance,
     formattedUsdtBalanceUSD,
     loading,
@@ -365,24 +374,13 @@ const handleNetworkSelect = (network: { id: string }) => {
             />
           }
         >
-          <View style={styles.headerSection}>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity 
-                style={styles.backButton} 
-                onPress={handleGoBack}
-                activeOpacity={0.7}
-                delayPressIn={0}
-                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-              >
-                <Image source={backIcon} style={styles.backIcon} />
-              </TouchableOpacity>
-              <View style={styles.headerGroup}>
-                <Image source={usdtIcon} style={styles.iconImage} />
-                <Text style={styles.headerTitle}>USDT</Text>
-              </View>
-              <View style={styles.headerRight} />
-            </View>
-          </View>
+          <ScreenHeader
+            title="USDT"
+            onBack={handleGoBack}
+            rightComponent={
+              <Image source={usdtIcon} style={styles.iconImage} />
+            }
+          />
 
           {/* Updated Balance Section with Portfolio Style */}
           <View style={styles.balanceSection}>
@@ -507,24 +505,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
-  headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
-  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { 
-    width: 40,
-    height: 40,
-    justifyContent: 'center', 
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  backIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
-  headerGroup: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' },
   iconImage: { width: 28, height: 28, resizeMode: 'cover' },
-  headerTitle: { fontSize: 16, fontWeight: '600', color: Colors.text.primary },
-  headerRight: { width: 40 },
 
   // Updated Balance Section Styles (Portfolio Style)
   balanceSection: { 
