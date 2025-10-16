@@ -181,6 +181,7 @@ const styles = StyleSheet.create({
   },
   bottomModal: {
     width: '100%',
+    maxHeight: '90%',
     borderTopLeftRadius: Layout.borderRadius?.xl || 16,
     borderTopRightRadius: Layout.borderRadius?.xl || 16,
     borderBottomLeftRadius: 0,

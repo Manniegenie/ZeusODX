@@ -1,16 +1,17 @@
 import React from 'react';
 import {
+    FlatList,
     Image,
-    Platform,
-    ScrollView,
+    Modal,
     StyleSheet,
     Text,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View
 } from 'react-native';
 import { Colors } from '../constants/Colors';
+import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
-import BaseModal from './ui/BaseModal';
 
 // Import provider icons
 // @ts-ignore
@@ -58,6 +59,8 @@ const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
   onSelectProvider,
   selectedProvider
 }) => {
+  console.log('ProviderSelectionModal rendered with visible:', visible);
+  
   // Provider list with icons
   const providers: ElectricityProvider[] = [
     { id: 'aba-electric', name: 'Aba Electricity', icon: AbaIcon, region: 'Abia' },
@@ -80,177 +83,135 @@ const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
     onClose();
   };
 
-  return (
-    <BaseModal
-      visible={visible}
-      onClose={onClose}
-      type="bottom"
+  const renderProviderOption = ({ item }: { item: ElectricityProvider }) => (
+    <TouchableOpacity
+      style={styles.providerOptionItem}
+      onPress={() => handleProviderSelect(item)}
     >
-      <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Choose provider</Text>
-          <TouchableOpacity 
-            style={styles.closeButton} 
-            onPress={onClose}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Text style={styles.closeButtonText}>✕</Text>
-          </TouchableOpacity>
+      <View style={styles.providerOptionLeft}>
+        <View style={styles.providerIcon}>
+          <Image source={item.icon} style={styles.providerIconImage} />
         </View>
-
-        {/* Provider List */}
-        <ScrollView 
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {providers.map((provider) => (
-            <TouchableOpacity
-              key={provider.id}
-              style={[
-                styles.providerItem,
-                selectedProvider?.id === provider.id && styles.providerItemSelected
-              ]}
-              onPress={() => handleProviderSelect(provider)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.providerIconContainer}>
-                <Image 
-                  source={provider.icon} 
-                  style={styles.providerIcon}
-                  resizeMode="contain"
-                />
-              </View>
-              <View style={styles.providerInfo}>
-                <Text style={styles.providerName}>{provider.name}</Text>
-                {provider.region && (
-                  <Text style={styles.providerRegion}>{provider.region}</Text>
-                )}
-              </View>
-              {selectedProvider?.id === provider.id && (
-                <View style={styles.selectedIndicator}>
-                  <Text style={styles.selectedCheckmark}>✓</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <View style={styles.providerInfo}>
+          <Text style={styles.providerName}>{item.name}</Text>
+          {item.region && (
+            <Text style={styles.providerRegion}>{item.region}</Text>
+          )}
+        </View>
       </View>
-    </BaseModal>
+    </TouchableOpacity>
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Choose provider</Text>
+                <TouchableOpacity onPress={onClose}>
+                  <Text style={styles.closeButton}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              <FlatList
+                data={providers}
+                renderItem={renderProviderOption}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={true}
+                contentContainerStyle={styles.providerList}
+                style={styles.scrollableList}
+              />
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    maxHeight: '80%',
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    justifyContent: 'flex-end' 
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+  modalContent: { 
+    backgroundColor: Colors.surface, 
+    borderTopLeftRadius: Layout.borderRadius.xl, 
+    borderTopRightRadius: Layout.borderRadius.xl, 
+    padding: Layout.spacing.lg, 
+    height: '50%' 
   },
-  headerTitle: {
-    color: Colors.text?.primary || '#111827',
-    fontFamily: Typography.medium || 'System',
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    flex: 1,
+  modalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: Layout.spacing.lg 
   },
-  closeButton: {
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 16,
-    backgroundColor: '#F9FAFB',
+  modalTitle: { 
+    fontFamily: Typography.bold, 
+    fontSize: 18, 
+    color: Colors.text.primary 
   },
-  closeButtonText: {
-    color: Colors.text?.secondary || '#6B7280',
-    fontSize: 16,
-    fontWeight: '500',
+  closeButton: { 
+    fontSize: 16, 
+    color: Colors.text.secondary, 
+    padding: Layout.spacing.sm 
   },
-  scrollView: {
-    flex: 1,
+  providerList: { 
+    paddingBottom: Layout.spacing.lg 
   },
-  scrollContent: {
-    paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+  scrollableList: { 
+    flex: 1 
   },
-  providerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F9FAFB',
-    minHeight: 72,
+  providerOptionItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingVertical: Layout.spacing.md, 
+    paddingHorizontal: Layout.spacing.sm, 
+    backgroundColor: '#F8F9FA', 
+    marginBottom: Layout.spacing.sm, 
+    borderRadius: Layout.borderRadius.md 
   },
-  providerItemSelected: {
-    backgroundColor: '#F8F7FF',
+  providerOptionLeft: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: Layout.spacing.md, 
+    flex: 1 
   },
-  providerIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    marginRight: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
+  providerIcon: { 
+    width: 40, 
+    height: 40, 
+    borderRadius: 20, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB', 
+    overflow: 'hidden' 
   },
-  providerIcon: {
-    width: 32,
-    height: 32,
+  providerIconImage: { 
+    width: 40, 
+    height: 40, 
+    resizeMode: 'cover' 
   },
-  providerInfo: {
-    flex: 1,
-    justifyContent: 'center',
+  providerInfo: { 
+    flex: 1 
   },
-  providerName: {
-    color: Colors.text?.primary || '#111827',
-    fontFamily: Typography.medium || 'System',
-    fontSize: 16,
-    fontWeight: '500',
-    lineHeight: 22,
+  providerName: { 
+    fontFamily: Typography.medium, 
+    fontSize: 14, 
+    color: Colors.text.primary 
   },
-  providerRegion: {
-    color: Colors.text?.secondary || '#6B7280',
-    fontFamily: Typography.regular || 'System',
-    fontSize: 14,
-    fontWeight: '400',
-    marginTop: 2,
-  },
-  selectedIndicator: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#35297F',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 12,
-  },
-  selectedCheckmark: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
+  providerRegion: { 
+    fontFamily: Typography.regular, 
+    fontSize: 12, 
+    color: Colors.text.secondary 
   },
 });
 

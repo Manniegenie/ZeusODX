@@ -358,7 +358,10 @@ const ElectricityScreen: React.FC = () => {
             <Text style={styles.sectionTitle}>Select provider</Text>
             <TouchableOpacity
               style={styles.providerSelector}
-              onPress={() => setShowProviderModal(true)}
+              onPress={() => {
+                console.log('Provider modal button pressed, setting showProviderModal to true');
+                setShowProviderModal(true);
+              }}
               activeOpacity={0.8}
             >
               {selectedProvider?.icon && (
