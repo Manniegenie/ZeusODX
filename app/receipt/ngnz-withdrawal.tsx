@@ -14,18 +14,17 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
+import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 
 // Icons
 // @ts-ignore
 import backIcon from '../../components/icons/backy.png';
 // @ts-ignore
-import successImage from '../../components/icons/check-check.png';
-// @ts-ignore
-import copyIcon from '../../components/icons/copy-icon.png';
+import successImage from '../../components/icons/logo1.png';
 
 type WithdrawalDetails = {
   withdrawalId?: string;
@@ -42,6 +41,41 @@ type WithdrawalDetails = {
   createdAt?: string;
   provider?: string;
   obiexStatus?: string;
+};
+
+// ---------- helpers ----------
+const maskMiddle = (v?: string, lead = 6, tail = 4) => {
+  if (!v) return '—';
+  const s = String(v);
+  if (s.length <= lead + tail) return s;
+  return `${s.slice(0, lead)}…${s.slice(-tail)}`;
+};
+
+const asText = (v: any) => {
+  if (v === null || v === undefined) return '—';
+  if (typeof v === 'number') return String(v);
+  if (typeof v === 'string') return v.trim().length ? v : '—';
+  return String(v);
+};
+
+const statusStyles = (status: string) => {
+  const s = (status || '').toLowerCase();
+  if (s === 'successful' || s === 'success')
+    return { bg: '#E8F7EF', text: '#166534', border: '#BBE7CC' };
+  if (s === 'failed' || s === 'error')
+    return { bg: '#FDECEC', text: '#991B1B', border: '#F6CACA' };
+  return { bg: '#FFF8E6', text: '#92400E', border: '#FBE1B3' };
+};
+
+const formatAmtSym = (amount?: number | string, symbol?: string) => {
+  if (amount === undefined || amount === null) return '—';
+  const n = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (Number.isNaN(n)) return '—';
+  const s = (symbol || '').toUpperCase();
+  if (['NGN', 'NGNB', 'NGNZ', '₦'].includes(s)) {
+    return `₦${Math.round(n).toLocaleString('en-NG')}`;
+  }
+  return `${n.toLocaleString('en-US', { maximumFractionDigits: 8 })} ${s || ''}`.trim();
 };
 
 export default function NGNZWithdrawalReceiptScreen() {
@@ -79,12 +113,6 @@ export default function NGNZWithdrawalReceiptScreen() {
     }
   }, [params]);
 
-  const formatAmount = (amount: string | number | undefined) => {
-    if (!amount) return '₦0';
-    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return `₦${Math.round(numAmount).toLocaleString('en-NG')}`;
-  };
-
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return new Date().toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' });
     try {
@@ -94,219 +122,130 @@ export default function NGNZWithdrawalReceiptScreen() {
     }
   };
 
-  const getStatusColor = (status: string | undefined) => {
-    switch (status?.toLowerCase()) {
-      case 'successful':
-      case 'completed':
-        return { bg: '#D1FAE5', border: '#10B981', text: '#065F46' };
-      case 'pending':
-      case 'processing':
-        return { bg: '#FEF3C7', border: '#F59E0B', text: '#92400E' };
-      case 'failed':
-      case 'rejected':
-        return { bg: '#FEE2E2', border: '#EF4444', text: '#991B1B' };
-      default:
-        return { bg: '#F3F4F6', border: '#6B7280', text: '#374151' };
-    }
-  };
-
+  // ---------- PDF Generation ----------
   const generateWithdrawalReceiptHTML = (withdrawal: WithdrawalDetails) => {
-    const statusColors = getStatusColor(withdrawal.status);
-    const amount = formatAmount(withdrawal.amount);
+    const currentDate = new Date().toLocaleString();
+    const logoBase64 = '';
+    const statusStyle = statusStyles(withdrawal.status || '');
+    const amount = formatAmtSym(withdrawal.amount, 'NGN');
     const date = formatDate(withdrawal.createdAt);
     
+    const detailRows: string[] = [];
+    detailRows.push(`<tr><td>Type</td><td>Withdrawal</td></tr>`);
+    detailRows.push(`<tr><td>Date</td><td>${date}</td></tr>`);
+    detailRows.push(`<tr><td>Reference</td><td>${asText(withdrawal.reference || withdrawal.withdrawalId)}</td></tr>`);
+    detailRows.push(`<tr><td>Bank Name</td><td>${asText(withdrawal.bankName)}</td></tr>`);
+    detailRows.push(`<tr><td>Account Name</td><td>${asText(withdrawal.accountName)}</td></tr>`);
+    detailRows.push(`<tr><td>Account Number</td><td>${asText(withdrawal.accountNumber)}</td></tr>`);
+    detailRows.push(`<tr><td>Withdrawal Fee</td><td>₦100</td></tr>`);
+    detailRows.push(`<tr><td>Currency</td><td>${asText(withdrawal.currency || 'NGN')}</td></tr>`);
+    detailRows.push(`<tr><td>Status</td><td>${asText(withdrawal.obiexStatus || withdrawal.status)}</td></tr>`);
+
     return `
       <!DOCTYPE html>
       <html>
       <head>
-        <meta charset="utf-8">
-        <title>NGNZ Withdrawal Receipt</title>
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: white;
-            color: #111827;
-            line-height: 1.6;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #E5E7EB;
-          }
-          .logo {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto 15px;
-            background: #35297F;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-          }
-          .title {
-            font-size: 24px;
-            font-weight: 700;
-            color: #111827;
-            margin: 0;
-          }
-          .subtitle {
-            font-size: 14px;
-            color: #6B7280;
-            margin: 5px 0 0;
-          }
-          .receipt-content {
-            max-width: 500px;
-            margin: 0 auto;
-          }
-          .status-badge {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            background-color: ${statusColors.bg};
-            color: ${statusColors.text};
-            border: 1px solid ${statusColors.border};
-          }
-          .amount-section {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: #F8F9FA;
-            border-radius: 12px;
-            border: 1px solid #E5E7EB;
-          }
-          .amount-label {
-            font-size: 14px;
-            color: #6B7280;
-            margin-bottom: 8px;
-          }
-          .amount-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #111827;
-          }
-          .details-section {
-            margin-bottom: 30px;
-          }
-          .detail-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #F3F4F6;
-          }
-          .detail-row:last-child {
-            border-bottom: none;
-          }
-          .detail-label {
-            font-size: 14px;
-            color: #6B7280;
-            font-weight: 500;
-          }
-          .detail-value {
-            font-size: 14px;
-            color: #111827;
-            font-weight: 600;
-            text-align: right;
-            max-width: 60%;
-            word-break: break-all;
-          }
-          .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #E5E7EB;
-            text-align: center;
-            color: #6B7280;
-            font-size: 12px;
-          }
-          .note {
-            background: #FEF3C7;
-            border: 1px solid #F59E0B;
-            border-radius: 8px;
-            padding: 16px;
-            margin: 20px 0;
-            font-size: 14px;
-            color: #92400E;
-          }
-        </style>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Withdrawal Receipt</title>
+          <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              @page { size: A4; margin: 0; }
+              body { 
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                  background: #F3F0FF;
+                  color: #111827;
+                  line-height: 1.5;
+                  -webkit-font-smoothing: antialiased;
+                  font-size: 21px;
+                  width: 100%;
+                  margin: 0;
+                  padding: 0;
+              }
+              .container { width: 100%; margin: 0; background: #F3F0FF; min-height: 100vh; }
+              .header { background: #F3F0FF; padding: 24px 36px; display: flex; align-items: center; justify-content: center; }
+              .header-logo { width: 150px; height: 66px; object-fit: contain; }
+              .content { padding: 0 36px 48px 36px; }
+              .amount-section { text-align: center; margin: 30px 0 9px 0; }
+              .amount-text { font-size: 42px; font-weight: bold; color: #111827; }
+              .status-container { text-align: center; margin-bottom: 24px; }
+              .status-pill {
+                  display: inline-block;
+                  padding: 9px 15px;
+                  border-radius: 999px;
+                  border: 1px solid ${statusStyle.border};
+                  background-color: ${statusStyle.bg};
+                  color: ${statusStyle.text};
+                  font-size: 18px;
+                  font-weight: 600;
+              }
+              .details-card {
+                  width: 100%;
+                  background: #F8F9FA;
+                  border-radius: 12px;
+                  padding: 30px 24px;
+                  border: 1px solid #E5E7EB;
+                  margin-bottom: 30px;
+              }
+              .details-table { width: 100%; border-collapse: collapse; }
+              .details-table tr { border-bottom: none; }
+              .details-table td { padding: 18px 0; vertical-align: center; border-bottom: none; }
+              .details-table td:first-child {
+                  width: 195px;
+                  flex-shrink: 0;
+                  color: #6B7280;
+                  font-size: 21px;
+                  font-weight: normal;
+              }
+              .details-table td:last-child {
+                  color: #111827;
+                  font-size: 21px;
+                  font-weight: 500;
+                  text-align: right;
+                  word-break: break-word;
+              }
+              .footer-message { width: 100%; margin-bottom: 30px; padding: 0 36px; }
+              .footer-text { font-size: 19px; color: #6B7280; line-height: 1.5; margin: 0; text-align: left; }
+              .generation-footer {
+                  text-align: center;
+                  padding: 30px 36px;
+                  color: #9CA3AF;
+                  font-size: 18px;
+                  border-top: 1px solid #E5E7EB;
+                  margin-top: 30px;
+              }
+              @media print {
+                  body { background: #F3F0FF; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                  .container { box-shadow: none; background: #F3F0FF; }
+                  @page { margin: 0; }
+              }
+          </style>
       </head>
       <body>
-        <div class="receipt-content">
-          <div class="header">
-            <div class="logo">Z</div>
-            <h1 class="title">Withdrawal Receipt</h1>
-            <p class="subtitle">NGNZ to Bank Transfer</p>
+          <div class="container">
+              <div class="header">
+                  <img src="${logoBase64}" alt="Logo" class="header-logo">
+              </div>
+              <div class="content">
+                  <div class="amount-section">
+                      <div class="amount-text">${amount}</div>
+                  </div>
+                  <div class="status-container">
+                      <span class="status-pill">${withdrawal.status || 'Processing'}</span>
+                  </div>
+                  <div class="details-card">
+                      <table class="details-table">
+                          ${detailRows.join('')}
+                      </table>
+                  </div>
+              </div>
+              <div class="footer-message">
+                  <p class="footer-text">Thank you for choosing ZeusODX.</p>
+              </div>
+              <div class="generation-footer">
+                  Generated on: ${currentDate}
+              </div>
           </div>
-          
-          <div style="text-align: center;">
-            <span class="status-badge">${withdrawal.status || 'Processing'}</span>
-          </div>
-          
-          <div class="amount-section">
-            <div class="amount-label">Amount Withdrawn</div>
-            <div class="amount-value">${amount}</div>
-          </div>
-          
-          <div class="details-section">
-            <div class="detail-row">
-              <span class="detail-label">Reference ID</span>
-              <span class="detail-value">${withdrawal.reference || withdrawal.withdrawalId || 'N/A'}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Transaction Date</span>
-              <span class="detail-value">${date}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Bank Name</span>
-              <span class="detail-value">${withdrawal.bankName || 'N/A'}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Account Name</span>
-              <span class="detail-value">${withdrawal.accountName || 'N/A'}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Account Number</span>
-              <span class="detail-value">${withdrawal.accountNumber || 'N/A'}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Bank Code</span>
-              <span class="detail-value">${withdrawal.bankCode || 'N/A'}</span>
-            </div>
-            ${withdrawal.fee ? `
-            <div class="detail-row">
-              <span class="detail-label">Transaction Fee</span>
-              <span class="detail-value">${formatAmount(withdrawal.fee)}</span>
-            </div>
-            ` : ''}
-            <div class="detail-row">
-              <span class="detail-label">Provider</span>
-              <span class="detail-value">${withdrawal.provider || 'ZeusODX'}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Status</span>
-              <span class="detail-value">${withdrawal.obiexStatus || withdrawal.status || 'Processing'}</span>
-            </div>
-          </div>
-          
-          ${withdrawal.narration ? `
-          <div class="note">
-            <strong>Note:</strong> ${withdrawal.narration}
-          </div>
-          ` : ''}
-          
-          <div class="footer">
-            <p>This receipt was generated by ZeusODX</p>
-            <p>For support, contact our customer service team</p>
-          </div>
-        </div>
       </body>
       </html>
     `;
@@ -351,41 +290,67 @@ export default function NGNZWithdrawalReceiptScreen() {
     }
   };
 
-  const copyToClipboard = (text: string, label: string) => {
-    Clipboard.setString(text);
-    Alert.alert('Copied', `${label} copied to clipboard`);
-  };
-
-  const handleDone = () => {
-    router.push('/user/wallet');
+  const handleCopy = (label: string, value?: string) => {
+    if (!value) return;
+    try {
+      Clipboard.setString(value);
+      Alert.alert('Copied!', `${label} copied to clipboard`);
+    } catch {
+      Alert.alert('Copy failed', `Unable to copy ${label.toLowerCase()}`);
+    }
   };
 
   if (!withdrawalData) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>No withdrawal data found</Text>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>Go Back</Text>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+            delayPressIn={0}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          >
+            <Image source={backIcon} style={styles.backIcon} />
           </TouchableOpacity>
+          <Image source={successImage} style={styles.headerLogo} resizeMode="contain" />
+          <View style={styles.headerRight} />
+        </View>
+        <View style={[styles.centerContent, { padding: 24 }]}>
+          <Text style={styles.emptyTitle}>No withdrawal data found</Text>
+          <View style={styles.ctaRow}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={() => router.back()}
+              activeOpacity={0.95}
+            >
+              <Text style={styles.primaryButtonText}>Done</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryButton} onPress={onShare} activeOpacity={0.85}>
+              <Text style={styles.secondaryButtonText}>Share</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     );
   }
 
-  const statusColors = getStatusColor(withdrawalData.status);
+  const s = statusStyles(withdrawalData.status || '');
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+          delayPressIn={0}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
           <Image source={backIcon} style={styles.backIcon} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Withdrawal Receipt</Text>
-        <TouchableOpacity style={styles.shareButton} onPress={onShare}>
-          <Text style={styles.shareButtonText}>Share</Text>
-        </TouchableOpacity>
+        <Image source={successImage} style={styles.headerLogo} resizeMode="contain" />
+        <View style={styles.headerRight} />
       </View>
 
       <ScrollView
@@ -393,144 +358,133 @@ export default function NGNZWithdrawalReceiptScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Success Icon */}
-        <View style={styles.iconContainer}>
-          <Image
-            source={successImage}
-            style={styles.checkmarkIcon}
-            resizeMode="contain"
-          />
+        <View style={styles.amountRow}>
+          <Text style={styles.amountText} numberOfLines={1}>
+            {formatAmtSym(withdrawalData.amount, 'NGN')}
+          </Text>
         </View>
 
-        {/* Title */}
-        <Text style={styles.title}>Withdrawal Successful</Text>
-
-        {/* Amount */}
-        <View style={styles.amountSection}>
-          <Text style={styles.amountLabel}>Amount Withdrawn</Text>
-          <Text style={styles.amountValue}>{formatAmount(withdrawalData.amount)}</Text>
-        </View>
-
-        {/* Status Badge */}
-        <View style={styles.statusContainer}>
-          <View style={[styles.statusBadge, { backgroundColor: statusColors.bg, borderColor: statusColors.border }]}>
-            <Text style={[styles.statusText, { color: statusColors.text }]}>
+        <View style={styles.centeredStatus}>
+          <View style={[styles.statusPill, { backgroundColor: s.bg, borderColor: s.border }]}>
+            <Text style={[styles.statusPillText, { color: s.text }]} numberOfLines={1}>
               {withdrawalData.status || 'Processing'}
             </Text>
           </View>
         </View>
 
-        {/* Details Card */}
         <View style={styles.detailsCard}>
-          <Text style={styles.detailsTitle}>Transaction Details</Text>
-          
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Reference ID</Text>
-            <TouchableOpacity 
-              style={styles.detailValueContainer}
-              onPress={() => copyToClipboard(withdrawalData.reference || withdrawalData.withdrawalId || '', 'Reference ID')}
-            >
-              <Text style={styles.detailValue} numberOfLines={1}>
-                {withdrawalData.reference || withdrawalData.withdrawalId || 'N/A'}
-              </Text>
-              <Image source={copyIcon} style={styles.copyIcon} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Transaction Date</Text>
-            <Text style={styles.detailValue}>{formatDate(withdrawalData.createdAt)}</Text>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Bank Name</Text>
-            <Text style={styles.detailValue}>{withdrawalData.bankName || 'N/A'}</Text>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Account Name</Text>
-            <Text style={styles.detailValue}>{withdrawalData.accountName || 'N/A'}</Text>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Account Number</Text>
-            <TouchableOpacity 
-              style={styles.detailValueContainer}
-              onPress={() => copyToClipboard(withdrawalData.accountNumber || '', 'Account Number')}
-            >
-              <Text style={styles.detailValue} numberOfLines={1}>
-                {withdrawalData.accountNumber || 'N/A'}
-              </Text>
-              <Image source={copyIcon} style={styles.copyIcon} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Bank Code</Text>
-            <Text style={styles.detailValue}>{withdrawalData.bankCode || 'N/A'}</Text>
-          </View>
-
-          {withdrawalData.fee && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Transaction Fee</Text>
-              <Text style={styles.detailValue}>{formatAmount(withdrawalData.fee)}</Text>
-            </View>
-          )}
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Provider</Text>
-            <Text style={styles.detailValue}>{withdrawalData.provider || 'ZeusODX'}</Text>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Status</Text>
-            <Text style={styles.detailValue}>{withdrawalData.obiexStatus || withdrawalData.status || 'Processing'}</Text>
-          </View>
+          <Row label="Type" value="Withdrawal" />
+          <Row label="Date" value={formatDate(withdrawalData.createdAt)} />
+          <Row
+            label="Reference"
+            value={asText(withdrawalData.reference || withdrawalData.withdrawalId)}
+            copyableValue={withdrawalData.reference || withdrawalData.withdrawalId as string}
+            onCopy={(v) => handleCopy('Reference', v)}
+          />
+          <Row label="Bank Name" value={asText(withdrawalData.bankName)} />
+          <Row label="Account Name" value={asText(withdrawalData.accountName)} />
+          <Row
+            label="Account Number"
+            value={asText(withdrawalData.accountNumber)}
+            copyableValue={withdrawalData.accountNumber as string}
+            onCopy={(v) => handleCopy('Account Number', v)}
+          />
+          <Row 
+            label="Withdrawal Fee" 
+            value="₦100" 
+          />
+          <Row label="Currency" value={asText(withdrawalData.currency || 'NGN')} />
+          <Row label="Status" value={asText(withdrawalData.obiexStatus || withdrawalData.status)} />
         </View>
 
-        {/* Note */}
-        {withdrawalData.narration && (
-          <View style={styles.noteContainer}>
-            <Text style={styles.noteTitle}>Note</Text>
-            <Text style={styles.noteText}>{withdrawalData.narration}</Text>
-          </View>
-        )}
+        <View style={styles.footerMessage}>
+          <Text style={styles.footerText}>Thank you for choosing ZeusODX.</Text>
+        </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>This receipt was generated by ZeusODX</Text>
-          <Text style={styles.footerSubtext}>For support, contact our customer service team</Text>
+        <View style={styles.ctaRow}>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => router.back()}
+            activeOpacity={0.95}
+          >
+            <Text style={styles.primaryButtonText}>Done</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.secondaryButton} onPress={onShare} activeOpacity={0.85}>
+            <Text style={styles.secondaryButtonText}>Share</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
-
-      {/* Done Button */}
-      <View style={styles.buttonSection}>
-        <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
-          <Text style={styles.doneButtonText}>Done</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
 
+function Row({
+  label,
+  value,
+  copyableValue,
+  onCopy,
+  isHashLink = false,
+  onHashPress,
+}: {
+  label: string;
+  value: string;
+  copyableValue?: string;
+  onCopy?: (val: string) => void;
+  isHashLink?: boolean;
+  onHashPress?: () => void;
+}) {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.rowLabel} numberOfLines={1}>
+        {label}
+      </Text>
+      <View style={styles.rowValueWrap}>
+        {isHashLink && onHashPress ? (
+          <TouchableOpacity onPress={onHashPress} activeOpacity={0.7}>
+            <Text style={[styles.rowValue, styles.linkText]} numberOfLines={1}>
+              {value}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={styles.rowValue} numberOfLines={1}>
+            {value}
+          </Text>
+        )}
+        {copyableValue ? (
+          <TouchableOpacity
+            style={styles.copyButton}
+            onPress={() => onCopy && onCopy(copyableValue)}
+            activeOpacity={0.8}
+          >
+            <Image
+              source={require('../../components/icons/copy-icon.png')}
+              style={styles.copyIcon}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+  container: { flex: 1, backgroundColor: Colors.background || '#FFFFFF' },
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: Layout?.spacing?.xl || 24, paddingBottom: 32 },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: Layout?.spacing?.xl || 24,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    backgroundColor: '#F3F0FF',
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
+  backButton: { 
+    width: 40, 
+    height: 40, 
+    justifyContent: 'center', 
     alignItems: 'center',
     borderRadius: 20,
   },
@@ -539,214 +493,110 @@ const styles = StyleSheet.create({
     height: 24,
     resizeMode: 'contain',
   },
-  headerTitle: {
-    color: '#35297F',
-    fontFamily: Typography.medium,
-    fontSize: 18,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'center',
+  headerLogo: { width: 100, height: 44 },
+  headerRight: { width: 44 },
+
+  centerContent: { alignItems: 'center', justifyContent: 'center', flex: 1 },
+  emptyTitle: {
+    fontSize: 16,
+    color: Colors.text?.primary || '#111827',
+    marginBottom: 12,
   },
-  shareButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  amountText: {
+    fontFamily: Typography.bold || 'System',
+    fontSize: 28,
+    color: Colors.text?.primary || '#111827',
+  },
+
+  centeredStatus: {
     alignItems: 'center',
-    borderRadius: 6,
-    backgroundColor: '#35297F',
+    justifyContent: 'center',
+    marginBottom: Layout?.spacing?.xs || 8,
   },
-  shareButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontFamily: Typography.medium,
-    fontWeight: '600',
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  iconContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 16,
-  },
-  checkmarkIcon: {
-    width: 80,
-    height: 80,
-  },
-  title: {
-    fontSize: 24,
-    fontFamily: Typography.medium,
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  amountSection: {
+  statusPill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1 },
+  statusPillText: { fontFamily: Typography.medium || 'System', fontSize: 12, top: 1 },
+
+  detailsCard: {
+    width: '100%',
     backgroundColor: '#F8F9FA',
     borderRadius: 12,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    alignItems: 'center',
-  },
-  amountLabel: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontFamily: Typography.regular,
-    marginBottom: 8,
-  },
-  amountValue: {
-    fontSize: 32,
-    fontFamily: Typography.medium,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  statusContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  statusBadge: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  statusText: {
-    fontSize: 14,
-    fontFamily: Typography.medium,
-    fontWeight: '600',
-  },
-  detailsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+    paddingVertical: 20,
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    marginBottom: Layout?.spacing?.lg || 16,
   },
-  detailsTitle: {
-    fontSize: 18,
-    fontFamily: Typography.medium,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontFamily: Typography.regular,
-    fontWeight: '500',
-    flex: 1,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#111827',
-    fontFamily: Typography.medium,
-    fontWeight: '600',
-    textAlign: 'right',
-    flex: 1,
-  },
-  detailValueContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  copyIcon: {
-    width: 16,
-    height: 16,
-    marginLeft: 8,
-    resizeMode: 'contain',
-  },
-  noteContainer: {
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#F59E0B',
-    borderRadius: 8,
-    padding: 16,
+
+  footerMessage: {
+    width: '100%',
     marginBottom: 20,
-  },
-  noteTitle: {
-    fontSize: 14,
-    fontFamily: Typography.medium,
-    fontWeight: '600',
-    color: '#92400E',
-    marginBottom: 8,
-  },
-  noteText: {
-    fontSize: 14,
-    fontFamily: Typography.regular,
-    color: '#92400E',
-    lineHeight: 20,
-  },
-  footer: {
-    alignItems: 'center',
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
   },
   footerText: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#6B7280',
-    fontFamily: Typography.regular,
-    textAlign: 'center',
-    marginBottom: 4,
+    fontFamily: Typography.regular || 'System',
+    lineHeight: 20,
+    textAlign: 'left',
   },
-  footerSubtext: {
-    fontSize: 12,
+
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 8 },
+  rowLabel: {
+    flexShrink: 0,
+    width: 130,
     color: '#6B7280',
-    fontFamily: Typography.regular,
-    textAlign: 'center',
+    fontFamily: Typography.regular || 'System',
+    fontSize: 14,
   },
-  buttonSection: {
-    paddingHorizontal: 16,
-    paddingBottom: 34,
-    paddingTop: 16,
-  },
-  doneButton: {
-    backgroundColor: '#35297F',
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  doneButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontFamily: Typography.medium,
-    fontWeight: '600',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#6B7280',
-    fontFamily: Typography.regular,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  backButtonText: {
+  rowValueWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'flex-end' },
+  rowValue: { color: '#111827', fontFamily: Typography.medium || 'System', fontSize: 14, textAlign: 'right', flexShrink: 1 },
+  
+  linkText: {
     color: '#35297F',
-    fontSize: 16,
-    fontFamily: Typography.medium,
-    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
+
+  ctaRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 8 },
+  primaryButton: {
+    flex: 1,
+    backgroundColor: Colors.primary || '#35297F',
+    paddingVertical: Layout?.spacing?.md || 14,
+    borderRadius: Layout?.borderRadius?.lg || 10,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.surface || '#FFFFFF',
+    fontFamily: Typography.medium || 'System',
+  },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: Colors.surface || '#FFFFFF',
+    paddingVertical: Layout?.spacing?.md || 14,
+    borderRadius: Layout?.borderRadius?.lg || 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  secondaryButtonText: { fontSize: 16, fontWeight: '600', color: '#111827', fontFamily: Typography.medium || 'System' },
+
+  copyButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.surface || '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  copyIcon: { width: 16, height: 16 },
 });
