@@ -2,25 +2,27 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  Modal,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Image,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 // @ts-ignore
 import ErrorDisplay from '../../components/ErrorDisplay';
 import FiatTransferConfirmationModal from '../../components/FiatConfirm';
+// @ts-ignore
 import naijaFlag from '../../components/icons/naija-flag.png';
 import { useBankAccounts } from '../../hooks/usebankAccount';
 // Icons - Updated to match btc-bsc screen
+// @ts-ignore
 import backIcon from '../../components/icons/backy.png';
 
 // PIN + 2FA modals and withdrawal hook
@@ -28,10 +30,7 @@ import TwoFactorAuthModal from '../../components/2FA';
 import PinEntryModal from '../../components/PinEntry';
 import { useNGNZWithdrawal } from '../../hooks/useNGNZService';
 
-// Fiat Withdrawal Receipt Modal
-import FiatWithdrawalReceiptModal, {
-  APITransaction as ReceiptTx,
-} from '../../components/FiatTransactionReciept';
+// No longer using FiatWithdrawalReceiptModal - using full-screen receipt instead
 
 interface BankAccount {
   id: string;
@@ -114,10 +113,7 @@ const BankAccountsScreen = () => {
   const [passwordPin, setPasswordPin] = useState('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
 
-  // Receipt modal state
-  const [showReceipt, setShowReceipt] = useState(false);
-  const [receiptTx, setReceiptTx] = useState<ReceiptTx | undefined>(undefined);
-  const [receiptRaw, setReceiptRaw] = useState<any | undefined>(undefined);
+  // No longer using receipt modal state - using full-screen receipt instead
 
   // Auto-fetch bank accounts on mount
   useEffect(() => {
@@ -378,32 +374,30 @@ const BankAccountsScreen = () => {
 
       const now = new Date();
 
-      const txForReceipt: ReceiptTx = {
-        id: String(wd.id ?? wd.reference ?? Date.now()),
-        type: 'Withdrawal',
-        status: String(status),
-        amount: formattedNaira,
-        date: now.toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' }),
-        details: { currency: 'NGN' },
-      };
-
-      const rawForReceipt = {
-        reference: wd.reference ?? wd.id,
-        provider: wd.provider ?? wd.psp ?? '—',
-        obiexStatus: wd.status ?? wd.providerStatus,
-        bankName: selectedBankForTransfer?.bankName,
-        bankCode: selectedBankForTransfer?.bankCode,
-        accountName: selectedBankForTransfer?.accountName,
-        accountNumber: selectedBankForTransfer?.accountNumber,
-        fee: wd.fee ?? wd.feeNGN ?? wd.charge,
-        narration: 'NGNZ withdrawal to bank',
-        createdAt: wd.createdAt ?? now.toISOString(),
-      };
-
-      // Set receipt state and show modal
-      setReceiptTx(txForReceipt);
-      setReceiptRaw(rawForReceipt);
-      setShowReceipt(true);
+      // Navigate to full-screen withdrawal receipt instead of modal
+      // DEBUG: Log the full account number to verify it's not masked
+      console.log('🔍 Full Account Number:', selectedBankForTransfer?.accountNumber);
+      console.log('🔍 Backend Response Account Number:', wd.destination?.accountNumber);
+      
+      router.push({
+        pathname: '/receipt/ngnz-withdrawal',
+        params: {
+          withdrawalId: String(wd.id ?? wd.reference ?? Date.now()),
+          reference: wd.reference ?? wd.id,
+          amount: String(ngnAmount || 0),
+          currency: 'NGN',
+          bankName: selectedBankForTransfer?.bankName,
+          accountName: selectedBankForTransfer?.accountName,
+          accountNumber: selectedBankForTransfer?.accountNumber, // Using FULL account number from selected bank
+          bankCode: selectedBankForTransfer?.bankCode,
+          fee: String(wd.fee ?? wd.feeNGN ?? wd.charge ?? 0),
+          narration: 'NGNZ withdrawal to bank',
+          status: String(status),
+          createdAt: wd.createdAt ?? now.toISOString(),
+          provider: wd.provider ?? wd.psp ?? 'ZeusODX',
+          obiexStatus: wd.status ?? wd.providerStatus,
+        },
+      });
 
       // clear selection after we captured it for the receipt
       setSelectedBankForTransfer(null);
@@ -715,13 +709,7 @@ const BankAccountsScreen = () => {
         subtitle="Enter the 6-digit code from your authenticator app"
       />
 
-      {/* Fiat Withdrawal Receipt Modal */}
-      <FiatWithdrawalReceiptModal
-        visible={showReceipt}
-        onClose={() => setShowReceipt(false)}
-        tx={receiptTx}
-        raw={receiptRaw}
-      />
+      {/* No longer using FiatWithdrawalReceiptModal - using full-screen receipt instead */}
     </View>
   );
 };

@@ -1,16 +1,16 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    Dimensions,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Dimensions,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import TwoFactorAuthModal from '../../components/2FA';
 import ErrorDisplay from '../../components/ErrorDisplay';
@@ -25,7 +25,6 @@ import { useBalance } from '../../hooks/useWallet';
 import { useWithdrawal } from '../../hooks/useexternalWithdrawal';
 
 // Icons - Updated to match BTC-BSC screen
-// @ts-ignore
 // @ts-ignore
 import arrowDownIcon from '../../components/icons/arrow-down.png';
 
@@ -486,6 +485,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
     }
   };
 
+
   const handlePinSubmit = (pin: string): void => {
     setPasswordPin(pin);
     setShowPinModal(false);
@@ -742,17 +742,19 @@ const ExternalWalletTransferScreen: React.FC = () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Wallet Address</Text>
             <View style={styles.inputCard}>
-              <TextInput
-                style={styles.addressInput}
-                placeholder="Paste here"
-                placeholderTextColor={Colors.text?.secondary}
-                value={walletAddress}
-                onChangeText={setWalletAddress}
-                autoCapitalize="none"
-                autoCorrect={false}
-                multiline={true}
-                numberOfLines={2}
-              />
+              <View style={styles.addressInputContainer}>
+                <TextInput
+                  style={styles.addressInput}
+                  placeholder="Enter wallet address"
+                  placeholderTextColor={Colors.text?.secondary}
+                  value={walletAddress}
+                  onChangeText={setWalletAddress}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  multiline={true}
+                  numberOfLines={2}
+                />
+              </View>
             </View>
           </View>
 
@@ -1001,6 +1003,9 @@ const styles = StyleSheet.create({
   },
 
   // Address input styles
+  addressInputContainer: {
+    flex: 1,
+  },
   addressInput: {
     color: Colors.text?.primary || '#111827',
     fontFamily: Typography.regular || 'System',
@@ -1008,6 +1013,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     paddingVertical: 4,
     textAlignVertical: 'top',
+    flex: 1,
   },
 
   // Network input styles

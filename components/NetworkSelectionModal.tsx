@@ -2,16 +2,16 @@ import React from 'react';
 import {
     ActivityIndicator,
     FlatList,
-    Platform,
+    Modal,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
-import BaseModal from './ui/BaseModal';
 
 interface NetworkOption {
   id: string;
@@ -52,10 +52,7 @@ const NetworkSelectionModal: React.FC<NetworkSelectionModalProps> = ({
     
     return (
       <TouchableOpacity 
-        style={[
-          styles.networkItem,
-          isSelected && styles.selectedNetworkItem
-        ]}
+        style={styles.networkItem}
         onPress={() => handleNetworkPress(item)}
         activeOpacity={0.7}
       >
@@ -65,12 +62,6 @@ const NetworkSelectionModal: React.FC<NetworkSelectionModalProps> = ({
             <Text style={styles.networkFee}>Fee: ~${item.feeUsd.toFixed(2)}</Text>
           )}
         </View>
-        
-        {isSelected && (
-          <View style={styles.selectedIndicator}>
-            <Text style={styles.checkMark}>✓</Text>
-          </View>
-        )}
       </TouchableOpacity>
     );
   };
@@ -119,143 +110,135 @@ const NetworkSelectionModal: React.FC<NetworkSelectionModalProps> = ({
   };
 
   return (
-    <BaseModal
+    <Modal
       visible={visible}
-      onClose={onClose}
-      type="bottom"
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
     >
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            Select Network{tokenSymbol ? ` for ${tokenSymbol}` : ''}
-          </Text>
-          <TouchableOpacity 
-            onPress={onClose} 
-            style={styles.closeButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Text style={styles.closeButtonText}>✕</Text>
-          </TouchableOpacity>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={() => {}}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  Select Network{tokenSymbol ? ` for ${tokenSymbol}` : ''}
+                </Text>
+                <TouchableOpacity onPress={onClose} style={styles.closeButtonContainer}>
+                  <Text style={styles.closeButton}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {renderContent()}
+            </View>
+          </TouchableWithoutFeedback>
         </View>
-        
-        {renderContent()}
-      </View>
-    </BaseModal>
+      </TouchableWithoutFeedback>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  content: {
+  modalOverlay: {
     flex: 1,
-    maxHeight: '70%',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: Layout.borderRadius.xl,
+    borderTopRightRadius: Layout.borderRadius.xl,
+    padding: Layout.spacing.lg,
+    width: '100%',
+    height: '45%',
     minHeight: '45%',
   },
-  header: {
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Layout.spacing.lg || 16,
-    paddingVertical: Layout.spacing.md || 12,
+    marginBottom: Layout.spacing.md,
+    paddingBottom: Layout.spacing.xs,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  headerTitle: {
-    fontFamily: Typography.bold || 'System',
-    fontSize: 16,
-    color: Colors.text?.primary || '#111827',
+  modalTitle: {
+    fontFamily: Typography.bold,
+    fontSize: 14,
+    color: Colors.text.primary,
     fontWeight: '600',
-    flex: 1,
+  },
+  closeButtonContainer: {
+    padding: Layout.spacing.xs,
   },
   closeButton: {
-    padding: Layout.spacing.xs || 8,
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: Colors.text?.secondary || '#6B7280',
+    fontSize: 14,
+    color: Colors.text.secondary,
     fontWeight: '500',
   },
   networkList: {
-    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
+    paddingBottom: Layout.spacing.sm,
   },
   networkItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: Layout.spacing.lg || 16,
-    paddingHorizontal: Layout.spacing.lg || 16,
+    paddingVertical: Layout.spacing.lg,
+    paddingHorizontal: Layout.spacing.lg,
     backgroundColor: '#F0EFFF',
-    marginBottom: Layout.spacing.sm || 8,
-    marginHorizontal: Layout.spacing.md || 12,
-    borderRadius: Layout.borderRadius?.md || 8,
-  },
-  selectedNetworkItem: {
-    backgroundColor: '#EEF2FF',
-    borderWidth: 1,
-    borderColor: Colors.primary || '#35297F',
+    marginBottom: Layout.spacing.sm,
+    borderRadius: Layout.borderRadius.md,
   },
   networkInfo: {
     flex: 1,
   },
   networkName: {
-    fontFamily: Typography.medium || 'System',
-    fontSize: 14,
-    color: Colors.text?.primary || '#111827',
+    fontFamily: Typography.medium,
+    fontSize: 13,
+    color: Colors.text.primary,
     fontWeight: '500',
     marginBottom: 2,
   },
   networkFee: {
-    fontFamily: Typography.regular || 'System',
+    fontFamily: Typography.regular,
     fontSize: 12,
-    color: Colors.text?.secondary || '#6B7280',
+    color: Colors.text.secondary,
     fontWeight: '400',
-  },
-  selectedIndicator: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: Colors.primary || '#35297F',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkMark: {
-    color: Colors.surface || '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
   },
   networkLoadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: Layout.spacing.xl || 24,
+    paddingVertical: Layout.spacing.xl,
   },
   networkLoadingText: {
-    fontFamily: Typography.regular || 'System',
+    fontFamily: Typography.regular,
     fontSize: 14,
-    color: Colors.text?.secondary || '#6B7280',
-    marginTop: Layout.spacing.md || 12,
+    color: Colors.text.secondary,
+    marginTop: Layout.spacing.md,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: Layout.spacing.xl || 24,
+    paddingVertical: Layout.spacing.xl,
   },
   emptyText: {
-    fontFamily: Typography.regular || 'System',
+    fontFamily: Typography.regular,
     fontSize: 14,
-    color: Colors.text?.secondary || '#6B7280',
+    color: Colors.text.secondary,
     textAlign: 'center',
-    marginBottom: Layout.spacing.md || 12,
+    marginBottom: Layout.spacing.md,
   },
   retryButton: {
-    backgroundColor: Colors.primary || '#35297F',
-    borderRadius: Layout.borderRadius?.md || 8,
-    paddingVertical: Layout.spacing.sm || 8,
-    paddingHorizontal: Layout.spacing.lg || 16,
+    backgroundColor: Colors.primary,
+    borderRadius: Layout.borderRadius.md,
+    paddingVertical: Layout.spacing.sm,
+    paddingHorizontal: Layout.spacing.lg,
   },
   retryButtonText: {
-    color: Colors.surface || '#FFFFFF',
-    fontFamily: Typography.medium || 'System',
+    color: Colors.surface,
+    fontFamily: Typography.medium,
     fontSize: 14,
     fontWeight: '600',
   },
