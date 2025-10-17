@@ -295,7 +295,7 @@ export const ngnzService = {
     const cryptoCurrency = isOnramp ? toUpper : fromUpper;
     
     // Validate crypto currency
-    const supportedCryptos = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'AVAX', 'BNB', 'MATIC'];
+    const supportedCryptos = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'AVAX', 'BNB', 'MATIC', 'TRX'];
     if (!supportedCryptos.includes(cryptoCurrency)) {
       return {
         success: false,

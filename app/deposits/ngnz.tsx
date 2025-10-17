@@ -2,9 +2,9 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     ActivityIndicator,
-    Image,
-    SafeAreaView,
-    ScrollView,
+  Image,
+  SafeAreaView,
+  ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -114,18 +114,18 @@ export default function NGNZDepositScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
+          {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Image source={backIcon} style={styles.backIcon} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Deposit NGNZ</Text>
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={() => router.back()}
+                activeOpacity={0.7}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
+              </TouchableOpacity>
+                <Text style={styles.headerTitle}>Deposit NGNZ</Text>
           <View style={styles.backButton} />
-        </View>
+              </View>
 
         <ScrollView
           style={styles.scrollView}
@@ -167,7 +167,7 @@ export default function NGNZDepositScreen() {
                 <View style={styles.tokenSelector}>
                   <Image source={ngnzIcon} style={styles.tokenIcon} />
                   <Text style={styles.tokenText}>NGNZ</Text>
-                </View>
+            </View>
               </View>
             </View>
             <Text style={styles.minimumText}>
@@ -208,12 +208,12 @@ export default function NGNZDepositScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background
+  container: { 
+    flex: 1, 
+    backgroundColor: Colors.background 
   },
-  safeArea: {
-    flex: 1
+  safeArea: { 
+    flex: 1 
   },
   header: {
     flexDirection: 'row',
@@ -224,10 +224,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  backButton: {
+  backButton: { 
     width: 40,
     height: 40,
-    justifyContent: 'center',
+    justifyContent: 'center', 
     alignItems: 'center',
     borderRadius: 20,
   },

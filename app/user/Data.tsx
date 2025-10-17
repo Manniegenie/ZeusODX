@@ -388,7 +388,34 @@ const BuyDataScreen: React.FC = () => {
         setPasswordPin(''); 
         setTwoFactorCode('');
         
-        setShowSuccessModal(true);
+        // Navigate to BillReceipt instead of showing modal
+        const resultData = result as any;
+        const billTransaction = {
+          id: resultData.data?.transactionId || resultData.data?.id || Date.now().toString(),
+          type: 'Data',
+          status: 'Successful',
+          amount: selectedPlan ? (selectedPlan as DataPlan).formattedData : '',
+          date: new Date().toLocaleString(),
+          details: {
+            orderId: resultData.data?.orderId || resultData.data?.requestId,
+            requestId: resultData.data?.requestId,
+            productName: resultData.data?.productName || 'Data',
+            network: selectedNetwork?.name || '',
+            customerInfo: mobileNumber,
+            billType: 'data',
+            paymentCurrency: 'NGN',
+            category: 'utility',
+          },
+          utilityType: 'Data'
+        };
+        
+        router.push({
+          pathname: '/receipt/bill-receipt',
+          params: {
+            tx: encodeURIComponent(JSON.stringify(billTransaction)),
+            raw: encodeURIComponent(JSON.stringify(resultData.data || {}))
+          }
+        });
       } else {
         setShowTwoFactorModal(false);
         const errorAction = getErrorAction?.((result as any).requiresAction);
