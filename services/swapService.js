@@ -223,7 +223,7 @@ export const swapService = {
    * Validate if currencies are supported for crypto-to-crypto swap
    */
   validateCryptoSwap(from, to) {
-    const supportedCryptos = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'AVAX', 'BNB', 'MATIC'];
+    const supportedCryptos = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'AVAX', 'BNB', 'MATIC', 'TRX'];
     
     const fromUpper = from.toUpperCase();
     const toUpper = to.toUpperCase();

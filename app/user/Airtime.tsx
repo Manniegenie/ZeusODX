@@ -355,7 +355,33 @@ const BuyAirtimeScreen: React.FC = () => {
         setPasswordPin('');
         setTwoFactorCode('');
         
-        setShowSuccessModal(true);
+        // Navigate to BillReceipt instead of showing modal
+        const billTransaction = {
+          id: result.data?.transactionId || result.data?.id || Date.now().toString(),
+          type: 'Airtime',
+          status: 'Successful',
+          amount: `₦${customAmount}`,
+          date: new Date().toLocaleString(),
+          details: {
+            orderId: result.data?.orderId || result.data?.requestId,
+            requestId: result.data?.requestId,
+            productName: result.data?.productName || 'Airtime',
+            network: selectedNetwork?.name || '',
+            customerInfo: mobileNumber,
+            billType: 'airtime',
+            paymentCurrency: 'NGN',
+            category: 'utility',
+          },
+          utilityType: 'Airtime'
+        };
+        
+        router.push({
+          pathname: '/receipt/bill-receipt',
+          params: {
+            tx: encodeURIComponent(JSON.stringify(billTransaction)),
+            raw: encodeURIComponent(JSON.stringify(result.data || {}))
+          }
+        });
       } else {
         setShowTwoFactorModal(false);
         

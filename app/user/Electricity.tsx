@@ -17,7 +17,6 @@ import TwoFactorAuthModal from '../../components/2FA';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ElectricityConfirmationModal from '../../components/ElectricityConfirmModal';
 import ProviderSelectionModal from '../../components/ElectricityProviderModal';
-import UtilityPurchaseSuccessModal from '../../components/ElectricitySuccess';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import PinEntryModal from '../../components/PinEntry';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -101,6 +100,44 @@ const ElectricityScreen: React.FC = () => {
     getUserFriendlyMessage,
     getErrorAction: getCustomerErrorAction
   } = useCustomer() as any;
+
+  // Debug customer data changes
+  React.useEffect(() => {
+    console.log('🔍 Customer data updated:', {
+      customerData,
+      customerName: customerData?.customer_name,
+      allKeys: customerData ? Object.keys(customerData) : []
+    });
+  }, [customerData]);
+
+  // Extract customer name from customerData
+  const getCustomerName = (): string => {
+    if (!customerData) {
+      console.log('🔍 getCustomerName: No customerData');
+      return '';
+    }
+    
+    // Try different possible field names
+    const possibleNames = [
+      customerData.customer_name,
+      customerData.CustomerName,
+      customerData.customerName,
+      customerData.name,
+      customerData.Name
+    ];
+    
+    const rawName = possibleNames.find(name => name && name.trim());
+    const formattedName = rawName ? formatCustomerName(rawName) : '';
+    
+    console.log('🔍 getCustomerName result:', {
+      customerData,
+      possibleNames,
+      rawName,
+      formattedName
+    });
+    
+    return formattedName;
+  };
 
   // ---- Form state ----
   const [selectedProvider, setSelectedProvider] = useState<ElectricityProvider | null>(null);
@@ -214,6 +251,12 @@ const ElectricityScreen: React.FC = () => {
     clearCustomerError();
     try {
       const result = await verifyElectricityCustomer(meterNumber, selectedProvider.id, selectedPaymentType.id);
+      console.log('🔍 Customer verification result:', {
+        result,
+        success: result?.success,
+        customerData: result?.data,
+        customerName: result?.data?.customer_name
+      });
       if (!(result && result.success)) {
         const errorAction = getCustomerErrorAction(result?.requiresAction || 'RETRY');
         const friendlyMessage = getUserFriendlyMessage(result?.error, result?.message);
@@ -290,7 +333,39 @@ const ElectricityScreen: React.FC = () => {
         setShowConfirmationModal(false);
         setPasswordPin('');
         setTwoFactorCode('');
-        setShowSuccessModal(true);
+        // Navigate to BillReceipt instead of showing modal
+        const billTransaction = {
+          id: result.data?.transactionId || result.data?.id || Date.now().toString(),
+          type: 'Electricity',
+          status: 'Successful',
+          amount: `₦${getCurrentAmount().toLocaleString()}`,
+          date: new Date().toLocaleString(),
+          details: {
+            orderId: result.data?.orderId || result.data?.requestId,
+            requestId: result.data?.requestId,
+            productName: result.data?.productName || 'Electricity',
+            network: selectedProvider?.name || '',
+            customerInfo: meterNumber,
+            billType: 'electricity',
+            paymentCurrency: 'NGN',
+            category: 'utility',
+            // Electricity specific fields
+            token: result.data?.token || purchaseReceipt?.token,
+            units: result.data?.units || purchaseReceipt?.units,
+            band: result.data?.band || purchaseReceipt?.band,
+            customerName: result.data?.customer_name || purchaseReceipt?.customer_name,
+            customerAddress: result.data?.customer_address || purchaseReceipt?.customer_address,
+          },
+          utilityType: 'Electricity'
+        };
+        
+        router.push({
+          pathname: '/receipt/bill-receipt',
+          params: {
+            tx: encodeURIComponent(JSON.stringify(billTransaction)),
+            raw: encodeURIComponent(JSON.stringify(result.data || {}))
+          }
+        });
       } else {
         setShowTwoFactorModal(false);
         const errorType = getErrorType(result?.error || 'SERVICE_ERROR');
@@ -433,7 +508,7 @@ const ElectricityScreen: React.FC = () => {
                 style={[styles.input, styles.uneditableInput]}
                 placeholder="Account name will appear here"
                 placeholderTextColor={Colors.text?.secondary}
-                value={customerData ? formatCustomerName((customerData as any).customer_name) : ''}
+                value={getCustomerName()}
                 editable={false}
               />
             </View>
@@ -516,7 +591,7 @@ const ElectricityScreen: React.FC = () => {
         provider={selectedProvider}
         meterNumber={meterNumber}
         customerData={customerData}
-        customerName={customerData ? formatCustomerName((customerData as any).customer_name) : ''}
+        customerName={getCustomerName()}
         amount={getCurrentAmount()}
       />
 
@@ -527,15 +602,12 @@ const ElectricityScreen: React.FC = () => {
         selectedProvider={selectedProvider}
       />
 
-      <UtilityPurchaseSuccessModal
-        visible={showSuccessModal}
-        onContinue={handleSuccessModalClose}
-        utilityType="Electricity"
-        amount={`₦${getCurrentAmount().toLocaleString()}`}
-        phoneNumber={meterNumber}
-        network={selectedProvider?.name || ''}
-        receipt={purchaseReceipt}
-      />
+      {/* Success Modal - Navigate to BillReceipt instead */}
+      {showSuccessModal && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 }}>
+          {/* This will be replaced by navigation to BillReceipt */}
+        </View>
+      )}
     </View>
   );
 };

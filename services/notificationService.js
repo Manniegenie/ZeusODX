@@ -1,8 +1,8 @@
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import Constants from 'expo-constants';
-import { Platform, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import { Linking, Platform } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 
 Notifications.setNotificationHandler({
@@ -37,6 +37,33 @@ class NotificationService {
     }
   }
 
+  // Auto-enable notifications for Android (as requested by user)
+  async autoEnable() {
+    if (!Device.isDevice) {
+      return { success: false, message: 'Notifications require a physical device' };
+    }
+
+    try {
+      // Check if already enabled
+      const alreadyEnabled = await this.isEnabled();
+      if (alreadyEnabled) {
+        return { success: true, message: 'Notifications already enabled' };
+      }
+
+      // For Android, automatically enable notifications
+      if (Platform.OS === 'android') {
+        console.log('🤖 Auto-enabling notifications for Android');
+        return await this.enable();
+      }
+
+      // For iOS, still require user permission
+      return await this.enable();
+    } catch (error) {
+      console.error('Error auto-enabling notifications:', error);
+      return { success: false, message: 'Failed to auto-enable notifications' };
+    }
+  }
+
   // Request notification permissions and register
   async enable() {
     if (!Device.isDevice) {
@@ -46,17 +73,28 @@ class NotificationService {
     try {
       // Setup Android channels first
       if (Platform.OS === 'android') {
-        await this.setupAndroidChannel();
+        await this.setupAndroidChannels();
       }
 
-      // Request permissions
-      const { status } = await Notifications.requestPermissionsAsync({
+      // Request permissions with Android-specific options
+      const permissionRequest = {
         ios: {
           allowAlert: true,
           allowSound: true,
           allowBadge: true,
         },
-      });
+      };
+
+      // Add Android-specific permissions
+      if (Platform.OS === 'android') {
+        permissionRequest.android = {
+          allowAlert: true,
+          allowSound: true,
+          allowBadge: true,
+        };
+      }
+
+      const { status } = await Notifications.requestPermissionsAsync(permissionRequest);
 
       if (status !== 'granted') {
         return { 
@@ -134,14 +172,52 @@ class NotificationService {
   }
 
   // Private helper methods
-  async setupAndroidChannel() {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'Default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-      sound: 'default',
-    });
+  async setupAndroidChannels() {
+    try {
+      // Create default channel
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Default Notifications',
+        description: 'General app notifications',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#35297F',
+        sound: 'default',
+        enableVibrate: true,
+        enableLights: true,
+        showBadge: true,
+      });
+
+      // Create transactions channel (matches backend channelId)
+      await Notifications.setNotificationChannelAsync('transactions', {
+        name: 'Transaction Notifications',
+        description: 'Notifications for deposits, withdrawals, and transfers',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#35297F',
+        sound: 'default',
+        enableVibrate: true,
+        enableLights: true,
+        showBadge: true,
+      });
+
+      // Create security channel
+      await Notifications.setNotificationChannelAsync('security', {
+        name: 'Security Alerts',
+        description: 'Important security notifications',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 500, 250, 500],
+        lightColor: '#FF231F7C',
+        sound: 'default',
+        enableVibrate: true,
+        enableLights: true,
+        showBadge: true,
+      });
+
+      console.log('✅ Android notification channels created successfully');
+    } catch (error) {
+      console.error('❌ Error setting up Android channels:', error);
+      throw error;
+    }
   }
 
   async getPushToken() {

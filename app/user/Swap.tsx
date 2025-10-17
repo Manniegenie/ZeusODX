@@ -1,7 +1,7 @@
 // app/user/Swap.tsx
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import {
+import { 
   Image,
   SafeAreaView,
   ScrollView,
@@ -306,7 +306,7 @@ export default function SwapScreen({
     
     // Return '0' if amount is invalid or zero
     if (!num || num === 0 || isNaN(num)) return '0';
-
+    
     // Get token-specific decimal places
     const getTokenDecimals = (symbol?: string) => {
       if (!symbol) return 2; // Default to 2 decimals
@@ -396,14 +396,14 @@ export default function SwapScreen({
     // Only clear quote if amount actually changed
     const currentAmount = (fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0;
     if (balance !== currentAmount) {
-      // Set raw value to exact balance (used for quoting & submission)
-      setFromAmountRaw(balance);
+    // Set raw value to exact balance (used for quoting & submission)
+    setFromAmountRaw(balance);
 
-      // Format friendly display string (with commas + trimmed decimals)
-      const displayStr = formatMaxAmount(balance);
-      setFromAmount(formatWithCommas(displayStr));
+    // Format friendly display string (with commas + trimmed decimals)
+    const displayStr = formatMaxAmount(balance);
+    setFromAmount(formatWithCommas(displayStr));
 
-      clearQuote();
+    clearQuote();
     }
 
     // Also update selectedFromToken.balance to latest
@@ -428,7 +428,7 @@ export default function SwapScreen({
     // Only clear quote if amount actually changed
     const currentAmount = (fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0;
     if (numeric !== currentAmount) {
-      clearQuote();
+    clearQuote();
     }
     clearMessage();
   };

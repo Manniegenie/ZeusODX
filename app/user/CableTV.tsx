@@ -511,8 +511,33 @@ const CableTvScreen: React.FC = () => {
         setPasswordPin('');
         setTwoFactorCode('');
         
-        // Show success modal instead of Alert
-        setShowSuccessModal(true);
+        // Navigate to BillReceipt instead of showing modal
+        const billTransaction = {
+          id: result.data?.transactionId || result.data?.id || Date.now().toString(),
+          type: 'Cable TV',
+          status: 'Successful',
+          amount: `₦${customAmount}`,
+          date: new Date().toLocaleString(),
+          details: {
+            orderId: result.data?.orderId || result.data?.requestId,
+            requestId: result.data?.requestId,
+            productName: result.data?.productName || 'Cable TV',
+            network: selectedProvider?.name || '',
+            customerInfo: smartCardNumber,
+            billType: 'cable_tv',
+            paymentCurrency: 'NGN',
+            category: 'utility',
+          },
+          utilityType: 'Cable TV'
+        };
+        
+        router.push({
+          pathname: '/receipt/bill-receipt',
+          params: {
+            tx: encodeURIComponent(JSON.stringify(billTransaction)),
+            raw: encodeURIComponent(JSON.stringify(result.data || {}))
+          }
+        });
       } else {
         setShowTwoFactorModal(false);
         const errorAction = getErrorAction?.(result.requiresAction);

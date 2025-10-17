@@ -36,7 +36,8 @@ import depositIcon from '../../components/icons/deposit-icon.png';
 import emptyStateIcon from '../../components/icons/empty-state.png';
 // @ts-ignore
 import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
-import ScreenHeader from '../../components/ScreenHeader';
+// @ts-ignore
+import backIcon from '../../components/icons/backy.png';
 
 // -------------------- Types to match History/Receipt --------------------
 type TokenDetails = {
@@ -359,13 +360,27 @@ const BitcoinWalletScreen: React.FC<BitcoinWalletScreenProps> = ({ onQuickAction
             />
           }
         >
-          <ScreenHeader
-            title="Bitcoin"
-            onBack={handleGoBack}
-            rightComponent={
-              <Image source={btcIcon} style={styles.iconImage} />
-            }
-          />
+          {/* Header */}
+          <View style={styles.headerSection}>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={handleGoBack}
+                activeOpacity={0.7}
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
+              </TouchableOpacity>
+              <View style={styles.headerGroup}>
+                <View style={styles.iconWrapper}>
+                  <Image source={btcIcon} style={styles.iconImage} />
+                </View>
+                <Text style={styles.headerTitle}>Bitcoin</Text>
+              </View>
+              <View style={styles.headerRight} />
+            </View>
+          </View>
 
           {/* Balance */}
           <View style={styles.balanceSection}>
@@ -489,7 +504,26 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
-  iconImage: { width: 28, height: 28, resizeMode: 'cover', marginRight: 8 },
+
+  headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
+  headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  backButton: { 
+    width: 40,
+    height: 40,
+    justifyContent: 'center', 
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
+  headerGroup: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, flex: 1 },
+  headerRight: { width: 40 },
+  iconWrapper: { width: 28, height: 28, borderRadius: 14, overflow: 'hidden' },
+  iconImage: { width: 28, height: 28, resizeMode: 'cover' },
+  headerTitle: { fontSize: 16, fontWeight: '600', color: Colors.text.primary },
 
   // Balance
   balanceSection: { 

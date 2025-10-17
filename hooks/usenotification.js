@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 import NotificationService from '../services/notificationService';
 
@@ -18,6 +18,20 @@ export const useNotifications = () => {
     setIsLoading(true);
     try {
       const result = await NotificationService.enable();
+      if (result.success) {
+        setIsEnabled(true);
+      }
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Auto-enable notifications (for Android)
+  const autoEnable = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await NotificationService.autoEnable();
       if (result.success) {
         setIsEnabled(true);
       }
@@ -69,6 +83,7 @@ export const useNotifications = () => {
     isEnabled,
     isLoading,
     enable,
+    autoEnable,
     openSettings,
     clearBadge,
     setupListeners,

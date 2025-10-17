@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import * as Updates from 'expo-updates';
 
 class ApiClient {
   constructor() {
@@ -74,6 +75,18 @@ class ApiClient {
 
       if (!response.ok) {
         console.error(`❌ API Error ${response.status}:`, data);
+        
+        // Handle 403 Forbidden - restart the app
+        if (response.status === 403) {
+          console.log('🔄 403 Forbidden detected - restarting app...');
+          try {
+            await Updates.reloadAsync();
+          } catch (restartError) {
+            console.error('❌ Failed to restart app:', restartError);
+            // Fallback: clear auth tokens and let user re-authenticate
+            await this.clearAuthToken();
+          }
+        }
         
         // Return the actual error message from server
         const errorMessage = data.message || data.error || `HTTP ${response.status}: ${response.statusText}`;

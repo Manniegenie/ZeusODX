@@ -22,7 +22,9 @@ import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 
 // Icons
+// @ts-ignore
 import backIcon from '../../components/icons/backy.png';
+// @ts-ignore
 import successImage from '../../components/icons/logo1.png';
 
 type TokenDetails = {
@@ -51,6 +53,12 @@ type TokenDetails = {
     rate?: string | number;
     exchangeRate?: string | number;
   };
+  // Electricity specific fields
+  token?: string;
+  units?: number | string;
+  band?: string;
+  customerName?: string;
+  customerAddress?: string;
 };
 
 type UtilityDetails = {
@@ -215,6 +223,18 @@ const formatAmtSym = (amount?: number | string, symbol?: string) => {
   return `${n.toLocaleString('en-US', { maximumFractionDigits: 8 })} ${s || ''}`.trim();
 };
 
+const formatToken = (token?: string) => {
+  if (!token) return '—';
+  return token.replace(/(.{4})/g, '$1 ').trim();
+};
+
+const formatUnits = (units?: number | string) => {
+  if (!units) return '—';
+  const num = typeof units === 'string' ? parseFloat(units) : units;
+  if (isNaN(num)) return '—';
+  return `${num.toLocaleString()} kWh`;
+};
+
 const parseSwapFromNarration = (narr?: string) => {
   if (!narr) return null;
   const r =
@@ -300,6 +320,23 @@ const generateTransactionReceiptHTML = (
     }
     if (merged.fee !== undefined && merged.fee !== null) {
       detailRows.push(`<tr><td>Fee</td><td>${asText(merged.fee)}</td></tr>`);
+    }
+    
+    // Electricity specific fields
+    if (merged.token) {
+      detailRows.push(`<tr><td>Token</td><td>${asText(merged.token)}</td></tr>`);
+    }
+    if (merged.units) {
+      detailRows.push(`<tr><td>Units</td><td>${asText(merged.units)} kWh</td></tr>`);
+    }
+    if (merged.band) {
+      detailRows.push(`<tr><td>Band</td><td>${asText(merged.band)}</td></tr>`);
+    }
+    if (merged.customerName) {
+      detailRows.push(`<tr><td>Customer Name</td><td>${asText(merged.customerName)}</td></tr>`);
+    }
+    if (merged.customerAddress) {
+      detailRows.push(`<tr><td>Address</td><td>${asText(merged.customerAddress)}</td></tr>`);
     }
     
   } else {
@@ -448,8 +485,8 @@ export default function TransactionReceiptScreen() {
 
   const isNGNZWithdrawal = useMemo(() => {
     return transaction?.isNGNZWithdrawal || 
-           transaction?.details?.isNGNZWithdrawal ||
-           (transaction?.details?.currency === 'NGNZ' && 
+           (transaction?.details as any)?.isNGNZWithdrawal ||
+           ((transaction?.details as any)?.currency === 'NGNZ' && 
             transaction?.type?.toLowerCase().includes('withdrawal'));
   }, [transaction]);
 
@@ -819,6 +856,28 @@ export default function TransactionReceiptScreen() {
               )}
               {merged.fee !== undefined && merged.fee !== null && (
                 <Row label="Fee" value={asText(merged.fee)} />
+              )}
+              
+              {/* Electricity specific fields */}
+              {merged.token && (
+                <Row 
+                  label="Token" 
+                  value={formatToken(merged.token)}
+                  copyableValue={merged.token}
+                  onCopy={(v) => handleCopy('Token', v)}
+                />
+              )}
+              {merged.units && (
+                <Row label="Units" value={formatUnits(merged.units)} />
+              )}
+              {merged.band && (
+                <Row label="Band" value={asText(merged.band)} />
+              )}
+              {merged.customerName && (
+                <Row label="Customer Name" value={asText(merged.customerName)} />
+              )}
+              {merged.customerAddress && (
+                <Row label="Address" value={asText(merged.customerAddress)} />
               )}
             </>
           ) : (

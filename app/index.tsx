@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Colors } from '../constants/Colors';
-import { simpleAppState } from '../services/appstate';
-import { useNotifications } from '../hooks/usenotification';
 import * as Notifications from 'expo-notifications';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { Colors } from '../constants/Colors';
+import { useNotifications } from '../hooks/usenotification';
+import { simpleAppState } from '../services/appstate';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -14,6 +14,7 @@ export default function HomeScreen() {
   const {
     checkStatus,
     enable,
+    autoEnable,
     openSettings,
     setupListeners,
     removeListeners,
@@ -54,7 +55,7 @@ export default function HomeScreen() {
       await determineInitialRoute();
       console.log('✅ App initialization complete');
     } catch (error) {
-      console.error('❌ Error initializing app:', error.message, error.stack);
+      console.error('❌ Error initializing app:', (error as Error).message, (error as Error).stack);
       router.replace('/onboarding/welcome');
     } finally {
       setIsLoading(false);
@@ -73,12 +74,12 @@ export default function HomeScreen() {
         console.log('🔧 Setting up notification listeners');
         setupListeners(
           // Notification received while app is open
-          (notification) => {
+          (notification: any) => {
             console.log('📨 Received notification while app is open:', JSON.stringify(notification, null, 2));
             // You can show an in-app notification banner here if you want
           },
           // Notification tapped
-          (response) => {
+          (response: any) => {
             console.log('👆 Handling notification tap');
             handleNotificationTap(response);
           }
@@ -88,14 +89,32 @@ export default function HomeScreen() {
         await clearBadge();
         console.log('✅ Notification setup complete');
       } else {
-        console.log('ℹ️ Notifications not enabled, skipping listener setup');
+        console.log('ℹ️ Notifications not enabled, attempting auto-enable for Android');
+        // Try to auto-enable notifications (works for Android)
+        const autoEnableResult = await autoEnable();
+        if (autoEnableResult.success) {
+          console.log('✅ Notifications auto-enabled successfully');
+          // Set up listeners after auto-enabling
+          setupListeners(
+            (notification: any) => {
+              console.log('📨 Received notification while app is open:', JSON.stringify(notification, null, 2));
+            },
+            (response: any) => {
+              console.log('👆 Handling notification tap');
+              handleNotificationTap(response);
+            }
+          );
+          await clearBadge();
+        } else {
+          console.log('ℹ️ Auto-enable failed, notifications will need manual setup');
+        }
       }
     } catch (error) {
-      console.error('❌ Error setting up notifications:', error.message, error.stack);
+      console.error('❌ Error setting up notifications:', (error as Error).message, (error as Error).stack);
     }
   };
 
-  const handleNotificationTap = async (response) => {
+  const handleNotificationTap = async (response: any) => {
     console.log('🔍 Processing notification tap:', JSON.stringify(response, null, 2));
     const data = response.notification.request.content.data;
     const actionId = response.actionIdentifier;
@@ -106,7 +125,7 @@ export default function HomeScreen() {
         // Handle custom notification actions here
         console.log('✅ Notification action handled');
       } catch (error) {
-        console.error('❌ Error handling notification action:', error.message, error.stack);
+        console.error('❌ Error handling notification action:', (error as Error).message, (error as Error).stack);
       }
       return;
     }
@@ -115,20 +134,20 @@ export default function HomeScreen() {
       console.log('🧭 Navigating from notification to screen:', data.screen);
       switch (data.screen) {
         case 'profile':
-          router.push('/(tabs)/profile');
+          router.push('/(tabs)/profile' as any);
           console.log('✅ Navigated to profile');
           break;
         case 'home':
-          router.push('/(tabs)/home');
+          router.push('/(tabs)/home' as any);
           console.log('✅ Navigated to home');
           break;
         case 'messages':
-          router.push('/messages');
+          router.push('/messages' as any);
           console.log('✅ Navigated to messages');
           break;
         case 'details':
           if (data.id) {
-            router.push(`/details/${data.id}`);
+            router.push(`/details/${data.id}` as any);
             console.log('✅ Navigated to details:', data.id);
           } else {
             console.log('❌ No ID provided for details screen');
@@ -188,7 +207,7 @@ export default function HomeScreen() {
           break;
       }
     } catch (error) {
-      console.error('❌ Error determining route:', error.message, error.stack);
+      console.error('❌ Error determining route:', (error as Error).message, (error as Error).stack);
       router.replace('/onboarding/welcome');
     }
   };
@@ -203,8 +222,8 @@ export default function HomeScreen() {
       console.log('✅ Notifications enabled successfully');
       // Setup listeners after enabling
       setupListeners(
-        (notification) => console.log('📨 Notification received:', notification),
-        (response) => handleNotificationTap(response)
+        (notification: any) => console.log('📨 Notification received:', notification),
+        (response: any) => handleNotificationTap(response)
       );
     } else {
       console.log('❌ Failed to enable notifications:', result.message);
