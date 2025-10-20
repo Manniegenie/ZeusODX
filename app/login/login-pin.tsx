@@ -1,27 +1,27 @@
 // app/login/LoginPinScreen.tsx
-import React from 'react';
+import * as LocalAuthentication from 'expo-local-authentication';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Typography } from '../../constants/Typography';
+import ErrorDisplay from '../../components/ErrorDisplay';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useState, useRef, useEffect } from 'react';
+import { Typography } from '../../constants/Typography';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/authService';
-import ErrorDisplay from '../../components/ErrorDisplay';
-import * as LocalAuthentication from 'expo-local-authentication';
 
 // Import mascot image
+// @ts-ignore
 import mascot from '../../components/icons/face-id.png';
 
 export default function LoginPinScreen() {
@@ -454,6 +454,7 @@ export default function LoginPinScreen() {
                   textAlign="center"
                   selectTextOnFocus
                   editable={!isLoading}
+                  autoFocus={index === 0}
                 />
               ))}
             </View>

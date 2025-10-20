@@ -61,7 +61,17 @@ class ApiClient {
       };
 
       console.log(`🌐 API Request: ${this.baseURL}${endpoint}`);
-      const response = await fetch(`${this.baseURL}${endpoint}`, config);
+      
+      // Add timeout handling for airtime purchases
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      const response = await fetch(`${this.baseURL}${endpoint}`, {
+        ...config,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       // Better error handling - get the response body even for errors
       const responseText = await response.text();
@@ -100,6 +110,13 @@ class ApiClient {
       console.log(`✅ API Success: ${endpoint}`, data);
       return { success: true, data };
     } catch (error) {
+      if (error.name === 'AbortError') {
+        console.error(`⏰ API Request Timeout: ${endpoint}`);
+        return { 
+          success: false, 
+          error: 'Request timeout. Please try again.' 
+        };
+      }
       console.error(`❌ API Network Error: ${endpoint}`, error);
       return { 
         success: false, 

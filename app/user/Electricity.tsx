@@ -333,8 +333,8 @@ const ElectricityScreen: React.FC = () => {
         setShowConfirmationModal(false);
         setPasswordPin('');
         setTwoFactorCode('');
-        // Navigate to BillReceipt instead of showing modal
-        const billTransaction = {
+        // Navigate to UtilityReceipt instead of showing modal
+        const utilityTransaction = {
           id: result.data?.transactionId || result.data?.id || Date.now().toString(),
           type: 'Electricity',
           status: 'Successful',
@@ -344,26 +344,23 @@ const ElectricityScreen: React.FC = () => {
             orderId: result.data?.orderId || result.data?.requestId,
             requestId: result.data?.requestId,
             productName: result.data?.productName || 'Electricity',
+            meterNumber: meterNumber,
+            customerName: result.data?.customer_name || purchaseReceipt?.customer_name || customerData?.customer_name || '',
+            customerAddress: result.data?.customer_address || purchaseReceipt?.customer_address || customerData?.customer_address || '',
+            token: result.data?.token || purchaseReceipt?.token || '',
+            units: result.data?.units || purchaseReceipt?.units || '',
             network: selectedProvider?.name || '',
             customerInfo: meterNumber,
             billType: 'electricity',
             paymentCurrency: 'NGN',
             category: 'utility',
-            // Electricity specific fields
-            token: result.data?.token || purchaseReceipt?.token,
-            units: result.data?.units || purchaseReceipt?.units,
-            band: result.data?.band || purchaseReceipt?.band,
-            customerName: result.data?.customer_name || purchaseReceipt?.customer_name,
-            customerAddress: result.data?.customer_address || purchaseReceipt?.customer_address,
-          },
-          utilityType: 'Electricity'
+          }
         };
         
         router.push({
-          pathname: '/receipt/bill-receipt',
+          pathname: '/utility-receipt',
           params: {
-            tx: encodeURIComponent(JSON.stringify(billTransaction)),
-            raw: encodeURIComponent(JSON.stringify(result.data || {}))
+            tx: encodeURIComponent(JSON.stringify(utilityTransaction))
           }
         });
       } else {

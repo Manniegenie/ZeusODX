@@ -1,14 +1,14 @@
 // app/login/simple-pin.tsx
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
-import { Typography } from '../../constants/Typography';
+import * as LocalAuthentication from 'expo-local-authentication';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import ErrorDisplay from '../../components/ErrorDisplay';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Typography } from '../../constants/Typography';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/authService';
-import ErrorDisplay from '../../components/ErrorDisplay';
-import * as LocalAuthentication from 'expo-local-authentication';
 
 export default function SimpleLoginPinScreen() {
   const router = useRouter();
@@ -249,7 +249,7 @@ export default function SimpleLoginPinScreen() {
       console.log('Navigating to ForgotPinScreen with phone:', phoneNumber);
     } catch (err) {
       console.warn('Failed to navigate to ForgotPinScreen', err);
-      router.push(`/auth/forgot-pin?phonenumber=${encodeURIComponent(phoneNumber || '')}`);
+      router.push(`/login/ForgotPinScreen?phonenumber=${encodeURIComponent(phoneNumber || '')}`);
     }
   };
 
@@ -314,6 +314,7 @@ export default function SimpleLoginPinScreen() {
                   textAlign="center"
                   selectTextOnFocus
                   editable={!isLoading}
+                  autoFocus={index === 0}
                 />
               ))}
             </View>
