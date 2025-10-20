@@ -1,7 +1,7 @@
 import { usePathname, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import { Animated, ImageStyle, StyleSheet, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
@@ -161,37 +161,39 @@ const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({ activeTab }) =>
       Animated.timing(slideAnim, { toValue: 1, duration: 100, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
     ]).start();
-    router.push(tab.route);
+    router.push(tab.route as any);
   };
 
   const currentActiveTab = getCurrentTab();
   const slideTransform = slideAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 2] });
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          transform: [{ translateY: slideTransform }],
-          paddingBottom: Math.max(insets.bottom, 8),
-        },
-      ]}
-    >
-      <View style={styles.tabNavContainer}>
-        {tabs.map(tab => (
-          <AnimatedTab
-            key={tab.id}
-            tab={tab}
-            isActive={currentActiveTab === tab.id}
-            onPress={handleTabPress}
-          />
-        ))}
-      </View>
-    </Animated.View>
+    <SafeAreaView edges={['bottom']} style={styles.safeAreaContainer}>
+      <Animated.View
+        style={[
+          styles.container,
+          {
+            transform: [{ translateY: slideTransform }],
+          },
+        ]}
+      >
+        <View style={styles.tabNavContainer}>
+          {tabs.map(tab => (
+            <AnimatedTab
+              key={tab.id}
+              tab={tab}
+              isActive={currentActiveTab === tab.id}
+              onPress={handleTabPress}
+            />
+          ))}
+        </View>
+      </Animated.View>
+    </SafeAreaView>
   );
 };
 
 interface Styles {
+  safeAreaContainer: ViewStyle;
   container: ViewStyle;
   tabNavContainer: ViewStyle;
   tabItem: ViewStyle;
@@ -206,6 +208,9 @@ interface Styles {
 }
 
 const styles = StyleSheet.create<Styles>({
+  safeAreaContainer: {
+    backgroundColor: Colors.surface,
+  },
   container: {
     backgroundColor: Colors.surface,
     borderTopWidth: 1,

@@ -2,14 +2,14 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Dimensions,
-    Image,
+  Image,
     ImageSourcePropType,
-    SafeAreaView,
-    ScrollView,
+  SafeAreaView,
+  ScrollView,
     StatusBar,
     StyleSheet,
     Text,
-    TextInput,
+  TextInput,
     TouchableOpacity,
     View
 } from 'react-native';

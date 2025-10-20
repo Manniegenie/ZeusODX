@@ -1,22 +1,24 @@
 // IMPORTANT: This must be the first import!
 import 'react-native-gesture-handler';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { Stack } from 'expo-router';
 import {
-  useFonts,
-  BricolageGrotesque_200ExtraLight,
-  BricolageGrotesque_300Light,
-  BricolageGrotesque_400Regular,
-  BricolageGrotesque_500Medium,
-  BricolageGrotesque_600SemiBold,
-  BricolageGrotesque_700Bold,
-  BricolageGrotesque_800ExtraBold,
+    BricolageGrotesque_200ExtraLight,
+    BricolageGrotesque_300Light,
+    BricolageGrotesque_400Regular,
+    BricolageGrotesque_500Medium,
+    BricolageGrotesque_600SemiBold,
+    BricolageGrotesque_700Bold,
+    BricolageGrotesque_800ExtraBold,
+    useFonts,
 } from '@expo-google-fonts/bricolage-grotesque';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { Stack } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useAuthProvider, AuthContext } from '../hooks/useAuth';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import ProfessionalSplashScreen from '../components/ProfessionalSplashScreen';
+import { AuthContext, useAuthProvider } from '../hooks/useAuth';
+import { configureModernEdgeToEdge } from '../utils/edgeToEdgeConfig';
+import { getLayoutConfig } from '../utils/responsiveLayout';
 
 // Optional: warm up Tawk chat on app start
 import { TawkPrefetcher } from '../components/TawkSupport';
@@ -67,6 +69,14 @@ export default function RootLayout() {
     }
   }, [loaded, error, isAuthReady]);
 
+  // Configure modern edge-to-edge for Android 15+ (no deprecated APIs)
+  useEffect(() => {
+    configureModernEdgeToEdge();
+  }, []);
+
+  // Get responsive layout configuration
+  const layoutConfig = getLayoutConfig();
+
   // Handle splash screen completion
   const handleSplashAnimationComplete = useCallback(() => {
     setIsSplashAnimationComplete(true);
@@ -81,7 +91,16 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#F4F2FF' }}>
+        <SafeAreaView 
+          edges={['top']} 
+          style={{ 
+            flex: 1, 
+            backgroundColor: '#F4F2FF',
+            maxWidth: layoutConfig.containerWidth,
+            alignSelf: 'center',
+            width: '100%',
+          }}
+        >
           <AuthProvider>
             <Stack
               screenOptions={{

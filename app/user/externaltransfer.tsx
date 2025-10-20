@@ -23,6 +23,7 @@ import { useNetworks } from '../../hooks/useNetwork';
 import { useTokens } from '../../hooks/useTokens';
 import { useBalance } from '../../hooks/useWallet';
 import { useWithdrawal } from '../../hooks/useexternalWithdrawal';
+import { withdrawalService } from '../../services/externalwithdrawalService';
 
 // Icons - Updated to match BTC-BSC screen
 // @ts-ignore
@@ -410,6 +411,21 @@ const ExternalWalletTransferScreen: React.FC = () => {
         duration: 3000
       });
       return false;
+    }
+
+    // Validate minimum withdrawal amount
+    if (selectedToken?.symbol) {
+      const minimumAmount = withdrawalService.getMinimumWithdrawalAmount(selectedToken.symbol);
+      if (amountValue < minimumAmount) {
+        showErrorMessage({
+          type: 'validation',
+          title: 'Amount Too Low',
+          message: `Minimum withdrawal amount for ${selectedToken.symbol} is ${minimumAmount}`,
+          autoHide: true,
+          duration: 4000
+        });
+        return false;
+      }
     }
 
     if (!feeCalculation) {
@@ -805,6 +821,11 @@ const ExternalWalletTransferScreen: React.FC = () => {
                 </View>
               </View>
             </View>
+            {selectedToken?.symbol && (
+              <Text style={styles.helperText}>
+                Minimum amount - {withdrawalService.getMinimumWithdrawalAmount(selectedToken.symbol)} {selectedToken.symbol}
+              </Text>
+            )}
           </View>
 
           {/* Transaction Summary */}
@@ -1089,6 +1110,14 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: Colors.primary || '#35297F',
     fontWeight: '600',
+  },
+  helperText: {
+    color: Colors.text?.secondary || '#6B7280',
+    fontFamily: Typography.regular || 'System',
+    fontSize: 11,
+    fontWeight: '400',
+    marginTop: 6,
+    fontStyle: 'italic',
   },
 
   // Summary styles

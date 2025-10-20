@@ -3,7 +3,7 @@
     "name": "ZeusODX",
     "slug": "zeusodx",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/app-icon.png",
     "scheme": "zeusodx",
     "userInterfaceStyle": "automatic",
@@ -29,7 +29,15 @@
         "foregroundImage": "./assets/images/app-icon.png",
         "backgroundColor": "#35297F"
       },
-      "edgeToEdgeEnabled": false,
+      "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "pan",
+      "windowSoftInputMode": "adjustResize",
+      "resizeableActivity": true,
+      "supportsTablet": true,
+      "usesCleartextTraffic": false,
+      "allowBackup": false,
+      "hardwareAccelerated": true,
+      "largeHeap": true,
       "permissions": [
         "INTERNET",
         "CAMERA",
@@ -57,7 +65,14 @@
           "android": {
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
-            "minSdkVersion": 24
+            "minSdkVersion": 24,
+            "resizeableActivity": true,
+            "supportsTablet": true,
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "enableR8": true,
+            "enableHermes": true,
+            "enableNewArchitecture": false
           },
           "ios": {
             "deploymentTarget": "15.1"

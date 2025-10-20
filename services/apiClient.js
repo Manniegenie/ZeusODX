@@ -76,9 +76,9 @@ class ApiClient {
       if (!response.ok) {
         console.error(`❌ API Error ${response.status}:`, data);
         
-        // Handle 403 Forbidden - restart the app
-        if (response.status === 403) {
-          console.log('🔄 403 Forbidden detected - restarting app...');
+        // Handle 401 Unauthorized and 403 Forbidden - restart the app
+        if (response.status === 401 || response.status === 403) {
+          console.log(`🔄 ${response.status} ${response.status === 401 ? 'Unauthorized' : 'Forbidden'} detected - restarting app...`);
           try {
             await Updates.reloadAsync();
           } catch (restartError) {
