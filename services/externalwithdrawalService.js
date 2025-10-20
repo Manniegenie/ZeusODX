@@ -549,7 +549,7 @@ export const withdrawalService = {
       BTC: 0.0001,
       ETH: 0.001,
       SOL: 0.01,
-      USDT: 10,
+      USDT: 20,
       USDC: 10,
       BNB: 0.01,
       MATIC: 1,
