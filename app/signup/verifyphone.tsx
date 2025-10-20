@@ -1,12 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput } from 'react-native';
-import { Typography } from '../../constants/Typography';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import ErrorDisplay from '../../components/ErrorDisplay';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { Typography } from '../../constants/Typography';
 import { useVerify } from '../../hooks/useVerify';
-import ErrorDisplay from '../../components/ErrorDisplay';
 
 export default function VerifyPhoneScreen() {
   const router = useRouter();
@@ -280,6 +279,9 @@ export default function VerifyPhoneScreen() {
             autoFocus={true}
             textAlign="center"
             editable={!isVerifying}
+            returnKeyType="done"
+            blurOnSubmit={false}
+            selectTextOnFocus={true}
           />
           
           {/* Visual code display */}
@@ -369,10 +371,18 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.xl,
   },
   codeInput: {
-    position: 'absolute',
-    opacity: 0, // Hide the actual input
-    width: '100%',
-    height: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: Layout.borderRadius.md,
+    borderWidth: 2,
+    borderColor: '#E5E5E5',
+    paddingHorizontal: Layout.spacing.md,
+    paddingVertical: Layout.spacing.md,
+    fontSize: 18,
+    fontFamily: Typography.medium,
+    color: Colors.text.primary,
+    textAlign: 'center',
+    marginBottom: Layout.spacing.lg,
+    minHeight: 50,
   },
   codeVisual: {
     flexDirection: 'row',

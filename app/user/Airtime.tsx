@@ -355,8 +355,8 @@ const BuyAirtimeScreen: React.FC = () => {
         setPasswordPin('');
         setTwoFactorCode('');
         
-        // Navigate to BillReceipt instead of showing modal
-        const billTransaction = {
+        // Navigate to UtilityReceipt instead of showing modal
+        const utilityTransaction = {
           id: result.data?.transactionId || result.data?.id || Date.now().toString(),
           type: 'Airtime',
           status: 'Successful',
@@ -366,20 +366,20 @@ const BuyAirtimeScreen: React.FC = () => {
             orderId: result.data?.orderId || result.data?.requestId,
             requestId: result.data?.requestId,
             productName: result.data?.productName || 'Airtime',
+            phoneNumber: result.data?.phone || mobileNumber, // Use backend response phone or fallback to form
+            serviceProvider: selectedNetwork?.name || '',
             network: selectedNetwork?.name || '',
-            customerInfo: mobileNumber,
+            customerInfo: result.data?.phone || mobileNumber, // Use backend response phone or fallback to form
             billType: 'airtime',
             paymentCurrency: 'NGN',
             category: 'utility',
-          },
-          utilityType: 'Airtime'
+          }
         };
         
         router.push({
-          pathname: '/receipt/bill-receipt',
+          pathname: '/utility-receipt',
           params: {
-            tx: encodeURIComponent(JSON.stringify(billTransaction)),
-            raw: encodeURIComponent(JSON.stringify(result.data || {}))
+            tx: encodeURIComponent(JSON.stringify(utilityTransaction))
           }
         });
       } else {

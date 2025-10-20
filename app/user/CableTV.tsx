@@ -511,31 +511,31 @@ const CableTvScreen: React.FC = () => {
         setPasswordPin('');
         setTwoFactorCode('');
         
-        // Navigate to BillReceipt instead of showing modal
-        const billTransaction = {
+        // Navigate to UtilityReceipt instead of showing modal
+        const utilityTransaction = {
           id: result.data?.transactionId || result.data?.id || Date.now().toString(),
           type: 'Cable TV',
           status: 'Successful',
-          amount: `₦${customAmount}`,
+          amount: `₦${selectedPackage?.price?.toLocaleString() || '0'}`,
           date: new Date().toLocaleString(),
           details: {
             orderId: result.data?.orderId || result.data?.requestId,
             requestId: result.data?.requestId,
             productName: result.data?.productName || 'Cable TV',
+            smartCardNumber: smartcardNumber,
+            packageName: selectedPackage?.name || '',
             network: selectedProvider?.name || '',
-            customerInfo: smartCardNumber,
+            customerInfo: smartcardNumber,
             billType: 'cable_tv',
             paymentCurrency: 'NGN',
             category: 'utility',
-          },
-          utilityType: 'Cable TV'
+          }
         };
         
         router.push({
-          pathname: '/receipt/bill-receipt',
+          pathname: '/utility-receipt',
           params: {
-            tx: encodeURIComponent(JSON.stringify(billTransaction)),
-            raw: encodeURIComponent(JSON.stringify(result.data || {}))
+            tx: encodeURIComponent(JSON.stringify(utilityTransaction))
           }
         });
       } else {

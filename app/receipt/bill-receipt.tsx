@@ -10,6 +10,7 @@ import {
     SafeAreaView,
     ScrollView,
     Share,
+    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,

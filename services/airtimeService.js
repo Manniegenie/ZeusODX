@@ -84,6 +84,15 @@ export const airtimeService = {
         type: 'NETWORK_ERROR'
       });
       
+      // Handle timeout specifically
+      if (error.message && error.message.includes('timeout')) {
+        return {
+          success: false,
+          error: 'REQUEST_TIMEOUT',
+          message: 'Request timed out. Please try again.'
+        };
+      }
+      
       return {
         success: false,
         error: 'NETWORK_ERROR',

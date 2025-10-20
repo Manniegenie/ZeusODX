@@ -2,14 +2,14 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
     Dimensions,
-  Image,
+    Image,
     ImageSourcePropType,
-  SafeAreaView,
-  ScrollView,
+    SafeAreaView,
+    ScrollView,
     StatusBar,
     StyleSheet,
     Text,
-  TextInput,
+    TextInput,
     TouchableOpacity,
     View
 } from 'react-native';
@@ -388,32 +388,34 @@ const BuyDataScreen: React.FC = () => {
         setPasswordPin(''); 
         setTwoFactorCode('');
         
-        // Navigate to BillReceipt instead of showing modal
+        // Navigate to UtilityReceipt instead of showing modal
         const resultData = result as any;
-        const billTransaction = {
+        const utilityTransaction = {
           id: resultData.data?.transactionId || resultData.data?.id || Date.now().toString(),
           type: 'Data',
           status: 'Successful',
-          amount: selectedPlan ? (selectedPlan as DataPlan).formattedData : '',
+          amount: selectedPlan ? (selectedPlan as DataPlan).formattedPrice : '',
           date: new Date().toLocaleString(),
           details: {
             orderId: resultData.data?.orderId || resultData.data?.requestId,
             requestId: resultData.data?.requestId,
             productName: resultData.data?.productName || 'Data',
+            phoneNumber: mobileNumber,
+            serviceProvider: selectedNetwork?.name || '',
+            dataPlan: selectedPlan ? (selectedPlan as DataPlan).formattedData : '',
+            validity: selectedPlan ? (selectedPlan as DataPlan).validity : '',
             network: selectedNetwork?.name || '',
             customerInfo: mobileNumber,
             billType: 'data',
             paymentCurrency: 'NGN',
             category: 'utility',
-          },
-          utilityType: 'Data'
+          }
         };
         
         router.push({
-          pathname: '/receipt/bill-receipt',
+          pathname: '/utility-receipt',
           params: {
-            tx: encodeURIComponent(JSON.stringify(billTransaction)),
-            raw: encodeURIComponent(JSON.stringify(resultData.data || {}))
+            tx: encodeURIComponent(JSON.stringify(utilityTransaction))
           }
         });
       } else {

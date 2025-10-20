@@ -18,7 +18,6 @@ import BettingConfirmationModal from '../../components/BettingConfirmation';
 import BettingProviderSelectionModal from '../../components/BettingProviderModal';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import PinEntryModal from '../../components/PinEntry';
-import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useBetting } from '../../hooks/useBetting';
@@ -54,7 +53,6 @@ const BettingScreen: React.FC = () => {
   const [customAmount, setCustomAmount] = useState<string>('');
   const [showProviderModal, setShowProviderModal] = useState<boolean>(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState<boolean>(false);
-  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [showErrorDisplay, setShowErrorDisplay] = useState<boolean>(false);
   const [errorDisplayData, setErrorDisplayData] = useState<any>(null);
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
@@ -246,7 +244,35 @@ const BettingScreen: React.FC = () => {
         setShowPinModal(false);
         setPasswordPin('');
         setTwoFactorCode('');
-        setShowSuccessModal(true);
+        
+        // Navigate to UtilityReceipt instead of showing modal
+        const utilityTransaction = {
+          id: (result as any).data?.transactionId || (result as any).data?.id || Date.now().toString(),
+          type: 'Betting',
+          status: 'Successful',
+          amount: `₦${getCurrentAmount().toLocaleString()}`,
+          date: new Date().toLocaleString(),
+          details: {
+            orderId: (result as any).data?.orderId || (result as any).data?.requestId,
+            requestId: (result as any).data?.requestId,
+            productName: (result as any).data?.productName || 'Betting',
+            betReference: (result as any).data?.betReference || (result as any).data?.reference,
+            gameType: 'Account Funding',
+            betAmount: getCurrentAmount(),
+            network: selectedProvider?.name || '',
+            customerInfo: userId,
+            billType: 'betting',
+            paymentCurrency: 'NGN',
+            category: 'utility',
+          }
+        };
+        
+        router.push({
+          pathname: '/utility-receipt',
+          params: {
+            tx: encodeURIComponent(JSON.stringify(utilityTransaction))
+          }
+        });
       } else {
         setShowTwoFactorModal(false);
         
@@ -287,9 +313,6 @@ const BettingScreen: React.FC = () => {
     setShowPinModal(true);
   };
 
-  const handleSuccessModalClose = (): void => {
-    setShowSuccessModal(false);
-  };
 
   const isFormValid: boolean = !!(
     selectedProvider && 
@@ -459,15 +482,6 @@ const BettingScreen: React.FC = () => {
         subtitle="Please enter the 6-digit code from your authenticator app"
       />
 
-      <UtilityPurchaseSuccessModal
-        visible={showSuccessModal}
-        utilityType="Betting"
-        amount={`₦${getCurrentAmount().toLocaleString()}`}
-        phoneNumber={userId}
-        network={selectedProvider?.name || ''}
-        onContinue={handleSuccessModalClose}
-        additionalInfo="Account funded successfully"
-      />
     </View>
   );
 };
