@@ -68,9 +68,9 @@
             "minSdkVersion": 24,
             "resizeableActivity": true,
             "supportsTablet": true,
-            "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true,
-            "enableR8": true,
+            "enableProguardInReleaseBuilds": false,
+            "enableShrinkResourcesInReleaseBuilds": false,
+            "enableR8": false,
             "enableHermes": true,
             "enableNewArchitecture": false
           },
