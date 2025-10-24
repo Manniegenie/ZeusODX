@@ -1,5 +1,5 @@
-import { apiClient } from './apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiClient } from './apiClient';
 
 export const balanceService = {
   // Cache variables

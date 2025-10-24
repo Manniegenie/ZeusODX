@@ -16,8 +16,9 @@ import {
 import TwoFactorAuthModal from '../../components/2FA';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ElectricityConfirmationModal from '../../components/ElectricityConfirmModal';
-import ProviderSelectionModal from '../../components/ElectricityProviderModal';
+import ElectricityProviderSelectionModal from '../../components/ElectricityProviderModal';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import Loading from '../../components/Loading';
 import PinEntryModal from '../../components/PinEntry';
 import ScreenHeader from '../../components/ScreenHeader';
 import { Colors } from '../../constants/Colors';
@@ -85,6 +86,7 @@ const ElectricityScreen: React.FC = () => {
   const {
     loading,
     purchaseElectricity,
+    validateElectricityCustomer,
     clearErrors,
     getErrorAction
   } = useElectricity();
@@ -96,6 +98,7 @@ const ElectricityScreen: React.FC = () => {
     error: customerError,
     clearError: clearCustomerError,
     clearCustomerData,
+    setCustomerData,
     formatCustomerName,
     getUserFriendlyMessage,
     getErrorAction: getCustomerErrorAction
@@ -133,16 +136,20 @@ const ElectricityScreen: React.FC = () => {
       customerData,
       possibleNames,
       rawName,
-      formattedName
+      formattedName,
+      hasCustomerData: !!customerData,
+      customerNameField: customerData?.customer_name
     });
     
-    return formattedName;
+    // Return the raw name if formatting fails
+    return formattedName || rawName || '';
   };
 
   // ---- Form state ----
   const [selectedProvider, setSelectedProvider] = useState<ElectricityProvider | null>(null);
   const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentType>({ id: 'prepaid', name: 'Prepaid' });
   const [meterNumber, setMeterNumber] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState<string>('');
 
@@ -250,14 +257,29 @@ const ElectricityScreen: React.FC = () => {
 
     clearCustomerError();
     try {
-      const result = await verifyElectricityCustomer(meterNumber, selectedProvider.id, selectedPaymentType.id);
-      console.log('🔍 Customer verification result:', {
-        result,
-        success: result?.success,
-        customerData: result?.data,
-        customerName: result?.data?.customer_name
+      // Use PayBeta validation instead of the old verifyElectricityCustomer
+      const result = await validateElectricityCustomer({
+        service: selectedProvider.id,
+        meterNumber: meterNumber,
+        meterType: selectedPaymentType.id
       });
-      if (!(result && result.success)) {
+      
+      if (result && result.success) {
+        // Update customer data with PayBeta validation response
+        const customerData = {
+          customer_name: result.data?.customerName,
+          customer_address: result.data?.customerAddress,
+          meter_number: result.data?.meterNumber,
+          meter_type: result.data?.meterType,
+          minimum_amount: result.data?.minimumAmount,
+          verified_at: result.data?.verifiedAt || new Date().toISOString(),
+          request_id: result.data?.requestId
+        };
+        
+        // Set customer data using the useCustomer hook
+        console.log('🔌 Setting customer data from PayBeta validation:', customerData);
+        setCustomerData(customerData);
+      } else {
         const errorAction = getCustomerErrorAction(result?.requiresAction || 'RETRY');
         const friendlyMessage = getUserFriendlyMessage(result?.error, result?.message);
         if (errorAction) {
@@ -313,6 +335,11 @@ const ElectricityScreen: React.FC = () => {
 
   const handleTwoFactorSubmit = async (code: string): Promise<void> => {
     setTwoFactorCode(code);
+    setShowTwoFactorModal(false); // Hide 2FA modal to show loading
+    setIsProcessing(true); // Set processing state for loading screen
+    
+    console.log('🔌 Starting electricity purchase, loading state:', loading);
+    
     try {
       const payload: PurchaseData = {
         meterNumber,
@@ -321,7 +348,10 @@ const ElectricityScreen: React.FC = () => {
         amount: getCurrentAmount(),
         twoFactorCode: code,
         passwordpin: passwordPin,
-        paymentType: selectedPaymentType.id
+        paymentType: selectedPaymentType.id,
+        // PayBeta requires customer details
+        customerName: customerData?.customer_name || '',
+        customerAddress: customerData?.customer_address || ''
       };
 
       const result = await purchaseElectricity(payload);
@@ -354,6 +384,13 @@ const ElectricityScreen: React.FC = () => {
             billType: 'electricity',
             paymentCurrency: 'NGN',
             category: 'utility',
+            // Additional PayBeta fields
+            bonusToken: result.data?.bonusToken || '',
+            commission: result.data?.commission || 0,
+            transactionDate: result.data?.transactionDate || new Date().toISOString(),
+            customerId: result.data?.customerId || '',
+            chargedAmount: result.data?.amount_charged || getCurrentAmount(),
+            reference: result.data?.reference || ''
           }
         };
         
@@ -363,6 +400,7 @@ const ElectricityScreen: React.FC = () => {
             tx: encodeURIComponent(JSON.stringify(utilityTransaction))
           }
         });
+        setIsProcessing(false); // Reset processing state on success
       } else {
         setShowTwoFactorModal(false);
         const errorType = getErrorType(result?.error || 'SERVICE_ERROR');
@@ -387,6 +425,8 @@ const ElectricityScreen: React.FC = () => {
         autoHide: true,
         duration: 4000
       });
+    } finally {
+      setIsProcessing(false); // Reset processing state
     }
   };
 
@@ -502,6 +542,7 @@ const ElectricityScreen: React.FC = () => {
             <Text style={styles.sectionTitle}>Account Name</Text>
             <View style={styles.inputContainer}>
               <TextInput
+                key={`customer-name-${customerData?.customer_name || 'empty'}`}
                 style={[styles.input, styles.uneditableInput]}
                 placeholder="Account name will appear here"
                 placeholderTextColor={Colors.text?.secondary}
@@ -592,11 +633,10 @@ const ElectricityScreen: React.FC = () => {
         amount={getCurrentAmount()}
       />
 
-      <ProviderSelectionModal
+      <ElectricityProviderSelectionModal
         visible={showProviderModal}
         onClose={() => setShowProviderModal(false)}
         onSelectProvider={handleProviderSelect}
-        selectedProvider={selectedProvider}
       />
 
       {/* Success Modal - Navigate to BillReceipt instead */}
@@ -604,6 +644,14 @@ const ElectricityScreen: React.FC = () => {
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000 }}>
           {/* This will be replaced by navigation to BillReceipt */}
         </View>
+      )}
+
+      {/* Loading Screen - full-screen overlay after 2FA submission */}
+      {(loading || isProcessing) && (
+        <>
+          {console.log('🔌 Rendering loading screen, loading state:', loading, 'isProcessing:', isProcessing)}
+          <Loading />
+        </>
       )}
     </View>
   );

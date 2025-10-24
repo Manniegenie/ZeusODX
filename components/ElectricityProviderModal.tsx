@@ -39,30 +39,29 @@ import KanoIcon from './icons/Kano.png';
 // @ts-ignore
 import YolaIcon from './icons/Yola.png';
 
-interface ElectricityProvider {
+export interface ElectricityProvider {
   id: string;
   name: string;
   icon: any;
   region?: string;
 }
 
-interface ProviderSelectionModalProps {
+interface ElectricityProviderSelectionModalProps {
   visible: boolean;
   onClose: () => void;
   onSelectProvider: (provider: ElectricityProvider) => void;
-  selectedProvider?: ElectricityProvider | null;
+  title?: string;
 }
 
-const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
+export default function ElectricityProviderSelectionModal({
   visible,
   onClose,
   onSelectProvider,
-  selectedProvider
-}) => {
-  console.log('ProviderSelectionModal rendered with visible:', visible);
+  title = "Select Electricity Provider"
+}: ElectricityProviderSelectionModalProps) {
   
-  // Provider list with icons
-  const providers: ElectricityProvider[] = [
+  // Electricity providers
+  const electricityProviders: ElectricityProvider[] = [
     { id: 'aba-electric', name: 'Aba Electricity', icon: AbaIcon, region: 'Abia' },
     { id: 'abuja-electric', name: 'Abuja Electricity', icon: AbujaceIcon, region: 'FCT' },
     { id: 'benin-electric', name: 'Benin Electricity', icon: BeninIcon, region: 'Edo' },
@@ -73,20 +72,19 @@ const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
     { id: 'jos-electric', name: 'Jos Electricity', icon: JosIcon, region: 'Plateau' },
     { id: 'kaduna-electric', name: 'Kaduna Electricity', icon: KadunaIcon, region: 'Kaduna' },
     { id: 'kano-electric', name: 'Kano Electricity', icon: KanoIcon, region: 'Kano' },
-    { id: 'kedco-electric', name: 'Kedco Electricity', icon: KanoIcon, region: 'Kano' },
     { id: 'portharcourt-electric', name: 'Port Harcourt Electricity', icon: PortharcourIcon, region: 'Rivers' },
     { id: 'yola-electric', name: 'Yola Electricity', icon: YolaIcon, region: 'Adamawa' }
   ];
 
-  const handleProviderSelect = (provider: ElectricityProvider) => {
-    onSelectProvider(provider);
+  const handleSelectProvider = (provider: ElectricityProvider) => {
     onClose();
+    onSelectProvider(provider);
   };
 
   const renderProviderOption = ({ item }: { item: ElectricityProvider }) => (
     <TouchableOpacity
       style={styles.providerOptionItem}
-      onPress={() => handleProviderSelect(item)}
+      onPress={() => handleSelectProvider(item)}
     >
       <View style={styles.providerOptionLeft}>
         <View style={styles.providerIcon}>
@@ -114,13 +112,13 @@ const ProviderSelectionModal: React.FC<ProviderSelectionModalProps> = ({
           <TouchableWithoutFeedback>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Choose provider</Text>
+                <Text style={styles.modalTitle}>{title}</Text>
                 <TouchableOpacity onPress={onClose}>
                   <Text style={styles.closeButton}>✕</Text>
                 </TouchableOpacity>
               </View>
               <FlatList
-                data={providers}
+                data={electricityProviders}
                 renderItem={renderProviderOption}
                 keyExtractor={(item) => item.id}
                 showsVerticalScrollIndicator={true}
@@ -214,5 +212,3 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary 
   },
 });
-
-export default ProviderSelectionModal;

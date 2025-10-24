@@ -1,16 +1,17 @@
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
-  Alert,
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Alert,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
+import Loading from '../../components/Loading';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
@@ -29,6 +30,7 @@ interface TransferScreenProps {
 export default function TransferScreen({ onBack, onTransfer }: TransferScreenProps) {
   const router = useRouter();
   const [amount, setAmount] = useState('0');
+  const [isLoading, setIsLoading] = useState(false);
 
   // === Hooks for NGNZ balance & USD rate ===
   const { getNGNZBalance, getNGNZRate } = useNGNZ();
@@ -220,6 +222,11 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      {/* Loading Screen - full-screen overlay during processing */}
+      {isLoading && (
+        <Loading />
+      )}
     </View>
   );
 }

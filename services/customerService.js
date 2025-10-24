@@ -341,16 +341,35 @@ class CustomerService {
   }
 
   /**
-   * Verify cable TV customer
+   * Verify cable TV customer using dedicated PayBeta endpoint
    * @param {string} customerId - Smart card number
    * @param {string} serviceId - Cable TV service ID
    * @returns {Promise<Object>} Verification result
    */
   async verifyCableTVCustomer(customerId, serviceId) {
-    return this.verifyCustomer({
-      customer_id: customerId,
-      service_id: serviceId
-    });
+    try {
+      const response = await apiClient.post('/verifycabletv/verify', {
+        service_id: serviceId,
+        customer_id: customerId
+      });
+      return response.data;
+    } catch (error) {
+      // Handle different types of errors
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        throw new Error(errorData.message || 'Cable TV customer verification failed');
+      }
+      
+      if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
+        throw new Error('Network connection failed. Please check your internet connection.');
+      }
+      
+      if (error.code === 'TIMEOUT') {
+        throw new Error('Request timed out. Please try again.');
+      }
+      
+      throw new Error(error.message || 'An unexpected error occurred');
+    }
   }
 
   /**

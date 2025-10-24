@@ -1,17 +1,17 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  TouchableWithoutFeedback,
-  Modal,
-  FlatList,
-  Image
+import {
+    FlatList,
+    Image,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
-import { Typography } from '../constants/Typography';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
+import { Typography } from '../constants/Typography';
 
 // Icons
 const btcIcon = require('../components/icons/btc-icon.png');

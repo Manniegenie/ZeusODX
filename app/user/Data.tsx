@@ -18,6 +18,7 @@ import BottomTabNavigator from '../../components/BottomNavigator';
 import DataConfirmationModal from '../../components/Dataconfirm';
 import DataPlansModal from '../../components/DataPlanModal';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import Loading from '../../components/Loading';
 import PinEntryModal from '../../components/PinEntry';
 import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
 import { Colors } from '../../constants/Colors';
@@ -369,6 +370,8 @@ const BuyDataScreen: React.FC = () => {
 
   const handleTwoFactorSubmit = async (code: string) => {
     setTwoFactorCode(code);
+    setShowTwoFactorModal(false); // Hide 2FA modal to show loading
+    
     try {
       const payload: PurchaseData = {
         phone: mobileNumber,
@@ -596,17 +599,6 @@ const BuyDataScreen: React.FC = () => {
             )}
           </View>
 
-          {/* Summary */}
-          {selectedPlan && (
-            <View style={styles.summarySection}>
-              <Text style={styles.summaryTitle}>Selected Plan</Text>
-              <View style={styles.summaryContent}>
-                <Text style={styles.summaryData}>{(selectedPlan as DataPlan).formattedData}</Text>
-                <Text style={styles.summaryPrice}>{(selectedPlan as DataPlan).formattedPrice}</Text>
-              </View>
-              <Text style={styles.summaryValidity}>Valid for {(selectedPlan as DataPlan).validity}</Text>
-            </View>
-          )}
 
           {/* Bottom spacing */}
           <View style={styles.bottomSpacer} />
@@ -686,6 +678,11 @@ const BuyDataScreen: React.FC = () => {
         onContinue={handleSuccessModalClose}
         additionalInfo={selectedPlan ? `Valid for ${(selectedPlan as DataPlan).validity}` : undefined}
       />
+
+      {/* Loading Screen - full-screen overlay after 2FA submission */}
+      {loading && (
+        <Loading />
+      )}
     </View>
   );
 };

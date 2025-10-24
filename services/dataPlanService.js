@@ -11,9 +11,9 @@ export const dataPlansService = {
     try {
       console.log('📋 Fetching data plans for:', this.getNetworkDisplayName(serviceId));
 
-      // POST request with JSON body - service_id in lowercase
+      // POST request with JSON body - service_id with _data suffix
       const response = await apiClient.post('/plans/plans', {
-        service_id: serviceId.toLowerCase()
+        service_id: `${serviceId.toLowerCase()}_data`
       });
 
       if (response.success && response.data) {
@@ -22,13 +22,13 @@ export const dataPlansService = {
         
         console.log('✅ Data plans fetched successfully:', {
           network: this.getNetworkDisplayName(serviceId),
-          plans_count: apiData.plans_by_provider?.[serviceId.toLowerCase()]?.length || 0,
+          plans_count: apiData.plans_by_provider?.[`${serviceId.toLowerCase()}_data`]?.length || 0,
           total_available: apiData.total_available_plans,
           total_all: apiData.total_all_plans
         });
 
         // Extract plans for the specific service from the grouped response
-        const servicePlans = apiData.plans_by_provider?.[serviceId.toLowerCase()] || [];
+        const servicePlans = apiData.plans_by_provider?.[`${serviceId.toLowerCase()}_data`] || [];
 
         // Transform the plans from API format to client format
         const transformedPlans = servicePlans.map(plan => ({

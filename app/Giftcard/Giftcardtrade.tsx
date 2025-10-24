@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import Loading from '../../components/Loading';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useGiftCard } from '../../hooks/usegiftcard';
@@ -889,6 +890,11 @@ const GiftcardTradeScreen: React.FC = () => {
         title="Trade Submitted"
         message="Your gift card details have been submitted. We will notify you after review."
       />
+
+      {/* Loading Screen - full-screen overlay during processing */}
+      {submitLoading && (
+        <Loading />
+      )}
     </View>
   );
 };

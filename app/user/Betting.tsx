@@ -17,6 +17,7 @@ import TwoFactorAuthModal from '../../components/2FA';
 import BettingConfirmationModal from '../../components/BettingConfirmation';
 import BettingProviderSelectionModal from '../../components/BettingProviderModal';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import Loading from '../../components/Loading';
 import PinEntryModal from '../../components/PinEntry';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -29,12 +30,23 @@ import ScreenHeader from '../../components/ScreenHeader';
 interface BettingProvider {
   id: string;
   name: string;
-  icon: any;
+  displayName?: string;
+  slug?: string;
+  category?: string;
+  logo?: string;
+  hasLogo?: boolean;
+  icon?: any;
 }
 
 const BettingScreen: React.FC = () => {
   const router = useRouter();
-  const { loading, fundBettingAccount, clearErrors, getErrorAction } = useBetting();
+  const { 
+    loading, 
+    fundBettingAccount, 
+    validateBettingCustomer,
+    clearErrors, 
+    getErrorAction 
+  } = useBetting();
   const { 
     verifyBettingCustomer, 
     loading: customerLoading, 
@@ -42,6 +54,7 @@ const BettingScreen: React.FC = () => {
     error: customerError,
     clearError: clearCustomerError,
     clearCustomerData,
+    setCustomerData,
     formatCustomerName,
     getUserFriendlyMessage: getCustomerUserFriendlyMessage,
     getErrorAction: getCustomerErrorAction
@@ -81,13 +94,8 @@ const BettingScreen: React.FC = () => {
   };
 
   const normalizeProviderId = (id: string): string => {
-    const validProviders = [
-      '1xBet', 'BangBet', 'Bet9ja', 'BetKing', 'BetLand', 'BetLion',
-      'BetWay', 'CloudBet', 'LiveScoreBet', 'MerryBet', 'NaijaBet',
-      'NairaBet', 'SupaBet'
-    ];
-    const match = validProviders.find((p) => p.toLowerCase() === id.toLowerCase());
-    return match || id;
+    // Convert provider ID to lowercase to match validation expectations
+    return id.toLowerCase();
   };
 
   const handleProceedUser = async (): Promise<void> => {
@@ -113,11 +121,29 @@ const BettingScreen: React.FC = () => {
     }
     clearCustomerError();
     try {
-      const normalizedProviderId = normalizeProviderId(selectedProvider.id);
-      const result = await verifyBettingCustomer(userId, normalizedProviderId);
-      if (!(result && result.success)) {
+      // Use PayBeta validation instead of the old verifyBettingCustomer
+      const result = await validateBettingCustomer({
+        service: selectedProvider.id,
+        customerId: userId
+      });
+      
+      if (result && (result as any).success) {
+        // Update customer data with PayBeta validation response
+        const customerData = {
+          customer_name: (result as any).data?.customerName,
+          customer_id: (result as any).data?.customerId,
+          service: (result as any).data?.service,
+          minimum_amount: (result as any).data?.minimumAmount,
+          verified_at: (result as any).data?.verifiedAt,
+          request_id: (result as any).data?.requestId
+        };
+        
+        // Set customer data using the useCustomer hook
+        console.log('🎰 Setting customer data from PayBeta validation:', customerData);
+        setCustomerData(customerData);
+      } else {
         const errorAction = getCustomerErrorAction((result as any)?.requiresAction || 'RETRY');
-        const friendlyMessage = getCustomerUserFriendlyMessage(result?.error, result?.message);
+        const friendlyMessage = getCustomerUserFriendlyMessage((result as any)?.error, (result as any)?.message);
         showErrorMessage({
           type: errorAction ? 'validation' : 'server',
           title: errorAction?.title || 'Verification Failed',
@@ -228,6 +254,7 @@ const BettingScreen: React.FC = () => {
 
   const handleTwoFactorSubmit = async (code: string): Promise<void> => {
     setTwoFactorCode(code);
+    setShowTwoFactorModal(false); // Hide 2FA modal to show loading
     
     try {
       const fundingData = {
@@ -481,6 +508,11 @@ const BettingScreen: React.FC = () => {
         title="Two-Factor Authentication"
         subtitle="Please enter the 6-digit code from your authenticator app"
       />
+
+      {/* Loading Screen - full-screen overlay after 2FA submission */}
+      {loading && (
+        <Loading />
+      )}
 
     </View>
   );
