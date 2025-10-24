@@ -1,19 +1,20 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Dimensions,
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Dimensions,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import TwoFactorAuthModal from '../../components/2FA';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import Loading from '../../components/Loading';
 import NetworkSelectionModal from '../../components/NetworkSelectionModal';
 import PinEntryModal from '../../components/PinEntry';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -516,6 +517,9 @@ const ExternalWalletTransferScreen: React.FC = () => {
   const handleTwoFactorSubmit = async (code: string): Promise<void> => {
     setTwoFactorCode(code);
     
+    // Close 2FA modal immediately to show loading screen
+    setShowTwoFactorModal(false);
+    
     try {
       if (!selectedNetwork || !selectedToken) {
         throw new Error('Missing required data');
@@ -540,7 +544,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
       const result = await initiateWithdrawal(withdrawalData);
 
       if (result.success) {
-        setShowTwoFactorModal(false);
         setShowPinModal(false);
         setPasswordPin('');
         setTwoFactorCode('');
@@ -902,6 +905,11 @@ const ExternalWalletTransferScreen: React.FC = () => {
           title="Two-Factor Authentication"
           subtitle="Please enter the 6-digit code from your authenticator app"
         />
+
+        {/* Loading Screen - full-screen overlay during processing */}
+        {isInitiating && (
+          <Loading />
+        )}
       </SafeAreaView>
     </View>
   );
@@ -1030,7 +1038,7 @@ const styles = StyleSheet.create({
   addressInput: {
     color: Colors.text?.primary || '#111827',
     fontFamily: Typography.regular || 'System',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '400',
     paddingVertical: 4,
     textAlignVertical: 'top',
@@ -1041,7 +1049,7 @@ const styles = StyleSheet.create({
   networkInput: {
     color: Colors.text?.primary || '#111827',
     fontFamily: Typography.regular || 'System',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '400',
     paddingVertical: 4,
     textAlignVertical: 'center',
@@ -1062,7 +1070,7 @@ const styles = StyleSheet.create({
   },
   amountInput: {
     fontFamily: Typography.medium || 'System',
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.text?.primary || '#111827',
     fontWeight: '600',
     paddingVertical: 4,

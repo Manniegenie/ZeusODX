@@ -1,44 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  Switch,
-  Alert,
-  AppState,
-  Modal,
-} from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import React, { useEffect, useState } from 'react';
+import {
+    Alert,
+    AppState,
+    Image,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import BottomTabNavigator from '../../components/BottomNavigator';
-import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
-import { useUserProfile } from '../../hooks/useProfile';
+import { Typography } from '../../constants/Typography';
 import { useBiometricAuth } from '../../hooks/usebiometric';
 import useLogout from '../../hooks/useLogout';
 import { useNotifications } from '../../hooks/usenotification';
+import { useUserProfile } from '../../hooks/useProfile';
 import { authService } from '../../services/authService';
 
 import DeleteAccountModal from '../../components/DeleteAccount';
+import LogoutModal from '../../components/LogoutModal';
 
-import backIcon from '../../components/icons/backy.png';
-import profileAvatarIcon from '../../components/icons/profile-avatar.png';
-import chevronRightIcon from '../../components/icons/chevron-right.png';
-import personalDetailsIcon from '../../components/icons/personal-details.png';
-import referEarnIcon from '../../components/icons/refer-earn.png';
-import notificationIcon from '../../components/icons/notification.png';
-import bankDetailsIcon from '../../components/icons/bank-details.png';
 import twoFAIcon from '../../components/icons/2FA.png';
-import pinIcon from '../../components/icons/pin.png';
+import backIcon from '../../components/icons/backy.png';
+import bankDetailsIcon from '../../components/icons/bank-details.png';
+import chevronRightIcon from '../../components/icons/chevron-right.png';
+import deleteIcon from '../../components/icons/delete.png';
 import fingerprintIcon from '../../components/icons/fingerprint.png';
 import kycIcon from '../../components/icons/kyc.png';
 import logoutIcon from '../../components/icons/logout.png';
-import deleteIcon from '../../components/icons/delete.png';
+import notificationIcon from '../../components/icons/notification.png';
+import personalDetailsIcon from '../../components/icons/personal-details.png';
+import pinIcon from '../../components/icons/pin.png';
+import profileAvatarIcon from '../../components/icons/profile-avatar.png';
 
 const BiometricModal = ({ visible, onClose, config }) => {
   if (!config) return null;
@@ -133,13 +133,22 @@ const ProfileScreen = () => {
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [fingerprintEnabled, setFingerprintEnabled] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
   const [biometricModalConfig, setBiometricModalConfig] = useState(null);
   const [showBiometricModal, setShowBiometricModal] = useState(false);
+  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
 
   useEffect(() => {
     setNotificationEnabled(isNotificationEnabled);
   }, [isNotificationEnabled]);
+
+  // Sync 2FA state with profile data
+  useEffect(() => {
+    if (profile?.is2FAEnabled !== undefined) {
+      setTwoFAEnabled(profile.is2FAEnabled);
+    }
+  }, [profile?.is2FAEnabled]);
 
   const isAnyOperationInProgress = loggingOut || isNotificationLoading || isProfileLoading || isBiometricLoading;
 
@@ -176,6 +185,15 @@ const ProfileScreen = () => {
     };
   }, [isEnrolled]);
 
+  // Refresh profile data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (refetch) {
+        refetch();
+      }
+    }, [refetch])
+  );
+
   const showBiometricInfo = (config) => {
     setBiometricModalConfig(config);
     setShowBiometricModal(true);
@@ -196,10 +214,6 @@ const ProfileScreen = () => {
     router.push('/profile/personal-details');
   };
 
-  const handleReferEarn = () => {
-    if (isAnyOperationInProgress) return;
-    router.push('/profile/refer-earn');
-  };
 
   const handleBankDetails = () => {
     if (isAnyOperationInProgress) return;
@@ -218,6 +232,7 @@ const ProfileScreen = () => {
 
   const handle2FAToggle = (value) => {
     if (isAnyOperationInProgress) return;
+    setTwoFAEnabled(value);
     if (value) router.push('/profile/2FA');
   };
 
@@ -419,34 +434,28 @@ const ProfileScreen = () => {
     onToggle: handleBiometricToggle,
   });
 
-  const confirmAndLogout = () => {
+  const handleLogout = () => {
     if (isAnyOperationInProgress) return;
+    setShowLogoutModal(true);
+  };
 
-    Alert.alert('Log Out', 'Are you sure you want to log out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Log Out',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const [userId, refreshToken] = await Promise.all([
-              SecureStore.getItemAsync('userId'),
-              SecureStore.getItemAsync('refreshToken'),
-            ]);
-            if (userId && refreshToken) {
-              await logout({ userId, refreshToken });
-            } else {
-              await SecureStore.deleteItemAsync('accessToken');
-              await SecureStore.deleteItemAsync('refreshToken');
-              await SecureStore.deleteItemAsync('userId');
-              router.replace('/login/login-phone');
-            }
-          } catch {
-            Alert.alert('Logout failed', 'Please check your connection.');
-          }
-        },
-      },
-    ]);
+  const confirmLogout = async () => {
+    try {
+      const [userId, refreshToken] = await Promise.all([
+        SecureStore.getItemAsync('userId'),
+        SecureStore.getItemAsync('refreshToken'),
+      ]);
+      if (userId && refreshToken) {
+        await logout({ userId, refreshToken });
+      } else {
+        await SecureStore.deleteItemAsync('accessToken');
+        await SecureStore.deleteItemAsync('refreshToken');
+        await SecureStore.deleteItemAsync('userId');
+        router.replace('/login/login-phone');
+      }
+    } catch {
+      Alert.alert('Logout failed', 'Please check your connection.');
+    }
   };
 
   const userData = {
@@ -462,7 +471,6 @@ const ProfileScreen = () => {
       title: 'Profile',
       options: [
         { id: 'personal-details', title: 'Personal Details', iconSrc: personalDetailsIcon, hasChevron: true, onPress: handlePersonalDetails },
-        { id: 'refer-earn', title: 'Refer & earn', iconSrc: referEarnIcon, hasChevron: true, onPress: handleReferEarn },
         {
           id: 'notification',
           title: 'Notification',
@@ -484,7 +492,7 @@ const ProfileScreen = () => {
       id: 'security',
       title: 'Security',
       options: [
-        { id: '2fa', title: '2FA (Two Factor Authentication)', iconSrc: twoFAIcon, hasToggle: true, toggleValue: profile?.is2FAEnabled, onToggle: handle2FAToggle },
+        { id: '2fa', title: '2FA (Two Factor Authentication)', iconSrc: twoFAIcon, hasToggle: true, toggleValue: twoFAEnabled, onToggle: handle2FAToggle },
         { id: 'reset-pin', title: 'Reset PIN', iconSrc: pinIcon, hasChevron: true, onPress: handleResetPin },
         getBiometricOption(),
       ],
@@ -498,7 +506,7 @@ const ProfileScreen = () => {
     {
       id: 'actions',
       options: [
-        { id: 'logout', title: loggingOut ? 'Logging out…' : 'Log Out', iconSrc: logoutIcon, onPress: confirmAndLogout, isDestructive: true },
+        { id: 'logout', title: loggingOut ? 'Logging out…' : 'Log Out', iconSrc: logoutIcon, onPress: handleLogout, isDestructive: true },
         { id: 'delete-account', title: 'Delete account', iconSrc: deleteIcon, isDestructive: true, onPress: handleDeleteAccount },
       ],
     },
@@ -623,6 +631,13 @@ const ProfileScreen = () => {
       <DeleteAccountModal 
         visible={showDeleteModal && !(isAnyOperationInProgress || isBiometricLoading)} 
         onClose={() => setShowDeleteModal(false)} 
+      />
+
+      <LogoutModal 
+        visible={showLogoutModal && !(isAnyOperationInProgress || isBiometricLoading)} 
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={confirmLogout}
+        loading={loggingOut}
       />
 
       <BottomTabNavigator activeTab="profile" />

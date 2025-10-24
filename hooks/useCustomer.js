@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { customerService } from '../services/customerService';
 
 // Match backend service IDs exactly
@@ -90,9 +90,45 @@ export const useCustomer = () => {
   }, [verifyCustomer]);
 
   /** Wrapper for cable */
-  const verifyCableTVCustomer = useCallback((customerId, serviceId) => {
-    return verifyCustomer(customerId, serviceId);
-  }, [verifyCustomer]);
+  const verifyCableTVCustomer = useCallback(async (customerId, serviceId) => {
+    if (!customerId?.trim()) {
+      setError('INVALID_CUSTOMER_ID');
+      return { success: false, error: 'INVALID_CUSTOMER_ID', message: 'Customer ID is required' };
+    }
+    if (!serviceId?.trim()) {
+      setError('INVALID_SERVICE_ID');
+      return { success: false, error: 'INVALID_SERVICE_ID', message: 'Service ID is required' };
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await customerService.verifyCableTVCustomer(customerId.trim(), serviceId.trim());
+      console.log('🔍 Raw cable TV verification response:', response);
+
+      if (response && response.success) {
+        const normalizedData = {
+          customer_name: response.data?.customer_name || response.data?.CustomerName || '',
+          ...response.data
+        };
+        setCustomerData(normalizedData);
+        setSelectedService(serviceId);
+        setSelectedServiceCategory('cable_tv');
+        return { success: true, data: normalizedData };
+      } else {
+        const errorMessage = response?.message || 'Cable TV customer verification failed';
+        setError('VERIFICATION_FAILED');
+        return { success: false, error: 'VERIFICATION_FAILED', message: errorMessage };
+      }
+    } catch (err) {
+      console.error('❌ Cable TV customer verification error:', err);
+      setError('VERIFICATION_ERROR');
+      return { success: false, error: 'VERIFICATION_ERROR', message: 'Unable to verify cable TV customer at this time.' };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   /** Wrapper for betting */
   const verifyBettingCustomer = useCallback((customerId, serviceId) => {
@@ -131,6 +167,7 @@ export const useCustomer = () => {
     verifyBettingCustomer,
     clearError,
     clearCustomerData,
+    setCustomerData,
     formatCustomerName,
     getUserFriendlyMessage
   };

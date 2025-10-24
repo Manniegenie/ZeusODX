@@ -17,16 +17,16 @@ import {
 } from 'react-native';
 import TwoFactorAuthModal from '../../components/2FA';
 import BottomTabNavigator from '../../components/BottomNavigator';
+import CablePackageModal from '../../components/cablePackageModal';
 import CableTvConfirmationModal from '../../components/CabletvConfirmModal';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import Loading from '../../components/Loading';
 import PinEntryModal from '../../components/PinEntry';
 import ScreenHeader from '../../components/ScreenHeader';
-import CablePackageModal from '../../components/cablePackageModal';
 import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
 import { Colors } from '../../constants/Colors';
-import { Typography } from '../../constants/Typography';
-import { useCustomer } from '../../hooks/useCustomer';
 import { useCableTV } from '../../hooks/useCabletv';
+import { useCustomer } from '../../hooks/useCustomer';
 
 // Provider icons
 const DstvIcon = require('../../components/icons/Dstv.png');
@@ -483,6 +483,9 @@ const CableTvScreen: React.FC = () => {
       return;
     }
 
+    // Hide 2FA modal immediately to show loading screen
+    setShowTwoFactorModal(false);
+
     // No need to validate variation_id anymore - modal guarantees it exists
     const variationId = selectedPackage.variation_id;
 
@@ -506,7 +509,6 @@ const CableTvScreen: React.FC = () => {
       const result = await purchaseCableTV(purchaseData);
       
       if (result.success) {
-        setShowTwoFactorModal(false);
         setShowPinModal(false);
         setPasswordPin('');
         setTwoFactorCode('');
@@ -893,6 +895,11 @@ const CableTvScreen: React.FC = () => {
         title="Two-Factor Authentication" 
         subtitle="Enter 6-digit authenticator code" 
       />
+
+      {/* Loading Screen - full-screen overlay after 2FA submission */}
+      {loading && (
+        <Loading />
+      )}
     </View>
   );
 };

@@ -722,6 +722,8 @@ export const transactionService = {
       'Successful': 'SUCCESSFUL',
       'Failed': 'FAILED', 
       'Pending': 'PENDING',
+      'completed': 'SUCCESSFUL',  // PayBeta electricity uses 'completed'
+      'Completed': 'SUCCESSFUL',
       'Refunded': 'FAILED'
     };
     return statusMap[status] || 'PENDING';

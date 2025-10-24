@@ -1,5 +1,5 @@
 // hooks/useElectricity.js
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { electricityService } from '../services/electricityService';
 
 /**
@@ -65,10 +65,31 @@ export const useElectricity = () => {
   }, []);
 
   /** Get available electricity providers */
-  const getElectricityProviders = useCallback(() => {
-    const providersList = electricityService.getElectricityProviders();
-    setProviders(providersList);
-    return providersList;
+  const getElectricityProviders = useCallback(async () => {
+    try {
+      const providersList = await electricityService.getElectricityProviders();
+      setProviders(providersList);
+      return providersList;
+    } catch (error) {
+      console.error('❌ useElectricity: Error getting providers:', error);
+      const staticProviders = electricityService.getStaticElectricityProviders();
+      setProviders(staticProviders);
+      return staticProviders;
+    }
+  }, []);
+
+  /** Validate electricity customer using PayBeta */
+  const validateElectricityCustomer = useCallback(async (validationData) => {
+    try {
+      return await electricityService.validateElectricityCustomer(validationData);
+    } catch (error) {
+      console.error('❌ useElectricity: Error validating customer:', error);
+      return {
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'Customer validation failed'
+      };
+    }
   }, []);
 
   /** Get available meter types */
@@ -260,6 +281,7 @@ export const useElectricity = () => {
     // Actions
     purchaseElectricity,
     getElectricityProviders,
+    validateElectricityCustomer,
     getMeterTypes,
     selectProvider,
     clearSelectedProvider,

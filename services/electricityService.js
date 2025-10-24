@@ -3,6 +3,111 @@ import { apiClient } from './apiClient';
 
 export const electricityService = {
   /**
+   * Get electricity providers from PayBeta API
+   * @returns {Promise<Array>} Available electricity providers
+   */
+  async getElectricityProviders() {
+    try {
+      console.log('🔌 Fetching electricity providers from PayBeta...');
+      
+      const response = await apiClient.get('/electricity/providers');
+      
+      // Handle nested data structure from API client
+      const providers = response.data?.data?.providers || response.data?.providers;
+      
+      if (response.success && providers) {
+        console.log('✅ Electricity providers fetched successfully:', providers.length);
+        return providers;
+      } else {
+        console.warn('⚠️ PayBeta providers API failed, using static providers');
+        return this.getStaticElectricityProviders();
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch electricity providers:', error);
+      return this.getStaticElectricityProviders();
+    }
+  },
+
+  /**
+   * Get static electricity providers as fallback
+   * @returns {Array} Static electricity providers
+   */
+  getStaticElectricityProviders() {
+    return [
+      { id: 'ikeja-electric', name: 'Ikeja Electric', region: 'Lagos' },
+      { id: 'eko-electric', name: 'Eko Electricity Distribution Company', region: 'Lagos' },
+      { id: 'kano-electric', name: 'Kano Electricity Distribution Company', region: 'Kano' },
+      { id: 'portharcourt-electric', name: 'Port Harcourt Electricity Distribution Company', region: 'Rivers' },
+      { id: 'jos-electric', name: 'Jos Electricity Distribution Company', region: 'Plateau' },
+      { id: 'ibadan-electric', name: 'Ibadan Electricity Distribution Company', region: 'Oyo' },
+      { id: 'kaduna-electric', name: 'Kaduna Electric', region: 'Kaduna' },
+      { id: 'abuja-electric', name: 'Abuja Electricity Distribution Company', region: 'FCT' },
+      { id: 'enugu-electric', name: 'Enugu Electricity Distribution Company', region: 'Enugu' },
+      { id: 'benin-electric', name: 'Benin Electricity Distribution Company', region: 'Edo' },
+      { id: 'aba-electric', name: 'Aba Power Electric Company', region: 'Abia' },
+      { id: 'yola-electric', name: 'Yola Electricity Distribution Company', region: 'Adamawa' }
+    ];
+  },
+
+  /**
+   * Validate electricity customer using PayBeta
+   * @param {Object} validationData - Customer validation data
+   * @returns {Promise<Object>} Validation result
+   */
+  async validateElectricityCustomer(validationData) {
+    try {
+      console.log('🔌 Starting electricity customer validation:', {
+        service: validationData.service,
+        meterNumber: validationData.meterNumber ? `${validationData.meterNumber.substring(0, 3)}***${validationData.meterNumber.substring(validationData.meterNumber.length - 3)}` : 'N/A',
+        meterType: validationData.meterType
+      });
+
+      const response = await apiClient.post('/electricity/validate', validationData);
+      
+      // Check for nested data structure (response.data.data)
+      const responseData = response.data?.data || response.data;
+      
+      if (response.success && responseData) {
+        console.log('✅ Electricity customer validation successful:', {
+          customerName: responseData.customerName,
+          customerAddress: responseData.customerAddress,
+          meterNumber: responseData.meterNumber,
+          meterType: responseData.meterType,
+          minimumAmount: responseData.minimumAmount
+        });
+        
+        return {
+          success: true,
+          data: {
+            customerName: responseData.customerName,
+            customerAddress: responseData.customerAddress,
+            meterNumber: responseData.meterNumber,
+            meterType: responseData.meterType,
+            minimumAmount: responseData.minimumAmount,
+            verifiedAt: responseData.verified_at,
+            requestId: responseData.requestId
+          }
+        };
+      } else {
+        console.log('❌ Electricity customer validation failed:', response.error);
+        
+        return {
+          success: false,
+          error: 'VALIDATION_FAILED',
+          message: response.error || 'Customer validation failed'
+        };
+      }
+    } catch (error) {
+      console.error('❌ Electricity customer validation error:', error);
+      return {
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: error.message || 'Customer validation failed'
+      };
+    }
+  },
+
+  /**
    * Purchase electricity
    * Returns the RAW backend body (eBills shape): { code, message, data }
    * On backend/validation error, returns backend error body if present.
@@ -17,7 +122,10 @@ export const electricityService = {
         amount: parseFloat(purchaseData.amount),
         payment_currency: 'NGNZ', // align with backend
         twoFactorCode: purchaseData.twoFactorCode,
-        passwordpin: purchaseData.passwordpin
+        passwordpin: purchaseData.passwordpin,
+        // PayBeta requires customer details
+        customerName: purchaseData.customerName,
+        customerAddress: purchaseData.customerAddress
       };
 
       console.log('⚡ Starting electricity purchase:', {

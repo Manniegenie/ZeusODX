@@ -21,6 +21,7 @@ import TwoFactorAuthModal from '../../components/2FA';
 import AirtimeConfirmationModal from '../../components/Airtimeconfirm';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import Loading from '../../components/Loading';
 import PinEntryModal from '../../components/PinEntry';
 import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
 import { Colors } from '../../constants/Colors';
@@ -276,11 +277,11 @@ const BuyAirtimeScreen: React.FC = () => {
       return false;
     }
     
-    if (amount < 50) {
+    if (amount < 99) {
       showErrorMessage({
         type: 'validation',
         title: 'Amount Too Low',
-        message: 'Minimum airtime purchase is ₦50',
+        message: 'Minimum airtime purchase is ₦99',
         autoHide: true,
         duration: 3000
       });
@@ -331,6 +332,7 @@ const BuyAirtimeScreen: React.FC = () => {
 
   const handleTwoFactorSubmit = async (code: string): Promise<void> => {
     setTwoFactorCode(code);
+    setShowTwoFactorModal(false); // Hide 2FA modal to show loading
     
     try {
       const purchaseData: PurchaseData = {
@@ -644,6 +646,11 @@ const BuyAirtimeScreen: React.FC = () => {
         network={selectedNetwork?.name || ''}
         onContinue={handleSuccessModalClose}
       />
+
+      {/* Loading Screen - full-screen overlay after 2FA submission */}
+      {loading && (
+        <Loading />
+      )}
     </View>
   );
 };

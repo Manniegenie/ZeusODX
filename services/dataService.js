@@ -110,27 +110,35 @@ export const dataService = {
     try {
       console.log('📋 Fetching data plans for:', this.getNetworkDisplayName(serviceId));
 
-      // FIXED: Use correct endpoint format to match your backend
-      const response = await apiClient.get(`/data/plans/${serviceId.toLowerCase()}`);
+      // FIXED: Use correct endpoint and payload format to match your backend
+      const response = await apiClient.post('/plans/plans', {
+        service_id: `${serviceId.toLowerCase()}_data`
+      });
 
       if (response.success && response.data) {
+        // Handle the nested data structure from the backend
+        const apiData = response.data.data || response.data;
+        
         console.log('✅ Data plans fetched successfully:', {
           network: this.getNetworkDisplayName(serviceId),
-          plans_count: response.data.length
+          plans_count: apiData.plans_by_provider?.[`${serviceId.toLowerCase()}_data`]?.length || 0
         });
+
+        // Extract plans for the specific service from the grouped response
+        const servicePlans = apiData.plans_by_provider?.[`${serviceId.toLowerCase()}_data`] || [];
 
         return {
           success: true,
-          data: response.data.map(plan => ({
+          data: servicePlans.map(plan => ({
             variationId: plan.variation_id,
-            name: plan.name,
-            description: plan.description,
+            name: plan.data_plan,
+            description: plan.data_plan,
             price: parseFloat(plan.price),
-            dataAllowance: plan.data_allowance,
-            validity: plan.validity,
+            dataAllowance: this.formatDataAllowance(plan.data_plan),
+            validity: this.extractValidityFromDataPlan(plan.data_plan),
             network: serviceId.toLowerCase(),
-            formattedPrice: this.formatAmount(plan.price),
-            formattedData: this.formatDataAllowance(plan.data_allowance)
+            formattedPrice: plan.price_formatted,
+            formattedData: this.formatDataAllowance(plan.data_plan)
           })),
           message: response.message || 'Data plans loaded successfully'
         };
@@ -362,8 +370,8 @@ export const dataService = {
       errors.push('Amount is required');
     } else if (amount <= 0) {
       errors.push('Amount must be greater than zero');
-    } else if (amount < 100) {
-      errors.push('Minimum data purchase is ₦100');
+    } else if (amount < 99) {
+      errors.push('Minimum data purchase is ₦99');
     } else if (amount > 50000) {
       errors.push('Maximum data purchase is ₦50,000');
     }

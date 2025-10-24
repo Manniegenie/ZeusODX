@@ -1,48 +1,57 @@
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  TextInput
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import backIcon from '../../components/icons/backy.png';
 import BottomTabNavigator from '../../components/BottomNavigator';
-import { Typography } from '../../constants/Typography';
+import backIcon from '../../components/icons/backy.png';
+import Loading from '../../components/Loading';
 import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 
 // Gift card icons - keeping existing import routes
-import amazonIcon from '../../components/icons/azn.png';
 import amexIcon from '../../components/icons/amex.png';
+import amazonIcon from '../../components/icons/azn.png';
+import ebayIcon from '../../components/icons/ebay.png';
 import googlePlayIcon from '../../components/icons/google-play.png';
 import itunesIcon from '../../components/icons/iTunes.png';
-import ebayIcon from '../../components/icons/ebay.png';
 import lensIcon from '../../components/icons/lens-icon.png';
 
 // New gift card icons
-import steamIcon from '../../components/icons/steam.png';
-import nordstromIcon from '../../components/icons/nordstrom.png';
+import footlockerIcon from '../../components/icons/footlocker.png';
 import macyIcon from '../../components/icons/macy.png';
 import nikeIcon from '../../components/icons/nike.png';
-import visaIcon from '../../components/icons/visa.png';
-import vanillaIcon from '../../components/icons/vanilla.png';
+import nordstromIcon from '../../components/icons/nordstrom.png';
 import razorGoldIcon from '../../components/icons/razor-gold.png';
 import sephoraIcon from '../../components/icons/sephora.png';
-import footlockerIcon from '../../components/icons/footlocker.png';
+import steamIcon from '../../components/icons/steam.png';
+import vanillaIcon from '../../components/icons/vanilla.png';
+import visaIcon from '../../components/icons/visa.png';
 import xboxIcon from '../../components/icons/xbox.png';
 
 const GiftCardScreen = ({ onGiftCardSelect }) => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleGoBack = () => {
     router.back();
   };
+
+  // Reset loading state when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      setIsLoading(false);
+    }, [])
+  );
 
   const giftCards = [
     { id: 'amazon', name: 'Amazon', iconSrc: amazonIcon },
@@ -69,6 +78,9 @@ const GiftCardScreen = ({ onGiftCardSelect }) => {
   const handleGiftCardPress = (giftCard) => {
     // Optional callback for analytics/side effects
     onGiftCardSelect?.(giftCard);
+
+    // Show loading screen
+    setIsLoading(true);
 
     // Navigate to trade screen, passing brand + id as params
     router.push({
@@ -145,6 +157,11 @@ const GiftCardScreen = ({ onGiftCardSelect }) => {
       </SafeAreaView>
 
       <BottomTabNavigator activeTab="giftcard" />
+
+      {/* Loading Screen - full-screen overlay during processing */}
+      {isLoading && (
+        <Loading />
+      )}
     </View>
   );
 };

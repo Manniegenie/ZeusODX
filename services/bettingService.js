@@ -3,6 +3,75 @@ import { apiClient } from './apiClient';
 
 export const bettingService = {
   /**
+   * Validate betting customer using PayBeta API
+   * @param {Object} validationData - Customer validation data
+   * @param {string} validationData.service - Betting provider
+   * @param {string} validationData.customerId - Customer ID
+   * @returns {Promise<Object>} Validation response
+   */
+  async validateBettingCustomer(validationData) {
+    try {
+      console.log('🎰 Validating betting customer via PayBeta:', {
+        service: validationData.service,
+        customerId: validationData.customerId?.substring(0, 4) + '***'
+      });
+
+      const response = await apiClient.post('/betting/validate', {
+        service: validationData.service,
+        customerId: validationData.customerId
+      });
+
+      // Debug: Log the raw response structure
+      console.log('🔍 Raw validation response:', {
+        success: response.success,
+        data: response.data,
+        error: response.error
+      });
+
+      // Check for nested data structure (response.data.data)
+      const responseData = response.data?.data || response.data;
+      
+      if (response.success && responseData) {
+        console.log('✅ Betting customer validation successful:', {
+          customerId: responseData.customerId,
+          customerName: responseData.customerName,
+          service: responseData.service,
+          minimumAmount: responseData.minimumAmount
+        });
+
+        return {
+          success: true,
+          data: {
+            customerId: responseData.customerId,
+            customerName: responseData.customerName,
+            service: responseData.service,
+            minimumAmount: responseData.minimumAmount,
+            verifiedAt: responseData.verified_at,
+            requestId: responseData.requestId
+          }
+        };
+      } else {
+        console.log('❌ Betting customer validation failed:', response.error);
+        
+        return {
+          success: false,
+          error: 'VALIDATION_FAILED',
+          message: response.error || 'Customer validation failed'
+        };
+      }
+
+    } catch (error) {
+      console.error('❌ Betting customer validation error:', error);
+      
+      return {
+        success: false,
+        error: 'NETWORK_ERROR',
+        message: 'Network connection failed. Please check your internet connection and try again.'
+      };
+    }
+  },
+
+  /**
    * Fund betting account
    * @param {Object} fundingData - Betting funding data
    * @param {string} fundingData.userId - Betting account user ID
@@ -104,24 +173,89 @@ export const bettingService = {
   },
 
   /**
-   * Get available betting providers
-   * @returns {Array} Available betting providers
+   * Get available betting providers from PayBeta API
+   * @returns {Promise<Array>} Available betting providers
    */
-  getBettingProviders() {
+  async getBettingProviders() {
+    try {
+      console.log('🎰 Fetching betting providers from PayBeta API...');
+      console.log('🔍 API Client configuration:', {
+        baseURL: apiClient.defaults?.baseURL,
+        timeout: apiClient.defaults?.timeout
+      });
+      
+      console.log('🔍 Making API call to /betting/providers...');
+      const response = await apiClient.get('/betting/providers');
+      console.log('🔍 API call completed, processing response...');
+      
+      // Debug: Log the raw response
+      console.log('🔍 Raw API response:', {
+        success: response.success,
+        data: response.data,
+        error: response.error,
+        status: response.status
+      });
+      
+      // Check for nested data structure (response.data.data.providers)
+      const providers = response.data?.data?.providers || response.data?.providers;
+      const total = response.data?.data?.total || response.data?.total;
+      
+      if (response.success && providers) {
+        console.log('✅ Betting providers fetched successfully:', {
+          providerCount: providers.length,
+          total: total,
+          providers: providers.map(p => ({ id: p.id, name: p.name, slug: p.slug }))
+        });
+        
+        // Debug: Log the full response structure
+        console.log('🔍 Full API response structure:', {
+          success: response.success,
+          data: response.data,
+          providersArray: providers,
+          providersLength: providers.length
+        });
+        
+        return providers;
+      } else {
+        console.log('❌ Failed to fetch betting providers:', {
+          success: response.success,
+          error: response.error,
+          data: response.data,
+          fullResponse: response
+        });
+        // Fallback to static providers if API fails
+        return this.getStaticBettingProviders();
+      }
+    } catch (error) {
+      console.error('❌ Error fetching betting providers:', {
+        error: error.message,
+        stack: error.stack,
+        type: 'API_ERROR'
+      });
+      // Fallback to static providers if API fails
+      return this.getStaticBettingProviders();
+    }
+  },
+
+  /**
+   * Get static betting providers as fallback
+   * @returns {Array} Static betting providers
+   */
+  getStaticBettingProviders() {
     return [
-      { id: '1xBet', name: '1xBet', displayName: '1xBet', category: 'Sports Betting' },
-      { id: 'BangBet', name: 'BangBet', displayName: 'BangBet', category: 'Sports Betting' },
-      { id: 'Bet9ja', name: 'Bet9ja', displayName: 'Bet9ja', category: 'Sports Betting' },
-      { id: 'BetKing', name: 'BetKing', displayName: 'BetKing', category: 'Sports Betting' },
-      { id: 'BetLand', name: 'BetLand', displayName: 'BetLand', category: 'Sports Betting' },
-      { id: 'BetLion', name: 'BetLion', displayName: 'BetLion', category: 'Sports Betting' },
-      { id: 'BetWay', name: 'BetWay', displayName: 'Betway', category: 'Sports Betting' },
-      { id: 'CloudBet', name: 'CloudBet', displayName: 'CloudBet', category: 'Crypto Betting' },
-      { id: 'LiveScoreBet', name: 'LiveScoreBet', displayName: 'LiveScore Bet', category: 'Sports Betting' },
-      { id: 'MerryBet', name: 'MerryBet', displayName: 'MerryBet', category: 'Sports Betting' },
-      { id: 'NaijaBet', name: 'NaijaBet', displayName: 'NaijaBet', category: 'Sports Betting' },
-      { id: 'NairaBet', name: 'NairaBet', displayName: 'NairaBet', category: 'Sports Betting' },
-      { id: 'SupaBet', name: 'SupaBet', displayName: 'SupaBet', category: 'Sports Betting' }
+      { id: '1xbet', name: '1xBet', displayName: '1xBet', category: 'gaming', logo: null, hasLogo: false },
+      { id: 'bangbet', name: 'BangBet', displayName: 'BangBet', category: 'gaming', logo: null, hasLogo: false },
+      { id: 'bet9ja', name: 'Bet9ja', displayName: 'Bet9ja', category: 'gaming', logo: null, hasLogo: false },
+      { id: 'betking', name: 'BetKing', displayName: 'BetKing', category: 'gaming', logo: null, hasLogo: false },
+      { id: 'betland', name: 'BetLand', displayName: 'BetLand', category: 'gaming', logo: null, hasLogo: false },
+      { id: 'betlion', name: 'BetLion', displayName: 'BetLion', category: 'gaming', logo: null, hasLogo: false },
+      { id: 'betway', name: 'BetWay', displayName: 'Betway', category: 'gaming', logo: null, hasLogo: false },
+      { id: 'cloudbet', name: 'CloudBet', displayName: 'CloudBet', category: 'gaming', logo: null, hasLogo: false },
+      { id: 'livescorebet', name: 'LiveScoreBet', displayName: 'LiveScore Bet', category: 'gaming', logo: null, hasLogo: false },
+      { id: 'merrybet', name: 'MerryBet', displayName: 'MerryBet', category: 'gaming', logo: null, hasLogo: false },
+      { id: 'naijabet', name: 'NaijaBet', displayName: 'NaijaBet', category: 'gaming', logo: null, hasLogo: false },
+      { id: 'nairabet', name: 'NairaBet', displayName: 'NairaBet', category: 'gaming', logo: null, hasLogo: false },
+      { id: 'supabet', name: 'SupaBet', displayName: 'SupaBet', category: 'gaming', logo: null, hasLogo: false }
     ];
   },
 
@@ -325,7 +459,9 @@ export const bettingService = {
     if (!data.service_id?.trim()) {
       errors.push('Betting provider is required');
     } else {
-      const validProviders = this.getBettingProviders().map(p => p.id);
+      // Use static providers for validation since getBettingProviders is async
+      const staticProviders = this.getStaticBettingProviders();
+      const validProviders = staticProviders.map(p => p.id);
       if (!validProviders.includes(data.service_id)) {
         errors.push('Please select a valid betting provider');
       }
@@ -404,7 +540,8 @@ export const bettingService = {
    * @returns {string} Provider display name
    */
   getProviderDisplayName(providerId) {
-    const provider = this.getBettingProviders().find(
+    const staticProviders = this.getStaticBettingProviders();
+    const provider = staticProviders.find(
       p => p.id === providerId
     );
     
@@ -417,7 +554,8 @@ export const bettingService = {
    * @returns {string} Provider category
    */
   getProviderCategory(providerId) {
-    const provider = this.getBettingProviders().find(
+    const staticProviders = this.getStaticBettingProviders();
+    const provider = staticProviders.find(
       p => p.id === providerId
     );
     
@@ -474,8 +612,8 @@ export const bettingService = {
    * @returns {boolean} True if provider is valid
    */
   isValidProvider(providerId) {
-    const providers = this.getBettingProviders();
-    return providers.some(provider => provider.id === providerId);
+    const staticProviders = this.getStaticBettingProviders();
+    return staticProviders.some(provider => provider.id === providerId);
   },
 
   /**
@@ -484,7 +622,8 @@ export const bettingService = {
    * @returns {Array} Providers in the specified category
    */
   getProvidersByCategory(category) {
-    return this.getBettingProviders().filter(
+    const staticProviders = this.getStaticBettingProviders();
+    return staticProviders.filter(
       provider => provider.category === category
     );
   },
@@ -688,12 +827,14 @@ export const bettingService = {
    * @returns {Array} Filtered providers
    */
   searchProviders(searchTerm) {
+    const staticProviders = this.getStaticBettingProviders();
+    
     if (!searchTerm || typeof searchTerm !== 'string') {
-      return this.getBettingProviders();
+      return staticProviders;
     }
 
     const term = searchTerm.toLowerCase().trim();
-    return this.getBettingProviders().filter(provider =>
+    return staticProviders.filter(provider =>
       provider.name.toLowerCase().includes(term) ||
       provider.displayName.toLowerCase().includes(term) ||
       provider.category.toLowerCase().includes(term)
@@ -705,8 +846,8 @@ export const bettingService = {
    * @returns {Array} Unique categories
    */
   getBettingCategories() {
-    const providers = this.getBettingProviders();
-    const categories = [...new Set(providers.map(p => p.category))];
+    const staticProviders = this.getStaticBettingProviders();
+    const categories = [...new Set(staticProviders.map(p => p.category))];
     return categories.sort();
   },
 

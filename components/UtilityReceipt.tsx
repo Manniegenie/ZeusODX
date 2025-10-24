@@ -138,6 +138,9 @@ const generateUtilityReceiptHTML = (
   if (details.phoneNumber) {
     detailRows.push(`<tr><td>Phone Number</td><td>${asText(details.phoneNumber)}</td></tr>`);
   }
+  if (details.customerInfo) {
+    detailRows.push(`<tr><td>Customer Info</td><td>${asText(details.customerInfo)}</td></tr>`);
+  }
   if (details.serviceProvider) {
     detailRows.push(`<tr><td>Service Provider</td><td>${asText(details.serviceProvider)}</td></tr>`);
   }
@@ -460,6 +463,14 @@ export default function UtilityReceipt() {
               value={asText(details.phoneNumber)}
               copyableValue={details.phoneNumber}
               onCopy={(v) => handleCopy('Phone Number', v)}
+            />
+          )}
+          {details.customerInfo && (
+            <Row 
+              label="Customer Info" 
+              value={asText(details.customerInfo)}
+              copyableValue={details.customerInfo}
+              onCopy={(v) => handleCopy('Customer Info', v)}
             />
           )}
           {details.serviceProvider && (

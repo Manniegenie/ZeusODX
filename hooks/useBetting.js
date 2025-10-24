@@ -1,5 +1,5 @@
 // hooks/useBetting.js
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { bettingService } from '../services/bettingService';
 
 export const useBetting = () => {
@@ -76,11 +76,85 @@ export const useBetting = () => {
   }, []);
 
   /**
-   * Get available betting providers
-   * @returns {Array} Available betting providers
+   * Validate betting customer
+   * @param {Object} validationData - Customer validation data
+   * @returns {Promise<Object>} Validation response
    */
-  const getBettingProviders = useCallback(() => {
-    return bettingService.getBettingProviders();
+  const validateBettingCustomer = useCallback(async (validationData) => {
+    setLoading(true);
+    clearErrors();
+
+    try {
+      console.log('🎰 useBetting: Starting customer validation', {
+        service: validationData.service,
+        customerId: validationData.customerId
+      });
+
+      const result = await bettingService.validateBettingCustomer(validationData);
+      
+      console.log('📊 useBetting: Validation response:', {
+        success: result.success,
+        error: result.error,
+        customerName: result.data?.customerName
+      });
+
+      if (!result.success) {
+        setError(result.message);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('❌ useBetting: Validation error:', error);
+      
+      const errorMessage = 'An unexpected error occurred during validation. Please try again.';
+      setError(errorMessage);
+      
+      return {
+        success: false,
+        error: 'NETWORK_ERROR',
+        message: errorMessage
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * Get available betting providers from PayBeta API
+   * @returns {Promise<Array>} Available betting providers
+   */
+  const getBettingProviders = useCallback(async () => {
+    setLoading(true);
+    clearErrors();
+
+    try {
+      console.log('🎰 useBetting: Fetching betting providers...');
+      
+      const providers = await bettingService.getBettingProviders();
+      
+      console.log('📊 useBetting: Providers fetched:', {
+        providerCount: providers.length
+      });
+
+      return providers;
+    } catch (error) {
+      console.error('❌ useBetting: Providers fetch error:', error);
+      
+      const errorMessage = 'Failed to fetch betting providers. Please try again.';
+      setError(errorMessage);
+      
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * Get static betting providers (fallback)
+   * @returns {Array} Static betting providers
+   */
+  const getStaticBettingProviders = useCallback(() => {
+    return bettingService.getStaticBettingProviders();
   }, []);
 
   /**
@@ -349,27 +423,39 @@ export const useBetting = () => {
    * @param {string} searchTerm - Search term
    * @returns {Array} Filtered providers
    */
-  const searchProviders = useCallback((searchTerm) => {
-    if (!searchTerm || typeof searchTerm !== 'string') {
-      return getBettingProviders();
-    }
+  const searchProviders = useCallback(async (searchTerm) => {
+    try {
+      const providers = await getBettingProviders();
+      
+      if (!searchTerm || typeof searchTerm !== 'string') {
+        return providers;
+      }
 
-    const term = searchTerm.toLowerCase().trim();
-    return getBettingProviders().filter(provider =>
-      provider.name.toLowerCase().includes(term) ||
-      provider.displayName.toLowerCase().includes(term) ||
-      provider.category.toLowerCase().includes(term)
-    );
+      const term = searchTerm.toLowerCase().trim();
+      return providers.filter(provider =>
+        provider.name.toLowerCase().includes(term) ||
+        provider.displayName.toLowerCase().includes(term) ||
+        provider.category.toLowerCase().includes(term)
+      );
+    } catch (error) {
+      console.error('❌ useBetting: Error searching providers:', error);
+      return [];
+    }
   }, [getBettingProviders]);
 
   /**
    * Get betting categories
-   * @returns {Array} Unique categories
+   * @returns {Promise<Array>} Unique categories
    */
-  const getBettingCategories = useCallback(() => {
-    const providers = getBettingProviders();
-    const categories = [...new Set(providers.map(p => p.category))];
-    return categories.sort();
+  const getBettingCategories = useCallback(async () => {
+    try {
+      const providers = await getBettingProviders();
+      const categories = [...new Set(providers.map(p => p.category))];
+      return categories.sort();
+    } catch (error) {
+      console.error('❌ useBetting: Error getting categories:', error);
+      return [];
+    }
   }, [getBettingProviders]);
 
   /**
@@ -389,10 +475,12 @@ export const useBetting = () => {
 
     // Main actions
     fundBettingAccount,
+    validateBettingCustomer,
     clearErrors,
 
     // Provider utilities
     getBettingProviders,
+    getStaticBettingProviders,
     getProviderDisplayName,
     getProviderCategory,
     isValidProvider,

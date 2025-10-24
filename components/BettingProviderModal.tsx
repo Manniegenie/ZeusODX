@@ -1,38 +1,59 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  SafeAreaView,
-  ScrollView,
-  Image,
-  StatusBar
+    ActivityIndicator,
+    FlatList,
+    Image,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
-import { Typography } from '../constants/Typography';
 import { Colors } from '../constants/Colors';
+import { Layout } from '../constants/Layout';
+import { Typography } from '../constants/Typography';
+import { useBetting } from '../hooks/useBetting';
+import DefaultBettingIcon from './DefaultBettingIcon';
 
-// Import betting provider icons
+// Import betting provider icons (fallback) - these may not exist
+// @ts-ignore
 import Bet9jaIcon from '../components/icons/bet9ja.jpeg';
+// @ts-ignore
 import BetkingIcon from '../components/icons/betking.jpeg';
+// @ts-ignore
 import BetwayIcon from '../components/icons/betway.png';
+// @ts-ignore
 import OnexbetIcon from '../components/icons/1xbet.png';
+// @ts-ignore
 import LivescoreBetIcon from '../components/icons/livescore.png';
+// @ts-ignore
 import NaijaBetIcon from '../components/icons/naijabet.jpeg';
-import MsportIcon from '../components/icons/msport.png';
+// @ts-ignore
+// @ts-ignore
 import MerryBetIcon from '../components/icons/merrybet.png';
+// @ts-ignore
 import NairaBetIcon from '../components/icons/nairabet.png';
+// @ts-ignore
 import BangBetIcon from '../components/icons/bangbet.png';
+// @ts-ignore
 import BetLandIcon from '../components/icons/betland.png';
+// @ts-ignore
 import BetLionIcon from '../components/icons/betlion.png';
+// @ts-ignore
 import CloudBetIcon from '../components/icons/cloudbet.png';
+// @ts-ignore
 import SupaBetIcon from '../components/icons/supabet.png';
 
 interface BettingProvider {
   id: string;
   name: string;
-  icon: any;
+  displayName: string;
+  slug: string;
+  category: string;
+  logo?: string;
+  hasLogo: boolean;
+  icon?: any; // For fallback icons
 }
 
 interface BettingProviderSelectionModalProps {
@@ -48,161 +69,260 @@ const BettingProviderSelectionModal: React.FC<BettingProviderSelectionModalProps
   onSelectProvider,
   selectedProvider
 }) => {
-  const providers: BettingProvider[] = [
-    { id: 'bet9ja', name: 'Bet9ja', icon: Bet9jaIcon },
-    { id: 'betking', name: 'BetKing', icon: BetkingIcon },
-    { id: 'betway', name: 'BetWay', icon: BetwayIcon },
-    { id: '1xbet', name: '1xBet', icon: OnexbetIcon },
-    { id: 'livescorebet', name: 'LiveScoreBet', icon: LivescoreBetIcon },
-    { id: 'naijabet', name: 'NaijaBet', icon: NaijaBetIcon },
-    { id: 'msport', name: 'MSport', icon: MsportIcon },
-    { id: 'merrybet', name: 'MerryBet', icon: MerryBetIcon },
-    { id: 'nairabet', name: 'NairaBet', icon: NairaBetIcon },
-    { id: 'bangbet', name: 'BangBet', icon: BangBetIcon },
-    { id: 'betland', name: 'BetLand', icon: BetLandIcon },
-    { id: 'betlion', name: 'BetLion', icon: BetLionIcon },
-    { id: 'cloudbet', name: 'CloudBet', icon: CloudBetIcon },
-    { id: 'supabet', name: 'SupaBet', icon: SupaBetIcon }
-  ];
+  const { getBettingProviders, getStaticBettingProviders } = useBetting();
+  const [providers, setProviders] = useState<BettingProvider[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fallback icon mapping for providers without logos
+  const fallbackIcons: { [key: string]: any } = {
+    'bet9ja': Bet9jaIcon,
+    'betking': BetkingIcon,
+    'betway': BetwayIcon,
+    '1xbet': OnexbetIcon,
+    'livescorebet': LivescoreBetIcon,
+    'naijabet': NaijaBetIcon,
+    'merrybet': MerryBetIcon,
+    'nairabet': NairaBetIcon,
+    'bangbet': BangBetIcon,
+    'betland': BetLandIcon,
+    'betlion': BetLionIcon,
+    'cloudbet': CloudBetIcon,
+    'supabet': SupaBetIcon
+  };
+
+  // Fetch providers when modal opens
+  useEffect(() => {
+    if (visible) {
+      fetchProviders();
+    }
+  }, [visible]);
+
+  const fetchProviders = async () => {
+    setLoading(true);
+    try {
+      const fetchedProviders = await getBettingProviders();
+      
+      console.log('🎰 BettingProviderModal: Fetched providers:', {
+        count: fetchedProviders.length,
+        providers: fetchedProviders.map(p => ({ id: p.id, name: p.name, slug: p.slug }))
+      });
+      
+      // Add fallback icons to providers
+      const providersWithIcons = fetchedProviders.map(provider => ({
+        ...provider,
+        icon: fallbackIcons[provider.id.toLowerCase()] || null
+      }));
+      
+      console.log('🎰 BettingProviderModal: Providers with icons:', {
+        count: providersWithIcons.length,
+        providers: providersWithIcons.map(p => ({ id: p.id, name: p.name, hasIcon: !!p.icon }))
+      });
+      
+      // Debug: Check for any filtering or issues
+      console.log('🎰 BettingProviderModal: Setting providers state:', {
+        count: providersWithIcons.length,
+        allProviderIds: providersWithIcons.map(p => p.id),
+        allProviderNames: providersWithIcons.map(p => p.name)
+      });
+      
+      setProviders(providersWithIcons);
+    } catch (error) {
+      console.error('Failed to fetch providers, using fallback:', error);
+      // Use static providers as fallback
+      const staticProviders = getStaticBettingProviders();
+      const providersWithIcons = staticProviders.map(provider => ({
+        ...provider,
+        icon: fallbackIcons[provider.id.toLowerCase()] || null
+      }));
+      setProviders(providersWithIcons);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleProviderSelect = (provider: BettingProvider) => {
     onSelectProvider(provider);
     onClose();
   };
 
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.modalWrapper}>
-        <SafeAreaView style={styles.container}>
-          <StatusBar backgroundColor={Colors.surface} barStyle="dark-content" />
-
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Choose Betting Provider</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
+  const renderProviderOption = ({ item }: { item: BettingProvider }) => {
+    console.log('🎰 BettingProviderModal: Rendering provider:', {
+      id: item.id,
+      name: item.name,
+      displayName: item.displayName
+    });
+    
+    return (
+      <TouchableOpacity
+        style={styles.providerOptionItem}
+        onPress={() => handleProviderSelect(item)}
+      >
+        <View style={styles.providerOptionLeft}>
+          <View style={styles.providerIcon}>
+            {item.hasLogo && item.logo ? (
+              <Image 
+                source={{ uri: item.logo }} 
+                style={styles.providerIconImage} 
+                resizeMode="contain" 
+              />
+            ) : item.icon ? (
+              <Image 
+                source={item.icon} 
+                style={styles.providerIconImage} 
+                resizeMode="contain" 
+              />
+            ) : (
+              <DefaultBettingIcon 
+                name={item.displayName || item.name} 
+                size={40}
+              />
+            )}
           </View>
+          <View style={styles.providerInfo}>
+            <Text style={styles.providerName}>{item.displayName || item.name}</Text>
+          </View>
+        </View>
+        {selectedProvider?.id === item.id && (
+          <View style={styles.selectedIndicator}>
+            <Text style={styles.selectedCheckmark}>✓</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
-          {/* Provider List */}
-          <ScrollView
-            style={styles.scrollView}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-          >
-            {providers.map((provider) => (
-              <TouchableOpacity
-                key={provider.id}
-                style={[
-                  styles.providerItem,
-                  selectedProvider?.id === provider.id && styles.providerItemSelected
-                ]}
-                onPress={() => handleProviderSelect(provider)}
-                activeOpacity={0.8}
-              >
-                <View style={styles.providerIconContainer}>
-                  <Image source={provider.icon} style={styles.providerIcon} resizeMode="contain" />
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  Choose Betting Provider
+                </Text>
+                <TouchableOpacity onPress={onClose}>
+                  <Text style={styles.closeButton}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              {loading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={Colors.primary} />
+                  <Text style={styles.loadingText}>Loading providers...</Text>
                 </View>
-                <View style={styles.providerInfo}>
-                  <Text style={styles.providerName}>{provider.name}</Text>
-                </View>
-                {selectedProvider?.id === provider.id && (
-                  <View style={styles.selectedIndicator}>
-                    <Text style={styles.selectedCheckmark}>✓</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </SafeAreaView>
-      </View>
+              ) : (
+                <>
+                  {console.log('🎰 BettingProviderModal: Rendering providers:', {
+                    count: providers.length,
+                    providers: providers.map(p => ({ id: p.id, name: p.name }))
+                  })}
+                  <FlatList
+                    data={providers}
+                    renderItem={renderProviderOption}
+                    keyExtractor={(item) => item.id}
+                    showsVerticalScrollIndicator={true}
+                    contentContainerStyle={styles.providerList}
+                    style={styles.scrollableList}
+                    onLayout={() => {
+                      console.log('🎰 BettingProviderModal: FlatList onLayout - providers count:', providers.length);
+                    }}
+                    onContentSizeChange={() => {
+                      console.log('🎰 BettingProviderModal: FlatList content size changed - providers count:', providers.length);
+                    }}
+                  />
+                </>
+              )}
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalWrapper: {
-    position: 'absolute',
-    top: 224,
-    left: 1,
-    width: 393,
-    height: 630,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    alignSelf: 'center',
-    overflow: 'hidden',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+  modalOverlay: { 
+    flex: 1, 
+    backgroundColor: 'rgba(0,0,0,0.5)', 
+    justifyContent: 'flex-end' 
   },
-  container: { flex: 1, backgroundColor: Colors.surface || '#FFFFFF' },
-
-  // Header styles
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+  modalContent: { 
+    backgroundColor: Colors.surface, 
+    borderTopLeftRadius: Layout.borderRadius.xl, 
+    borderTopRightRadius: Layout.borderRadius.xl, 
+    padding: Layout.spacing.lg, 
+    height: '85%' 
   },
-  headerTitle: {
-    color: Colors.text?.primary || '#111827',
-    fontFamily: Typography.medium || 'System',
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-    flex: 1,
+  modalHeader: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: Layout.spacing.lg 
   },
-  closeButton: {
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 16,
-    backgroundColor: '#F9FAFB',
+  modalTitle: { 
+    fontFamily: Typography.bold, 
+    fontSize: 18, 
+    color: Colors.text.primary 
   },
-  closeButtonText: { color: Colors.text?.secondary || '#6B7280', fontSize: 16, fontWeight: '500' },
-
-  // Scroll view
-  scrollView: { flex: 1 },
-  scrollContent: { paddingTop: 8, paddingBottom: 24 },
-
-  // Provider items
-  providerItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F9FAFB',
-    minHeight: 72,
+  closeButton: { 
+    fontSize: 16, 
+    color: Colors.text.secondary, 
+    padding: Layout.spacing.sm 
   },
-  providerItemSelected: { backgroundColor: '#F8F7FF' },
-
-  providerIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    marginRight: 16,
+  providerList: { 
+    paddingBottom: Layout.spacing.lg 
   },
-  providerIcon: { width: 32, height: 32 },
-
-  providerInfo: { flex: 1, justifyContent: 'center' },
-  providerName: {
-    color: Colors.text?.primary || '#111827',
-    fontFamily: Typography.medium || 'System',
-    fontSize: 16,
-    fontWeight: '500',
-    lineHeight: 22,
+  scrollableList: { 
+    flex: 1 
   },
-
+  providerOptionItem: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingVertical: Layout.spacing.md, 
+    paddingHorizontal: Layout.spacing.sm, 
+    backgroundColor: '#F8F9FA', 
+    marginBottom: Layout.spacing.sm, 
+    borderRadius: Layout.borderRadius.md 
+  },
+  providerOptionLeft: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: Layout.spacing.md, 
+    flex: 1 
+  },
+  providerIcon: { 
+    width: 40, 
+    height: 40, 
+    borderRadius: 20, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB', 
+    overflow: 'hidden' 
+  },
+  providerIconImage: { 
+    width: 40, 
+    height: 40, 
+    resizeMode: 'cover' 
+  },
+  providerInfo: { 
+    flex: 1 
+  },
+  providerName: { 
+    fontFamily: Typography.medium, 
+    fontSize: 14, 
+    color: Colors.text.primary 
+  },
+  providerCategory: { 
+    fontFamily: Typography.regular, 
+    fontSize: 12, 
+    color: Colors.text.secondary 
+  },
   selectedIndicator: {
     width: 24,
     height: 24,
@@ -213,6 +333,17 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   selectedCheckmark: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: Colors.text.secondary,
+    marginTop: 12,
+  },
 });
 
 export default BettingProviderSelectionModal;

@@ -1,13 +1,14 @@
 // app/user/UsernameSearchScreen.tsx
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar, ScrollView, TextInput, Alert } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { Alert, Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import BottomTabNavigator from '../../components/BottomNavigator';
+import Loading from '../../components/Loading';
 import TransferBottomSheet from '../../components/UsernameTransfer';
-import lensIcon from '../../components/icons/lens-icon.png';
 import backIcon from '../../components/icons/backy.png'; // <- shared back icon
+import lensIcon from '../../components/icons/lens-icon.png';
+import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 import { useUsernameSearch } from '../../hooks/useUsernameQuery';
 
 interface User {
@@ -194,6 +195,11 @@ const UsernameSearchScreen = () => {
         selectedUser={selectedUser}
         defaultToken={{ id: tokenId as string, name: tokenName as string, symbol: tokenSymbol as string }}
       />
+
+      {/* Loading Screen - full-screen overlay during processing */}
+      {isLoading && (
+        <Loading />
+      )}
     </View>
   );
 };

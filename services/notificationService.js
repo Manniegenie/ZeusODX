@@ -185,6 +185,7 @@ class NotificationService {
         enableVibrate: true,
         enableLights: true,
         showBadge: true,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       });
 
       // Create transactions channel (matches backend channelId)
@@ -198,6 +199,7 @@ class NotificationService {
         enableVibrate: true,
         enableLights: true,
         showBadge: true,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       });
 
       // Create security channel
@@ -211,6 +213,7 @@ class NotificationService {
         enableVibrate: true,
         enableLights: true,
         showBadge: true,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       });
 
       console.log('✅ Android notification channels created successfully');
@@ -247,17 +250,44 @@ class NotificationService {
         await AsyncStorage.setItem('deviceId', deviceId);
       }
 
+      // Get current user ID if available
+      let userId = null;
+      try {
+        const userData = await AsyncStorage.getItem('user_data');
+        if (userData) {
+          const user = JSON.parse(userData);
+          userId = user._id || user.id;
+        }
+      } catch (error) {
+        console.log('No user data found for notification registration');
+      }
+
+      const requestBody = {
+        expoPushToken: token,
+        deviceId,
+        platform: Platform.OS,
+      };
+
+      // Add userId if available (for authenticated users)
+      if (userId) {
+        requestBody.userId = userId;
+      }
+
       const response = await fetch('https://zeusodx-web.onrender.com/notification/register-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          expoPushToken: token,
-          deviceId,
-          platform: Platform.OS,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      return response.ok;
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Notification registration successful:', result.message);
+        return true;
+      } else {
+        const error = await response.text();
+        console.error('❌ Notification registration failed:', error);
+        return false;
+      }
     } catch (error) {
       console.error('Error registering with backend:', error);
       return false;

@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Animated, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
@@ -23,6 +23,7 @@ export default function VerifyPhoneScreen() {
   const [canResend, setCanResend] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
+  const [cursorOpacity] = useState(new Animated.Value(1));
   const [error, setError] = useState<{
     show: boolean;
     type: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general';
@@ -78,6 +79,26 @@ export default function VerifyPhoneScreen() {
       handleVerification();
     }
   }, [verificationCode, phoneNumber]);
+
+  // Blinking cursor animation
+  useEffect(() => {
+    const blinkAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(cursorOpacity, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cursorOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    blinkAnimation.start();
+    return () => blinkAnimation.stop();
+  }, [cursorOpacity]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -270,7 +291,7 @@ export default function VerifyPhoneScreen() {
         <View style={styles.codeSection}>
           <TextInput
             style={styles.codeInput}
-            placeholder="Enter 6-digit code"
+            placeholder=""
             placeholderTextColor={Colors.text.muted}
             value={verificationCode}
             onChangeText={handleCodeChange}
@@ -279,9 +300,6 @@ export default function VerifyPhoneScreen() {
             autoFocus={true}
             textAlign="center"
             editable={!isVerifying}
-            returnKeyType="done"
-            blurOnSubmit={false}
-            selectTextOnFocus={true}
           />
           
           {/* Visual code display */}
@@ -298,6 +316,15 @@ export default function VerifyPhoneScreen() {
                 <Text style={styles.codeText}>
                   {verificationCode[index] || ''}
                 </Text>
+                {/* Blinking cursor in the next empty box */}
+                {index === verificationCode.length && !isVerifying && (
+                  <Animated.View 
+                    style={[
+                      styles.cursor,
+                      { opacity: cursorOpacity }
+                    ]}
+                  />
+                )}
               </View>
             ))}
           </View>
@@ -327,12 +354,6 @@ export default function VerifyPhoneScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Instructions */}
-        <View style={styles.instructionsSection}>
-          <Text style={styles.instructionsText}>
-            Enter all 6 digits and we'll verify your code automatically
-          </Text>
-        </View>
       </View>
     </SafeAreaView>
   );
@@ -371,18 +392,10 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.xl,
   },
   codeInput: {
-    backgroundColor: Colors.surface,
-    borderRadius: Layout.borderRadius.md,
-    borderWidth: 2,
-    borderColor: '#E5E5E5',
-    paddingHorizontal: Layout.spacing.md,
-    paddingVertical: Layout.spacing.md,
-    fontSize: 18,
-    fontFamily: Typography.medium,
-    color: Colors.text.primary,
-    textAlign: 'center',
-    marginBottom: Layout.spacing.lg,
-    minHeight: 50,
+    position: 'absolute',
+    opacity: 0, // Hide the actual input
+    width: '100%',
+    height: 1,
   },
   codeVisual: {
     flexDirection: 'row',
@@ -413,6 +426,16 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold,
     color: Colors.text.primary,
   },
+  cursor: {
+    position: 'absolute',
+    width: 2,
+    height: 30,
+    backgroundColor: Colors.primary,
+    top: '50%',
+    left: '50%',
+    marginLeft: -1,
+    marginTop: -15,
+  },
   verifyingText: {
     ...Typography.styles.caption,
     color: '#FFA500',
@@ -436,15 +459,5 @@ const styles = StyleSheet.create({
   },
   resendInactive: {
     color: Colors.text.muted,
-  },
-  instructionsSection: {
-    alignItems: 'center',
-    paddingHorizontal: Layout.spacing.lg,
-  },
-  instructionsText: {
-    ...Typography.styles.caption,
-    color: Colors.text.secondary,
-    textAlign: 'center',
-    fontStyle: 'italic',
   },
 });
