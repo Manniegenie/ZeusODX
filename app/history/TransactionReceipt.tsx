@@ -146,6 +146,12 @@ const extractField = (
   }
   
   for (const field of fieldNames) {
+    if (rawTx?.details?.[field] !== undefined && rawTx?.details?.[field] !== null && rawTx?.details?.[field] !== '') {
+      return rawTx.details[field];
+    }
+  }
+  
+  for (const field of fieldNames) {
     if (field.includes('.')) {
       const parts = field.split('.');
       let value = rawTx;
