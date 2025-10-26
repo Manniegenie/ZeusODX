@@ -52,7 +52,7 @@ const AddressCopied: React.FC<AddressCopiedProps> = ({
     >
       <TouchableWithoutFeedback onPress={dismissible ? handleDismiss : undefined}>
         <View style={styles.content}>
-          <Text style={styles.title}>{label}</Text>
+          <Text style={styles.title}>Copied</Text>
         </View>
       </TouchableWithoutFeedback>
     </Animated.View>
