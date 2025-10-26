@@ -3,20 +3,21 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import * as Print from 'expo-print';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  Image,
-  Linking,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    Linking,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import AddressCopied from '../../components/AddressCopied';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
@@ -466,6 +467,7 @@ export default function TransactionReceiptScreen() {
   const parsedTx = safeParseParam(params.tx) as APITransaction | undefined;
   const rawTx = safeParseParam(params.raw) as any | undefined;
   const transaction = parsedTx;
+  const [showCopied, setShowCopied] = useState(false);
 
   useEffect(() => {
     if (transaction) {
@@ -513,7 +515,7 @@ export default function TransactionReceiptScreen() {
     if (!value) return;
     try {
       Clipboard.setString(value);
-      Alert.alert('Copied!', `${label} copied to clipboard`);
+      setShowCopied(true);
     } catch {
       Alert.alert('Copy failed', `Unable to copy ${label.toLowerCase()}`);
     }
@@ -546,6 +548,15 @@ export default function TransactionReceiptScreen() {
 
   const d = (transaction?.details || {}) as TokenDetails & UtilityDetails;
   
+  // Debug: Log the transaction details to see what's available
+  console.log('🔍 TransactionReceipt Debug:', {
+    transactionId: transaction?.id,
+    details: transaction?.details,
+    rawTx: rawTx,
+    extractedToken: extractField(transaction, d, rawTx, ['token', 'electricityToken', 'meterToken']),
+    allDetails: d
+  });
+  
   const merged: TokenDetails & UtilityDetails = {
     ...d,
     transactionId: extractField(transaction, d, rawTx, ['transactionId', 'txId', 'externalId', 'reference', 'id', '_id']),
@@ -563,6 +574,13 @@ export default function TransactionReceiptScreen() {
     customerInfo: extractField(transaction, d, rawTx, ['customerInfo', 'customerPhone', 'phone', 'meterNo', 'account']),
     billType: extractField(transaction, d, rawTx, ['billType', 'type']),
     paymentCurrency: extractField(transaction, d, rawTx, ['paymentCurrency']),
+    
+    // Electricity specific fields
+    token: extractField(transaction, d, rawTx, ['token', 'electricityToken', 'meterToken']),
+    units: extractField(transaction, d, rawTx, ['units', 'kwh', 'kilowattHours']),
+    band: extractField(transaction, d, rawTx, ['band', 'tariffBand']),
+    customerName: extractField(transaction, d, rawTx, ['customerName', 'customer_name', 'accountName']),
+    customerAddress: extractField(transaction, d, rawTx, ['customerAddress', 'customer_address', 'address']),
     
     isNGNZWithdrawal,
     withdrawalReference: extractField(transaction, d, rawTx, [
@@ -867,6 +885,13 @@ export default function TransactionReceiptScreen() {
                   onCopy={(v) => handleCopy('Token', v)}
                 />
               )}
+              {/* Debug: Always show token field for debugging */}
+              {!merged.token && (
+                <Row 
+                  label="Token (Debug)" 
+                  value={`No token found. Raw: ${JSON.stringify(transaction?.details)}`}
+                />
+              )}
               {merged.units && (
                 <Row label="Units" value={formatUnits(merged.units)} />
               )}
@@ -910,6 +935,15 @@ export default function TransactionReceiptScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      
+      {/* AddressCopied notification */}
+      {showCopied && (
+        <AddressCopied
+          onDismiss={() => setShowCopied(false)}
+          autoHide={true}
+          duration={1800}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -955,7 +989,7 @@ function Row({
             <Image
               source={require('../../components/icons/copy-icon.png')}
               style={styles.copyIcon}
-              resizeMode="contain"
+              resizeMode="cover"
             />
           </TouchableOpacity>
         ) : null}
@@ -1085,14 +1119,19 @@ const styles = StyleSheet.create({
   secondaryButtonText: { fontSize: 16, fontWeight: '600', color: '#111827', fontFamily: Typography.medium || 'System' },
 
   copyButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6', // Temporary visible background for debugging
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#D1D5DB', // More visible border
+    overflow: 'hidden',
   },
-  copyIcon: { width: 16, height: 16 },
+  copyIcon: {
+    width: 32,
+    height: 32,
+    resizeMode: 'cover',
+  },
 });

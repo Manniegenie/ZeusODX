@@ -138,7 +138,17 @@ export const useCustomer = () => {
   /** Format customer name for display */
   const formatCustomerName = useCallback((name) => {
     if (!name) return '';
-    return name
+    
+    // Convert to string to handle any type issues
+    const nameStr = String(name);
+    
+    // Check if the name is purely numeric (like SportyBet customer IDs)
+    if (/^\d+$/.test(nameStr)) {
+      return nameStr; // Return numeric names as-is
+    }
+    
+    // For non-numeric names, apply normal formatting
+    return nameStr
       .split(' ')
       .map((word) => word[0]?.toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');

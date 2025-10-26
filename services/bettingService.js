@@ -455,16 +455,9 @@ export const bettingService = {
       }
     }
 
-    // Provider validation
+    // Provider validation - let server handle provider validation
     if (!data.service_id?.trim()) {
       errors.push('Betting provider is required');
-    } else {
-      // Use static providers for validation since getBettingProviders is async
-      const staticProviders = this.getStaticBettingProviders();
-      const validProviders = staticProviders.map(p => p.id);
-      if (!validProviders.includes(data.service_id)) {
-        errors.push('Please select a valid betting provider');
-      }
     }
 
     // Amount validation

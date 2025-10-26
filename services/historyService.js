@@ -635,6 +635,15 @@ export const transactionService = {
 
     const parsedISO = this.tryParseToISO(transaction.createdAt);
 
+    // Debug: Log the transaction details to see what's available
+    console.log('🔍 HistoryService formatBillTransaction Debug:', {
+      transactionId: transaction.id,
+      type: transaction.type,
+      details: transaction.details,
+      metaData: transaction.metaData,
+      hasToken: !!(transaction.details?.token || transaction.metaData?.token)
+    });
+
     return {
       id: transaction.id,
       type: 'BILL_PAYMENT',
@@ -650,6 +659,13 @@ export const transactionService = {
       utilityType: transaction.details?.billType,
       details: {
         ...transaction.details,
+        ...(transaction.metaData && {
+          token: transaction.metaData.token,
+          units: transaction.metaData.units,
+          band: transaction.metaData.band,
+          customerName: transaction.metaData.customer_name,
+          customerAddress: transaction.metaData.customer_address
+        }),
         category: 'utility',
         billCategory: transaction.type
       }

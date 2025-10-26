@@ -3,7 +3,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import * as Print from 'expo-print';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     Alert,
     Image,
@@ -16,6 +16,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import AddressCopied from '../../components/AddressCopied';
 import { Colors } from '../../constants/Colors';
 
 // Icons
@@ -318,6 +319,7 @@ const generateBillReceiptHTML = (
 const BillReceiptScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const [showCopied, setShowCopied] = useState(false);
   
   const transaction = useMemo(() => {
     try {
@@ -397,14 +399,14 @@ const BillReceiptScreen = () => {
   const copyToken = () => {
     if (merged.token) {
       Clipboard.setString(merged.token);
-      Alert.alert('Copied', 'Token copied to clipboard');
+      setShowCopied(true);
     }
   };
 
   const copyOrderId = () => {
     if (merged.orderId) {
       Clipboard.setString(merged.orderId);
-      Alert.alert('Copied', 'Order ID copied to clipboard');
+      setShowCopied(true);
     }
   };
 
@@ -535,6 +537,15 @@ const BillReceiptScreen = () => {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
+      
+      {/* AddressCopied notification */}
+      {showCopied && (
+        <AddressCopied
+          onDismiss={() => setShowCopied(false)}
+          autoHide={true}
+          duration={1800}
+        />
+      )}
     </View>
   );
 };
@@ -670,8 +681,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: Colors.primary,
-    borderRadius: 4,
   },
   copyText: {
     fontSize: 12,

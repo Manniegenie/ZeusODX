@@ -1,14 +1,23 @@
 // screens/history/SpecificTransactionHistoryScreen.tsx
-import React, { useState, useCallback, useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar,
-  ScrollView, Modal, TouchableWithoutFeedback, ActivityIndicator, RefreshControl,
+    ActivityIndicator,
+    Image,
+    Modal,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Colors } from '../../constants/Colors';
+import emptyStateIcon from '../../components/icons/empty-black.png';
 import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
-import emptyStateIcon from '../../components/icons/empty-black.png';
 
 const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
@@ -207,6 +216,15 @@ const TransactionHistoryScreen = () => {
 
   // ✅ NEW: Prepare transaction for receipt screen - preserves all service data
   const prepareForReceipt = (tx: any) => {
+    // Debug: Log the transaction data to see what's available
+    console.log('🔍 prepareForReceipt Debug:', {
+      transactionId: tx?.id,
+      type: tx?.type,
+      details: tx?.details,
+      hasToken: !!(tx?.details?.token),
+      fullTx: tx
+    });
+
     // Get display values for UI
     const serviceType = String(tx?.type || '');
     const serviceStatus = String(tx?.status || '');
@@ -237,13 +255,24 @@ const TransactionHistoryScreen = () => {
 
     // Return transaction with UI-friendly display fields
     // but preserve ALL original data including NGNZ withdrawal fields
-    return {
+    const preparedTx = {
       ...tx, // ✅ Keep everything from service (bankName, accountNumber, etc.)
       type: humanType,
       status: humanStatus,
       amount: displayAmount,
       date: displayDate,
     };
+
+    // Debug: Log the prepared transaction to see what's being passed
+    console.log('🔍 prepareForReceipt Result:', {
+      transactionId: preparedTx?.id,
+      type: preparedTx?.type,
+      details: preparedTx?.details,
+      hasToken: !!(preparedTx?.details?.token),
+      tokenValue: preparedTx?.details?.token
+    });
+
+    return preparedTx;
   };
 
   // Filter sheet component
