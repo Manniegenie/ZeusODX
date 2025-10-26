@@ -8,7 +8,7 @@ type AddressCopiedProps = {
   autoHide?: boolean;
   duration?: number;
   dismissible?: boolean;
-  label?: string; // optional override, defaults to "Address Copied"
+  label?: string; // optional override, defaults to "Copied"
 };
 
 const AddressCopied: React.FC<AddressCopiedProps> = ({
@@ -16,7 +16,7 @@ const AddressCopied: React.FC<AddressCopiedProps> = ({
   autoHide = true,
   duration = 1800,
   dismissible = true,
-  label = 'Address Copied',
+  label = 'Copied',
 }) => {
   const slideAnim = useRef(new Animated.Value(-90)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
