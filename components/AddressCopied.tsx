@@ -1,8 +1,7 @@
 // components/AddressCopied.tsx
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableWithoutFeedback } from 'react-native';
+import { Animated, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { Typography } from '../constants/Typography';
-import { Colors } from '../constants/Colors';
 
 type AddressCopiedProps = {
   onDismiss?: () => void;

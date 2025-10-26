@@ -1,25 +1,26 @@
 // screens/withdrawal/WithdrawalReceiptScreen.tsx
-import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  Alert,
-  Share,
-  ScrollView,
-  Platform,
-  Linking,
-} from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import * as Print from 'expo-print';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Typography } from '../../constants/Typography';
+import React, { useState } from 'react';
+import {
+    Alert,
+    Image,
+    Linking,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import AddressCopied from '../../components/AddressCopied';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
+import { Typography } from '../../constants/Typography';
 
 // Icons
 import backIcon from '../../components/icons/backy.png';
@@ -337,6 +338,7 @@ export default function WithdrawalReceiptScreen() {
   const parsedTx = safeParseParam(params.tx) as APITransaction | undefined;
   const rawTx = safeParseParam(params.raw) as any | undefined;
   const transaction = parsedTx;
+  const [showCopied, setShowCopied] = useState(false);
 
   const s = statusStyles(transaction?.status || '');
 
@@ -344,7 +346,7 @@ export default function WithdrawalReceiptScreen() {
     if (!value) return;
     try {
       Clipboard.setString(value);
-      Alert.alert('Copied!', `${label} copied to clipboard`);
+      setShowCopied(true);
     } catch {
       Alert.alert('Copy failed', `Unable to copy ${label.toLowerCase()}`);
     }
@@ -567,6 +569,15 @@ export default function WithdrawalReceiptScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      
+      {/* AddressCopied notification */}
+      {showCopied && (
+        <AddressCopied
+          onDismiss={() => setShowCopied(false)}
+          autoHide={true}
+          duration={1800}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -612,7 +623,7 @@ function Row({
             <Image
               source={require('../../components/icons/copy-icon.png')}
               style={styles.copyIcon}
-              resizeMode="contain"
+              resizeMode="cover"
             />
           </TouchableOpacity>
         ) : null}
@@ -742,14 +753,19 @@ const styles = StyleSheet.create({
   secondaryButtonText: { fontSize: 16, fontWeight: '600', color: '#111827', fontFamily: Typography.medium || 'System' },
 
   copyButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    overflow: 'hidden',
   },
-  copyIcon: { width: 16, height: 16 },
+  copyIcon: {
+    width: 32,
+    height: 32,
+    resizeMode: 'cover',
+  },
 });

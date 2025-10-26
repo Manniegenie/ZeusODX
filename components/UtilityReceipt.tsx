@@ -3,7 +3,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import * as Print from 'expo-print';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Alert,
     Image,
@@ -19,6 +19,7 @@ import {
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
+import AddressCopied from './AddressCopied';
 
 // Icons
 // @ts-ignore
@@ -137,9 +138,6 @@ const generateUtilityReceiptHTML = (
   // Airtime specific fields
   if (details.phoneNumber) {
     detailRows.push(`<tr><td>Phone Number</td><td>${asText(details.phoneNumber)}</td></tr>`);
-  }
-  if (details.customerInfo) {
-    detailRows.push(`<tr><td>Customer Info</td><td>${asText(details.customerInfo)}</td></tr>`);
   }
   if (details.serviceProvider) {
     detailRows.push(`<tr><td>Service Provider</td><td>${asText(details.serviceProvider)}</td></tr>`);
@@ -307,6 +305,7 @@ export default function UtilityReceipt() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const transaction = safeParseParam(params.tx) as UtilityTransaction | undefined;
+  const [showCopied, setShowCopied] = useState(false);
 
   useEffect(() => {
     if (transaction) {
@@ -324,7 +323,7 @@ export default function UtilityReceipt() {
     if (!value) return;
     try {
       Clipboard.setString(value);
-      Alert.alert('Copied!', `${label} copied to clipboard`);
+      setShowCopied(true);
     } catch {
       Alert.alert('Copy failed', `Unable to copy ${label.toLowerCase()}`);
     }
@@ -465,14 +464,6 @@ export default function UtilityReceipt() {
               onCopy={(v) => handleCopy('Phone Number', v)}
             />
           )}
-          {details.customerInfo && (
-            <Row 
-              label="Customer Info" 
-              value={asText(details.customerInfo)}
-              copyableValue={details.customerInfo}
-              onCopy={(v) => handleCopy('Customer Info', v)}
-            />
-          )}
           {details.serviceProvider && (
             <Row label="Service Provider" value={asText(details.serviceProvider)} />
           )}
@@ -565,6 +556,15 @@ export default function UtilityReceipt() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      
+      {/* AddressCopied notification */}
+      {showCopied && (
+        <AddressCopied
+          onDismiss={() => setShowCopied(false)}
+          autoHide={true}
+          duration={1800}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -596,9 +596,9 @@ function Row({
             activeOpacity={0.8}
           >
             <Image
-              source={require('./icons/copy-icon.png')}
+              source={require('../../components/icons/copy-icon.png')}
               style={styles.copyIcon}
-              resizeMode="contain"
+              resizeMode="cover"
             />
           </TouchableOpacity>
         ) : null}
@@ -723,14 +723,19 @@ const styles = StyleSheet.create({
   secondaryButtonText: { fontSize: 16, fontWeight: '600', color: '#111827', fontFamily: Typography.medium || 'System' },
 
   copyButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: '#E5E7EB',
+    overflow: 'hidden',
   },
-  copyIcon: { width: 16, height: 16 },
+  copyIcon: {
+    width: 32,
+    height: 32,
+    resizeMode: 'cover',
+  },
 });

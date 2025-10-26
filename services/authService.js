@@ -1,6 +1,6 @@
-import { apiClient } from './apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { apiClient } from './apiClient';
 
 export const authService = {
   // Storage keys
