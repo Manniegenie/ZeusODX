@@ -596,7 +596,7 @@ function Row({
             activeOpacity={0.8}
           >
             <Image
-              source={require('../../components/icons/copy-icon.png')}
+              source={require('./icons/copy-icon.png')}
               style={styles.copyIcon}
               resizeMode="cover"
             />
