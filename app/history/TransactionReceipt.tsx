@@ -554,7 +554,13 @@ export default function TransactionReceiptScreen() {
     details: transaction?.details,
     rawTx: rawTx,
     extractedToken: extractField(transaction, d, rawTx, ['token', 'electricityToken', 'meterToken']),
-    allDetails: d
+    allDetails: d,
+    // Debug: Check if token exists in different places
+    tokenInDetails: transaction?.details?.token,
+    tokenInRawTx: rawTx?.token,
+    tokenInTransaction: transaction?.token,
+    // Debug: Check the full transaction object
+    fullTransaction: transaction
   });
   
   const merged: TokenDetails & UtilityDetails = {
