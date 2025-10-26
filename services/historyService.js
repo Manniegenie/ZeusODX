@@ -660,11 +660,11 @@ export const transactionService = {
       details: {
         ...transaction.details,
         ...(transaction.metaData && {
-          token: transaction.metaData.token,
-          units: transaction.metaData.units,
-          band: transaction.metaData.band,
-          customerName: transaction.metaData.customer_name,
-          customerAddress: transaction.metaData.customer_address
+          token: transaction.metaData.token || transaction.details?.token,
+          units: transaction.metaData.units || transaction.details?.units,
+          band: transaction.metaData.band || transaction.details?.band,
+          customerName: transaction.metaData.customer_name || transaction.details?.customerName,
+          customerAddress: transaction.metaData.customer_address || transaction.details?.customerAddress
         }),
         category: 'utility',
         billCategory: transaction.type
