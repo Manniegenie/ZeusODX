@@ -555,18 +555,14 @@ export default function TransactionReceiptScreen() {
   const d = (transaction?.details || {}) as TokenDetails & UtilityDetails;
   
   // Debug: Log the transaction details to see what's available
+  const extractedToken = (d as any).token || (transaction?.details as any)?.token || (rawTx?.details as any)?.token || (rawTx as any)?.token;
   console.log('🔍 TransactionReceipt Debug:', {
     transactionId: transaction?.id,
-    details: transaction?.details,
-    rawTx: rawTx,
-    extractedToken: extractField(transaction, d, rawTx, ['token', 'electricityToken', 'meterToken']),
-    allDetails: d,
-    // Debug: Check if token exists in different places
-    tokenInDetails: transaction?.details?.token,
-    tokenInRawTx: rawTx?.token,
-    tokenInTransaction: transaction?.token,
-    // Debug: Check the full transaction object
-    fullTransaction: transaction
+    extractedToken,
+    hasToken: !!extractedToken,
+    billType: (d as any).billType,
+    rawTxDetails: (rawTx as any)?.details,
+    transactionDetails: (transaction as any)?.details
   });
   
   const merged: TokenDetails & UtilityDetails = {
@@ -587,12 +583,12 @@ export default function TransactionReceiptScreen() {
     billType: extractField(transaction, d, rawTx, ['billType', 'type']),
     paymentCurrency: extractField(transaction, d, rawTx, ['paymentCurrency']),
     
-    // Electricity specific fields
-    token: extractField(transaction, d, rawTx, ['token', 'electricityToken', 'meterToken']),
-    units: extractField(transaction, d, rawTx, ['units', 'kwh', 'kilowattHours']),
-    band: extractField(transaction, d, rawTx, ['band', 'tariffBand']),
-    customerName: extractField(transaction, d, rawTx, ['customerName', 'customer_name', 'accountName']),
-    customerAddress: extractField(transaction, d, rawTx, ['customerAddress', 'customer_address', 'address']),
+    // Electricity specific fields - simplified direct access
+    token: (d as any).token || (transaction?.details as any)?.token || (rawTx?.details as any)?.token || (rawTx as any)?.token,
+    units: (d as any).units || (transaction?.details as any)?.units || (rawTx?.details as any)?.units || (rawTx as any)?.units,
+    band: (d as any).band || (transaction?.details as any)?.band || (rawTx?.details as any)?.band || (rawTx as any)?.band,
+    customerName: (d as any).customerName || (transaction?.details as any)?.customerName || (rawTx?.details as any)?.customerName || (rawTx as any)?.customerName,
+    customerAddress: (d as any).customerAddress || (transaction?.details as any)?.customerAddress || (rawTx?.details as any)?.customerAddress || (rawTx as any)?.customerAddress,
     
     isNGNZWithdrawal,
     withdrawalReference: extractField(transaction, d, rawTx, [
@@ -642,6 +638,16 @@ export default function TransactionReceiptScreen() {
     
     swapDetails: d.swapDetails,
   };
+
+  // Debug: Log the merged object to see what's actually in it
+  console.log('🔍 TransactionReceipt Debug:', {
+    transactionId: transaction?.id,
+    extractedToken,
+    hasToken: !!extractedToken,
+    billType: (d as any).billType,
+    category: cat,
+    type: transaction?.type
+  });
 
   useEffect(() => {
     if (isNGNZWithdrawal) {
@@ -887,6 +893,16 @@ export default function TransactionReceiptScreen() {
               {merged.fee !== undefined && merged.fee !== null && (
                 <Row label="Fee" value={asText(merged.fee)} />
               )}
+            </>
+          ) : (
+            <>
+              <Row label="Order ID" value={asText(merged.orderId)} />
+              <Row label="Product" value={asText(merged.productName)} />
+              <Row label="Quantity" value={asText(merged.quantity)} />
+              <Row label="Network" value={asText(merged.network)} />
+              <Row label="Customer" value={asText(merged.customerInfo)} />
+              <Row label="Bill Type" value={asText(merged.billType)} />
+              <Row label="Pay Currency" value={asText(merged.paymentCurrency)} />
               
               {/* Electricity specific fields */}
               {merged.token && (
@@ -895,13 +911,6 @@ export default function TransactionReceiptScreen() {
                   value={formatToken(merged.token)}
                   copyableValue={merged.token}
                   onCopy={(v) => handleCopy('Token', v)}
-                />
-              )}
-              {/* Debug: Always show token field for debugging */}
-              {!merged.token && (
-                <Row 
-                  label="Token (Debug)" 
-                  value={`No token found. Raw: ${JSON.stringify(transaction?.details)}`}
                 />
               )}
               {merged.units && (
@@ -916,16 +925,6 @@ export default function TransactionReceiptScreen() {
               {merged.customerAddress && (
                 <Row label="Address" value={asText(merged.customerAddress)} />
               )}
-            </>
-          ) : (
-            <>
-              <Row label="Order ID" value={asText(merged.orderId)} />
-              <Row label="Product" value={asText(merged.productName)} />
-              <Row label="Quantity" value={asText(merged.quantity)} />
-              <Row label="Network" value={asText(merged.network)} />
-              <Row label="Customer" value={asText(merged.customerInfo)} />
-              <Row label="Bill Type" value={asText(merged.billType)} />
-              <Row label="Pay Currency" value={asText(merged.paymentCurrency)} />
             </>
           )}
         </View>
