@@ -156,8 +156,7 @@ const CableTvScreen: React.FC = () => {
     clearError: clearCustomerError,
     clearCustomerData,
     formatCustomerName,
-    getUserFriendlyMessage: getCustomerUserFriendlyMessage,
-    getErrorAction: getCustomerErrorAction
+    getUserFriendlyMessage: getCustomerUserFriendlyMessage
   } = useCustomer();
   
   // Form state
@@ -332,7 +331,7 @@ const CableTvScreen: React.FC = () => {
         // Customer verified successfully - verification state will be updated by useEffect
       } else {
         // Handle verification failure
-        const errorAction = getCustomerErrorAction?.(result?.requiresAction || 'RETRY');
+        const errorAction = getErrorAction?.(result?.requiresAction || 'RETRY');
         const friendlyMessage = getCustomerUserFriendlyMessage?.(result?.error, result?.message);
         
         if (errorAction) {

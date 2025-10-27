@@ -56,8 +56,7 @@ const BettingScreen: React.FC = () => {
     clearCustomerData,
     setCustomerData,
     formatCustomerName,
-    getUserFriendlyMessage: getCustomerUserFriendlyMessage,
-    getErrorAction: getCustomerErrorAction
+    getUserFriendlyMessage: getCustomerUserFriendlyMessage
   } = useCustomer() as any;
 
   const [selectedProvider, setSelectedProvider] = useState<BettingProvider | null>(null);
@@ -142,7 +141,7 @@ const BettingScreen: React.FC = () => {
         console.log('🎰 Setting customer data from PayBeta validation:', customerData);
         setCustomerData(customerData);
       } else {
-        const errorAction = getCustomerErrorAction((result as any)?.requiresAction || 'RETRY');
+        const errorAction = getErrorAction((result as any)?.requiresAction || 'RETRY');
         const friendlyMessage = getCustomerUserFriendlyMessage((result as any)?.error, (result as any)?.message);
         showErrorMessage({
           type: errorAction ? 'validation' : 'server',

@@ -101,7 +101,6 @@ const ElectricityScreen: React.FC = () => {
     setCustomerData,
     formatCustomerName,
     getUserFriendlyMessage,
-    getErrorAction: getCustomerErrorAction
   } = useCustomer() as any;
 
   // Debug customer data changes
@@ -280,7 +279,7 @@ const ElectricityScreen: React.FC = () => {
         console.log('🔌 Setting customer data from PayBeta validation:', customerData);
         setCustomerData(customerData);
       } else {
-        const errorAction = getCustomerErrorAction(result?.requiresAction || 'RETRY');
+        const errorAction = getErrorAction(result?.requiresAction || 'RETRY');
         const friendlyMessage = getUserFriendlyMessage(result?.error, result?.message);
         if (errorAction) {
           showErrorMessage({ type: 'validation', title: errorAction.title, message: errorAction.message, autoHide: true, duration: 4000 });
