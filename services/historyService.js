@@ -736,6 +736,7 @@ export const transactionService = {
   mapBillStatus(status) {
     const statusMap = {
       'Successful': 'SUCCESSFUL',
+      'successful': 'SUCCESSFUL',  // PayBeta airtime uses 'successful'
       'Failed': 'FAILED', 
       'Pending': 'PENDING',
       'completed': 'SUCCESSFUL',  // PayBeta electricity uses 'completed'
