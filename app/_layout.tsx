@@ -23,6 +23,9 @@ import { getLayoutConfig } from '../utils/responsiveLayout';
 // Optional: warm up Tawk chat on app start
 import { TawkPrefetcher } from '../components/TawkSupport';
 
+// Expo Notifications imports
+import { initializeExpoNotifications, setupNotificationListeners } from '../services/expoNotificationService';
+
 const TAWK_DIRECT_LINK =
   process.env.EXPO_PUBLIC_TAWK_DIRECT_LINK ||
   'https://tawk.to/chat/68b186eb517e5918ffb583a8/1j3qne2kl';
@@ -50,10 +53,22 @@ export default function RootLayout() {
   const [isSplashAnimationComplete, setIsSplashAnimationComplete] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  // Initialize auth (simulate auth check delay)
+  // Initialize auth and Expo Notifications (simulate auth check delay)
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        // Initialize Expo Notifications
+        console.log('🚀 Initializing Expo Notifications...');
+        const notificationResult = await initializeExpoNotifications();
+        if (notificationResult.success) {
+          console.log('✅ Expo Notifications initialized successfully');
+        } else {
+          console.log('⚠️ Expo Notifications initialization failed:', notificationResult.error);
+        }
+
+        // Set up notification listeners
+        setupNotificationListeners();
+
         await new Promise(resolve => setTimeout(resolve, 1000));
       } finally {
         setIsAuthReady(true);

@@ -1,20 +1,23 @@
+import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  ActivityIndicator,
-  ImageSourcePropType,
+    ActivityIndicator,
+    Image,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Typography } from '../../constants/Typography';
+import ErrorDisplay from '../../components/ErrorDisplay';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import ErrorDisplay from '../../components/ErrorDisplay';
+import { Typography } from '../../constants/Typography';
 import { useEmailVerification } from '../../hooks/useEmailVerification';
 import { useUserProfile } from '../../hooks/useProfile';
+
+// Icons - Updated to match btc-bsc screen
+import backIcon from '../../components/icons/backy.png';
 
 interface ErrorAction {
   title: string;
@@ -51,7 +54,6 @@ export default function VerifyEmailSendScreen() {
   const [showErrorDisplay, setShowErrorDisplay] = useState(false);
   const [errorDisplayData, setErrorDisplayData] = useState<ErrorDisplayData | null>(null);
 
-  const handleBackPress = () => router.back();
 
   const showErrorMessage = (d: ErrorDisplayData) => {
     setErrorDisplayData(d);
@@ -156,14 +158,14 @@ export default function VerifyEmailSendScreen() {
         {/* Header */}
         <View style={styles.headerSection}>
           <View style={styles.headerContainer}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={handleBackPress}
+            <TouchableOpacity 
+              style={styles.backButton} 
+              onPress={() => router.back()}
               activeOpacity={0.7}
               delayPressIn={0}
               hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             >
-              <Text style={styles.backButtonText}>←</Text>
+              <Image source={backIcon} style={styles.backIcon} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Verify Email</Text>
             <View style={styles.emptySpace} />
@@ -230,8 +232,18 @@ const styles = StyleSheet.create({
 
   headerSection: { paddingTop: 12, paddingBottom: 6 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { width: 48, height: 48, justifyContent: 'center', alignItems: 'center', borderRadius: 24, backgroundColor: 'rgba(0,0,0,0.02)', overflow: 'hidden' },
-  backButtonText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
+  backButton: { 
+    width: 40,
+    height: 40,
+    justifyContent: 'center', 
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  backIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
   headerTitle: {
     color: '#35297F',
     fontFamily: Typography.medium || 'System',
