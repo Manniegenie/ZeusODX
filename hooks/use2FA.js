@@ -1,5 +1,5 @@
 // hooks/use2FA.js
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { twoFAService } from '../services/2faService';
 
 /**
@@ -117,14 +117,26 @@ export const use2FA = () => {
 
   /**
    * Disable 2FA
+   * @param {string} token - 6-digit 2FA code from authenticator app
    * @returns {Promise<Object>} Disable result
    */
-  const disable2FA = useCallback(async () => {
+  const disable2FA = useCallback(async (token) => {
+    if (!token || typeof token !== 'string' || token.length !== 6) {
+      const errorResult = {
+        success: false,
+        error: 'VALIDATION_ERROR',
+        message: 'Valid 6-digit 2FA code is required to disable 2FA',
+        requiresAction: 'RETRY'
+      };
+      setError(errorResult.error);
+      return errorResult;
+    }
+
     setLoading(true);
     setError(null);
     
     try {
-      const result = await twoFAService.disable2FA();
+      const result = await twoFAService.disable2FA(token);
       
       if (result.success) {
         setIsEnabled(false);

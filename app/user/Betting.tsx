@@ -397,6 +397,7 @@ const BettingScreen: React.FC = () => {
                   onChangeText={handleUserIdChange}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  keyboardType="numeric"
                 />
               </View>
               <TouchableOpacity

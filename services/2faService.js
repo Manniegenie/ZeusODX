@@ -141,13 +141,22 @@ export const twoFAService = {
 
   /**
    * Disable 2FA
+   * @param {string} token - 6-digit 2FA code from authenticator app
    * @returns {Promise<Object>} Disable response
    */
-  async disable2FA() {
+  async disable2FA(token) {
     try {
-      console.log('🔐 Starting 2FA disable...');
+      if (!token || typeof token !== 'string' || token.length !== 6) {
+        return {
+          success: false,
+          error: 'VALIDATION_ERROR',
+          message: 'Valid 6-digit 2FA code is required to disable 2FA'
+        };
+      }
 
-      const response = await apiClient.post('/2FA/disable-2fa');
+      console.log('🔐 Starting 2FA disable with verification...');
+
+      const response = await apiClient.post('/2FA/disable-2fa', { token });
 
       // Handle successful response
       if (response.success && response.data) {

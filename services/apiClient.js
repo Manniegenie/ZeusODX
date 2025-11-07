@@ -4,8 +4,8 @@ import * as Updates from 'expo-updates';
 class ApiClient {
   constructor() {
     this.baseURL = __DEV__ 
-      ? 'https://zeusodx-web.onrender.com'
-      : 'https://zeusodx-web.onrender.com';
+      ? 'https://zeusadminxyz.online'
+      : 'https://zeusadminxyz.online';
     
     this.headers = {
       'Content-Type': 'application/json',

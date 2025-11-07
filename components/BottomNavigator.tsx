@@ -209,10 +209,10 @@ interface Styles {
 
 const styles = StyleSheet.create<Styles>({
   safeAreaContainer: {
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FAFAFA',
   },
   container: {
-    backgroundColor: Colors.surface,
+    backgroundColor: '#FAFAFA',
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
     paddingTop: 8,
