@@ -197,7 +197,7 @@ export const useElectricity = () => {
         title: '2FA Setup Required',
         message: 'Two-factor authentication is required for transactions. Please set it up in your security settings.',
         actionText: 'Setup 2FA',
-        route: '/security/2fa',
+        route: '/profile/2FA',
         priority: 'high'
       },
       SETUP_PIN: {

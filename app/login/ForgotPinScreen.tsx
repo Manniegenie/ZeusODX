@@ -1,18 +1,18 @@
 // app/login/ForgotPinScreen.tsx
-import React, { useState, useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  Image,
+    Image,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Typography } from '../../constants/Typography';
+import ErrorDisplay from '../../components/ErrorDisplay';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import ErrorDisplay from '../../components/ErrorDisplay';
+import { Typography } from '../../constants/Typography';
 import { useForgotPin } from '../../hooks/useforgotpin';
 
 // Back icon import - matching BTC-BSC screen
@@ -140,7 +140,7 @@ export default function ForgotPinScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Reset your PIN</Text>
           <Text style={styles.subtitle}>
-            We'll send a 6-digit verification code to the email associated with your phone number.
+            We will send a 6-digit verification code to the email associated with your phone number.
           </Text>
         </View>
 

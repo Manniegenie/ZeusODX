@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import backIcon from '../../../components/icons/backy.png';
 import { Colors } from '../../../constants/Colors';
 import { Typography } from '../../../constants/Typography';
@@ -40,7 +40,7 @@ export default function VerifyIndex() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.card} onPress={() => router.push('/kyc/verify/drivers-license')}>
-            <Text style={styles.cardTitle}>Driver's License</Text>
+          <Text style={styles.cardTitle}>{`Driver's License`}</Text>
             <Text style={styles.cardSub}>Authority Check + selfie</Text>
           </TouchableOpacity>
         </View>

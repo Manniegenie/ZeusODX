@@ -666,7 +666,6 @@ const styles = StyleSheet.create({
   },
   rowValueContainer: {
     flex: 2,
-    alignItems: 'flex-end',
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',

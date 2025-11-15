@@ -28,7 +28,20 @@ export const logoutService = {
    * @returns {Promise<{success:boolean, message:string, error?:string, status?:number}>}
    */
   async logout({ userId, refreshToken, signal } = {}) {
-    if (!userId || !refreshToken) {
+    let targetUserId = userId;
+    let targetRefreshToken = refreshToken;
+
+    if (!targetUserId || !targetRefreshToken) {
+      try {
+        const session = await apiClient.getAuthSession();
+        targetUserId = targetUserId || session.userId;
+        targetRefreshToken = targetRefreshToken || session.refreshToken;
+      } catch (error) {
+        console.error('Failed to read auth session during logout:', error);
+      }
+    }
+
+    if (!targetUserId || !targetRefreshToken) {
       return {
         success: false,
         error: 'MISSING_FIELDS',
@@ -39,7 +52,7 @@ export const logoutService = {
     try {
       const resp = await apiClient.post(
         '/logout',
-        { userId, refreshToken },
+        { userId: targetUserId, refreshToken: targetRefreshToken },
         { signal }
       );
 

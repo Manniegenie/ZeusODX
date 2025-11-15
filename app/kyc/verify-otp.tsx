@@ -46,7 +46,7 @@ export default function VerifyEmailOtpScreen() {
 
   // OTP inputs
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const inputRefs = useRef<Array<TextInput | null>>([]);
+  const inputRefs = useRef<(TextInput | null)[]>([]);
 
   // Resend timer
   const [countdown, setCountdown] = useState(TIMER_SECS);
@@ -255,7 +255,7 @@ export default function VerifyEmailOtpScreen() {
         {/* Resend */}
         <View style={styles.resendContainer}>
           <View style={styles.resendTextContainer}>
-            <Text style={styles.resendText}>Didn't receive the code? </Text>
+            <Text style={styles.resendText}>Did not receive the code? </Text>
             <TouchableOpacity onPress={handleResend} disabled={!canResend || initiating} activeOpacity={0.7}>
               <Text
                 style={[

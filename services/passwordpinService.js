@@ -1,5 +1,5 @@
-import { apiClient } from './apiClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiClient } from './apiClient';
 
 export const passwordPinService = {
   async setPasswordPin(passwordPinData) {
@@ -41,6 +41,9 @@ export const passwordPinService = {
           storagePromises.push(
             AsyncStorage.setItem('user_data', JSON.stringify(response.data.user))
           );
+          if (response.data.user._id) {
+            storagePromises.push(apiClient.setUserId(response.data.user._id.toString()))
+          }
           
           // Also save username separately for easy access
           if (response.data.user.username) {

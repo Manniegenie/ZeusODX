@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { apiClient } from './apiClient';
+import NotificationService from './notificationService';
 
 export const authService = {
   // Storage keys
@@ -58,7 +59,7 @@ export const authService = {
   // Store refresh token securely
   async setRefreshToken(refreshToken) {
     try {
-      await SecureStore.setItemAsync(this.REFRESH_TOKEN_KEY, refreshToken);
+      await apiClient.setRefreshToken(refreshToken);
       console.log('✅ Refresh token stored securely');
     } catch (error) {
       console.error('❌ Error storing refresh token:', error);
@@ -69,7 +70,7 @@ export const authService = {
   // Get refresh token securely
   async getRefreshToken() {
     try {
-      const refreshToken = await SecureStore.getItemAsync(this.REFRESH_TOKEN_KEY);
+      const refreshToken = await apiClient.getRefreshToken();
       return refreshToken;
     } catch (error) {
       console.error('❌ Error getting refresh token:', error);
@@ -80,7 +81,7 @@ export const authService = {
   // Clear refresh token securely
   async clearRefreshToken() {
     try {
-      await SecureStore.deleteItemAsync(this.REFRESH_TOKEN_KEY);
+      await apiClient.clearRefreshToken();
       console.log('✅ Refresh token cleared from SecureStore');
     } catch (error) {
       console.error('❌ Error clearing refresh token:', error);
@@ -186,6 +187,9 @@ export const authService = {
       // Store user data in AsyncStorage (non-sensitive)
       if (response.data.user) {
         await AsyncStorage.setItem('user_data', JSON.stringify(response.data.user));
+        if (response.data.user._id) {
+          await apiClient.setUserId(response.data.user._id.toString());
+        }
       }
       
       // Store portfolio data in AsyncStorage (non-sensitive)
@@ -216,6 +220,10 @@ export const authService = {
         await this.saveUsername(response.data.user.username);
       }
       
+      if (response.data.user && response.data.user._id) {
+        await apiClient.setUserId(response.data.user._id.toString());
+      }
+      
       // Store access token securely using apiClient
       if (response.data.accessToken) {
         await apiClient.setAuthToken(response.data.accessToken);
@@ -234,11 +242,11 @@ export const authService = {
     console.log('🚪 Logging out user');
     
     try {
-      // Clear auth token securely using apiClient
-      await apiClient.clearAuthToken();
-      
-      // Clear refresh token securely
-      await this.clearRefreshToken();
+      // Attempt to unregister push notification tokens before clearing local data
+      await NotificationService.unregisterTokens();
+
+      // Clear auth tokens and user session securely
+      await apiClient.clearSession();
       
       // Clear biometric PIN
       await this.clearBiometricPin();

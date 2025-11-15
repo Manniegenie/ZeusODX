@@ -350,9 +350,16 @@ class CustomerService {
     try {
       const response = await apiClient.post('/verifycabletv/verify', {
         service_id: serviceId,
-        customer_id: customerId
+        customer_id: customerId,
+        service: serviceId,
+        smartCardNumber: customerId
       });
-      return response.data;
+
+      const payload = response.data || {};
+      return {
+        ...payload,
+        success: payload.status?.toLowerCase?.() === 'successful'
+      };
     } catch (error) {
       // Handle different types of errors
       if (error.response?.data) {

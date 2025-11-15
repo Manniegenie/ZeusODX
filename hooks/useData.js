@@ -1,5 +1,5 @@
 // hooks/useData.js
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { dataService } from '../services/dataService';
 
 /**
@@ -293,7 +293,7 @@ export const useData = () => {
         title: '2FA Setup Required',
         message: 'Two-factor authentication is required for transactions. Please set it up in your security settings.',
         actionText: 'Setup 2FA',
-        route: '/security/2fa',
+        route: '/profile/2FA',
         priority: 'high'
       },
       'SETUP_PIN': {

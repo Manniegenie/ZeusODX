@@ -1,19 +1,19 @@
 // app/login/ForgotPinVerifyScreen.tsx
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  TextInput,
-  Vibration,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    Vibration,
+    View,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Typography } from '../../constants/Typography';
+import ErrorDisplay from '../../components/ErrorDisplay';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import ErrorDisplay from '../../components/ErrorDisplay';
+import { Typography } from '../../constants/Typography';
 import { useUserProfile } from '../../hooks/useProfile';
 import { useForgotPin } from '../../hooks/useforgotpin';
 
@@ -63,7 +63,7 @@ export default function ForgotPinVerifyScreen() {
   }, [profilePhone, hookPhoneNumber, passedPhone, setHookPhoneNumber]);
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const inputRefs = useRef<Array<TextInput | null>>([]);
+  const inputRefs = useRef<(TextInput | null)[]>([]);
   const [countdown, setCountdown] = useState(TIMER_SECS);
   const [canResend, setCanResend] = useState(false);
   const [showErrorDisplay, setShowErrorDisplay] = useState(false);
@@ -276,7 +276,7 @@ export default function ForgotPinVerifyScreen() {
 
         <View style={styles.resendContainer}>
           <View style={styles.resendTextContainer}>
-            <Text style={styles.resendText}>Didn't receive the code? </Text>
+            <Text style={styles.resendText}>Did not receive the code? </Text>
             <TouchableOpacity onPress={handleResend} disabled={!canResend} activeOpacity={0.7}>
               <Text
                 style={[

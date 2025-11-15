@@ -1,3 +1,7 @@
+/**
+ * useNotifications Hook
+ * Provides notification functionality to components
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 import NotificationService from '../services/notificationService';
@@ -20,6 +24,8 @@ export const useNotifications = () => {
       const result = await NotificationService.enable();
       if (result.success) {
         setIsEnabled(true);
+        // Register token after enabling
+        await NotificationService.registerPushToken();
       }
       return result;
     } finally {
@@ -34,6 +40,8 @@ export const useNotifications = () => {
       const result = await NotificationService.autoEnable();
       if (result.success) {
         setIsEnabled(true);
+        // Register token after enabling
+        await NotificationService.registerPushToken();
       }
       return result;
     } finally {
@@ -59,6 +67,20 @@ export const useNotifications = () => {
   // Remove listeners
   const removeListeners = useCallback(() => {
     NotificationService.removeListeners();
+  }, []);
+
+  // Initialize notifications
+  const initialize = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const result = await NotificationService.initialize();
+      if (result.success) {
+        setIsEnabled(true);
+      }
+      return result;
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   // Check status on mount
@@ -89,5 +111,6 @@ export const useNotifications = () => {
     setupListeners,
     removeListeners,
     checkStatus,
+    initialize,
   };
 };

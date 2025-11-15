@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { withdrawalService } from '../services/externalwithdrawalService';
 
 export const useWithdrawal = () => {
@@ -146,7 +146,7 @@ export const useWithdrawal = () => {
           title: '2FA Setup Required',
           message: 'Two-factor authentication is required for withdrawals. Please set up 2FA to continue.',
           actionText: 'Setup 2FA',
-          route: '/settings/security/2fa',
+          route: '/profile/2FA',
           priority: 'high'
         };
       case 'SETUP_PIN_REQUIRED':

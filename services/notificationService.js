@@ -1,10 +1,15 @@
+/**
+ * Notification Service
+ * Handles all Expo notification functionality including permissions, tokens, and listeners
+ */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { Linking, Platform } from 'react-native';
-import { v4 as uuidv4 } from 'uuid';
+import { Platform } from 'react-native';
+import { apiClient } from './apiClient';
 
+// Configure notification behavior
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -15,18 +20,15 @@ Notifications.setNotificationHandler({
 
 class NotificationService {
   constructor() {
-    this.pushToken = null;
-    this.listeners = [];
+    this.notificationListener = null;
+    this.responseListener = null;
+    this.expoPushToken = null;
+    this.isInitialized = false;
   }
 
-  static getInstance() {
-    if (!NotificationService.instance) {
-      NotificationService.instance = new NotificationService();
-    }
-    return NotificationService.instance;
-  }
-
-  // Check if notifications are enabled
+  /**
+   * Check if notifications are enabled
+   */
   async isEnabled() {
     try {
       const { status } = await Notifications.getPermissionsAsync();
@@ -37,108 +39,64 @@ class NotificationService {
     }
   }
 
-  // Auto-enable notifications for Android (as requested by user)
-  async autoEnable() {
-    if (!Device.isDevice) {
-      return { success: false, message: 'Notifications require a physical device' };
-    }
-
-    try {
-      // Check if already enabled
-      const alreadyEnabled = await this.isEnabled();
-      if (alreadyEnabled) {
-        return { success: true, message: 'Notifications already enabled' };
-      }
-
-      // For Android, automatically enable notifications
-      if (Platform.OS === 'android') {
-        console.log('🤖 Auto-enabling notifications for Android');
-        return await this.enable();
-      }
-
-      // For iOS, still require user permission
-      return await this.enable();
-    } catch (error) {
-      console.error('Error auto-enabling notifications:', error);
-      return { success: false, message: 'Failed to auto-enable notifications' };
-    }
-  }
-
-  // Request notification permissions and register
+  /**
+   * Request notification permissions
+   */
   async enable() {
-    if (!Device.isDevice) {
-      return { success: false, message: 'Notifications require a physical device' };
-    }
-
     try {
-      // Setup Android channels first
-      if (Platform.OS === 'android') {
-        await this.setupAndroidChannels();
-      }
-
-      // Request permissions with Android-specific options
-      const permissionRequest = {
-        ios: {
-          allowAlert: true,
-          allowSound: true,
-          allowBadge: true,
-        },
+      const { status } = await Notifications.requestPermissionsAsync();
+      return {
+        success: status === 'granted',
+        status
       };
-
-      // Add Android-specific permissions
-      if (Platform.OS === 'android') {
-        permissionRequest.android = {
-          allowAlert: true,
-          allowSound: true,
-          allowBadge: true,
-        };
-      }
-
-      const { status } = await Notifications.requestPermissionsAsync(permissionRequest);
-
-      if (status !== 'granted') {
-        return { 
-          success: false, 
-          message: 'Permission denied. Please enable notifications in Settings.' 
-        };
-      }
-
-      // Get push token
-      const token = await this.getPushToken();
-      if (!token) {
-        return { success: false, message: 'Failed to get push token' };
-      }
-
-      this.pushToken = token;
-      await AsyncStorage.setItem('expo_push_token', token);
-
-      // Register with backend
-      const registered = await this.registerWithBackend(token);
-      if (!registered) {
-        return { success: false, message: 'Failed to register with backend' };
-      }
-
-      return { success: true };
     } catch (error) {
       console.error('Error enabling notifications:', error);
-      return { success: false, message: 'Failed to enable notifications' };
+      return {
+        success: false,
+        error: error.message
+      };
     }
   }
 
-  // Open device notification settings
+  /**
+   * Auto-enable notifications (for Android)
+   */
+  async autoEnable() {
+    try {
+      if (Platform.OS === 'android') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        return {
+          success: status === 'granted',
+          status
+        };
+      }
+      return {
+        success: false,
+        message: 'Auto-enable only available on Android'
+      };
+    } catch (error) {
+      console.error('Error auto-enabling notifications:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Open notification settings
+   */
   async openSettings() {
     try {
-      if (Platform.OS === 'ios') {
-        await Linking.openURL('app-settings:');
-      } else {
-        await Linking.openSettings();
-      }
+      await Notifications.openSettingsAsync();
     } catch (error) {
-      console.error('Error opening settings:', error);
+      console.error('Error opening notification settings:', error);
     }
   }
 
-  // Clear badge count
+  /**
+   * Clear notification badge
+   */
   async clearBadge() {
     try {
       await Notifications.setBadgeCountAsync(0);
@@ -147,110 +105,72 @@ class NotificationService {
     }
   }
 
-  // Setup listeners
-  setupListeners(onReceived, onTapped) {
-    this.removeListeners();
-
-    if (onReceived) {
-      this.listeners.push(
-        Notifications.addNotificationReceivedListener(onReceived)
-      );
-    }
-
-    if (onTapped) {
-      this.listeners.push(
-        Notifications.addNotificationResponseReceivedListener(onTapped)
-      );
-    }
-  }
-
-  removeListeners() {
-    this.listeners.forEach(sub => {
-      Notifications.removeNotificationSubscription(sub);
-    });
-    this.listeners = [];
-  }
-
-  // Private helper methods
-  async setupAndroidChannels() {
+  /**
+   * Get Expo push token
+   */
+  async getExpoPushToken() {
     try {
-      // Create default channel
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'Default Notifications',
-        description: 'General app notifications',
-        importance: Notifications.AndroidImportance.HIGH,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#35297F',
-        sound: 'default',
-        enableVibrate: true,
-        enableLights: true,
-        showBadge: true,
-        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-      });
-
-      // Create transactions channel (matches backend channelId)
-      await Notifications.setNotificationChannelAsync('transactions', {
-        name: 'Transaction Notifications',
-        description: 'Notifications for deposits, withdrawals, and transfers',
-        importance: Notifications.AndroidImportance.HIGH,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#35297F',
-        sound: 'default',
-        enableVibrate: true,
-        enableLights: true,
-        showBadge: true,
-        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-      });
-
-      // Create security channel
-      await Notifications.setNotificationChannelAsync('security', {
-        name: 'Security Alerts',
-        description: 'Important security notifications',
-        importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 500, 250, 500],
-        lightColor: '#FF231F7C',
-        sound: 'default',
-        enableVibrate: true,
-        enableLights: true,
-        showBadge: true,
-        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-      });
-
-      console.log('✅ Android notification channels created successfully');
-    } catch (error) {
-      console.error('❌ Error setting up Android channels:', error);
-      throw error;
-    }
-  }
-
-  async getPushToken() {
-    try {
-      const isExpoGo = Constants.appOwnership === 'expo';
-      let token;
-      
-      if (isExpoGo) {
-        token = (await Notifications.getExpoPushTokenAsync()).data;
-      } else {
-        const projectId = Constants?.expoConfig?.extra?.eas?.projectId;
-        token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+      // Return cached token if available
+      if (this.expoPushToken) {
+        return this.expoPushToken;
       }
+
+      // For simulators, create a mock token for testing
+      if (!Device.isDevice) {
+        const mockToken = `ExponentPushToken[simulator-${Date.now()}]`;
+        console.log('📱 Using simulator - mock Expo Push Token:', mockToken);
+        this.expoPushToken = mockToken;
+        return mockToken;
+      }
+
+      // Get real token from Expo
+      const token = await Notifications.getExpoPushTokenAsync({
+        projectId: Constants.expoConfig?.extra?.eas?.projectId,
+      });
       
-      return token;
+      this.expoPushToken = token.data;
+      console.log('📱 Expo Push Token obtained:', token.data);
+      return token.data;
     } catch (error) {
-      console.error('Error getting push token:', error);
+      console.error('Error getting Expo push token:', error);
       return null;
     }
   }
 
-  async registerWithBackend(token) {
+  /**
+   * Get device ID
+   */
+  getDeviceId() {
     try {
-      let deviceId = await AsyncStorage.getItem('deviceId');
-      if (!deviceId) {
-        deviceId = uuidv4();
-        await AsyncStorage.setItem('deviceId', deviceId);
+      if (Device.isDevice) {
+        return Device.osInternalBuildId || Device.modelId || 'unknown-device';
+      } else {
+        // For simulators, create a consistent ID
+        return 'ios-simulator-test';
+      }
+    } catch (error) {
+      console.error('Error getting device ID:', error);
+      return 'unknown-device';
+    }
+  }
+
+  /**
+   * Register push token with backend
+   */
+  async registerPushToken() {
+    try {
+      const expoPushToken = await this.getExpoPushToken();
+      if (!expoPushToken) {
+        return {
+          success: false,
+          error: 'Could not get Expo push token'
+        };
       }
 
-      // Get current user ID if available
+      const deviceId = this.getDeviceId();
+      const platform = Platform.OS;
+
+      // Try to get userId from stored user data
       let userId = null;
       try {
         const userData = await AsyncStorage.getItem('user_data');
@@ -258,41 +178,131 @@ class NotificationService {
           const user = JSON.parse(userData);
           userId = user._id || user.id;
         }
-      } catch (error) {
-        console.log('No user data found for notification registration');
+      } catch (err) {
+        console.warn('Could not get userId from storage:', err);
       }
 
-      const requestBody = {
-        expoPushToken: token,
+      // Register with backend using authenticated API client
+      const response = await apiClient.post('/notification/register-token', {
+        expoPushToken,
         deviceId,
-        platform: Platform.OS,
-      };
-
-      // Add userId if available (for authenticated users)
-      if (userId) {
-        requestBody.userId = userId;
-      }
-
-      const response = await fetch('https://zeusodx-web.onrender.com/notification/register-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
+        platform,
+        ...(userId && { userId }) // Include userId if available
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('✅ Notification registration successful:', result.message);
-        return true;
+      if (response.success) {
+        console.log('✅ Push token registered successfully', userId ? `for user ${userId}` : '');
+        return {
+          success: true,
+          data: response
+        };
       } else {
-        const error = await response.text();
-        console.error('❌ Notification registration failed:', error);
-        return false;
+        console.error('❌ Failed to register push token:', response);
+        return {
+          success: false,
+          error: response.error || 'Failed to register push token'
+        };
       }
     } catch (error) {
-      console.error('Error registering with backend:', error);
-      return false;
+      console.error('Error registering push token:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
+  }
+
+  /**
+   * Initialize notifications (request permission and register token)
+   */
+  async initialize() {
+    if (this.isInitialized) {
+      console.log('📱 Notifications already initialized');
+      return { success: true, message: 'Already initialized' };
+    }
+
+    try {
+      console.log('🚀 Initializing notifications...');
+
+      // Request permission
+      const hasPermission = await this.isEnabled();
+      if (!hasPermission) {
+        const result = await this.enable();
+        if (!result.success) {
+          return {
+            success: false,
+            error: 'Notification permission denied'
+          };
+        }
+      }
+
+      // Register push token
+      const registerResult = await this.registerPushToken();
+      if (!registerResult.success) {
+        console.warn('⚠️ Failed to register push token, but continuing...');
+      }
+
+      this.isInitialized = true;
+      console.log('✅ Notifications initialized successfully');
+      
+      return {
+        success: true,
+        tokenRegistered: registerResult.success
+      };
+    } catch (error) {
+      console.error('Error initializing notifications:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Setup notification listeners
+   * @param {Function} onReceived - Callback when notification is received
+   * @param {Function} onTapped - Callback when notification is tapped
+   */
+  setupListeners(onReceived, onTapped) {
+    // Remove existing listeners first
+    this.removeListeners();
+
+    // Handle notifications received while app is running
+    if (onReceived) {
+      this.notificationListener = Notifications.addNotificationReceivedListener(onReceived);
+    }
+
+    // Handle notification taps
+    if (onTapped) {
+      this.responseListener = Notifications.addNotificationResponseReceivedListener(onTapped);
+    }
+  }
+
+  /**
+   * Remove notification listeners
+   */
+  removeListeners() {
+    if (this.notificationListener) {
+      this.notificationListener.remove();
+      this.notificationListener = null;
+    }
+
+    if (this.responseListener) {
+      this.responseListener.remove();
+      this.responseListener = null;
+    }
+  }
+
+  /**
+   * Reset service (useful for logout)
+   */
+  reset() {
+    this.removeListeners();
+    this.expoPushToken = null;
+    this.isInitialized = false;
   }
 }
 
-export default NotificationService.getInstance();
+// Export singleton instance
+export default new NotificationService();
+

@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
-import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
-import { Layout } from '../../constants/Layout';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Colors } from '../../constants/Colors';
+import { Layout } from '../../constants/Layout';
+import { Typography } from '../../constants/Typography';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -136,7 +136,7 @@ export default function LoginScreen() {
               
               <TouchableOpacity onPress={handleCreateAccount}>
                 <Text style={styles.createAccountText}>
-                  I'm new here. <Text style={styles.createAccountLink}>Create my account!</Text>
+                  I am new here. <Text style={styles.createAccountLink}>Create my account!</Text>
                 </Text>
               </TouchableOpacity>
             </View>

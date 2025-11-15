@@ -33,7 +33,9 @@ export const cableTVService = {
         amount: parseFloat(purchaseData.amount),
         payment_currency: 'NGNZ',
         twoFactorCode: purchaseData.twoFactorCode,
-        passwordpin: purchaseData.passwordpin
+        passwordpin: purchaseData.passwordpin,
+        customer_name: purchaseData.customer_name,
+        reference: purchaseData.reference
       });
 
       // Handle successful response
@@ -56,13 +58,16 @@ export const cableTVService = {
             status: response.data.status,
             customerId: response.data.customer_id,
             customerName: response.data.customer_name,
+            smartCardNumber: response.data.smartCardNumber || response.data.customer_id,
+            reference: response.data.reference,
             amount: response.data.amount,
-            amountCharged: response.data.amount_charged,
-            serviceName: response.data.service_name,
+            amountCharged: response.data.amount_charged ?? response.data.chargedAmount,
+            serviceName: response.data.service_name || response.data.service,
+            service: response.data.service || response.data.service_name,
             subscriptionType: response.data.subscription_type,
             packageVariation: response.data.package_variation,
             discount: response.data.discount,
-            requestId: response.data.request_id,
+            requestId: response.data.request_id || response.data.reference,
             balanceAction: response.data.balance_action,
             paymentDetails: response.data.payment_details,
             securityInfo: response.data.security_info,
