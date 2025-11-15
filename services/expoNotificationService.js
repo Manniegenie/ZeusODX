@@ -2,7 +2,11 @@ import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 
-const API_BASE_URL = 'https://zeusodx-web.onrender.com';
+// Use the same API base URL as the rest of the app
+// Match the base URL from apiClient.js
+const API_BASE_URL = __DEV__
+  ? 'https://zeusadminxyz.online'
+  : 'https://zeusadminxyz.online';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -165,8 +169,8 @@ export const setupNotificationListeners = () => {
   });
 
   return () => {
-    Notifications.removeNotificationSubscription(notificationListener);
-    Notifications.removeNotificationSubscription(responseListener);
+    notificationListener.remove();
+    responseListener.remove();
   };
 };
 

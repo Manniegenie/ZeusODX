@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image } from 'react-native';
-import { Typography } from '../../constants/Typography';
+import { useRouter } from 'expo-router';
+import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import { useRouter } from 'expo-router';
+import { Typography } from '../../constants/Typography';
 
 export default function VerificationSuccessScreen() {
   const router = useRouter();
@@ -28,8 +28,8 @@ export default function VerificationSuccessScreen() {
 
           <Text style={styles.title}>Signup Successful</Text>
           <Text style={styles.subtitle}>
-            Your account has has been successfully created.{'\n'}
-            Click "Continue" to login.
+            Your account has been successfully created.{'\n'}
+            Tap Continue to log in.
           </Text>
         </View>
 

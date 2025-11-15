@@ -1,11 +1,10 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     AppState,
     Image,
-    Modal,
     Platform,
     SafeAreaView,
     ScrollView,
@@ -45,6 +44,7 @@ import profileAvatarIcon from '../../components/icons/profile-avatar.png';
 const ProfileScreen = () => {
   const router = useRouter();
 
+  // Profile data
   const {
     profile,
     loading: isProfileLoading,
@@ -54,6 +54,7 @@ const ProfileScreen = () => {
     refetch,
   } = useUserProfile({ auto: true });
 
+  // Logout
   const { logout, loggingOut } = useLogout({
     clearStorage: async () => {
       await SecureStore.deleteItemAsync('accessToken');
@@ -64,6 +65,7 @@ const ProfileScreen = () => {
     onError: (e) => showError('general', 'Logout Failed', e?.message || 'Could not log out. Please try again.'),
   });
 
+  // Biometric auth
   const { 
     isBiometricSupported, 
     isEnrolled, 
@@ -73,6 +75,7 @@ const ProfileScreen = () => {
     authenticate 
   } = useBiometricAuth();
 
+  // Notifications
   const { 
     isEnabled: isNotificationEnabled, 
     isLoading: isNotificationLoading,
@@ -80,23 +83,17 @@ const ProfileScreen = () => {
     openSettings: openNotificationSettings,
   } = useNotifications();
 
+  // 2FA
+  const { disable2FA, loading: is2FADisabling } = use2FA();
+
+  // Local state
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [fingerprintEnabled, setFingerprintEnabled] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
-  const [showInfoModal, setShowInfoModal] = useState(false);
-  const [infoModalContent, setInfoModalContent] = useState<{ title: string; message: string; onConfirm: (() => void) | null }>({ 
-    title: '', 
-    message: '', 
-    onConfirm: null 
-  });
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
   const [show2FADisableModal, setShow2FADisableModal] = useState(false);
-  
-  const { disable2FA, loading: is2FADisabling } = use2FA();
-
-  // ErrorDisplay state
   const [showErrorDisplay, setShowErrorDisplay] = useState(false);
   const [errorDisplayData, setErrorDisplayData] = useState<{
     type?: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' | 'setup' | 'limit' | 'balance';
@@ -104,124 +101,145 @@ const ProfileScreen = () => {
     message?: string;
   } | null>(null);
 
-  const showError = (type: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' | 'setup' | 'limit' | 'balance', title: string, message: string) => {
-    setErrorDisplayData({ type, title, message });
-    setShowErrorDisplay(true);
-  };
+  // Computed values
+  const isAnyOperationInProgress = useMemo(() => 
+    loggingOut || isNotificationLoading || isProfileLoading || isBiometricLoading,
+    [loggingOut, isNotificationLoading, isProfileLoading, isBiometricLoading]
+  );
 
-  const hideError = () => {
-    setShowErrorDisplay(false);
-    setErrorDisplayData(null);
-  };
-
+  // Sync notification state
   useEffect(() => {
     setNotificationEnabled(isNotificationEnabled);
   }, [isNotificationEnabled]);
 
+  // Sync 2FA state from profile
   useEffect(() => {
-    if ((profile as any)?.is2FAEnabled !== undefined) {
-      setTwoFAEnabled((profile as any).is2FAEnabled);
+    if (profile?.is2FAEnabled !== undefined) {
+      setTwoFAEnabled(profile.is2FAEnabled);
     }
-  }, [(profile as any)?.is2FAEnabled]);
+  }, [profile?.is2FAEnabled]);
 
-  const isAnyOperationInProgress = loggingOut || isNotificationLoading || isProfileLoading || isBiometricLoading;
-
+  // Load biometric state
   useEffect(() => {
     const loadBiometricState = async () => {
       try {
         const hasPinStored = await authService.hasBiometricPin();
         setFingerprintEnabled(hasPinStored && isEnrolled);
       } catch (error) {
-        console.error('Failed to load biometric state:', error);
         setFingerprintEnabled(false);
       }
     };
-    loadBiometricState();
-  }, [isEnrolled]);
-
-  useEffect(() => {
-    if (!isEnrolled) {
+    
+    if (isEnrolled) {
+      loadBiometricState();
+    } else {
       setFingerprintEnabled(false);
     }
   }, [isEnrolled]);
 
+  // Listen to app state changes for biometric
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
-      if (nextAppState === 'active') {
-        const hasPinStored = await authService.hasBiometricPin();
-        setFingerprintEnabled(hasPinStored && isEnrolled);
+      if (nextAppState === 'active' && isEnrolled) {
+        try {
+          const hasPinStored = await authService.hasBiometricPin();
+          setFingerprintEnabled(hasPinStored && isEnrolled);
+        } catch {
+          setFingerprintEnabled(false);
+        }
       }
     });
     return () => subscription.remove();
   }, [isEnrolled]);
 
+  // Refetch profile when screen comes into focus (like dashboard)
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       if (refetch) {
-        refetch();
+        refetch().catch(() => {
+          // Silently handle refetch errors - they're logged in the service
+        });
       }
     }, [refetch])
   );
 
-  const showInfo = (title: string, message: string, onConfirm: (() => void) | null = null) => {
-    setInfoModalContent({ title, message, onConfirm });
-    setShowInfoModal(true);
-  };
+  // Error handling
+  const showError = useCallback((type: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general' | 'setup' | 'limit' | 'balance', title: string, message: string) => {
+    setErrorDisplayData({ type, title, message });
+    setShowErrorDisplay(true);
+  }, []);
 
-  const closeInfoModal = () => {
-    setShowInfoModal(false);
-    setInfoModalContent({ title: '', message: '', onConfirm: null as (() => void) | null });
-  };
+  const hideError = useCallback(() => {
+    setShowErrorDisplay(false);
+    setErrorDisplayData(null);
+  }, []);
 
-  const handleGoBack = () => {
+  // Modal handlers - using Alert instead of modal overlay
+  const showInfo = useCallback((title: string, message: string, onConfirm: (() => void) | null = null) => {
+    Alert.alert(
+      title,
+      message,
+      [
+        ...(onConfirm ? [{
+          text: 'Cancel',
+          style: 'cancel' as const,
+        }] : []),
+        {
+          text: 'OK',
+          onPress: onConfirm || undefined,
+        },
+      ]
+    );
+  }, []);
+
+  // Navigation handlers
+  const handleGoBack = useCallback(() => {
     if (isAnyOperationInProgress) return;
     router.replace('/user/dashboard');
-  };
+  }, [isAnyOperationInProgress, router]);
 
-  const handlePersonalDetails = () => {
+  const handlePersonalDetails = useCallback(() => {
     if (isAnyOperationInProgress) return;
     router.push('/profile/personal-details');
-  };
+  }, [isAnyOperationInProgress, router]);
 
-  const handleBankDetails = () => {
+  const handleBankDetails = useCallback(() => {
     if (isAnyOperationInProgress) return;
     router.push('/profile/bank-details');
-  };
+  }, [isAnyOperationInProgress, router]);
 
-  const handleResetPin = () => {
+  const handleResetPin = useCallback(() => {
     if (isAnyOperationInProgress) return;
     router.push('/profile/pin-reset');
-  };
+  }, [isAnyOperationInProgress, router]);
 
-  const handleUpdateKYC = () => {
+  const handleUpdateKYC = useCallback(() => {
     if (isAnyOperationInProgress) return;
     router.push('/kyc/kyc-upgrade');
-  };
+  }, [isAnyOperationInProgress, router]);
 
-  const handle2FAToggle = (value: boolean) => {
+  // 2FA handlers
+  const handle2FAToggle = useCallback((value: boolean) => {
     if (isAnyOperationInProgress) return;
     if (value) {
-      // Enable 2FA - navigate to setup screen
       setTwoFAEnabled(value);
       router.push('/profile/2FA');
     } else {
-      // Disable 2FA - show verification modal
       setShow2FADisableModal(true);
     }
-  };
+  }, [isAnyOperationInProgress, router]);
 
-  const handle2FADisableSubmit = async (code: string) => {
+  const handle2FADisableSubmit = useCallback(async (code: string) => {
     try {
       const result = await disable2FA(code);
       
-      if (result && (result as any).success) {
+      if (result?.success) {
         setTwoFAEnabled(false);
         setShow2FADisableModal(false);
         showInfo('2FA Disabled', 'Two-factor authentication has been successfully disabled.');
-        // Refresh profile to get updated 2FA status
         refetch();
       } else {
-        const errorMessage = (result as any)?.message || 'Invalid 2FA code. Please try again.';
+        const errorMessage = result?.message || 'Invalid 2FA code. Please try again.';
         const errorType = errorMessage.toLowerCase().includes('network') || errorMessage.toLowerCase().includes('connection') 
           ? 'network' 
           : errorMessage.toLowerCase().includes('invalid') || errorMessage.toLowerCase().includes('code')
@@ -232,30 +250,26 @@ const ProfileScreen = () => {
     } catch (error) {
       showError('network', 'Error', 'An error occurred while disabling 2FA. Please check your connection and try again.');
     }
-  };
+  }, [disable2FA, refetch, showError, showInfo]);
 
-  const handle2FADisableClose = () => {
+  const handle2FADisableClose = useCallback(() => {
     if (!is2FADisabling) {
       setShow2FADisableModal(false);
     }
-  };
+  }, [is2FADisabling]);
 
-  const handleDeleteAccount = () => {
-    if (isAnyOperationInProgress) return;
-    setShowDeleteModal(true);
-  };
-
-  const handleNotificationToggle = async (value: boolean) => {
+  // Notification handlers
+  const handleNotificationToggle = useCallback(async (value: boolean) => {
     if (isAnyOperationInProgress) return;
 
     if (value) {
       const result = await enableNotifications();
-      if (result && result.success) {
+      if (result?.success) {
         showInfo('Notifications Enabled', 'You will now receive notifications.');
       } else {
         showInfo(
           'Unable to Enable Notifications',
-          (result && result.message) || 'Please enable notifications in Settings.',
+          result?.message || 'Please enable notifications in Settings.',
           openNotificationSettings as (() => void) | null
         );
       }
@@ -266,9 +280,10 @@ const ProfileScreen = () => {
         openNotificationSettings as (() => void) | null
       );
     }
-  };
+  }, [isAnyOperationInProgress, enableNotifications, openNotificationSettings, showInfo]);
 
-  const handleBiometricToggle = async (value: boolean) => {
+  // Biometric handlers
+  const handleBiometricToggle = useCallback(async (value: boolean) => {
     if (isAnyOperationInProgress || isBiometricLoading) return;
 
     if (!isBiometricSupported) {
@@ -306,10 +321,9 @@ const ProfileScreen = () => {
               await SecureStore.deleteItemAsync('userId');
               router.replace('/login/login-phone');
             }
-            } catch (error) {
-              console.error('Logout error:', error);
-              showError('general', 'Logout Failed', 'Please try again.');
-            }
+          } catch {
+            showError('general', 'Logout Failed', 'Please try again.');
+          }
         }) as (() => void) | null
       );
     } else {
@@ -326,8 +340,8 @@ const ProfileScreen = () => {
         if (authResult.success) {
           try {
             const clearResult: any = await authService.clearBiometricPin();
-            if (!clearResult || !clearResult.success) {
-              throw new Error((clearResult && clearResult.error) || 'Failed to clear biometric PIN');
+            if (!clearResult?.success) {
+              throw new Error(clearResult?.error || 'Failed to clear biometric PIN');
             }
             
             const stillHasPin = await authService.hasBiometricPin();
@@ -338,7 +352,6 @@ const ProfileScreen = () => {
             setFingerprintEnabled(false);
             showInfo('Success', `${biometricType} login has been disabled.`);
           } catch (clearError) {
-            console.error('Error clearing PIN:', clearError);
             setFingerprintEnabled(wasEnabled);
             const errorMessage = (clearError as any)?.message || 'Failed to disable biometric login. Please try again.';
             const errorType = errorMessage.toLowerCase().includes('network') ? 'network' : 'general';
@@ -351,21 +364,35 @@ const ProfileScreen = () => {
           }
         }
       } catch (error) {
-        console.error('Unexpected error:', error);
         setFingerprintEnabled(wasEnabled);
         showError('general', 'Error', 'An error occurred. Please try again.');
       } finally {
         setIsBiometricLoading(false);
       }
     }
-  };
+  }, [
+    isAnyOperationInProgress,
+    isBiometricLoading,
+    isBiometricSupported,
+    isEnrolled,
+    fingerprintEnabled,
+    getBiometricTypeName,
+    getSetupInstructions,
+    openBiometricSettings,
+    showInfo,
+    logout,
+    router,
+    authenticate,
+    showError
+  ]);
 
-  const handleLogout = () => {
+  // Logout handlers
+  const handleLogout = useCallback(() => {
     if (isAnyOperationInProgress) return;
     setShowLogoutModal(true);
-  };
+  }, [isAnyOperationInProgress]);
 
-  const confirmLogout = async () => {
+  const confirmLogout = useCallback(async () => {
     try {
       const [userId, refreshToken] = await Promise.all([
         SecureStore.getItemAsync('userId'),
@@ -382,17 +409,24 @@ const ProfileScreen = () => {
     } catch {
       Alert.alert('Logout failed', 'Please check your connection.');
     }
-  };
+  }, [logout, router]);
 
-  const userData = {
+  // Delete account handler
+  const handleDeleteAccount = useCallback(() => {
+    if (isAnyOperationInProgress) return;
+    setShowDeleteModal(true);
+  }, [isAnyOperationInProgress]);
+
+  // Profile data for display
+  const userData = useMemo(() => ({
     name: displayName || '-',
-    email: (profile as any)?.email || '-',
-    phone: (profile as any)?.phoneNumber || '-',
+    email: profile?.email || '-',
+    phone: profile?.phoneNumber || '-',
     avatar: hasAvatar ? { uri: avatarUrl } : profileAvatarIcon,
-  };
+  }), [displayName, profile?.email, profile?.phoneNumber, hasAvatar, avatarUrl]);
 
-  // Simplified profile options array
-  const profileOptions = [
+  // Profile options configuration
+  const profileOptions = useMemo(() => [
     { id: 'personal-details', title: 'Personal Details', icon: personalDetailsIcon, onPress: handlePersonalDetails, hasChevron: true },
     { id: 'notification', title: 'Notification', icon: notificationIcon, hasToggle: true, toggleValue: notificationEnabled, onToggle: handleNotificationToggle },
     { id: 'bank-details', title: 'Bank Details', icon: bankDetailsIcon, onPress: handleBankDetails, hasChevron: true },
@@ -402,9 +436,25 @@ const ProfileScreen = () => {
     { id: 'update-kyc', title: 'Update KYC', icon: kycIcon, onPress: handleUpdateKYC, hasChevron: true },
     { id: 'logout', title: loggingOut ? 'Logging out…' : 'Log Out', icon: logoutIcon, onPress: handleLogout, isDestructive: true },
     { id: 'delete-account', title: 'Delete account', icon: deleteIcon, onPress: handleDeleteAccount, isDestructive: true },
-  ];
+  ], [
+    handlePersonalDetails,
+    notificationEnabled,
+    handleNotificationToggle,
+    handleBankDetails,
+    twoFAEnabled,
+    handle2FAToggle,
+    handleResetPin,
+    fingerprintEnabled,
+    isEnrolled,
+    handleBiometricToggle,
+    handleUpdateKYC,
+    loggingOut,
+    handleLogout,
+    handleDeleteAccount
+  ]);
 
-  const renderOption = (option: any) => (
+  // Render option row
+  const renderOption = useCallback((option: any) => (
     <TouchableOpacity
       key={option.id}
       style={[styles.optionRow, isAnyOperationInProgress && styles.optionRowDisabled]}
@@ -435,7 +485,7 @@ const ProfileScreen = () => {
         )}
       </View>
     </TouchableOpacity>
-  );
+  ), [isAnyOperationInProgress]);
 
   return (
     <View style={styles.container}>
@@ -482,43 +532,6 @@ const ProfileScreen = () => {
         </ScrollView>
       </SafeAreaView>
 
-      {/* Info Modal */}
-      <Modal
-        visible={showInfoModal}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={closeInfoModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{infoModalContent.title}</Text>
-            <Text style={styles.modalMessage}>{infoModalContent.message}</Text>
-            <View style={styles.modalButtons}>
-              {infoModalContent.onConfirm && (
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.modalButtonCancel]}
-                  onPress={closeInfoModal}
-                >
-                  <Text style={styles.modalButtonCancelText}>Cancel</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonConfirm]}
-                onPress={() => {
-                  if (infoModalContent.onConfirm) {
-                    infoModalContent.onConfirm();
-                  }
-                  closeInfoModal();
-                }}
-              >
-                <Text style={styles.modalButtonConfirmText}>
-                  {infoModalContent.onConfirm ? 'OK' : 'OK'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       <DeleteAccountModal 
         visible={showDeleteModal} 
@@ -695,73 +708,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#F3F4F6',
     marginLeft: 52,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  modalMessage: {
-    fontSize: 15,
-    color: '#6B7280',
-    lineHeight: 22,
-    marginBottom: 24,
-    textAlign: 'center',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalButtonCancel: {
-    backgroundColor: '#F3F4F6',
-  },
-  modalButtonConfirm: {
-    backgroundColor: '#35297F',
-  },
-  modalButtonCancelText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  modalButtonConfirmText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
 });
 

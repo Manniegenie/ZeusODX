@@ -42,6 +42,7 @@ export default function HomeScreen() {
       console.log('🧹 Cleaning up notification listeners');
       removeListeners();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initializeApp = async () => {

@@ -1,26 +1,28 @@
 // app/deposits/eth.tsx
+import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  RefreshControl,
-  ActivityIndicator,
-  Clipboard,
-  Dimensions
+    ActivityIndicator,
+    Alert,
+    Clipboard,
+    Dimensions,
+    Image,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import AddressCopied from '../../components/AddressCopied';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
-import AddressCopied from '../../components/AddressCopied';
-import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 import { useDeposit } from '../../hooks/useDeposit';
+import { shareDepositPdf } from '../../utils/shareDepositPdf';
 
 // Icons - Updated to match BTC-BSC screen
 import backIcon from '../../components/icons/backy.png';
@@ -260,8 +262,35 @@ export default function EthDepositScreen() {
           </View>
 
           <View style={styles.shareSection}>
-            <TouchableOpacity style={styles.shareButton}>
-              <Text style={styles.shareButtonText}>Share as image</Text>
+            <TouchableOpacity
+              style={[
+                styles.shareButton,
+                !depositData?.address && styles.shareButtonDisabled,
+              ]}
+              activeOpacity={0.8}
+              disabled={!depositData?.address}
+              onPress={async () => {
+                if (!depositData?.address) {
+                  showErrorMessage('ETH wallet address is not yet available');
+                  return;
+                }
+
+                try {
+                  await shareDepositPdf({
+                    tokenSymbol: 'ETH',
+                    tokenName: 'Ethereum',
+                    networkDisplay: network,
+                    address: depositData.address,
+                    minDeposit,
+                    walletReferenceId: depositData?.walletReferenceId,
+                    qrCodeDataUrl: depositData?.qrCode?.dataUrl,
+                  });
+                } catch (error) {
+                  Alert.alert('Share failed', 'Could not generate deposit PDF. Please try again.');
+                }
+              }}
+            >
+              <Text style={styles.shareButtonText}>Share PDF</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -506,6 +535,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
+  },
+  shareButtonDisabled: {
+    backgroundColor: '#A5A6F6',
   },
   shareButtonText: {
     color: Colors.surface,

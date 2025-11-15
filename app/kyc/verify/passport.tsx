@@ -1,27 +1,27 @@
 // app/kyc/verify/passport-verify.tsx
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  Image,
-  Modal,
-  TouchableWithoutFeedback,
-  Animated,
-} from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import Svg, { Defs, Rect, Mask, Circle } from 'react-native-svg';
-import backIcon from '../../../components/icons/backy.png';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    Animated,
+    Dimensions,
+    Image,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
+} from 'react-native';
+import Svg, { Circle, Defs, Mask, Rect } from 'react-native-svg';
 import ErrorDisplay from '../../../components/ErrorDisplay';
+import backIcon from '../../../components/icons/backy.png';
 import { Colors } from '../../../constants/Colors';
 import { Typography } from '../../../constants/Typography';
 import { useBiometricVerification } from '../../../hooks/useKYC';
@@ -406,7 +406,7 @@ export default function PassportVerify() {
             </Text>
           )}
           {passportNumber.length > 0 && isValidFormat && (
-            <Text style={styles.successText}>
+            <Text style={styles.successHint}>
               ✓ Valid passport format
             </Text>
           )}
@@ -574,7 +574,7 @@ export default function PassportVerify() {
       <ActivityIndicator size="large" color="#35297F" />
       <Text style={styles.processingText}>Verifying your passport...</Text>
       <Text style={styles.processingSubtext}>
-        We're comparing your selfie with your passport records
+        We are comparing your selfie with your passport records
       </Text>
       <Text style={styles.processingSubtext}>
         This may take a few moments
@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
   },
   inputError: { borderColor: '#EF4444' },
   errorText: { color: '#EF4444', fontSize: 12, marginTop: 4, marginLeft: 4 },
-  successText: { color: '#10B981', fontSize: 12, marginTop: 4, marginLeft: 4 },
+  successHint: { color: '#10B981', fontSize: 12, marginTop: 4, marginLeft: 4 },
   infoBox: {
     backgroundColor: '#F0F9FF',
     borderColor: '#BAE6FD',

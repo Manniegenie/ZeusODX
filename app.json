@@ -31,13 +31,7 @@
       },
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "pan",
-      "windowSoftInputMode": "adjustResize",
-      "resizeableActivity": true,
-      "supportsTablet": true,
-      "usesCleartextTraffic": false,
       "allowBackup": false,
-      "hardwareAccelerated": true,
-      "largeHeap": true,
       "permissions": [
         "INTERNET",
         "CAMERA",
@@ -48,7 +42,7 @@
         "com.google.android.c2dm.permission.RECEIVE",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "versionCode": 30
+      "versionCode": 71
     },
     "web": {
       "bundler": "metro",
@@ -72,7 +66,8 @@
             "enableShrinkResourcesInReleaseBuilds": false,
             "enableR8": false,
             "enableHermes": true,
-            "enableNewArchitecture": false
+            "enableNewArchitecture": false,
+            "ndkVersion": "28.0.12433564"
           },
           "ios": {
             "deploymentTarget": "15.1"

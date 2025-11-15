@@ -287,7 +287,7 @@ export const useBetting = () => {
         title: '2FA Setup Required',
         message: 'Set up two-factor authentication to secure your betting transactions.',
         actionText: 'Set up 2FA',
-        route: '/security/setup-2fa',
+        route: '/profile/2FA',
         priority: 'high'
       },
       'SETUP_PIN': {

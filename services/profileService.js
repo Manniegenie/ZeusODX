@@ -1,48 +1,62 @@
 import { apiClient } from './apiClient';
 
+/**
+ * User Profile Service
+ * Handles all profile-related API interactions
+ */
 export const userProfileService = {
   /**
    * Fetch the authenticated user's profile
-   * @param {{ signal?: AbortSignal }} [opts]
-   * @returns {Promise<{success: boolean, data?: any, error?: string, message?: string, raw?: any}>}
+   * @param {{ signal?: AbortSignal }} [opts] - Request options
+   * @returns {Promise<{success: boolean, data?: any, error?: string, message?: string}>}
    */
   async getProfile(opts = {}) {
     try {
-      console.log('👤 Fetching user profile…');
+      const requestOptions = opts.signal ? { signal: opts.signal } : {};
+      const resp = await apiClient.get('/profile/profile/complete', requestOptions);
 
-      const resp = await apiClient.get('/profile/profile', { signal: opts.signal });
       const payload = resp?.data ?? resp;
       const success = Boolean(payload?.success);
 
       if (!success) {
         const backendMsg = payload?.message || payload?.error || 'Failed to load profile';
         const code = this._codeFromMessage(backendMsg);
-        console.log('❌ Profile fetch failed:', { code, backendMsg });
-        return { success: false, error: code, message: backendMsg };
+        return { 
+          success: false, 
+          error: code, 
+          message: backendMsg 
+        };
       }
 
+      // Extract profile from response (handles both response formats)
       const serverProfile = payload?.data?.profile ?? payload?.profile ?? payload?.data ?? payload;
-      const normalized = this._normalize(serverProfile);
+      
+      if (!serverProfile || (typeof serverProfile === 'object' && Object.keys(serverProfile).length === 0)) {
+        return {
+          success: false,
+          error: 'EMPTY_PROFILE',
+          message: 'Profile data is empty',
+        };
+      }
 
-      console.log('✅ Profile fetched:', {
-        username: normalized.username,
-        email: normalized.email,
-        is2FAEnabled: normalized.is2FAEnabled,
-      });
+      const normalized = this._normalize(serverProfile);
 
       return {
         success: true,
         data: normalized,
-        raw: payload,
-        message: payload?.message || 'Profile loaded',
+        message: payload?.message || 'Profile loaded successfully',
       };
     } catch (error) {
-      console.error('❌ Profile network/error:', {
-        message: error?.message,
-        status: error?.response?.status,
-        response: error?.response?.data,
-      });
+      // Handle AbortError (cancelled request)
+      if (error?.name === 'AbortError') {
+        return {
+          success: false,
+          error: 'CANCELLED',
+          message: 'Request was cancelled',
+        };
+      }
 
+      // Handle API error responses
       const errData = error?.response?.data;
       if (errData) {
         const code = this._codeFromMessage(errData.error || errData.message);
@@ -53,6 +67,7 @@ export const userProfileService = {
         };
       }
 
+      // Network or other errors
       return {
         success: false,
         error: 'NETWORK_ERROR',
@@ -62,17 +77,22 @@ export const userProfileService = {
   },
 
   /**
-   * Map server profile → app shape
-   * @param {any} p
+   * Normalize server profile data to app format
+   * @param {any} p - Server profile object
+   * @returns {Object} Normalized profile
    */
   _normalize(p = {}) {
     const first = p.firstname ?? p.firstName ?? null;
     const last = p.lastname ?? p.lastName ?? null;
-
     const fullName = p.fullName || [first, last].filter(Boolean).join(' ').trim() || null;
-
     const avatarUrl = p.avatar?.url ?? p.avatarUrl ?? null;
     const avatarLastUpdated = p.avatar?.lastUpdated ?? p.avatarLastUpdated ?? null;
+
+    // Extract KYC information
+    const kycData = p.kyc || {};
+    const kycLevel = p.kycLevel ?? kycData.level ?? 0;
+    const kycStatus = p.kycStatus ?? kycData.status ?? 'not_verified';
+    const isKycActive = kycData.isActive ?? (kycLevel > 0 && kycStatus === 'approved');
 
     return {
       username: p.username ?? null,
@@ -85,10 +105,21 @@ export const userProfileService = {
         lastUpdated: avatarLastUpdated,
         cacheKey: avatarLastUpdated ? String(new Date(avatarLastUpdated).getTime()) : null,
       },
-      _original: p,
+      kyc: {
+        level: kycLevel,
+        status: kycStatus,
+        isActive: isKycActive,
+        level1: kycData.level1 || null,
+        level2: kycData.level2 || null,
+      },
     };
   },
 
+  /**
+   * Extract error code from error message
+   * @param {string} msg - Error message
+   * @returns {string} Error code
+   */
   _codeFromMessage(msg = '') {
     const m = String(msg).toLowerCase();
     if (m.includes('unauthorized') || m.includes('invalid token')) return 'UNAUTHORIZED';
@@ -98,6 +129,12 @@ export const userProfileService = {
     return 'FETCH_FAILED';
   },
 
+  /**
+   * Get user-friendly error message
+   * @param {string} code - Error code
+   * @param {string} fallback - Fallback message
+   * @returns {string} User-friendly message
+   */
   getUserFriendlyMessage(code, fallback = 'Something went wrong') {
     const map = {
       UNAUTHORIZED: 'Your session has expired. Please log in again.',
@@ -106,6 +143,8 @@ export const userProfileService = {
       SERVER_ERROR: 'Server error. Please try again later.',
       NETWORK_ERROR: 'Network error. Check your connection.',
       FETCH_FAILED: 'Could not load your profile.',
+      CANCELLED: 'Request was cancelled.',
+      EMPTY_PROFILE: 'Profile data is empty.',
     };
     return map[code] ?? fallback;
   },

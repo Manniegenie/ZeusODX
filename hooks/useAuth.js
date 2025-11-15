@@ -1,6 +1,7 @@
-import { useState, useEffect, createContext, useContext } from 'react';
-import { authService } from '../services/authService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { authService } from '../services/authService';
+import NotificationService from '../services/notificationService';
 
 const AuthContext = createContext();
 
@@ -36,6 +37,10 @@ export function useAuthProvider() {
           loading: false,
           isAuthenticated: true,
         });
+        
+        // Don't auto-initialize notifications - let user decide
+        // Notifications will be prompted when user opens profile screen
+        
         return { success: true, data: response.data };
       } else {
         console.log('❌ useAuth: Login failed');
@@ -63,6 +68,10 @@ export function useAuthProvider() {
           loading: false,
           isAuthenticated: true,
         });
+        
+        // Don't auto-initialize notifications - let user decide
+        // Notifications will be prompted when user opens profile screen
+        
         return { success: true, data: response.data };
       } else {
         console.log('❌ useAuth: Registration failed');
@@ -81,6 +90,10 @@ export function useAuthProvider() {
     try {
       console.log('🚪 useAuth: Logging out');
       await authService.logout();
+      
+      // Reset notification service on logout
+      NotificationService.reset();
+      
       setState({
         user: null,
         portfolio: null,
@@ -162,6 +175,9 @@ export function useAuthProvider() {
           loading: false,
           isAuthenticated: true,
         });
+        
+        // Don't auto-initialize notifications - let user decide
+        // Notifications will be prompted when user opens profile screen
       } else {
         console.log('⚠️ useAuth: Token found but no user data, getting current user');
         // Token exists but no user data, try to get current user

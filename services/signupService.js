@@ -56,17 +56,20 @@ export const signupService = {
       
       // Set auth token if provided
       if (response.data.accessToken) {
-        apiClient.setAuthToken(response.data.accessToken);
+        await apiClient.setAuthToken(response.data.accessToken);
       }
       
       // Store refresh token
       if (response.data.refreshToken) {
-        await AsyncStorage.setItem('refresh_token', response.data.refreshToken);
+        await apiClient.setRefreshToken(response.data.refreshToken);
       }
       
       // Store user data
       if (response.data.user) {
         await AsyncStorage.setItem('user_data', JSON.stringify(response.data.user));
+        if (response.data.user._id) {
+          await apiClient.setUserId(response.data.user._id.toString());
+        }
       }
       
       // Clear temporary signup data

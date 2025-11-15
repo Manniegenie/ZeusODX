@@ -109,8 +109,12 @@ export const useCustomer = () => {
 
       if (response && response.success) {
         const normalizedData = {
-          customer_name: response.data?.customer_name || response.data?.CustomerName || '',
-          ...response.data
+          customer_name: response.data?.customerName || '',
+          customerName: response.data?.customerName || '',
+          customer_id: response.data?.smartCardNumber || customerId.trim(),
+          smartCardNumber: response.data?.smartCardNumber || customerId.trim(),
+          service: response.data?.service || serviceId.toUpperCase(),
+          service_id: response.data?.service?.toLowerCase?.() || serviceId.toLowerCase()
         };
         setCustomerData(normalizedData);
         setSelectedService(serviceId);

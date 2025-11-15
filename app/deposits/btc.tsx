@@ -1,27 +1,28 @@
 // app/deposits/btc.tsx (BTC Deposit Screen)
+import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  RefreshControl,
-  ActivityIndicator,
-  Clipboard,
-  Alert,
-  Dimensions
+    ActivityIndicator,
+    Alert,
+    Clipboard,
+    Dimensions,
+    Image,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import AddressCopied from '../../components/AddressCopied';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
-import AddressCopied from '../../components/AddressCopied';
-import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 import { useDeposit } from '../../hooks/useDeposit';
+import { shareDepositPdf } from '../../utils/shareDepositPdf';
 
 // Icons - Updated to match gift card screens
 import backIcon from '../../components/icons/backy.png';
@@ -127,10 +128,6 @@ export default function BtcDepositScreen() {
   }, [refreshSupportedTokens]);
 
   const handleBack = () => router.back();
-
-  const handleShareImage = () => {
-    // TODO: Implement share functionality
-  };
 
   const isLoading = isAddressLoading('BTC', 'BTC') || supportedLoading;
   const addressError = getAddressError('BTC', 'BTC');
@@ -310,11 +307,34 @@ export default function BtcDepositScreen() {
                 styles.shareButton,
                 (!depositData?.address || isWalletSetupNeeded) && styles.shareButtonDisabled,
               ]}
-              onPress={handleShareImage}
+              onPress={async () => {
+                if (!depositData?.address) {
+                  if (isWalletSetupNeeded) {
+                    showErrorMessage('Please set up your BTC wallet first before sharing the address');
+                  } else {
+                    showErrorMessage('BTC wallet address is not yet available');
+                  }
+                  return;
+                }
+
+                try {
+                  await shareDepositPdf({
+                    tokenSymbol: 'BTC',
+                    tokenName: 'Bitcoin',
+                    networkDisplay: network,
+                    address: depositData.address,
+                    minDeposit,
+                    walletReferenceId: depositData?.walletReferenceId,
+                    qrCodeDataUrl: qrCodeData,
+                  });
+                } catch (error) {
+                  Alert.alert('Share failed', 'Could not generate deposit PDF. Please try again.');
+                }
+              }}
               activeOpacity={0.8}
               disabled={!depositData?.address || isWalletSetupNeeded}
             >
-              <Text style={styles.shareButtonText}>Share as image</Text>
+              <Text style={styles.shareButtonText}>Share PDF</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
