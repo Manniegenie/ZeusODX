@@ -1,43 +1,57 @@
 import { Dimensions } from 'react-native';
-import { s, ms, vs, mvs } from 'react-native-size-matters';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 
 const { width, height } = Dimensions.get('window');
 
-/**
- * Layout constants with automatic responsive scaling
- * Uses react-native-size-matters for production-grade scaling
- * 
- * - s() = horizontal scaling (for widths, border radius)
- * - vs() = vertical scaling (for heights)
- * - ms() = moderate scaling (for spacing, fonts - recommended)
- * - mvs() = moderate vertical scaling
- */
+const BASE_WIDTH = 375;
+const BASE_HEIGHT = 812;
+
+const widthPercentFromPx = (px: number) => `${(px / BASE_WIDTH) * 100}%`;
+const heightPercentFromPx = (px: number) => `${(px / BASE_HEIGHT) * 100}%`;
+
+const scaleWidth = (px: number) => wp(widthPercentFromPx(px));
+const scaleHeight = (px: number) => hp(heightPercentFromPx(px));
+
 export const Layout = {
   window: {
     width,
     height,
   },
-  // Spacing values (automatically scaled)
+  wp,
+  hp,
+  scale: scaleWidth,
+  scaleVertical: scaleHeight,
   spacing: {
-    xs: ms(4),
-    sm: ms(8),
-    md: ms(16),
-    lg: ms(24),
-    xl: ms(32),
-    xxl: ms(48),
+    xs: scaleWidth(4),
+    sm: scaleWidth(8),
+    md: scaleWidth(16),
+    lg: scaleWidth(24),
+    xl: scaleWidth(32),
+    xxl: scaleWidth(48),
   },
-  // Border radius values (automatically scaled)
+  verticalSpacing: {
+    xs: scaleHeight(4),
+    sm: scaleHeight(8),
+    md: scaleHeight(16),
+    lg: scaleHeight(24),
+    xl: scaleHeight(32),
+    xxl: scaleHeight(48),
+  },
   borderRadius: {
-    sm: s(4),
-    md: s(8),
-    lg: s(12),
-    xl: s(16),
-    full: s(999),
+    sm: scaleWidth(4),
+    md: scaleWidth(8),
+    lg: scaleWidth(12),
+    xl: scaleWidth(16),
+    full: scaleWidth(999),
   },
-  isSmallDevice: width < 375,
-  // Export scaling functions for direct use
-  scale: s,        // Horizontal scaling (widths, border radius)
-  scaleVertical: vs, // Vertical scaling (heights)
-  scaleModerate: ms, // Moderate scaling (spacing, fonts - recommended)
-  scaleModerateVertical: mvs, // Moderate vertical scaling
+  icon: {
+    sm: scaleWidth(16),
+    md: scaleWidth(24),
+    lg: scaleWidth(32),
+    xl: scaleWidth(40),
+  },
+  isSmallDevice: width < 360,
 };

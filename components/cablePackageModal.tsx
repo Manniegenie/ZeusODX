@@ -1,25 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  TextInput,
-  Image,
-  ImageSourcePropType,
-  Modal,
-  TouchableWithoutFeedback,
-  Dimensions,
-  SafeAreaView,
-  ActivityIndicator,
-  Alert
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    Image,
+    ImageSourcePropType,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native';
+import { ms, s } from 'react-native-size-matters';
 import { Typography } from '../constants/Typography';
 import { useCableTvPackages } from '../hooks/useCabletvpackages';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const MODAL_WIDTH = 393;
+const MODAL_WIDTH = SCREEN_WIDTH;
 
 // Import cable TV provider icons
 const DstvIcon = require('../components/icons/Dstv.png');
@@ -596,12 +597,12 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: MODAL_WIDTH,
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: s(16),
+    borderTopRightRadius: s(16),
     position: 'absolute',
     top: 150,
     bottom: 0,
-    left: (SCREEN_WIDTH - MODAL_WIDTH) / 2,
+    left: 0,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -614,7 +615,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: ms(20),
     paddingTop: 20,
     paddingBottom: 16,
   },
@@ -638,7 +639,7 @@ const styles = StyleSheet.create({
   },
   
   closeButton: {
-    padding: 4,
+    padding: ms(4),
   },
   
   closeButtonText: {
@@ -648,7 +649,7 @@ const styles = StyleSheet.create({
   },
   
   searchContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: ms(20),
     paddingBottom: 16,
   },
   
@@ -656,17 +657,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderRadius: s(8),
+    paddingHorizontal: ms(12),
     paddingVertical: 10,
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
   
   searchIcon: {
-    width: 16,
+    width: s(16),
     height: 16,
-    marginRight: 8,
+    marginRight: ms(8),
     tintColor: '#9CA3AF',
   },
   
@@ -682,15 +683,15 @@ const styles = StyleSheet.create({
   },
   
   categoryScrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: ms(20),
   },
   
   categoryChip: {
-    paddingHorizontal: 12,
+    paddingHorizontal: ms(12),
     paddingVertical: 6,
     backgroundColor: '#F3F4F6',
-    borderRadius: 16,
-    marginRight: 8,
+    borderRadius: s(16),
+    marginRight: ms(8),
   },
   
   categoryChipSelected: {
@@ -725,7 +726,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: ms(40),
     paddingVertical: 40,
   },
   
@@ -748,10 +749,10 @@ const styles = StyleSheet.create({
   },
   
   retryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: ms(20),
+    paddingVertical: ms(10),
     backgroundColor: '#6366F1',
-    borderRadius: 8,
+    borderRadius: s(8),
   },
   
   retryButtonText: {
@@ -763,7 +764,7 @@ const styles = StyleSheet.create({
   
   packagesContainer: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: ms(20),
   },
   
   packagesContent: {
@@ -787,17 +788,17 @@ const styles = StyleSheet.create({
   },
   
   packageIconContainer: {
-    width: 32,
+    width: s(32),
     height: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: ms(12),
     backgroundColor: '#F9FAFB',
-    borderRadius: 6,
+    borderRadius: s(6),
   },
   
   packageProviderIcon: {
-    width: 20,
+    width: s(20),
     height: 20,
   },
   

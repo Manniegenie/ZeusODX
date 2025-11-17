@@ -234,8 +234,8 @@ const styles = StyleSheet.create({
     rowGap: 1,
   },
   serviceCard: {
-    width: 150,        // Original width that works on all phones
-    height: 80,        // Fixed height for consistency
+    width: 170,        // Original width that works on all phones
+    height: 100,        // Fixed height for consistency
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',

@@ -1,15 +1,15 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   FlatList,
   Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
+import { Typography } from '../../constants/Typography';
 import { useTokens } from '../../hooks/useTokens';
 
 interface Token {
@@ -294,12 +294,12 @@ const styles = StyleSheet.create({
     fontFamily: Typography.medium,
     fontSize: 13,
     color: Colors.text.primary,
-    marginBottom: 4,
+    marginBottom: 0.5,
     fontWeight: '600',
   },
   changeContainer: {
     paddingHorizontal: 6,
-    paddingVertical: 3,
+    paddingVertical: 0.5,
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',

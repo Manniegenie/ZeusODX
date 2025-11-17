@@ -1,20 +1,20 @@
 // app/components/WalletPortfolioSection.tsx
-import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   Image,
   ImageBackground,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
-import { Layout } from '../../constants/Layout';
-import { useDashboard } from '../../hooks/useDashboard';
 import SelectTokenModal, { WalletOption } from '../../components/SelectToken';
 import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
+import { Colors } from '../../constants/Colors';
+import { Layout } from '../../constants/Layout';
+import { Typography } from '../../constants/Typography';
+import { useDashboard } from '../../hooks/useDashboard';
 import DashboardModals from './DashboardModals';
 
 // Assets

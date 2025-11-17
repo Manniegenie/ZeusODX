@@ -1,27 +1,28 @@
 import React, { useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Modal,
-  Animated,
-  Dimensions,
-  TouchableWithoutFeedback,
-  ImageSourcePropType,
+    Animated,
+    Dimensions,
+    Image,
+    ImageSourcePropType,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ms, s } from 'react-native-size-matters';
 import { Typography } from '../constants/Typography';
 
 // Network icons
-import mtnIcon from '../components/icons/mtn.png';
-import gloIcon from '../components/icons/glo.png';
-import airtelIcon from '../components/icons/airtel.png';
 import nineMobileIcon from '../components/icons/9mobile.png';
+import airtelIcon from '../components/icons/airtel.png';
+import gloIcon from '../components/icons/glo.png';
+import mtnIcon from '../components/icons/mtn.png';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const MODAL_HEIGHT = 520; // Increased height to ensure pay button is visible
+const MODAL_HEIGHT = 520; // vertical sizing stays fixed
 
 // Type definitions
 interface NetworkProvider {
@@ -289,26 +290,27 @@ const styles = StyleSheet.create({
   },
   modalWrapper: {
     alignSelf: 'center',
+    width: '100%',
   },
   modalContainer: {
-    width: 393,
+    width: '100%',
     height: MODAL_HEIGHT,
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 24,
+    borderTopLeftRadius: s(24),
+    borderTopRightRadius: s(24),
+    paddingHorizontal: ms(24),
     paddingTop: 12,
   },
   safeAreaExtension: {
-    width: 393,
+    width: '100%',
     backgroundColor: '#FFFFFF',
     alignSelf: 'center',
   },
   handleBar: {
-    width: 40,
+    width: s(40),
     height: 4,
     backgroundColor: '#E5E7EB',
-    borderRadius: 2,
+    borderRadius: s(2),
     alignSelf: 'center',
     marginBottom: 24,
   },
@@ -356,15 +358,15 @@ const styles = StyleSheet.create({
   phoneContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    columnGap: s(8),
     flex: 1,
     justifyContent: 'flex-end',
   },
   networkIconSmall: {
-    width: 20,
+    width: s(20),
     height: 20,
     resizeMode: 'contain',
-    borderRadius: 4,
+    borderRadius: s(4),
   },
   buttonSection: {
     marginTop: 'auto',
