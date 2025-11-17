@@ -1,23 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  TextInput,
-  ScrollView,
-  TouchableWithoutFeedback,
   ActivityIndicator,
-  Dimensions
+  Animated,
+  Dimensions,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ms, s } from 'react-native-size-matters';
 import { Typography } from '../constants/Typography';
-import { Colors } from '../constants/Colors';
 import { useDataPlans } from '../hooks/useDataPlans';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const MODAL_WIDTH = 393;
-const MODAL_HEIGHT = 537;
+const MODAL_HEIGHT = 600;
 
 interface DataPlan {
   id?: string;
@@ -52,6 +52,8 @@ const DataPlansModal: React.FC<DataPlansModalProps> = ({
   loading: externalLoading = false
 }) => {
   const [activeTab, setActiveTab] = useState('daily');
+  const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
+  const insets = useSafeAreaInsets();
 
   // Safe hook usage with error boundaries
   const {
@@ -159,6 +161,24 @@ const DataPlansModal: React.FC<DataPlansModalProps> = ({
       safeClearErrors();
     }
   }, [visible, safeClearErrors]);
+
+  // Slide animation
+  useEffect(() => {
+    if (visible) {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        tension: 100,
+        friction: 8,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: MODAL_HEIGHT,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, slideAnim]);
 
   // Tab configuration
   const tabs = [
@@ -401,6 +421,10 @@ const DataPlansModal: React.FC<DataPlansModalProps> = ({
     }
   }, [onClose]);
 
+  const handleBackdropPress = () => {
+    handleModalClose();
+  };
+
   return (
     <Modal
       visible={visible}
@@ -409,56 +433,71 @@ const DataPlansModal: React.FC<DataPlansModalProps> = ({
       onRequestClose={handleModalClose}
       statusBarTranslucent
     >
-      <TouchableWithoutFeedback onPress={handleModalClose}>
+      <TouchableWithoutFeedback onPress={handleBackdropPress}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
-            <View style={styles.modalContainer}>
-              {/* Header */}
-              <View style={styles.header}>
-                <Text style={styles.title}>
-                  {networkName ? `${networkName} Data Plans` : 'Choose Data plan'}
-                </Text>
-                <TouchableOpacity 
-                  style={styles.closeButton}
-                  onPress={handleModalClose}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Text style={styles.closeButtonText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Tabs */}
-              <View style={styles.tabsContainer}>
-                {tabs.map((tab) => (
-                  <TouchableOpacity
-                    key={tab.id}
-                    style={[
-                      styles.tab,
-                      activeTab === tab.id && styles.activeTab
-                    ]}
-                    onPress={() => handleTabPress(tab.id)}
-                    activeOpacity={0.7}
-                    disabled={isLoading || plansError || !networkId}
-                  >
-                    <Text style={[
-                      styles.tabText,
-                      activeTab === tab.id && styles.activeTabText,
-                      (isLoading || plansError || !networkId) && styles.tabTextDisabled
-                    ]}>
-                      {tab.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Plans Grid */}
-              <ScrollView 
-                style={styles.plansContainer}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.plansContent}
+            <View style={styles.modalWrapper}>
+              <Animated.View
+                style={[
+                  styles.modalContainer,
+                  {
+                    transform: [{ translateY: slideAnim }],
+                  },
+                ]}
               >
-                {getDisplayContent()}
-              </ScrollView>
+                {/* Handle Bar */}
+                <View style={styles.handleBar} />
+
+                {/* Header */}
+                <View style={styles.header}>
+                  <Text style={styles.title}>
+                    {networkName ? `${networkName} Data Plans` : 'Choose Data plan'}
+                  </Text>
+                  <TouchableOpacity 
+                    style={styles.closeButton}
+                    onPress={handleModalClose}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Text style={styles.closeButtonText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Tabs */}
+                <View style={styles.tabsContainer}>
+                  {tabs.map((tab) => (
+                    <TouchableOpacity
+                      key={tab.id}
+                      style={[
+                        styles.tab,
+                        activeTab === tab.id && styles.activeTab
+                      ]}
+                      onPress={() => handleTabPress(tab.id)}
+                      activeOpacity={0.7}
+                      disabled={isLoading || plansError || !networkId}
+                    >
+                      <Text style={[
+                        styles.tabText,
+                        activeTab === tab.id && styles.activeTabText,
+                        (isLoading || plansError || !networkId) && styles.tabTextDisabled
+                      ]}>
+                        {tab.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Plans Grid */}
+                <ScrollView 
+                  style={styles.plansContainer}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={styles.plansContent}
+                >
+                  {getDisplayContent()}
+                </ScrollView>
+              </Animated.View>
+              
+              {/* Safe Area Extension */}
+              <View style={[styles.safeAreaExtension, { height: insets.bottom }]} />
             </View>
           </TouchableWithoutFeedback>
         </View>
@@ -471,18 +510,33 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  modalWrapper: {
+    alignSelf: 'center',
+    width: '100%',
   },
   modalContainer: {
-    width: MODAL_WIDTH,
+    width: '100%',
     height: MODAL_HEIGHT,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    position: 'absolute',
-    top: 317,
-    left: (SCREEN_WIDTH - MODAL_WIDTH) / 2,
+    borderTopLeftRadius: s(24),
+    borderTopRightRadius: s(24),
     overflow: 'hidden',
+  },
+  safeAreaExtension: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    alignSelf: 'center',
+  },
+  handleBar: {
+    width: s(40),
+    height: 4,
+    backgroundColor: '#E5E7EB',
+    borderRadius: s(2),
+    alignSelf: 'center',
+    marginTop: 12,
+    marginBottom: 16,
   },
   
   // Header styles
@@ -490,8 +544,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingHorizontal: ms(24),
+    paddingTop: 12,
     paddingBottom: 16,
   },
   title: {
@@ -502,7 +556,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   closeButton: {
-    padding: 4,
+    padding: ms(4),
   },
   closeButtonText: {
     color: '#6B7280',
@@ -513,9 +567,9 @@ const styles = StyleSheet.create({
   // Tabs styles
   tabsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
+    paddingHorizontal: ms(24),
     marginBottom: 20,
-    gap: 24,
+    columnGap: ms(24),
   },
   tab: {
     paddingVertical: 8,
@@ -542,7 +596,7 @@ const styles = StyleSheet.create({
   // Plans styles
   plansContainer: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: ms(24),
   },
   plansContent: {
     paddingBottom: 20,
@@ -550,17 +604,18 @@ const styles = StyleSheet.create({
   plansGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    rowGap: ms(10),
+    columnGap: ms(10),
     justifyContent: 'space-between',
   },
   planCard: {
     width: '31%',
     backgroundColor: '#F9FAFB',
-    borderRadius: 6,
+    borderRadius: s(6),
     borderWidth: 0.5,
     borderColor: '#E5E7EB',
     paddingVertical: 12,
-    paddingHorizontal: 8,
+    paddingHorizontal: ms(8),
     alignItems: 'center',
     minHeight: 65,
     justifyContent: 'center',
@@ -631,9 +686,9 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: '#35297F',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingHorizontal: ms(20),
+    paddingVertical: ms(10),
+    borderRadius: s(8),
   },
   retryButtonText: {
     color: '#FFFFFF',

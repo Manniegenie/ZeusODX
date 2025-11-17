@@ -1,49 +1,50 @@
 // components/giftcards/GiftCardConfirmationModal.tsx
 import React, { useEffect, useMemo, useRef } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Modal,
-  Animated,
-  Dimensions,
-  TouchableWithoutFeedback,
-  ImageSourcePropType,
+    Animated,
+    Dimensions,
+    Image,
+    ImageSourcePropType,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ms, s } from 'react-native-size-matters';
 import { Typography } from '../constants/Typography';
 // ✅ Correct path to root hooks folder
 import { useGiftcardRate } from '../hooks/useGiftcardRate';
 
 /* ── Brand icons (match GiftCard screen; keep ../components prefix) */
+import amexIcon from '../components/icons/amex.png';
 import amazonIcon from '../components/icons/azn.png';
+import ebayIcon from '../components/icons/ebay.png';
+import footlockerIcon from '../components/icons/footlocker.png';
+import googlePlayIcon from '../components/icons/google-play.png';
 import itunesIcon from '../components/icons/iTunes.png';
-import steamIcon from '../components/icons/steam.png';
-import nordstromIcon from '../components/icons/nordstrom.png';
 import macyIcon from '../components/icons/macy.png';
 import nikeIcon from '../components/icons/nike.png';
-import googlePlayIcon from '../components/icons/google-play.png';
-import visaIcon from '../components/icons/visa.png';
-import vanillaIcon from '../components/icons/vanilla.png';
+import nordstromIcon from '../components/icons/nordstrom.png';
 import razorGoldIcon from '../components/icons/razor-gold.png';
-import amexIcon from '../components/icons/amex.png';
 import sephoraIcon from '../components/icons/sephora.png';
-import footlockerIcon from '../components/icons/footlocker.png';
+import steamIcon from '../components/icons/steam.png';
+import vanillaIcon from '../components/icons/vanilla.png';
+import visaIcon from '../components/icons/visa.png';
 import xboxIcon from '../components/icons/xbox.png';
-import ebayIcon from '../components/icons/ebay.png';
 
 /* ── Country flags */
+import auFlag from '../components/icons/australia.png';
+import caFlag from '../components/icons/canada.png';
+import frFlag from '../components/icons/france.png';
+import deFlag from '../components/icons/germany.png';
+import chFlag from '../components/icons/switzerland.png'; // Switzerland
+import trFlag from '../components/icons/turkey.png';
+import aeFlag from '../components/icons/united-arab-emirates.png';
 import gbFlag from '../components/icons/united-kingdom.png';
 import usFlag from '../components/icons/united-states.png';
-import caFlag from '../components/icons/canada.png';
-import deFlag from '../components/icons/germany.png';
-import frFlag from '../components/icons/france.png';
-import auFlag from '../components/icons/australia.png';
-import aeFlag from '../components/icons/united-arab-emirates.png';
-import trFlag from '../components/icons/turkey.png';
-import chFlag from '../components/icons/switzerland.png'; // Switzerland
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MODAL_HEIGHT = 560;
@@ -286,7 +287,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
               <Animated.View
                 style={[
                   styles.modalContainer,
-                  { transform: [{ translateY: slideAnim }], width: Math.min(393, SCREEN_WIDTH) },
+                  { transform: [{ translateY: slideAnim }] },
                 ]}
               >
                 {/* Handle Bar */}
@@ -380,7 +381,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
               <View
                 style={[
                   styles.safeAreaExtension,
-                  { height: insets.bottom, width: Math.min(393, SCREEN_WIDTH) },
+                  { height: insets.bottom },
                 ]}
               />
             </View>
@@ -393,18 +394,19 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalWrapper: { alignSelf: 'center' },
+  modalWrapper: { alignSelf: 'center', width: '100%' },
   modalContainer: {
+    width: '100%',
     height: MODAL_HEIGHT,
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 24,
+    borderTopLeftRadius: s(24),
+    borderTopRightRadius: s(24),
+    paddingHorizontal: ms(24),
     paddingTop: 12,
   },
-  safeAreaExtension: { backgroundColor: '#FFFFFF', alignSelf: 'center' },
+  safeAreaExtension: { backgroundColor: '#FFFFFF', alignSelf: 'center', width: '100%' },
   handleBar: {
-    width: 40,
+    width: s(40),
     height: 4,
     backgroundColor: '#E5E7EB',
     borderRadius: 2,
@@ -443,14 +445,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'right',
   },
-  valueContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, justifyContent: 'flex-end' },
-  brandIcon: { width: 20, height: 20, resizeMode: 'contain', borderRadius: 4 },
-  countryFlag: { width: 24, height: 16, resizeMode: 'cover', borderRadius: 2, marginRight: 8 },
+  valueContainer: { flexDirection: 'row', alignItems: 'center', gap: ms(8), flex: 1, justifyContent: 'flex-end' },
+  brandIcon: { width: s(20), height: 20, resizeMode: 'contain', borderRadius: s(4) },
+  countryFlag: { width: s(24), height: 16, resizeMode: 'cover', borderRadius: s(2), marginRight: ms(8) },
   confirmationTimeSection: {
     backgroundColor: '#F3F4F6',
-    borderRadius: 8,
+    borderRadius: s(8),
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: ms(16),
     marginBottom: 24,
     alignItems: 'center',
   },
@@ -464,7 +466,7 @@ const styles = StyleSheet.create({
   buttonSection: { marginTop: 'auto', paddingBottom: 24 },
   payButton: {
     backgroundColor: '#35297F',
-    borderRadius: 12,
+    borderRadius: s(12),
     paddingVertical: 16,
     justifyContent: 'center',
     alignItems: 'center',
