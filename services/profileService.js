@@ -7,16 +7,13 @@ import { apiClient } from './apiClient';
 export const userProfileService = {
   /**
    * Fetch the authenticated user's profile
-   * @param {{ signal?: AbortSignal }} [opts] - Request options
    * @returns {Promise<{success: boolean, data?: any, error?: string, message?: string}>}
    */
-  async getProfile(opts = {}) {
+  async getProfile() {
     try {
-      const requestOptions = opts.signal ? { signal: opts.signal } : {};
-      const resp = await apiClient.get('/profile/profile/complete', requestOptions);
-
+      const resp = await apiClient.get('/profile/complete');
       const payload = resp?.data ?? resp;
-      const success = Boolean(payload?.success);
+      const success = resp?.success ?? Boolean(payload);
 
       if (!success) {
         const backendMsg = payload?.message || payload?.error || 'Failed to load profile';
@@ -28,8 +25,13 @@ export const userProfileService = {
         };
       }
 
-      // Extract profile from response (handles both response formats)
-      const serverProfile = payload?.data?.profile ?? payload?.profile ?? payload?.data ?? payload;
+      // Extract profile from response
+      const serverProfile =
+        payload?.profile ??
+        payload?.data?.profile ??
+        payload?.data ??
+        payload?.user ??
+        payload;
       
       if (!serverProfile || (typeof serverProfile === 'object' && Object.keys(serverProfile).length === 0)) {
         return {
@@ -47,15 +49,6 @@ export const userProfileService = {
         message: payload?.message || 'Profile loaded successfully',
       };
     } catch (error) {
-      // Handle AbortError (cancelled request)
-      if (error?.name === 'AbortError') {
-        return {
-          success: false,
-          error: 'CANCELLED',
-          message: 'Request was cancelled',
-        };
-      }
-
       // Handle API error responses
       const errData = error?.response?.data;
       if (errData) {
@@ -143,7 +136,6 @@ export const userProfileService = {
       SERVER_ERROR: 'Server error. Please try again later.',
       NETWORK_ERROR: 'Network error. Check your connection.',
       FETCH_FAILED: 'Could not load your profile.',
-      CANCELLED: 'Request was cancelled.',
       EMPTY_PROFILE: 'Profile data is empty.',
     };
     return map[code] ?? fallback;

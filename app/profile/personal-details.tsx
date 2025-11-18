@@ -1,19 +1,19 @@
 // app/user/PersonalDetailsScreen.tsx
-import React, { useMemo } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useMemo } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  ActivityIndicator,
-  Image,
+    ActivityIndicator,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 import { useUserProfile } from '../../hooks/useProfile';
 
 // use same back icon as other screens
@@ -53,7 +53,14 @@ const PersonalDetailsScreen = () => {
   const router = useRouter();
 
   // Load profile on mount; expose refetch for retry
-  const { profile, loading, error, refetch } = useUserProfile({ auto: true });
+  const { profile, loading, error, refetch } = useUserProfile();
+
+  // Fetch profile when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const details: PersonalDetails = useMemo(() => {
     const { firstName, lastName } = deriveNames(profile);

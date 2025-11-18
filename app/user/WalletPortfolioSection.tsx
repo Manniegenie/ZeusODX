@@ -45,7 +45,7 @@ export default function WalletPortfolioSection({
   // Dashboard-derived data
   const { totalPortfolioBalance } = useDashboard();
   const safeBalance = totalPortfolioBalance || 0;
-  const formattedUsdBalance = `${safeBalance.toLocaleString('en-US', {
+  const formattedUsdBalance = `$${safeBalance.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;

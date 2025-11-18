@@ -52,7 +52,7 @@ const ProfileScreen = () => {
     avatarUrl,
     hasAvatar,
     refetch,
-  } = useUserProfile({ auto: true });
+  } = useUserProfile();
 
   // Logout
   const { logout, loggingOut } = useLogout({

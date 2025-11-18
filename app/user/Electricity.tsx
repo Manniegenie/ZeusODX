@@ -646,16 +646,7 @@ const ElectricityScreen: React.FC = () => {
       )}
 
       {/* Loading Screen - full-screen overlay during verification/purchase */}
-      {(loading || isProcessing || customerLoading) && (
-        <>
-          {console.log('🔌 Rendering loading screen, loading state:', {
-            loading,
-            isProcessing,
-            customerLoading,
-          })}
-          <Loading />
-        </>
-      )}
+      {(loading || isProcessing || customerLoading) && <Loading />}
     </View>
   );
 };

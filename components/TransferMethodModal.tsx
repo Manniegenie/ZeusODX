@@ -1,21 +1,20 @@
 // components/TransferMethodModal.tsx
 import React, { useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  Modal,
-  FlatList,
-  Image,
-  Animated,
-  Dimensions,
+    Animated,
+    Dimensions,
+    FlatList,
+    Image,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Typography } from '../constants/Typography';
 import { Colors } from '../constants/Colors';
-import { Layout } from '../constants/Layout';
+import { Typography } from '../constants/Typography';
 
 const internalWalletIcon = require('../components/icons/internal-wallet.png');
 const externalWalletIcon = require('../components/icons/external-wallet.png');
@@ -115,7 +114,7 @@ export default function TransferMethodModal({
               <Animated.View
                 style={[
                   styles.modalContainer,
-                  { transform: [{ translateY: slideAnim }], width: Math.min(393, SCREEN_WIDTH) },
+                  { transform: [{ translateY: slideAnim }] },
                 ]}
               >
                 <View className="handle">
@@ -146,7 +145,7 @@ export default function TransferMethodModal({
               <View
                 style={[
                   styles.safeAreaExtension,
-                  { height: insets.bottom, width: Math.min(393, SCREEN_WIDTH) },
+                  { height: insets.bottom },
                 ]}
               />
             </View>
@@ -158,19 +157,27 @@ export default function TransferMethodModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalWrapper: { alignSelf: 'center' },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalWrapper: {
+    alignSelf: 'center',
+    width: '100%',
+  },
 
   modalContainer: {
+    width: '100%',
     height: MODAL_HEIGHT,
     backgroundColor: Colors.surface || '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingHorizontal: (Layout.spacing?.md || 12) * 1.155,
-    paddingTop: (Layout.spacing?.md || 12) * 1.155,
+    paddingHorizontal: 24,
+    paddingTop: 16,
     overflow: 'hidden',
   },
-  safeAreaExtension: { backgroundColor: Colors.surface || '#FFFFFF', alignSelf: 'center' },
+  safeAreaExtension: { backgroundColor: Colors.surface || '#FFFFFF', alignSelf: 'center', width: '100%' },
 
   handleBar: {
     width: 40,
@@ -185,51 +192,51 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: (Layout.spacing?.md || 12) * 1.155,
+    marginBottom: 16,
   },
   modalTitle: {
     fontFamily: Typography.bold || 'System',
-    fontSize: 16.3,
+    fontSize: 16,
     color: Colors.text?.primary || '#111827',
   },
   closeButton: {
-    fontSize: 15,
+    fontSize: 16,
     color: Colors.text?.secondary || '#6B7280',
-    padding: (Layout.spacing?.xs || 6) * 1.155,
+    padding: 6,
   },
 
   listContent: {
-    paddingBottom: (Layout.spacing?.md || 12),
+    paddingBottom: 24,
   },
 
   transferMethodItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: (Layout.spacing?.sm || 8) * 2,
-    paddingHorizontal: (Layout.spacing?.xs || 6) * 2,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
     backgroundColor: '#F0EFFF',
-    marginBottom: (Layout.spacing?.xs || 6) * 3,
-    borderRadius: (Layout.borderRadius?.sm || 6) * 3,
+    marginBottom: 12,
+    borderRadius: 16,
   },
   transferMethodIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.primary || '#35297F',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  transferMethodIconImage: { width: 36.75, height: 36.75, resizeMode: 'cover' },
-  transferMethodContent: { flex: 1, marginLeft: (Layout.spacing?.sm || 8) * 1.155 },
+  transferMethodIconImage: { width: 28, height: 28, resizeMode: 'contain' },
+  transferMethodContent: { flex: 1, marginLeft: 12 },
   transferMethodTitle: {
     fontFamily: Typography.medium || 'System',
-    fontSize: 12.7,
+    fontSize: 14,
     color: Colors.text?.primary || '#111827',
-    marginBottom: 1,
+    marginBottom: 4,
   },
   transferMethodDescription: {
     fontFamily: Typography.regular || 'System',
-    fontSize: 11.55,
+    fontSize: 12,
     color: Colors.text?.secondary || '#6B7280',
   },
 });

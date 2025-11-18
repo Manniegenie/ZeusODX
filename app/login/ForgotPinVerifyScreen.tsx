@@ -33,7 +33,7 @@ export default function ForgotPinVerifyScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ phoneNumber?: string }>();
 
-  const { profile } = useUserProfile({ auto: true });
+  const { profile } = useUserProfile();
   const currentEmail = useMemo(() => String(profile?.email || ''), [profile]);
   const maskedEmail = useMemo(() => maskEmailFirstThree(currentEmail), [currentEmail]);
   const profilePhone = useMemo(() => String(profile?.phonenumber || ''), [profile]);
