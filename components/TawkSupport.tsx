@@ -1,29 +1,24 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  TouchableWithoutFeedback,
-  Animated,
-  ActivityIndicator,
-  Linking,
-  Platform,
-  useWindowDimensions,
-  Keyboard,
+    ActivityIndicator,
+    Animated,
+    Keyboard,
+    Linking,
+    Modal,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    useWindowDimensions,
+    View,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 
 import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
-import { useUserProfile as useProfileHookMaybe } from '../hooks/useProfile';
-import { useUserProfile as useProfileHookAltMaybe } from '../hooks/useProfile';
-
-// Helper for hook compatibility
-const useUserProfile = (opts?: any) =>
-  (useProfileHookMaybe || useProfileHookAltMaybe)(opts);
+import { useUserProfile } from '../hooks/useProfile';
 
 /* ================= Bottom Sheet Base (75% height) ================= */
 
@@ -130,7 +125,7 @@ export function TawkChatSheet({
   title = 'Support • ZeusODX',
   directLink = 'https://tawk.to/chat/68b186eb517e5918ffb583a8/1j3qne2kl',
 }: TawkChatSheetProps) {
-  const { profile, displayName } = useUserProfile({ auto: true });
+  const { profile, displayName } = useUserProfile();
   const userName = useMemo(() => displayName || profile?.fullName || profile?.username || '', [displayName, profile]);
   const userEmail = useMemo(() => profile?.email || profile?.contactEmail || '', [profile]);
 
@@ -320,7 +315,7 @@ export function TawkPrefetcher({
 }: {
   directLink?: string;
 }) {
-  const { profile, displayName } = useUserProfile({ auto: true });
+  const { profile, displayName } = useUserProfile();
   const userName = useMemo(() => displayName || profile?.fullName || profile?.username || '', [displayName, profile]);
   const userEmail = useMemo(() => profile?.email || profile?.contactEmail || '', [profile]);
 

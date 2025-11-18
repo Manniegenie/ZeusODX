@@ -220,28 +220,13 @@ class ApiClient {
         },
       };
 
-      // Handle AbortSignal - use provided signal or create new one for timeout
-      let abortController = null;
-      let timeoutId = null;
-      let finalSignal = options.signal;
-      
-      if (options.signal) {
-        // Use provided signal (e.g., from useProfile hook)
-        // Don't create timeout controller if signal is provided
-        finalSignal = options.signal;
-      } else {
-        // Create new controller for timeout handling
-        abortController = new AbortController();
-        timeoutId = setTimeout(() => abortController.abort(), 30000); // 30 second timeout
-        finalSignal = abortController.signal;
-      }
+      // Handle AbortSignal - only use if provided
+      const finalSignal = options.signal || null;
 
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         ...config,
-        signal: finalSignal,
+        ...(finalSignal && { signal: finalSignal }),
       });
-
-      if (timeoutId) clearTimeout(timeoutId);
 
       // Better error handling - get the response body even for errors
       const responseText = await response.text();
@@ -288,10 +273,11 @@ class ApiClient {
       return { success: true, data };
     } catch (error) {
       if (error.name === 'AbortError') {
-        console.error(`⏰ API Request Timeout: ${endpoint}`);
+        console.log(`⏹️ API Request Cancelled: ${endpoint}`);
         return {
           success: false,
-          error: 'Request timeout. Please try again.',
+          error: 'CANCELLED',
+          message: 'Request was cancelled',
         };
       }
       console.error(`❌ API Network Error: ${endpoint}`, error);

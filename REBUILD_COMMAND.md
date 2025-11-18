@@ -41,3 +41,4 @@ cd /Users/mac/Projects/ZeusODX && npx eas build --platform android --profile pro
 
 
 
+

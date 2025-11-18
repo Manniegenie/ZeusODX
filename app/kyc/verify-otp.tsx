@@ -35,7 +35,7 @@ export default function VerifyEmailOtpScreen() {
   const params = useLocalSearchParams<{ email?: string }>();
 
   // Profile (fallback for email if not passed via params)
-  const { profile } = useUserProfile({ auto: true });
+  const { profile } = useUserProfile();
   const currentEmail = useMemo(
     () => String(params?.email || profile?.email || ''),
     [params?.email, profile?.email]

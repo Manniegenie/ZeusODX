@@ -43,7 +43,7 @@ export default function VerifyEmailSendScreen() {
   const router = useRouter();
 
   // Profile → current email
-  const { profile, loading: profileLoading } = useUserProfile({ auto: true });
+  const { profile, loading: profileLoading } = useUserProfile();
   const currentEmail = useMemo(() => String(profile?.email || ''), [profile]);
   const hasValidEmail = useMemo(() => EMAIL_RE.test(currentEmail), [currentEmail]);
 

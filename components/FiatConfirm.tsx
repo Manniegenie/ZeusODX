@@ -1,21 +1,20 @@
 // components/FiatTransferConfirmationModal.tsx
 import React, { useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Animated,
-  Dimensions,
-  TouchableWithoutFeedback,
+    Animated,
+    Dimensions,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '../constants/Typography';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-// Increased height a bit; adapts to screen size, max 500
-const MODAL_HEIGHT = Math.min(500, Math.round(SCREEN_HEIGHT * 0.72));
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const MODAL_HEIGHT = Math.min(520, Math.round(SCREEN_HEIGHT * 0.7));
 
 interface BankDetails {
   id: string;
@@ -180,9 +179,10 @@ const styles = StyleSheet.create({
   },
   modalWrapper: {
     alignSelf: 'center',
+    width: '100%',
   },
   modalContainer: {
-    width: Math.min(393, SCREEN_WIDTH),
+    width: '100%',
     height: MODAL_HEIGHT,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   safeAreaExtension: {
-    width: Math.min(393, SCREEN_WIDTH),
+    width: '100%',
     backgroundColor: '#FFFFFF',
     alignSelf: 'center',
   },
@@ -250,7 +250,6 @@ const styles = StyleSheet.create({
   },
   buttonSection: {
     marginTop: 'auto',
-    // paddingBottom is set dynamically with safe-area inset
   },
   confirmButton: {
     backgroundColor: '#35297F',

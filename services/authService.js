@@ -298,20 +298,26 @@ export const authService = {
   async getCurrentUser() {
     console.log('👤 Getting current user info');
     try {
-      // First try to get from local storage
-      const userData = await AsyncStorage.getItem('user_data');
-      if (userData) {
-        return { 
-          success: true, 
-          data: JSON.parse(userData) 
-        };
+      const response = await apiClient.get('/profile/complete');
+      if (response?.success) {
+        const profile =
+          response?.data?.profile ??
+          response?.profile ??
+          response?.data ??
+          null;
+
+        if (profile) {
+          return {
+            success: true,
+            data: profile,
+            message: response?.message || 'Profile fetched successfully',
+          };
+        }
       }
-      
-      // If not in storage, fetch from API (apiClient handles auth headers automatically)
-      return apiClient.get('/auth/me');
+      return response;
     } catch (error) {
-      console.log('❌ Get current user failed:', error);
-      return { success: false, error: error.message };
+      console.log('❌ Get current user failed:', error?.message || error);
+      return { success: false, error: error?.message || 'Failed to load user profile' };
     }
   },
 

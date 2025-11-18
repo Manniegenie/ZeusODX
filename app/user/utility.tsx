@@ -1,27 +1,27 @@
 // app/user/UtilityScreen.tsx
+import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   Image,
-  SafeAreaView,
-  StatusBar,
   ImageSourcePropType,
+  SafeAreaView,
   ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
 import BottomTabNavigator from '../../components/BottomNavigator';
+import { Colors } from '../../constants/Colors';
+import { Typography } from '../../constants/Typography';
 
 // Utility service icons
 import utilityAirtimeIcon from '../../components/icons/utility-airtime.png';
+import utilityBettingIcon from '../../components/icons/utility-betting.png';
+import utilityCableIcon from '../../components/icons/utility-cable.png';
 import utilityDataIcon from '../../components/icons/utility-data.png';
 import utilityElectricityIcon from '../../components/icons/utility-electricity.png';
-import utilityCableIcon from '../../components/icons/utility-cable.png';
-import utilityBettingIcon from '../../components/icons/utility-betting.png';
 import utilityGiftcardIcon from '../../components/icons/utility-giftcard.png';
 
 // use same back icon as other screens
@@ -234,8 +234,8 @@ const styles = StyleSheet.create({
     rowGap: 1,
   },
   serviceCard: {
-    width: 170,        // Original width that works on all phones
-    height: 100,        // Fixed height for consistency
+    width: 140,        // Reduced width
+    height: 80,        // Reduced height
     borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
