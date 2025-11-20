@@ -1,36 +1,36 @@
 // app/user/NGNZWalletScreen.tsx
-import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  RefreshControl,
-  ActivityIndicator,
-  ImageBackground
+    ActivityIndicator,
+    Image,
+    ImageBackground,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
-import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import NetworkSelectionModal from '../../components/Network';
-import { Typography } from '../../constants/Typography';
+import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import { useBalance } from '../../hooks/useWallet';
+import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
+import { useBalance } from '../../hooks/useWallet';
 
-import ngnzIcon from '../../components/icons/NGNZ.png';
-import transferIcon from '../../components/icons/transfer-icon.png';
-import swapIcon from '../../components/icons/swap-icon.png';
-import depositIcon from '../../components/icons/deposit-icon.png';
-import emptyStateIcon from '../../components/icons/empty-state.png';
 import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
 import backIcon from '../../components/icons/backy.png';
+import depositIcon from '../../components/icons/deposit-icon.png';
+import emptyStateIcon from '../../components/icons/empty-state.png';
+import ngnzIcon from '../../components/icons/NGNZ.png';
+import swapIcon from '../../components/icons/swap-icon.png';
+import transferIcon from '../../components/icons/transfer-icon.png';
 
 type TokenDetails = {
   transactionId?: string;
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
   quickActionsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   actionItem: { alignItems: 'center' },
   actionIconImage: { width: 44, height: 44 },
-  actionLabel: { fontSize: 10, color: '#292d32', marginTop: 4 },
+  actionLabel: { fontSize: 12, color: '#292d32', marginTop: 4 },
   recentHistorySection: { 
     paddingHorizontal: Layout.spacing.lg, 
     paddingBottom: Layout.spacing.xl 

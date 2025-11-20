@@ -244,5 +244,5 @@ const styles = StyleSheet.create({
   },
   quickLinkItem: { flex: 1, alignItems: 'center', gap: Layout.spacing.xs },
   quickLinkIconImage: { width: 44, height: 44, borderRadius: 22, resizeMode: 'contain' },
-  quickLinkText: { fontFamily: Typography.regular, fontSize: 10, color: Colors.text.secondary, textAlign: 'center' },
+  quickLinkText: { fontFamily: Typography.regular, fontSize: 12, color: Colors.text.secondary, textAlign: 'center' },
 });

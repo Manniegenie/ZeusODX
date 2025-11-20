@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
   quickActionsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   actionItem: { alignItems: 'center' },
   actionIconImage: { width: 44, height: 44 },
-  actionLabel: { fontSize: 10, color: '#292d32', marginTop: 4 },
+  actionLabel: { fontSize: 12, color: '#292d32', marginTop: 4 },
 
   // Recent History
   recentHistorySection: { paddingHorizontal: Layout.spacing.lg, paddingBottom: Layout.spacing.xl },

@@ -280,7 +280,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.text.primary,
     fontWeight: '600',
-    marginBottom: 3,
   },
   tokenSymbol: {
     fontFamily: Typography.regular,
@@ -294,12 +293,12 @@ const styles = StyleSheet.create({
     fontFamily: Typography.medium,
     fontSize: 13,
     color: Colors.text.primary,
-    marginBottom: 0.5,
+   
     fontWeight: '600',
   },
   changeContainer: {
     paddingHorizontal: 6,
-    paddingVertical: 0.5,
+   
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',

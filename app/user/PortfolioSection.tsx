@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   quickLinksList: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Layout.spacing.xs },
   quickLinkItem: { flex: 1, alignItems: 'center', gap: Layout.spacing.xs },
   quickLinkIconImage: { width: 44, height: 44, borderRadius: 22, resizeMode: 'contain' },
-  quickLinkText: { fontFamily: Typography.regular, fontSize: 10, color: Colors.text.secondary, textAlign: 'center' },
+  quickLinkText: { fontFamily: Typography.regular, fontSize: 12, color: Colors.text.secondary, textAlign: 'center' },
   setupBanner: { marginHorizontal: Layout.spacing.lg, marginBottom: Layout.spacing.lg, backgroundColor: '#F8F9FA', borderRadius: Layout.borderRadius.md, borderWidth: 0.5, borderColor: '#F0A202', padding: Layout.spacing.md },
   setupBannerLoading: { opacity: 0.7, backgroundColor: '#E8E8E8' },
   setupContent: { alignItems: 'center' },

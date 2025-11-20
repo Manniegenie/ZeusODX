@@ -26,8 +26,8 @@ export const Typography = {
   bold: 'BricolageGrotesque-Bold',
   extraBold: 'BricolageGrotesque-ExtraBold',
   sizes: {
-    xs: scaleFont(12),
-    sm: scaleFont(14),
+    xs: scaleFont(14),
+    sm: scaleFont(16),
     md: scaleFont(16),
     lg: scaleFont(18),
     xl: scaleFont(20),
@@ -62,8 +62,8 @@ export const Typography = {
     },
     caption: {
       fontFamily: 'BricolageGrotesque-Light',
-      fontSize: scaleFont(12),
-      lineHeight: scaleFont(16),
+      fontSize: scaleFont(14),
+      lineHeight: scaleFont(18),
     },
     display: {
       fontFamily: 'BricolageGrotesque-ExtraBold',

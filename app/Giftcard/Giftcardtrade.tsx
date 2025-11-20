@@ -1,5 +1,6 @@
 // app/giftcards/giftcard-trade.tsx
 import * as FileSystem from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -423,7 +424,7 @@ const GiftcardTradeScreen: React.FC = () => {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
-        quality: 0.9,
+        quality: 1, // Get full quality first, we'll compress it
         selectionLimit: 1,
       });
 
@@ -431,13 +432,6 @@ const GiftcardTradeScreen: React.FC = () => {
       const asset = result.assets?.[0];
       if (!asset) return;
 
-      let size = asset.fileSize ?? 0;
-      if (!size && asset.uri) {
-        try {
-          const stat = await FileSystem.getInfoAsync(asset.uri);
-          if (stat.exists && typeof stat.size === 'number') size = stat.size;
-        } catch {}
-      }
       const mimeType = asset.mimeType || 'image/jpeg';
 
       if (!(ACCEPTED_MIME.includes(mimeType) || mimeType.startsWith('image/'))) {
@@ -450,19 +444,41 @@ const GiftcardTradeScreen: React.FC = () => {
         });
       }
 
+      // Compress and resize image to prevent memory issues
+      const manipulatedImage = await ImageManipulator.manipulateAsync(
+        asset.uri,
+        [
+          { resize: { width: 1200 } }, // Resize to max 1200px width (maintains aspect ratio)
+        ],
+        {
+          compress: 0.8, // 80% quality - good balance between size and quality
+          format: ImageManipulator.SaveFormat.JPEG, // Always use JPEG for smaller file size
+        }
+      );
+
+      // Get file size of compressed image
+      let size = 0;
+      try {
+        const stat = await FileSystem.getInfoAsync(manipulatedImage.uri);
+        if (stat.exists && typeof stat.size === 'number') {
+          size = stat.size;
+        }
+      } catch {}
+
       const newUpload: FileInfo = {
-        name: asset.fileName || asset.uri.split('/').pop() || 'card.jpg',
+        name: asset.fileName || `card_${Date.now()}.jpg`,
         size,
-        mimeType,
-        uri: asset.uri,
+        mimeType: 'image/jpeg', // Always JPEG after compression
+        uri: manipulatedImage.uri,
       };
 
       setUploads(prev => [...prev, newUpload]);
     } catch (e: any) {
+      console.error('Image picker error:', e);
       showError({
         type: 'general',
         title: 'Upload Failed',
-        message: e?.message || 'Unable to open gallery.',
+        message: e?.message || 'Unable to process image. Please try again.',
         autoHide: true,
         duration: 3000,
       });
