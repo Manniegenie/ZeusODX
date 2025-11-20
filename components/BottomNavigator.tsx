@@ -240,7 +240,7 @@ const styles = StyleSheet.create<Styles>({
     resizeMode: 'contain',
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: 12,
     textAlign: 'center',
     letterSpacing: 0.2,
     marginTop: 4,
@@ -273,7 +273,7 @@ const styles = StyleSheet.create<Styles>({
     resizeMode: 'contain',
   },
   specialTabLabel: {
-    fontSize: 10,
+    fontSize: 12,
     textAlign: 'center',
     letterSpacing: 0.3,
     marginTop: 6,

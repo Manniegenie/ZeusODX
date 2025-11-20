@@ -72,16 +72,19 @@ export const giftCardService = {
         }
 
         // Process each image
-        giftCardData.images.forEach((image, index) => {
+        for (let index = 0; index < giftCardData.images.length; index++) {
+          const image = giftCardData.images[index];
+          
           if (!image || !image.uri) {
             console.warn(`Skipping invalid image at index ${index}`);
-            return;
+            continue;
           }
 
-          // Create proper file object
+          // Create proper file object for React Native FormData
+          // React Native FormData requires: uri, type, name
           const fileObj = {
             uri: image.uri,
-            type: image.type || image.mime || 'image/jpeg',
+            type: image.mimeType || image.type || image.mime || 'image/jpeg',
             name: image.name || image.fileName || `card_image_${index + 1}.jpg`
           };
 
@@ -91,8 +94,9 @@ export const giftCardService = {
             uri: fileObj.uri.substring(0, 50) + '...'
           });
 
+          // Append each image separately - React Native FormData handles this correctly
           formData.append('cardImages', fileObj);
-        });
+        }
       }
 
       console.log('FormData prepared, making API request...');

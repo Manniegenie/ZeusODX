@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
   quickActionsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   actionItem: { alignItems: 'center' },
   actionIconImage: { width: 44, height: 44 },
-  actionLabel: { fontSize: 10, color: '#292d32', marginTop: 4 },
+  actionLabel: { fontSize: 12, color: '#292d32', marginTop: 4 },
   recentHistorySection: { paddingHorizontal: Layout.spacing.lg, paddingBottom: Layout.spacing.xl },
   recentHistoryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Layout.spacing.lg },
   recentHistoryTitle: { fontFamily: Typography.medium, fontSize: 14, fontWeight: '600', color: Colors.text.primary },

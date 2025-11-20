@@ -1,36 +1,36 @@
 // app/wallet-screens/bnb-wallet.tsx
-import React, { useCallback, useState, useEffect } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  RefreshControl,
-  ActivityIndicator,
-  ImageBackground,
+    ActivityIndicator,
+    Image,
+    ImageBackground,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
 import NetworkSelectionModal from '../../components/Network';
 import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
-import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import { useBalance } from '../../hooks/useWallet';
+import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
+import { useBalance } from '../../hooks/useWallet';
 
-import bnbIcon from '../../components/icons/bnb-icon.png';
-import transferIcon from '../../components/icons/transfer-icon.png';
-import swapIcon from '../../components/icons/swap-icon.png';
-import depositIcon from '../../components/icons/deposit-icon.png';
-import emptyStateIcon from '../../components/icons/empty-state.png';
 import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
 import backIcon from '../../components/icons/backy.png';
+import bnbIcon from '../../components/icons/bnb-icon.png';
+import depositIcon from '../../components/icons/deposit-icon.png';
+import emptyStateIcon from '../../components/icons/empty-state.png';
+import swapIcon from '../../components/icons/swap-icon.png';
+import transferIcon from '../../components/icons/transfer-icon.png';
 
 // -------------------- Types to match History/Receipt --------------------
 type TokenDetails = {
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
   quickActionsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   actionItem: { alignItems: 'center', flex: 1 },
   actionIconImage: { width: 44, height: 44, resizeMode: 'cover' },
-  actionLabel: { fontSize: 10, color: '#292d32', marginTop: 4 },
+  actionLabel: { fontSize: 12, color: '#292d32', marginTop: 4 },
 
   // Recent History
   recentHistorySection: { paddingHorizontal: Layout.spacing.lg, paddingBottom: Layout.spacing.xl },

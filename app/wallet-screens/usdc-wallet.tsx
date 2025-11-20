@@ -2,17 +2,17 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  ImageBackground,
-  RefreshControl,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Image,
+    ImageBackground,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
 import BottomTabNavigator from '../../components/BottomNavigator';
@@ -25,12 +25,12 @@ import { useHistory } from '../../hooks/useHistory';
 import { useBalance } from '../../hooks/useWallet';
 
 import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
+import backIcon from '../../components/icons/backy.png';
 import depositIcon from '../../components/icons/deposit-icon.png';
 import emptyStateIcon from '../../components/icons/empty-state.png';
 import swapIcon from '../../components/icons/swap-icon.png';
 import transferIcon from '../../components/icons/transfer-icon.png';
 import usdcIcon from '../../components/icons/usdc-icon.png';
-import backIcon from '../../components/icons/backy.png';
 
 // -------------------- Types to match History/Receipt --------------------
 type TokenDetails = {
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
   quickActionsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   actionItem: { alignItems: 'center' },
   actionIconImage: { width: 44, height: 44 },
-  actionLabel: { fontSize: 10, color: '#292d32', marginTop: 4 },
+  actionLabel: { fontSize: 12, color: '#292d32', marginTop: 4 },
 
   // History
   recentHistorySection: { paddingHorizontal: Layout.spacing.lg, paddingBottom: Layout.spacing.xl },
