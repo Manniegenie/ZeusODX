@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  TouchableWithoutFeedback,
-  Modal,
-  FlatList,
-  Image
-} from 'react-native';
 import { useRouter } from 'expo-router';
-import { Typography } from '../../constants/Typography';
+import React from 'react';
+import {
+    FlatList,
+    Image,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
+} from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
+import { Typography } from '../../constants/Typography';
 
 // Icons
 const btcIcon = require('../../components/icons/btc-icon.png');
@@ -219,8 +219,22 @@ const styles = StyleSheet.create({
   scrollableList: { flex: 1 },
   walletOptionItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: Layout.spacing.md, paddingHorizontal: Layout.spacing.sm, backgroundColor: '#F8F9FA', marginBottom: Layout.spacing.sm, borderRadius: Layout.borderRadius.md },
   walletOptionLeft: { flexDirection: 'row', alignItems: 'center', gap: Layout.spacing.md, flex: 1 },
-  walletIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#E5E7EB', overflow: 'hidden' },
-  walletIconImage: { width: 40, height: 40, resizeMode: 'cover' },
+  walletIcon: { 
+    width: 40, 
+    height: 40, 
+    borderRadius: 20, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    borderWidth: 1, 
+    borderColor: '#E5E7EB', 
+    overflow: 'hidden',
+    padding: 0
+  },
+  walletIconImage: { 
+    width: 40, 
+    height: 40, 
+    resizeMode: 'cover'
+  },
   walletInfo: { flex: 1 },
   walletName: { fontFamily: Typography.medium, fontSize: 14, color: Colors.text.primary },
   walletSymbol: { fontFamily: Typography.regular, fontSize: 12, color: Colors.text.secondary },

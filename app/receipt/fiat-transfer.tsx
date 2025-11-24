@@ -5,19 +5,20 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useMemo } from 'react';
 import {
-    Alert,
-    Image,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
+import { getPdfLayoutScale } from '../../utils/pdfLayout';
 
 // Icons
 // @ts-ignore
@@ -118,6 +119,15 @@ export default function FiatTransferReceiptScreen() {
     const statusColors = getStatusColor(transfer.status);
     const amount = formatAmount(transfer.amount, transfer.currency);
     const date = formatDate(transfer.createdAt);
+    const detailCount =
+      7 +
+      (transfer.fee ? 1 : 0) +
+      (transfer.balanceAfter ? 1 : 0) +
+      (transfer.narration ? 1 : 0);
+    const layoutScale = getPdfLayoutScale(detailCount, { extraSections: 6, baseRows: 10 });
+    const fontScale = layoutScale.fontScale.toFixed(3);
+    const spacingScale = layoutScale.spacingScale.toFixed(3);
+    const contentScale = layoutScale.contentScale.toFixed(3);
     
     return `
       <!DOCTYPE html>
@@ -126,125 +136,170 @@ export default function FiatTransferReceiptScreen() {
         <meta charset="utf-8">
         <title>${transfer.transferType || 'Transfer'} Receipt</title>
         <style>
+          :root {
+            --font-scale: ${fontScale};
+            --spacing-scale: ${spacingScale};
+            --content-scale: ${contentScale};
+          }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          @page { size: A4; margin: 0; }
+          html, body { height: 100%; }
           body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
-            padding: 20px;
-            background: white;
+            padding: calc(24px * var(--spacing-scale));
+            background: #F3F0FF;
             color: #111827;
-            line-height: 1.6;
+            line-height: calc(1.5 * var(--font-scale));
+            min-height: 100vh;
+            overflow: hidden;
+          }
+          .scaled-block {
+            width: calc(100% / var(--content-scale));
+            transform: scale(var(--content-scale));
+            transform-origin: top center;
+          }
+          .receipt-content {
+            max-width: 520px;
+            margin: 0 auto;
+            background: #FFFFFF;
+            border-radius: 20px;
+            padding: calc(28px * var(--spacing-scale));
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+          }
+          .logo-slot {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto calc(18px * var(--spacing-scale));
+            border-radius: 16px;
+            border: 1px dashed rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: calc(12px * var(--font-scale));
+            color: rgba(255,255,255,0.8);
+          }
+          .logo-slot img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
           }
           .header {
             text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
+            margin-bottom: calc(30px * var(--spacing-scale));
+            padding-bottom: calc(20px * var(--spacing-scale));
             border-bottom: 2px solid #E5E7EB;
           }
           .logo {
             width: 60px;
             height: 60px;
-            margin: 0 auto 15px;
+            margin: 0 auto calc(15px * var(--spacing-scale));
             background: #35297F;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 24px;
+            color: #FFFFFF;
+            font-size: calc(24px * var(--font-scale));
             font-weight: bold;
           }
           .title {
-            font-size: 24px;
+            font-size: calc(24px * var(--font-scale));
             font-weight: 700;
             color: #111827;
             margin: 0;
           }
           .subtitle {
-            font-size: 14px;
+            font-size: calc(14px * var(--font-scale));
             color: #6B7280;
-            margin: 5px 0 0;
-          }
-          .receipt-content {
-            max-width: 500px;
-            margin: 0 auto;
+            margin: calc(5px * var(--spacing-scale)) 0 0;
           }
           .status-badge {
             display: inline-block;
-            padding: 8px 16px;
+            padding: calc(8px * var(--spacing-scale)) calc(16px * var(--spacing-scale));
             border-radius: 20px;
-            font-size: 14px;
+            font-size: calc(14px * var(--font-scale));
             font-weight: 600;
-            margin-bottom: 20px;
+            margin-bottom: calc(20px * var(--spacing-scale));
             background-color: ${statusColors.bg};
             color: ${statusColors.text};
             border: 1px solid ${statusColors.border};
           }
           .amount-section {
             text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
+            margin-bottom: calc(30px * var(--spacing-scale));
+            padding: calc(20px * var(--spacing-scale));
             background: #F8F9FA;
             border-radius: 12px;
             border: 1px solid #E5E7EB;
           }
           .amount-label {
-            font-size: 14px;
+            font-size: calc(14px * var(--font-scale));
             color: #6B7280;
-            margin-bottom: 8px;
+            margin-bottom: calc(8px * var(--spacing-scale));
           }
           .amount-value {
-            font-size: 32px;
+            font-size: calc(32px * var(--font-scale));
             font-weight: 700;
             color: #111827;
           }
           .details-section {
-            margin-bottom: 30px;
+            margin-bottom: calc(30px * var(--spacing-scale));
           }
           .detail-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
+            padding: calc(12px * var(--spacing-scale)) 0;
             border-bottom: 1px solid #F3F4F6;
           }
           .detail-row:last-child {
             border-bottom: none;
           }
           .detail-label {
-            font-size: 14px;
+            font-size: calc(14px * var(--font-scale));
             color: #6B7280;
             font-weight: 500;
           }
           .detail-value {
-            font-size: 14px;
+            font-size: calc(14px * var(--font-scale));
             color: #111827;
             font-weight: 600;
             text-align: right;
             max-width: 60%;
-            word-break: break-all;
+            word-break: break-word;
           }
           .footer {
-            margin-top: 40px;
-            padding-top: 20px;
+            margin-top: calc(40px * var(--spacing-scale));
+            padding-top: calc(20px * var(--spacing-scale));
             border-top: 1px solid #E5E7EB;
             text-align: center;
             color: #6B7280;
-            font-size: 12px;
+            font-size: calc(12px * var(--font-scale));
           }
           .note {
             background: #FEF3C7;
             border: 1px solid #F59E0B;
             border-radius: 8px;
-            padding: 16px;
-            margin: 20px 0;
-            font-size: 14px;
+            padding: calc(16px * var(--spacing-scale));
+            margin: calc(20px * var(--spacing-scale)) 0;
+            font-size: calc(14px * var(--font-scale));
             color: #92400E;
+          }
+          @media print {
+            body { background: #F3F0FF; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page { margin: 0; }
           }
         </style>
       </head>
       <body>
-        <div class="receipt-content">
+        <div class="receipt-content scaled-block">
           <div class="header">
+            <div class="logo-slot">
+              <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAACjQAAAIACAYAAAAvoxf9AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUABP5aSURBVHgB7P0JtCTZeR92fneJJSP3t7/au7t6R4MgAVkESdOgLcsiRdmmRMCkPZ7RyD6kl2N5tJFnKIEsmBJtS+dY1ozsH1HWoceSZathUrJEQqJECU0SIAgBDQLo7uqt9uXtL/fMWO+9c29kvqpX1d21dFd1v+r6/6ri5RYRGZkZ+/3i+xg95IwxbP9Dxhi9d6fkU4d3mmFzfskztCCYXyt0ERlSNU5mgRhraUMV4kySocBORNM+V2ekQ0bcsyOwz1HVTkzFTo20j+1gtiPyDTM+EePlc8y4593rwnZuwu3Us/JjEAAAwC0UuR6MhslgNEqHhsz2/FztzBNPLb/01HOPzz359NH1Z59a3H7uE0fXg9BL7822EQAAAAAAAAAAAAAAAAAAAODWJD3kGGPmnV6bBTu+XRQH/8Y3vsF+7dd+zbzzgqb5eWMfv1o5d66IAiPC1tzlUPitmijUAkmvrY2KOLFQM1a1b9YyxBqMUWA0k8wFKZKuM8Nq5J4zRtpp8tx9OwWefV4a+8dOqAtiFPYONy6YkcwsyPF6ACPCTQAAAAAAAAAAAAAAAAAAAAAAAOBB9dAHNN7OP/7HZ7xjxxpepeIJ3xfC8xpy9+r58Ny5zPe85/jjj1/h585d9XTarDarcZUZ7kvpB4axyAjRJM2axE1omAmYodAFMxKjmr3vERlBzHjcBTpqE3Hi0jCSxr7GGPMZad+ORxiXN5K5LI1lsGOZmdFMMzZOAxunGCE7IwAAAAAAAAAAAAAAAAAAAAAAADygPrQBjfeilLTL3vjFXzrP3ty+GDBfBvWl0OPFRmU8iRubV4e1wfbYj4eFV6Q88OzL" alt="Transfer receipt logo" />
+            </div>
             <div class="logo">Z</div>
             <h1 class="title">${transfer.transferType || 'Transfer'} Receipt</h1>
             <p class="subtitle">${transfer.currency || 'NGNZ'} Transfer</p>

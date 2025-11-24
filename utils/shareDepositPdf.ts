@@ -1,6 +1,7 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Platform, Share } from 'react-native';
+import { getPdfLayoutScale } from './pdfLayout';
 
 type DetailRow = {
   label: string;
@@ -80,65 +81,89 @@ const generateDepositHtml = ({
   const prettyTokenName = tokenName ?? tokenSymbol;
   const title = `${prettyTokenName} Deposit`;
   const subtitle = networkDisplay ? `${networkDisplay} Deposit Details` : 'Deposit Details';
+  const layoutScale = getPdfLayoutScale(details.length, {
+    extraSections: warnings.length + (qrCodeDataUrl ? 4 : 2),
+    baseRows: 9,
+  });
+  const fontScale = layoutScale.fontScale.toFixed(3);
+  const spacingScale = layoutScale.spacingScale.toFixed(3);
+  const contentScale = layoutScale.contentScale.toFixed(3);
 
   return `
     <html>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
+          :root {
+            --font-scale: ${fontScale};
+            --spacing-scale: ${spacingScale};
+            --content-scale: ${contentScale};
+          }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          @page { size: A4; margin: 0; }
+          html, body { height: 100%; }
           body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
-            padding: 24px;
+            padding: calc(24px * var(--spacing-scale));
             background-color: #f4f4f5;
             color: #1f2937;
+            line-height: calc(1.5 * var(--font-scale));
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+          }
+          .scaled-card {
+            width: calc(100% / var(--content-scale));
+            transform: scale(var(--content-scale));
+            transform-origin: top center;
           }
           .card {
             background-color: #ffffff;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 10px 30px rgba(53, 41, 127, 0.08);
+            border-radius: 18px;
+            padding: calc(24px * var(--spacing-scale));
+            box-shadow: 0 20px 45px rgba(17, 24, 39, 0.08);
             max-width: 640px;
-            margin: 0 auto;
             border: 1px solid #ede9fe;
           }
           .header {
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: calc(24px * var(--spacing-scale));
           }
           .title {
-            font-size: 22px;
+            font-size: calc(22px * var(--font-scale));
             font-weight: 700;
             color: #35297F;
             margin: 0;
           }
           .subtitle {
-            font-size: 14px;
+            font-size: calc(14px * var(--font-scale));
             color: #6b7280;
-            margin-top: 4px;
+            margin-top: calc(4px * var(--spacing-scale));
           }
           .qr-container {
             text-align: center;
-            margin: 24px 0;
+            margin: calc(24px * var(--spacing-scale)) 0;
           }
           .qr-image {
             width: 180px;
             height: 180px;
             border-radius: 16px;
             border: 1px solid #e5e7eb;
-            padding: 12px;
+            padding: calc(12px * var(--spacing-scale));
             background-color: #fafafa;
           }
           .details {
             background-color: #f9fafb;
             border-radius: 12px;
-            padding: 16px;
+            padding: calc(16px * var(--spacing-scale));
             border: 1px solid #ede9fe;
           }
           .detail-row {
             display: flex;
             justify-content: space-between;
-            padding: 10px 0;
+            padding: calc(10px * var(--spacing-scale)) 0;
             border-bottom: 1px solid #e5e7eb;
           }
           .detail-row:last-child {
@@ -147,63 +172,67 @@ const generateDepositHtml = ({
           .detail-label {
             color: #6b7280;
             font-weight: 500;
-            font-size: 14px;
+            font-size: calc(14px * var(--font-scale));
           }
           .detail-value {
             color: #111827;
             font-weight: 600;
-            font-size: 14px;
+            font-size: calc(14px * var(--font-scale));
             max-width: 65%;
             word-break: break-word;
             text-align: right;
           }
           .address-block {
-            margin-top: 24px;
+            margin-top: calc(24px * var(--spacing-scale));
             background-color: #ede9fe;
             border-radius: 12px;
-            padding: 16px;
+            padding: calc(16px * var(--spacing-scale));
             border: 1px solid #ddd6fe;
           }
           .address-block h3 {
-            margin: 0 0 8px 0;
-            font-size: 14px;
+            margin: 0 0 calc(8px * var(--spacing-scale)) 0;
+            font-size: calc(14px * var(--font-scale));
             color: #4c1d95;
             text-transform: uppercase;
             letter-spacing: 0.08em;
           }
           .address-block p {
             margin: 0;
-            font-size: 15px;
+            font-size: calc(15px * var(--font-scale));
             font-weight: 600;
             color: #1f2937;
             word-break: break-word;
           }
           .warning {
-            margin-top: 24px;
+            margin-top: calc(24px * var(--spacing-scale));
             border-radius: 12px;
-            padding: 16px;
+            padding: calc(16px * var(--spacing-scale));
             background-color: #fef3c7;
             border: 1px solid #f59e0b;
             color: #92400e;
-            font-size: 13px;
+            font-size: calc(13px * var(--font-scale));
           }
           .warning ul {
-            padding-left: 18px;
-            margin: 8px 0 0 0;
+            padding-left: calc(18px * var(--spacing-scale));
+            margin: calc(8px * var(--spacing-scale)) 0 0 0;
           }
           .warning li {
-            margin-bottom: 6px;
+            margin-bottom: calc(6px * var(--spacing-scale));
           }
           .footer {
-            margin-top: 32px;
-            font-size: 11px;
+            margin-top: calc(32px * var(--spacing-scale));
+            font-size: calc(11px * var(--font-scale));
             color: #9ca3af;
             text-align: center;
+          }
+          @media print {
+            body { background: #f4f4f5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page { margin: 0; }
           }
         </style>
       </head>
       <body>
-        <div class="card">
+        <div class="card scaled-card">
           <div class="header">
             <h1 class="title">${escapeHtml(title)}</h1>
             <p class="subtitle">${escapeHtml(subtitle)}</p>

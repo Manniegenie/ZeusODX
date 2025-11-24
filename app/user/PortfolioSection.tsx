@@ -1,10 +1,11 @@
 // app/components/PortfolioSection.tsx
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ImageBackground, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Typography } from '../../constants/Typography';
+import { useEffect, useRef } from 'react';
+import { Animated, Image, ImageBackground, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
+import { Typography } from '../../constants/Typography';
 import { useDashboard } from '../../hooks/useDashboard';
 
 // Asset imports
@@ -185,27 +186,27 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#DDDDDD',
   },
-  balanceBackground: { height: 151, justifyContent: 'center', backgroundColor: '#4A3FAD' },
+  balanceBackground: { height: moderateScale(151, 0.1), justifyContent: 'center', backgroundColor: '#4A3FAD' },
   balanceBackgroundImage: { borderRadius: Layout.borderRadius.lg },
   balanceContent: { padding: Layout.spacing.lg, justifyContent: 'center', alignItems: 'center', height: '100%' },
-  balanceLabel: { fontFamily: Typography.regular, fontSize: 14, color: Colors.surface, marginBottom: Layout.spacing.sm, textAlign: 'center' },
+  balanceLabel: { fontFamily: Typography.regular, fontSize: moderateScale(14, 0.1), color: Colors.surface, marginBottom: Layout.spacing.sm, textAlign: 'center' },
   balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  balanceAmount: { fontFamily: Typography.medium, fontSize: 32, color: Colors.surface, fontWeight: '500', textAlign: 'center' },
+  balanceAmount: { fontFamily: Typography.medium, fontSize: moderateScale(32, 0.15), color: Colors.surface, fontWeight: '500', textAlign: 'center' },
   eyeIcon: { width: 12, height: 12, tintColor: Colors.surface, marginLeft: 6 },
   quickLinksContainer: { paddingHorizontal: Layout.spacing.lg, marginBottom: Layout.spacing.lg },
   quickLinksHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Layout.spacing.md },
-  quickLinksTitle: { fontFamily: Typography.medium, fontSize: 16, color: Colors.text.primary },
-  seeMore: { fontFamily: Typography.regular, fontSize: 12, color: Colors.primary },
+  quickLinksTitle: { fontFamily: Typography.medium, fontSize: moderateScale(16, 0.1), color: Colors.text.primary },
+  seeMore: { fontFamily: Typography.regular, fontSize: moderateScale(12, 0.1), color: Colors.primary },
   quickLinksList: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Layout.spacing.xs },
   quickLinkItem: { flex: 1, alignItems: 'center', gap: Layout.spacing.xs },
-  quickLinkIconImage: { width: 44, height: 44, borderRadius: 22, resizeMode: 'contain' },
-  quickLinkText: { fontFamily: Typography.regular, fontSize: 12, color: Colors.text.secondary, textAlign: 'center' },
+  quickLinkIconImage: { width: moderateScale(44, 0.1), height: moderateScale(44, 0.1), borderRadius: moderateScale(22, 0.1), resizeMode: 'contain' },
+  quickLinkText: { fontFamily: Typography.regular, fontSize: moderateScale(12, 0.1), color: Colors.text.secondary, textAlign: 'center' },
   setupBanner: { marginHorizontal: Layout.spacing.lg, marginBottom: Layout.spacing.lg, backgroundColor: '#F8F9FA', borderRadius: Layout.borderRadius.md, borderWidth: 0.5, borderColor: '#F0A202', padding: Layout.spacing.md },
   setupBannerLoading: { opacity: 0.7, backgroundColor: '#E8E8E8' },
   setupContent: { alignItems: 'center' },
-  setupText: { fontFamily: Typography.regular, fontSize: 12, color: '#35297F', textAlign: 'center', marginBottom: Layout.spacing.xs },
+  setupText: { fontFamily: Typography.regular, fontSize: moderateScale(12, 0.1), color: '#35297F', textAlign: 'center', marginBottom: Layout.spacing.xs },
   progressBarContainer: { width: '100%', alignItems: 'center' },
-  progressBar: { width: '100%', height: 14, backgroundColor: '#FFFBDB', borderRadius: 7, overflow: 'hidden' },
-  progressFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: '#F0A202', borderRadius: 7 },
-  progressText: { position: 'absolute', fontFamily: Typography.medium, fontSize: 10, color: '#F4F2FF', fontWeight: '600', width: '100%', textAlign: 'center', lineHeight: 14 },
+  progressBar: { width: '100%', height: moderateScale(14, 0.1), backgroundColor: '#FFFBDB', borderRadius: moderateScale(7, 0.1), overflow: 'hidden' },
+  progressFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: '#F0A202', borderRadius: moderateScale(7, 0.1) },
+  progressText: { position: 'absolute', fontFamily: Typography.medium, fontSize: moderateScale(10, 0.1), color: '#F4F2FF', fontWeight: '600', width: '100%', textAlign: 'center', lineHeight: moderateScale(14, 0.1) },
 });

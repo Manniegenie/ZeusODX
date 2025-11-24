@@ -2,18 +2,19 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-  Image,
-  ImageSourcePropType,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    ImageSourcePropType,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Colors } from '../../constants/Colors';
+import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 
 // Utility service icons
@@ -166,11 +167,11 @@ const styles = StyleSheet.create({
     flex: 1 
   },
 
-  // Header styles - Fixed header
+  // Header styles - Responsive scaling
   headerSection: {
-    paddingHorizontal: 16,
-    paddingTop: 6,
-    paddingBottom: 12,
+    paddingHorizontal: Layout.spacing.md,
+    paddingTop: Layout.verticalSpacing.xs,
+    paddingBottom: Layout.verticalSpacing.sm,
     backgroundColor: Colors.background || '#F3F4F6',
     zIndex: 1,
   },
@@ -180,15 +181,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: Layout.scale(40),
+    height: Layout.scale(40),
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: Layout.scale(20),
   },
   backIcon: {
-    width: 24,
-    height: 24,
+    width: Layout.icon.md,
+    height: Layout.icon.md,
     resizeMode: 'contain',
   },
   headerTitle: {
@@ -197,13 +198,13 @@ const styles = StyleSheet.create({
     right: 0,
     color: '#35297F',
     fontFamily: Typography.medium || 'System',
-    fontSize: 18,
+    fontSize: Typography.sizes.lg,
     fontWeight: '600',
     textAlign: 'center',
     pointerEvents: 'none',
   },
   headerSpacer: {
-    width: 40,
+    width: Layout.scale(40),
   },
   headerUnderline: {
     height: 0.5,
@@ -218,39 +219,42 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 20,
+    paddingBottom: Layout.verticalSpacing.lg,
   },
 
-  // Services grid styles - Fixed dimensions
+  // Services grid styles - Responsive scaling
   servicesContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingHorizontal: Layout.spacing.md,
+    paddingTop: Layout.verticalSpacing.lg,
   },
   servicesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    columnGap: 28,
-    rowGap: 1,
+    columnGap: Layout.spacing.sm,
+    rowGap: Layout.spacing.sm,
+    maxWidth: '100%',
   },
   serviceCard: {
-    width: 140,        // Reduced width
-    height: 80,        // Reduced height
-    borderRadius: 8,
+    width: '45%',                    // Use percentage for responsive sizing
+    maxWidth: Layout.scale(140),     // Scaled maximum width
+    minWidth: Layout.scale(110),     // Scaled minimum width for very small screens
+    height: Layout.scaleVertical(80), // Scaled height
+    borderRadius: Layout.borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: Layout.spacing.sm,
   },
   serviceIcon: {
     width: '100%',
     height: '100%',
     resizeMode: 'contain',
-    borderRadius: 8,
+    borderRadius: Layout.borderRadius.md,
   },
 
   // Bottom spacer for navigation
   bottomSpacer: {
-    height: 100,
+    height: Layout.scaleVertical(100),
   },
 });
 

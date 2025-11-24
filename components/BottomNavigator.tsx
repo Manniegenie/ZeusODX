@@ -2,6 +2,7 @@ import { usePathname, useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import { Animated, ImageStyle, StyleSheet, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
@@ -215,52 +216,52 @@ const styles = StyleSheet.create<Styles>({
     backgroundColor: '#FAFAFA',
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
-    paddingTop: 8,
+    paddingTop: moderateScale(8, 0.1),
   },
   tabNavContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
     paddingHorizontal: Layout.spacing.md,
-    height: 40,
+    height: moderateScale(40, 0.1),
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 56,
+    height: moderateScale(56, 0.1),
   },
   tabContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   tabIcon: {
-    width: 24,
-    height: 24,
+    width: moderateScale(24, 0.1),
+    height: moderateScale(24, 0.1),
     resizeMode: 'contain',
   },
   tabLabel: {
-    fontSize: 12,
+    fontSize: moderateScale(12, 0.1),
     textAlign: 'center',
     letterSpacing: 0.2,
-    marginTop: 4,
+    marginTop: moderateScale(4, 0.1),
   },
   // Special styles for Buy/Sell tab - Shadow effects removed
   specialTabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    height: 56,
-    marginTop: -6,
+    height: moderateScale(56, 0.1),
+    marginTop: moderateScale(-6, 0.1),
   },
   specialTabContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   specialIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: moderateScale(50, 0.1),
+    height: moderateScale(50, 0.1),
+    borderRadius: moderateScale(25, 0.1),
     backgroundColor: '#35297F',
     justifyContent: 'center',
     alignItems: 'center',
@@ -268,15 +269,15 @@ const styles = StyleSheet.create<Styles>({
     borderColor: '#35297F33',
   },
   specialTabIcon: {
-    width: 24,
-    height: 24,
+    width: moderateScale(24, 0.1),
+    height: moderateScale(24, 0.1),
     resizeMode: 'contain',
   },
   specialTabLabel: {
-    fontSize: 12,
+    fontSize: moderateScale(12, 0.1),
     textAlign: 'center',
     letterSpacing: 0.3,
-    marginTop: 6,
+    marginTop: moderateScale(6, 0.1),
     fontWeight: '600',
   },
 });

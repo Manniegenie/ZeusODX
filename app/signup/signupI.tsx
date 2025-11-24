@@ -1,12 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView, Pressable } from 'react-native';
-import { Typography } from '../../constants/Typography';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import ErrorDisplay from '../../components/ErrorDisplay';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Typography } from '../../constants/Typography';
 import { useSignup } from '../../hooks/useSignup';
-import ErrorDisplay from '../../components/ErrorDisplay';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -268,6 +267,12 @@ export default function SignupScreen() {
   );
 }
 
+const getStartedBorder = {
+  borderWidth: 1,
+  borderColor: '#E0E0E0',
+  borderRadius: Layout.borderRadius.lg,
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -311,12 +316,10 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
   },
   input: {
+    ...getStartedBorder,
     backgroundColor: Colors.surface,
-    borderRadius: Layout.borderRadius.md,
     paddingHorizontal: Layout.spacing.md,
     paddingVertical: Layout.spacing.md,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
     fontFamily: Typography.regular,
     fontSize: 16,
     color: Colors.text.primary,
@@ -327,12 +330,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   countryCodeDisplay: {
+    ...getStartedBorder,
     backgroundColor: Colors.surface,
-    borderRadius: Layout.borderRadius.md,
     paddingHorizontal: Layout.spacing.sm,
     paddingVertical: Layout.spacing.md,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
     flexDirection: 'row',
     alignItems: 'center',
     gap: Layout.spacing.xs,
@@ -347,13 +348,11 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
   },
   phoneInput: {
+    ...getStartedBorder,
     flex: 1,
     backgroundColor: Colors.surface,
-    borderRadius: Layout.borderRadius.md,
     paddingHorizontal: Layout.spacing.md,
     paddingVertical: Layout.spacing.md,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
     fontFamily: Typography.regular,
     fontSize: 16,
     color: Colors.text.primary,

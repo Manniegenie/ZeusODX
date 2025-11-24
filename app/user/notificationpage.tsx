@@ -38,9 +38,18 @@ const NotificationScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<{
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+  } | null>(null);
+  
+  const LIMIT = 50; // Number of notifications to load per page
 
   /**
-   * Fetch notifications from API
+   * Fetch notifications from API (initial load or refresh)
    */
   const fetchNotifications = useCallback(async (isRefreshing = false) => {
     try {
@@ -50,25 +59,57 @@ const NotificationScreen = () => {
       setError(null);
 
       const response = await notificationService.getNotifications({
-        limit: 50,
+        limit: LIMIT,
         skip: 0,
         unreadOnly: false,
       });
 
+      console.log('📱 Notification API Response:', JSON.stringify(response, null, 2));
+
+      // apiClient wraps the response, so we need to access response.data.data
       if (response?.success && response?.data) {
-        setNotifications(response.data);
+        // The API returns { success: true, data: [...], count: 14 }
+        // apiClient wraps it as { success: true, data: { success: true, data: [...], count: 14 } }
+        const apiData = response.data;
+        const notificationsArray = Array.isArray(apiData.data) ? apiData.data : apiData;
+        const count = apiData.count || notificationsArray.length;
+        
+        if (Array.isArray(notificationsArray)) {
+          console.log(`✅ Loaded ${notificationsArray.length} notifications (total: ${count})`);
+          
+          // Replace notifications (initial load or refresh)
+          setNotifications(notificationsArray);
+          
+          // Update pagination state (same pattern as transaction history)
+          const totalPages = Math.ceil(count / LIMIT);
+          setPagination({
+            currentPage: 1,
+            totalPages,
+            totalCount: count,
+            limit: LIMIT,
+            hasNextPage: totalPages > 1,
+          });
+        } else {
+          console.error('❌ Notifications data is not an array:', notificationsArray);
+          setError('Invalid notifications data format');
+          setNotifications([]);
+          setPagination(null);
+        }
       } else {
-        setError('Failed to load notifications');
+        console.error('❌ Failed to load notifications:', response);
+        setError(response?.error || 'Failed to load notifications');
         setNotifications([]);
+        setPagination(null);
       }
     } catch (err: any) {
       setError(err?.message || 'Failed to load notifications');
       setNotifications([]);
+      setPagination(null);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [LIMIT]);
 
   /**
    * Mark notification as read
@@ -115,10 +156,57 @@ const NotificationScreen = () => {
     clearBadge();
   }, [fetchNotifications, clearBadge]);
 
+  /**
+   * Load more notifications when reaching the end (same pattern as transaction history)
+   */
+  const loadMoreNotifications = useCallback(async () => {
+    // Same safety checks as transaction history hook
+    if (!pagination?.hasNextPage || loading) return;
+    
+    setLoading(true);
+    try {
+      const nextPage = (pagination.currentPage || 1) + 1;
+      
+      const response = await notificationService.getNotifications({
+        limit: LIMIT,
+        skip: (nextPage - 1) * LIMIT,
+        unreadOnly: false,
+      });
+
+      if (response?.success && response?.data) {
+        const apiData = response.data;
+        const notificationsArray = Array.isArray(apiData.data) ? apiData.data : apiData;
+        const count = apiData.count || (pagination.totalCount || 0);
+        
+        if (Array.isArray(notificationsArray)) {
+          console.log(`✅ Loaded ${notificationsArray.length} more notifications (page: ${nextPage})`);
+          
+          // Append new notifications to existing list (same pattern as transaction history)
+          setNotifications(prev => [...prev, ...notificationsArray]);
+          
+          // Update pagination state
+          const totalPages = Math.ceil(count / LIMIT);
+          setPagination({
+            currentPage: nextPage,
+            totalPages,
+            totalCount: count,
+            limit: LIMIT,
+            hasNextPage: nextPage < totalPages,
+          });
+        }
+      }
+    } catch (err: any) {
+      console.error('Load more notifications error:', err);
+      // Don't set error state for load more failures - just log it
+    } finally {
+      setLoading(false);
+    }
+  }, [pagination, loading, LIMIT]);
+
   // Fetch notifications on mount and when screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      fetchNotifications();
+      fetchNotifications(false);
     }, [fetchNotifications])
   );
 
@@ -194,6 +282,20 @@ const NotificationScreen = () => {
   ), [handleNotificationPress]);
 
   /**
+   * Footer component for loading more
+   */
+  const renderFooter = useCallback(() => {
+    if (!loading || notifications.length === 0) return null;
+    
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color="#35297F" />
+        <Text style={styles.footerLoaderText}>Loading more...</Text>
+      </View>
+    );
+  }, [loading, notifications.length]);
+
+  /**
    * Empty state
    */
   const renderEmptyState = useCallback(() => {
@@ -213,7 +315,7 @@ const NotificationScreen = () => {
           <Text style={styles.emptyStateMessage}>{error}</Text>
           <TouchableOpacity 
             style={styles.retryButton}
-            onPress={() => fetchNotifications()}
+            onPress={() => fetchNotifications(false)}
           >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
@@ -263,6 +365,9 @@ const NotificationScreen = () => {
               notifications.length === 0 && styles.emptyListContainer
             ]}
             ListEmptyComponent={renderEmptyState}
+            ListFooterComponent={renderFooter}
+            onEndReached={loadMoreNotifications}
+            onEndReachedThreshold={0.5}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -416,6 +521,16 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  footerLoaderText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#6B7280',
   },
 });
 

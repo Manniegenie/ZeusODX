@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { useNotifications } from '../hooks/usenotification';
 import { simpleAppState } from '../services/appstate';
+import NotificationService from '../services/notificationService';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -85,6 +86,16 @@ export default function HomeScreen() {
             handleNotificationTap(response);
           }
         );
+        
+        // IMPORTANT: Register token even if notifications are already enabled
+        // This ensures tokens are registered on app start, especially for Android
+        console.log('📱 Registering push token (notifications already enabled)');
+        const registerResult = await NotificationService.registerPushToken();
+        if (registerResult.success) {
+          console.log('✅ Token registration completed');
+        } else {
+          console.warn('⚠️ Token registration failed:', registerResult.error);
+        }
         
         console.log('🔍 Clearing notification badge');
         await clearBadge();

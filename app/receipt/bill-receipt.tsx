@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import AddressCopied from '../../components/AddressCopied';
 import { Colors } from '../../constants/Colors';
+import { getPdfLayoutScale } from '../../utils/pdfLayout';
 
 // Icons
 // @ts-ignore
@@ -158,6 +159,11 @@ const generateBillReceiptHTML = (
     }
   }
 
+  const layoutScale = getPdfLayoutScale(detailRows.length, { extraSections: 7, baseRows: 11 });
+  const fontScale = layoutScale.fontScale.toFixed(3);
+  const spacingScale = layoutScale.spacingScale.toFixed(3);
+  const contentScale = layoutScale.contentScale.toFixed(3);
+
   return `
     <!DOCTYPE html>
     <html>
@@ -166,66 +172,81 @@ const generateBillReceiptHTML = (
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Bill Receipt</title>
       <style>
+        :root {
+          --font-scale: ${fontScale};
+          --spacing-scale: ${spacingScale};
+          --content-scale: ${contentScale};
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 0; }
+        html, body { height: 100%; }
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           margin: 0;
-          padding: 20px;
-          background: #f8fafc;
+          padding: calc(24px * var(--spacing-scale));
+          background: #EEF2FF;
           color: #1f2937;
-          line-height: 1.6;
+          line-height: calc(1.5 * var(--font-scale));
+          min-height: 100vh;
+          overflow: hidden;
+        }
+        .scaled-block {
+          width: calc(100% / var(--content-scale));
+          transform: scale(var(--content-scale));
+          transform-origin: top center;
         }
         .receipt-container {
-          max-width: 400px;
+          max-width: 420px;
           margin: 0 auto;
           background: white;
-          border-radius: 12px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          border-radius: 16px;
+          box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
           overflow: hidden;
         }
         .header {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
-          padding: 24px 20px;
+          padding: calc(24px * var(--spacing-scale)) calc(20px * var(--spacing-scale));
           text-align: center;
         }
         .logo {
           width: 60px;
           height: 60px;
-          margin: 0 auto 16px;
+          margin: 0 auto calc(16px * var(--spacing-scale));
           border-radius: 12px;
           background: rgba(255, 255, 255, 0.2);
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 24px;
+          font-size: calc(24px * var(--font-scale));
           font-weight: bold;
         }
         .title {
-          font-size: 20px;
+          font-size: calc(20px * var(--font-scale));
           font-weight: 600;
-          margin: 0 0 8px;
+          margin: 0 0 calc(8px * var(--spacing-scale));
         }
         .subtitle {
-          font-size: 14px;
+          font-size: calc(14px * var(--font-scale));
           opacity: 0.9;
           margin: 0;
         }
         .amount-section {
-          padding: 24px 20px;
+          padding: calc(24px * var(--spacing-scale)) calc(20px * var(--spacing-scale));
           text-align: center;
           background: #f8fafc;
         }
         .amount {
-          font-size: 32px;
+          font-size: calc(32px * var(--font-scale));
           font-weight: 700;
           color: #1f2937;
-          margin: 0 0 8px;
+          margin: 0 0 calc(8px * var(--spacing-scale));
         }
         .status {
           display: inline-block;
-          padding: 6px 12px;
+          padding: calc(6px * var(--spacing-scale)) calc(12px * var(--spacing-scale));
           border-radius: 20px;
-          font-size: 12px;
+          font-size: calc(12px * var(--font-scale));
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.5px;
@@ -233,12 +254,12 @@ const generateBillReceiptHTML = (
           background: ${statusStyle.backgroundColor};
         }
         .details {
-          padding: 20px;
+          padding: calc(20px * var(--spacing-scale));
         }
         .details-title {
-          font-size: 16px;
+          font-size: calc(16px * var(--font-scale));
           font-weight: 600;
-          margin: 0 0 16px;
+          margin: 0 0 calc(16px * var(--spacing-scale));
           color: #374151;
         }
         .details-table {
@@ -246,48 +267,55 @@ const generateBillReceiptHTML = (
           border-collapse: collapse;
         }
         .details-table td {
-          padding: 12px 0;
+          padding: calc(12px * var(--spacing-scale)) 0;
           border-bottom: 1px solid #e5e7eb;
           vertical-align: top;
         }
         .details-table td:first-child {
           font-weight: 500;
           color: #6b7280;
-          width: 40%;
+          width: 45%;
+          font-size: calc(13px * var(--font-scale));
         }
         .details-table td:last-child {
           color: #1f2937;
-          word-break: break-all;
+          word-break: break-word;
+          font-size: calc(13px * var(--font-scale));
+          text-align: right;
         }
         .footer {
-          padding: 20px;
+          padding: calc(20px * var(--spacing-scale));
           background: #f8fafc;
           text-align: center;
           border-top: 1px solid #e5e7eb;
         }
         .footer-text {
-          font-size: 12px;
+          font-size: calc(12px * var(--font-scale));
           color: #6b7280;
-          margin: 0 0 8px;
+          margin: 0 0 calc(8px * var(--spacing-scale));
         }
         .footer-date {
-          font-size: 11px;
+          font-size: calc(11px * var(--font-scale));
           color: #9ca3af;
           margin: 0;
         }
         .token-display {
           font-family: 'Courier New', monospace;
-          font-size: 14px;
+          font-size: calc(14px * var(--font-scale));
           background: #f3f4f6;
-          padding: 8px 12px;
-          border-radius: 6px;
-          border: 1px solid #d1d5db;
-          word-break: break-all;
+          padding: calc(12px * var(--spacing-scale));
+          border-radius: 8px;
+          margin: calc(12px * var(--spacing-scale)) 0;
+          word-break: break-word;
+        }
+        @media print {
+          body { background: #EEF2FF; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          @page { margin: 0; }
         }
       </style>
     </head>
     <body>
-      <div class="receipt-container">
+      <div class="receipt-container scaled-block">
         <div class="header">
           <div class="logo">Z</div>
           <h1 class="title">${billType} Receipt</h1>
