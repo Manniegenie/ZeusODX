@@ -21,6 +21,7 @@ import AddressCopied from '../../components/AddressCopied';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
+import { getPdfLayoutScale } from '../../utils/pdfLayout';
 
 // Icons
 // @ts-ignore
@@ -356,6 +357,11 @@ const generateTransactionReceiptHTML = (
     detailRows.push(`<tr><td>Pay Currency</td><td>${asText(merged.paymentCurrency)}</td></tr>`);
   }
 
+  const layoutScale = getPdfLayoutScale(detailRows.length, { extraSections: 6, baseRows: 10 });
+  const fontScale = layoutScale.fontScale.toFixed(3);
+  const spacingScale = layoutScale.spacingScale.toFixed(3);
+  const contentScale = layoutScale.contentScale.toFixed(3);
+
   return `
     <!DOCTYPE html>
     <html>
@@ -364,70 +370,120 @@ const generateTransactionReceiptHTML = (
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Transaction Receipt</title>
         <style>
+            :root {
+                --font-scale: ${fontScale};
+                --spacing-scale: ${spacingScale};
+                --content-scale: ${contentScale};
+            }
             * { margin: 0; padding: 0; box-sizing: border-box; }
             @page { size: A4; margin: 0; }
+            html, body { height: 100%; }
             body { 
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                 background: #F3F0FF;
                 color: #111827;
-                line-height: 1.5;
+                line-height: calc(1.45 * var(--font-scale));
                 -webkit-font-smoothing: antialiased;
-                font-size: 21px;
+                font-size: calc(21px * var(--font-scale));
                 width: 100%;
                 margin: 0;
                 padding: 0;
+                min-height: 100vh;
+                overflow: hidden;
             }
-            .container { width: 100%; margin: 0; background: #F3F0FF; min-height: 100vh; }
-            .header { background: #F3F0FF; padding: 24px 36px; display: flex; align-items: center; justify-content: center; }
+            .container { 
+                width: 100%; 
+                margin: 0; 
+                background: #F3F0FF; 
+                min-height: 100vh; 
+                max-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                page-break-inside: avoid;
+            }
+            .header { 
+                background: #F3F0FF; 
+                padding: calc(24px * var(--spacing-scale)) calc(36px * var(--spacing-scale)); 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+            }
             .header-logo { width: 150px; height: 66px; object-fit: contain; }
-            .content { padding: 0 36px 48px 36px; }
-            .amount-section { text-align: center; margin: 30px 0 9px 0; }
-            .amount-text { font-size: 42px; font-weight: bold; color: #111827; }
-            .status-container { text-align: center; margin-bottom: 24px; }
+            .scaled-block {
+                width: calc(100% / var(--content-scale));
+                transform: scale(var(--content-scale));
+                transform-origin: top center;
+            }
+            .content { 
+                padding: 0 calc(36px * var(--spacing-scale)) calc(48px * var(--spacing-scale)) calc(36px * var(--spacing-scale)); 
+                display: flex;
+                flex-direction: column;
+                gap: calc(18px * var(--spacing-scale));
+            }
+            .amount-section { text-align: center; margin: calc(30px * var(--spacing-scale)) 0 calc(9px * var(--spacing-scale)) 0; }
+            .amount-text { font-size: calc(42px * var(--font-scale)); font-weight: bold; color: #111827; }
+            .status-container { text-align: center; margin-bottom: calc(24px * var(--spacing-scale)); }
             .status-pill {
                 display: inline-block;
-                padding: 9px 15px;
+                padding: calc(9px * var(--spacing-scale)) calc(15px * var(--spacing-scale));
                 border-radius: 999px;
                 border: 1px solid ${statusStyle.border};
                 background-color: ${statusStyle.bg};
                 color: ${statusStyle.text};
-                font-size: 18px;
+                font-size: calc(18px * var(--font-scale));
                 font-weight: 600;
             }
             .details-card {
                 width: 100%;
                 background: #F8F9FA;
                 border-radius: 12px;
-                padding: 30px 24px;
+                padding: calc(30px * var(--spacing-scale)) calc(24px * var(--spacing-scale));
                 border: 1px solid #E5E7EB;
-                margin-bottom: 30px;
+                margin-bottom: calc(30px * var(--spacing-scale));
+                page-break-inside: avoid;
             }
             .details-table { width: 100%; border-collapse: collapse; }
             .details-table tr { border-bottom: none; }
-            .details-table td { padding: 18px 0; vertical-align: center; border-bottom: none; }
+            .details-table td { padding: calc(18px * var(--spacing-scale)) 0; vertical-align: middle; border-bottom: none; }
             .details-table td:first-child {
                 width: 195px;
                 flex-shrink: 0;
                 color: #6B7280;
-                font-size: 21px;
+                font-size: calc(21px * var(--font-scale));
                 font-weight: normal;
             }
             .details-table td:last-child {
                 color: #111827;
-                font-size: 21px;
+                font-size: calc(21px * var(--font-scale));
                 font-weight: 500;
                 text-align: right;
                 word-break: break-word;
             }
-            .footer-message { width: 100%; margin-bottom: 30px; padding: 0 36px; }
-            .footer-text { font-size: 19px; color: #6B7280; line-height: 1.5; margin: 0; text-align: left; }
+            .footer-message { 
+                margin-bottom: calc(30px * var(--spacing-scale)); 
+                padding: 0 calc(36px * var(--spacing-scale)); 
+            }
+            .footer-text { 
+                font-size: calc(19px * var(--font-scale)); 
+                color: #6B7280; 
+                line-height: calc(1.4 * var(--font-scale)); 
+                margin: 0; 
+                text-align: left; 
+            }
             .generation-footer {
                 text-align: center;
-                padding: 30px 36px;
+                padding: calc(30px * var(--spacing-scale)) calc(36px * var(--spacing-scale));
                 color: #9CA3AF;
-                font-size: 18px;
+                font-size: calc(18px * var(--font-scale));
                 border-top: 1px solid #E5E7EB;
-                margin-top: 30px;
+                margin-top: calc(30px * var(--spacing-scale));
+            }
+            .footer-message,
+            .generation-footer,
+            .content {
+                margin-left: auto;
+                margin-right: auto;
             }
             @media print {
                 body { background: #F3F0FF; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -441,7 +497,7 @@ const generateTransactionReceiptHTML = (
             <div class="header">
                 <img src="${logoBase64}" alt="Logo" class="header-logo">
             </div>
-            <div class="content">
+            <div class="content scaled-block">
                 <div class="amount-section">
                     <div class="amount-text">${transaction.amount}</div>
                 </div>
@@ -454,10 +510,10 @@ const generateTransactionReceiptHTML = (
                     </table>
                 </div>
             </div>
-            <div class="footer-message">
+            <div class="footer-message scaled-block">
                 <p class="footer-text">Thank you for choosing ZeusODX.</p>
             </div>
-            <div class="generation-footer">
+            <div class="generation-footer scaled-block">
                 Generated on: ${currentDate}
             </div>
         </div>

@@ -2,13 +2,14 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Image,
-  ImageBackground,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    ImageBackground,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import { moderateScale } from 'react-native-size-matters';
 import SelectTokenModal, { WalletOption } from '../../components/SelectToken';
 import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import { Colors } from '../../constants/Colors';
@@ -207,7 +208,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#DDDDDD',
   },
-  balanceBackground: { height: 151, justifyContent: 'center', backgroundColor: '#4A3FAD' },
+  balanceBackground: { height: moderateScale(151, 0.1), justifyContent: 'center', backgroundColor: '#4A3FAD' },
   balanceBackgroundImage: { borderRadius: Layout.borderRadius.lg },
   balanceContent: {
     padding: Layout.spacing.lg,
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
   },
   balanceLabel: {
     fontFamily: Typography.regular,
-    fontSize: 14,
+    fontSize: moderateScale(14, 0.1),
     color: Colors.surface,
     marginBottom: Layout.spacing.sm,
     textAlign: 'center',
@@ -225,7 +226,7 @@ const styles = StyleSheet.create({
   balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   balanceAmount: {
     fontFamily: Typography.medium,
-    fontSize: 32,
+    fontSize: moderateScale(32, 0.15),
     color: Colors.surface,
     fontWeight: '500',
     textAlign: 'center',
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
   // Quick links
   quickLinksContainer: { paddingHorizontal: Layout.spacing.lg, marginBottom: Layout.spacing.lg },
   quickLinksHeader: { marginBottom: Layout.spacing.md },
-  quickLinksTitle: { fontFamily: Typography.medium, fontSize: 16, color: Colors.text.primary },
+  quickLinksTitle: { fontFamily: Typography.medium, fontSize: moderateScale(16, 0.1), color: Colors.text.primary },
   quickLinksList: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -243,6 +244,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.spacing.xs,
   },
   quickLinkItem: { flex: 1, alignItems: 'center', gap: Layout.spacing.xs },
-  quickLinkIconImage: { width: 44, height: 44, borderRadius: 22, resizeMode: 'contain' },
-  quickLinkText: { fontFamily: Typography.regular, fontSize: 12, color: Colors.text.secondary, textAlign: 'center' },
+  quickLinkIconImage: { width: moderateScale(44, 0.1), height: moderateScale(44, 0.1), borderRadius: moderateScale(22, 0.1), resizeMode: 'contain' },
+  quickLinkText: { fontFamily: Typography.regular, fontSize: moderateScale(12, 0.1), color: Colors.text.secondary, textAlign: 'center' },
 });

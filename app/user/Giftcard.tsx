@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { moderateScale } from 'react-native-size-matters';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import backIcon from '../../components/icons/backy.png';
 import Loading from '../../components/Loading';
@@ -173,9 +174,9 @@ const styles = StyleSheet.create({
 
   // Header styles - Updated to match BTC screen
   headerSection: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 6,
+    paddingHorizontal: moderateScale(16, 0.1),
+    paddingTop: moderateScale(12, 0.1),
+    paddingBottom: moderateScale(6, 0.1),
   },
   headerContainer: {
     flexDirection: 'row',
@@ -183,73 +184,73 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: { 
-    width: 40,
-    height: 40,
+    width: moderateScale(40, 0.1),
+    height: moderateScale(40, 0.1),
     justifyContent: 'center', 
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: moderateScale(20, 0.1),
   },
   backIcon: {
-    width: 24,
-    height: 24,
+    width: moderateScale(24, 0.1),
+    height: moderateScale(24, 0.1),
     resizeMode: 'contain',
   },
   headerTitle: {
     color: '#35297F',
     fontFamily: Typography.medium || 'System',
-    fontSize: 18,
+    fontSize: moderateScale(18, 0.1),
     fontWeight: '600',
     flex: 1,
     textAlign: 'center',
-    marginHorizontal: 16,
+    marginHorizontal: moderateScale(16, 0.1),
   },
-  headerRight: { width: 40 },
+  headerRight: { width: moderateScale(40, 0.1) },
 
   // Search
   searchSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: moderateScale(16, 0.1),
+    paddingVertical: moderateScale(12, 0.1),
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderRadius: 8,
+    borderRadius: moderateScale(8, 0.1),
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: moderateScale(16, 0.1),
+    paddingVertical: moderateScale(16, 0.1),
   },
-  searchIcon: { marginRight: 8 },
-  searchIconImage: { width: 16, height: 16, resizeMode: 'contain' },
+  searchIcon: { marginRight: moderateScale(8, 0.1) },
+  searchIconImage: { width: moderateScale(16, 0.1), height: moderateScale(16, 0.1), resizeMode: 'contain' },
   searchInput: {
     flex: 1,
     color: Colors.text?.primary,
     fontFamily: Typography.regular,
-    fontSize: 14,
+    fontSize: moderateScale(14, 0.1),
     fontWeight: '400',
   },
 
   // Grid
   giftCardsSection: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 24,
+    paddingHorizontal: moderateScale(16, 0.1),
+    paddingTop: moderateScale(12, 0.1),
+    paddingBottom: moderateScale(24, 0.1),
   },
   giftCardsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 16,
+    gap: moderateScale(16, 0.1),
   },
   giftCardItem: {
     width: '47%',
-    marginBottom: 16,
+    marginBottom: moderateScale(16, 0.1),
   },
   giftCardIconContainer: {
     width: '100%',
     aspectRatio: 155 / 142,
-    borderRadius: 8,
+    borderRadius: moderateScale(8, 0.1),
     overflow: 'hidden',
   },
   giftCardIcon: { width: '100%', height: '100%', resizeMode: 'cover' },

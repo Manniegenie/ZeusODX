@@ -303,7 +303,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     borderWidth: 1, 
     borderColor: '#E5E7EB', 
-    overflow: 'hidden' 
+    overflow: 'hidden',
+    padding: 0
   },
   providerIconImage: { 
     width: 40, 

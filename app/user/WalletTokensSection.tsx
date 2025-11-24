@@ -1,18 +1,19 @@
 // app/components/WalletTokensSection.tsx
 
-import React, { useMemo } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  FlatList,
-  Image
-} from 'react-native';
 import { useRouter } from 'expo-router';
-import { Typography } from '../../constants/Typography';
+import { useMemo } from 'react';
+import {
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
+import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
+import { Typography } from '../../constants/Typography';
 import { useTokens } from '../../hooks/useTokens';
 import { useBalance } from '../../hooks/useWallet';
 
@@ -217,15 +218,15 @@ export default function WalletTokensSection({
           <Image source={item.icon} style={styles.tokenIconImage} />
         </View>
         <View style={styles.tokenInfo}>
-          <Text style={styles.tokenName}>{item.name}</Text>
-          <Text style={styles.tokenSymbol}>{item.symbol}</Text>
+          <Text style={styles.tokenName} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
+          <Text style={styles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">{item.symbol}</Text>
         </View>
       </View>
       <View style={styles.tokenRight}>
-        <Text style={styles.tokenBalance}>
+        <Text style={styles.tokenBalance} numberOfLines={1} ellipsizeMode="tail">
           {item.formattedBalance}
         </Text>
-        <Text style={styles.tokenUsdValue}>
+        <Text style={styles.tokenUsdValue} numberOfLines={1} ellipsizeMode="tail">
           {item.formattedUsdValue}
         </Text>
       </View>
@@ -323,7 +324,7 @@ const styles = StyleSheet.create({
   },
   tokenTabText: {
     fontFamily: Typography.regular,
-    fontSize: 14,
+    fontSize: moderateScale(14, 0.1),
     color: Colors.text.secondary,
   },
   activeTokenTabText: {
@@ -342,57 +343,67 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0EFFF',
     marginBottom: Layout.spacing.sm,
     borderRadius: Layout.borderRadius.md,
-    height: 72,
+    minHeight: moderateScale(72, 0.1),
   },
   tokenLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Layout.spacing.lg,
     flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
   },
   tokenIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: moderateScale(40, 0.1),
+    height: moderateScale(40, 0.1),
+    borderRadius: moderateScale(20, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    flexShrink: 0,
   },
   tokenIconImage: {
-    width: 40,
-    height: 40,
+    width: moderateScale(40, 0.1),
+    height: moderateScale(40, 0.1),
     resizeMode: 'cover',
   },
   tokenInfo: {
     flex: 1,
     justifyContent: 'center',
+    minWidth: 0,
+    flexShrink: 1,
   },
   tokenName: {
     fontFamily: Typography.medium,
-    fontSize: 14,
+    fontSize: moderateScale(14, 0.1),
     color: Colors.text.primary,
     fontWeight: '600',
-    marginBottom: 3,
+    marginBottom: moderateScale(3, 0.1),
   },
   tokenSymbol: {
     fontFamily: Typography.regular,
-    fontSize: 12,
+    fontSize: moderateScale(12, 0.1),
     color: Colors.text.secondary,
   },
   tokenRight: {
     alignItems: 'flex-end',
+    flexShrink: 0,
+    marginLeft: Layout.spacing.md,
+    minWidth: moderateScale(100, 0.1),
   },
   tokenBalance: {
     fontFamily: Typography.medium,
-    fontSize: 13,
+    fontSize: moderateScale(13, 0.1),
     color: Colors.text.primary,
-    marginBottom: 4,
+    marginBottom: moderateScale(4, 0.1),
     fontWeight: '600',
+    textAlign: 'right',
   },
   tokenUsdValue: {
     fontFamily: Typography.regular,
-    fontSize: 12,
+    fontSize: moderateScale(12, 0.1),
     color: Colors.text.secondary,
+    textAlign: 'right',
   },
   loadingContainer: {
     flex: 1,
@@ -402,7 +413,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontFamily: Typography.regular,
-    fontSize: 14,
+    fontSize: moderateScale(14, 0.1),
     color: Colors.text.secondary,
   },
   errorContainer: {
@@ -413,7 +424,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontFamily: Typography.regular,
-    fontSize: 14,
+    fontSize: moderateScale(14, 0.1),
     color: Colors.text.secondary,
   },
   emptyContainer: {
@@ -424,7 +435,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontFamily: Typography.regular,
-    fontSize: 14,
+    fontSize: moderateScale(14, 0.1),
     color: Colors.text.secondary,
   },
 });

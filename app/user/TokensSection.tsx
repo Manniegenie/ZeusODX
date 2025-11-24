@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
+import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
@@ -98,13 +99,13 @@ export default function TokensSection({
         <View style={styles.tokenIcon}>
           <Image source={getTokenIcon(item.symbol)} style={styles.tokenIconImage} />
         </View>
-        <View style={styles.tokenInfo}>
-          <Text style={styles.tokenName}>{item.name}</Text>
-          <Text style={styles.tokenSymbol}>{item.symbol}</Text>
-        </View>
+      <View style={styles.tokenInfo}>
+        <Text style={styles.tokenName} numberOfLines={1} ellipsizeMode="tail">{item.name}</Text>
+        <Text style={styles.tokenSymbol} numberOfLines={1} ellipsizeMode="tail">{item.symbol}</Text>
+      </View>
       </View>
       <View style={styles.tokenRight}>
-        <Text style={styles.tokenPrice}>{item.price}</Text>
+        <Text style={styles.tokenPrice} numberOfLines={1} ellipsizeMode="tail">{item.price}</Text>
         <View
           style={[
             styles.changeContainer,
@@ -116,6 +117,7 @@ export default function TokensSection({
               styles.changeText,
               { color: item.isPositive ? '#4CAF50' : '#F44336' },
             ]}
+            numberOfLines={1}
           >
             {item.change}
           </Text>
@@ -231,7 +233,7 @@ const styles = StyleSheet.create({
   },
   tokenTabText: {
     fontFamily: Typography.regular,
-    fontSize: 14,
+    fontSize: moderateScale(14, 0.1),
     color: Colors.text.secondary,
   },
   activeTokenTabText: {
@@ -250,63 +252,72 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0EFFF',
     marginBottom: Layout.spacing.sm,
     borderRadius: Layout.borderRadius.md,
-    height: 72,
+    minHeight: moderateScale(72, 0.1),
   },
   tokenLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Layout.spacing.lg,
     flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
   },
   tokenIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: moderateScale(40, 0.1),
+    height: moderateScale(40, 0.1),
+    borderRadius: moderateScale(20, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    flexShrink: 0,
   },
   tokenIconImage: {
-    width: 40,
-    height: 40,
+    width: moderateScale(40, 0.1),
+    height: moderateScale(40, 0.1),
     resizeMode: 'cover',
   },
   tokenInfo: {
     flex: 1,
     justifyContent: 'center',
+    minWidth: 0,
+    flexShrink: 1,
   },
   tokenName: {
     fontFamily: Typography.medium,
-    fontSize: 14,
+    fontSize: moderateScale(14, 0.1),
     color: Colors.text.primary,
     fontWeight: '600',
   },
   tokenSymbol: {
     fontFamily: Typography.regular,
-    fontSize: 12,
+    fontSize: moderateScale(12, 0.1),
     color: Colors.text.secondary,
   },
   tokenRight: {
     alignItems: 'flex-end',
+    flexShrink: 0,
+    marginLeft: Layout.spacing.md,
+    minWidth: moderateScale(100, 0.1),
   },
   tokenPrice: {
     fontFamily: Typography.medium,
-    fontSize: 13,
+    fontSize: moderateScale(13, 0.1),
     color: Colors.text.primary,
-   
     fontWeight: '600',
+    textAlign: 'right',
   },
   changeContainer: {
-    paddingHorizontal: 6,
-   
-    borderRadius: 6,
+    paddingHorizontal: moderateScale(6, 0.1),
+    paddingVertical: moderateScale(2, 0.1),
+    borderRadius: moderateScale(6, 0.1),
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 50,
+    minWidth: moderateScale(50, 0.1),
+    marginTop: moderateScale(4, 0.1),
   },
   changeText: {
     fontFamily: Typography.medium,
-    fontSize: 12,
+    fontSize: moderateScale(12, 0.1),
     fontWeight: '600',
   },
   loadingContainer: {
@@ -317,7 +328,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontFamily: Typography.regular,
-    fontSize: 14,
+    fontSize: moderateScale(14, 0.1),
     color: Colors.text.secondary,
   },
   errorContainer: {
@@ -328,7 +339,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontFamily: Typography.regular,
-    fontSize: 14,
+    fontSize: moderateScale(14, 0.1),
     color: Colors.text.secondary,
   },
   emptyContainer: {
@@ -339,7 +350,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontFamily: Typography.regular,
-    fontSize: 14,
+    fontSize: moderateScale(14, 0.1),
     color: Colors.text.secondary,
   },
 });

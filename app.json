@@ -13,6 +13,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.manniegenie.zeusodx",
+      "buildNumber": "85",
       "icon": "./assets/images/app-icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -42,7 +43,7 @@
         "com.google.android.c2dm.permission.RECEIVE",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "versionCode": 71
+      "versionCode": 86
     },
     "web": {
       "bundler": "metro",
@@ -100,7 +101,6 @@
     "updates": {
       "url": "https://u.expo.dev/7cc7ad65-2b13-42f3-9865-62b4e1d55984"
     },
-    "sdkVersion": "53.0.0",
     "platforms": [
       "ios",
       "android",

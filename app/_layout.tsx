@@ -20,7 +20,6 @@ import { disableFontScaling } from '../constants/Typography';
 import { AuthContext, useAuthProvider } from '../hooks/useAuth';
 import NotificationService from '../services/notificationService';
 import { configureModernEdgeToEdge } from '../utils/edgeToEdgeConfig';
-import { getLayoutConfig } from '../utils/responsiveLayout';
 
 // Optional: warm up Tawk chat on app start
 import { TawkPrefetcher } from '../components/TawkSupport';
@@ -120,9 +119,6 @@ export default function RootLayout() {
     };
   }, []);
 
-  // Get responsive layout configuration
-  const layoutConfig = getLayoutConfig();
-
   // Handle splash screen completion
   const handleSplashAnimationComplete = useCallback(() => {
     setIsSplashAnimationComplete(true);
@@ -135,16 +131,13 @@ export default function RootLayout() {
 
   // Main app layout
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#F4F2FF' }}>
       <SafeAreaProvider>
         <SafeAreaView 
           edges={['top']} 
           style={{ 
             flex: 1, 
             backgroundColor: '#F4F2FF',
-            // Only limit width on tablets/large screens, not on phones
-            maxWidth: layoutConfig.isLarge ? layoutConfig.containerWidth : undefined,
-            alignSelf: layoutConfig.isLarge ? 'center' : 'stretch',
             width: '100%',
           }}
         >

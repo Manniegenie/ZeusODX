@@ -1,13 +1,13 @@
 import { useRouter } from 'expo-router';
-import React, { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  View,
-  RefreshControl,
-  TouchableOpacity,
-  Image,
+    Image,
+    RefreshControl,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 

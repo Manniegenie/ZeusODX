@@ -112,6 +112,7 @@ class NotificationService {
     try {
       // Return cached token if available
       if (this.expoPushToken) {
+        console.log('📱 Using cached Expo Push Token:', this.expoPushToken);
         return this.expoPushToken;
       }
 
@@ -123,16 +124,54 @@ class NotificationService {
         return mockToken;
       }
 
+      // Check if we have permission first (especially important for Android)
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== 'granted') {
+        console.warn('⚠️ Notification permission not granted, requesting...');
+        const { status: newStatus } = await Notifications.requestPermissionsAsync();
+        if (newStatus !== 'granted') {
+          console.error('❌ Notification permission denied, cannot get push token');
+          return null;
+        }
+      }
+
+      // Get project ID from config
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+      if (!projectId) {
+        console.error('❌ EAS projectId not found in app config');
+        console.log('📱 Available config:', {
+          hasExpoConfig: !!Constants.expoConfig,
+          hasExtra: !!Constants.expoConfig?.extra,
+          hasEas: !!Constants.expoConfig?.extra?.eas,
+        });
+        return null;
+      }
+
+      console.log('📱 Requesting Expo Push Token with projectId:', projectId);
+      console.log('📱 Platform:', Platform.OS);
+
       // Get real token from Expo
       const token = await Notifications.getExpoPushTokenAsync({
-        projectId: Constants.expoConfig?.extra?.eas?.projectId,
+        projectId: projectId,
       });
       
+      if (!token || !token.data) {
+        console.error('❌ Invalid token response from Expo:', token);
+        return null;
+      }
+
       this.expoPushToken = token.data;
-      console.log('📱 Expo Push Token obtained:', token.data);
+      console.log('✅ Expo Push Token obtained successfully:', token.data);
+      console.log('📱 Token length:', token.data.length);
       return token.data;
     } catch (error) {
-      console.error('Error getting Expo push token:', error);
+      console.error('❌ Error getting Expo push token:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack,
+        platform: Platform.OS,
+      });
       return null;
     }
   }
@@ -143,14 +182,21 @@ class NotificationService {
   getDeviceId() {
     try {
       if (Device.isDevice) {
-        return Device.osInternalBuildId || Device.modelId || 'unknown-device';
+        // Try multiple methods to get device ID for better Android compatibility
+        const deviceId = Device.osInternalBuildId || Device.modelId || Device.deviceName || Device.brand;
+        if (deviceId) {
+          return `${Platform.OS}-${deviceId}`;
+        }
+        // Fallback: use a combination of platform and timestamp for unique ID
+        return `${Platform.OS}-device-${Date.now()}`;
       } else {
         // For simulators, create a consistent ID
-        return 'ios-simulator-test';
+        return `${Platform.OS}-simulator-test`;
       }
     } catch (error) {
       console.error('Error getting device ID:', error);
-      return 'unknown-device';
+      // Fallback device ID
+      return `${Platform.OS}-unknown-device-${Date.now()}`;
     }
   }
 
@@ -159,8 +205,12 @@ class NotificationService {
    */
   async registerPushToken() {
     try {
+      console.log('📱 Starting push token registration...');
+      console.log('📱 Platform:', Platform.OS);
+      
       const expoPushToken = await this.getExpoPushToken();
       if (!expoPushToken) {
+        console.error('❌ Could not get Expo push token');
         return {
           success: false,
           error: 'Could not get Expo push token'
@@ -170,6 +220,10 @@ class NotificationService {
       const deviceId = this.getDeviceId();
       const platform = Platform.OS;
 
+      console.log('📱 Device ID:', deviceId);
+      console.log('📱 Platform:', platform);
+      console.log('📱 Expo Push Token:', expoPushToken.substring(0, 20) + '...');
+
       // Try to get userId from stored user data
       let userId = null;
       try {
@@ -177,37 +231,54 @@ class NotificationService {
         if (userData) {
           const user = JSON.parse(userData);
           userId = user._id || user.id;
+          console.log('📱 User ID found:', userId);
+        } else {
+          console.log('📱 No user data found in storage');
         }
       } catch (err) {
-        console.warn('Could not get userId from storage:', err);
+        console.warn('⚠️ Could not get userId from storage:', err);
       }
 
-      // Register with backend using authenticated API client
-      const response = await apiClient.post('/notification/register-token', {
+      // Prepare request payload
+      const payload = {
         expoPushToken,
         deviceId,
         platform,
         ...(userId && { userId }) // Include userId if available
-      });
+      };
+
+      console.log('📱 Registering token with backend...');
+      console.log('📱 Payload:', { ...payload, expoPushToken: expoPushToken.substring(0, 20) + '...' });
+
+      // Register with backend using authenticated API client
+      const response = await apiClient.post('/notification/register-token', payload);
 
       if (response.success) {
         console.log('✅ Push token registered successfully', userId ? `for user ${userId}` : '');
+        console.log('📱 Response:', response);
         return {
           success: true,
           data: response
         };
       } else {
         console.error('❌ Failed to register push token:', response);
+        console.error('❌ Response details:', JSON.stringify(response, null, 2));
         return {
           success: false,
           error: response.error || 'Failed to register push token'
         };
       }
     } catch (error) {
-      console.error('Error registering push token:', error);
+      console.error('❌ Error registering push token:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        code: error.code,
+        stack: error.stack,
+        platform: Platform.OS,
+      });
       return {
         success: false,
-        error: error.message
+        error: error.message || 'Unknown error registering push token'
       };
     }
   }
