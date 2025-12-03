@@ -19,7 +19,6 @@ import { useNGNZ } from '../../hooks/useNGNZ';
 
 // Asset imports
 const ngnzIcon = require('../../components/icons/NGNZ.png');
-// Icons - Updated to match btc-bsc screen
 import backIcon from '../../components/icons/backy.png';
 
 interface TransferScreenProps {
@@ -35,11 +34,11 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
   // === Hooks for NGNZ balance & USD rate ===
   const { getNGNZBalance, getNGNZRate } = useNGNZ();
   const ngnzBalance = Number(getNGNZBalance?.() ?? 0);
-  const ngnzExchangeRate = Number(getNGNZRate?.() ?? 0); // 1 USD = X NGNZ
+  const ngnzExchangeRate = Number(getNGNZRate?.() ?? 0);
 
   // Business rules
-  const FEE_NGNZ = 100;         // fixed transaction fee
-  const minimumAmount = 1000;   // Minimum transfer amount in NGNZ
+  const FEE_NGNZ = 100;        
+  const minimumAmount = 1000;   
 
   // Helpers
   const formatWithCommas = (value: string): string => {
@@ -51,13 +50,14 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
     const formattedInt = Number(integer).toLocaleString('en-US');
     return decimal !== undefined ? `${formattedInt}.${decimal}` : formattedInt;
   };
+  
   const unformat = (value: string): string => String(value || '').replace(/,/g, '');
+  
   const safeParseAmount = (val: string): number => {
     const n = parseFloat(unformat(val));
     return Number.isFinite(n) ? n : 0;
   };
 
-  // Use full balance - backend will handle fee deductions
   const spendable = useMemo(() => ngnzBalance, [ngnzBalance]);
 
   const formatUsdValue = (amt: string): string => {
@@ -68,13 +68,15 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
     return '$' + usdValue.toFixed(2);
   };
 
-  const getMaxBalanceLabel = (): string => `${ngnzBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NGNZ`;
+  const getMaxBalanceLabel = (): string => 
+    `${ngnzBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NGNZ`;
 
+  // === FIX 1: Max Logic ===
   const handleMax = () => {
-    // Use full balance - backend will handle fee deductions
-    const max = ngnzBalance;
-    const formattedMax = max.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    setAmount(formattedMax);
+    // Floor to 2 decimal places to ensure we never round UP past the actual balance
+    // Example: 100.559 -> 100.55 (Safe) vs 100.56 (Unsafe)
+    const flooredBalance = Math.floor((ngnzBalance * 100) + 0.000001) / 100;
+    setAmount(formatWithCommas(flooredBalance.toFixed(2)));
   };
 
   const handleContinue = () => {
@@ -88,60 +90,62 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
       Alert.alert('Invalid Amount', 'Please enter a valid amount');
       return;
     }
-    if (rawAmount > spendable) {
+    // Use epsilon comparison here too just in case
+    if (rawAmount > (spendable + 0.001)) {
       Alert.alert('Insufficient Balance', `You don't have enough NGNZ. Available: ${getMaxBalanceLabel()}`);
       return;
     }
 
-    // Do NOT deduct fee on the frontend. Send full amount + fee info for backend processing.
     router.push({
       pathname: '/user/BankAccountsScreen',
       params: {
-        transferAmount: rawAmount.toString(), // Send full amount - backend handles deductions
+        transferAmount: rawAmount.toString(),
         transferFee: FEE_NGNZ.toString(),
         mode: 'select'
       }
     });
   };
 
-  // Display the amount after fee for information only (frontend-only display)
   const getAmountAfterFee = (): string => {
     const rawAmount = safeParseAmount(amount);
     const netAmount = rawAmount - FEE_NGNZ;
     return netAmount > 0 ? formatWithCommas(netAmount.toFixed(2)) : '0';
   };
 
-  // fee for display only (100 NGNZ shown when user has entered a positive amount)
   const rawAmountNum = safeParseAmount(amount);
   const feeForDisplay = rawAmountNum > 0 ? FEE_NGNZ : 0;
 
-  // Clamp to spendable on blur to avoid impossible values keeping the button disabled
   const handleBlur = () => {
     if (!amount) {
       setAmount('0');
       return;
     }
     const raw = safeParseAmount(amount);
+    // Ensure we don't accidentally set a value higher than spendable on blur
     const clamped = Math.min(raw, spendable);
-    setAmount(formatWithCommas(clamped.toString()));
+    
+    // If clamped has more than 2 decimals, trim it to avoid "maxing" issues on re-focus
+    const flooredClamped = Math.floor((clamped * 100) + 0.000001) / 100;
+    
+    setAmount(formatWithCommas(flooredClamped.toString()));
   };
 
+  // === FIX 2: Validation Logic ===
   const isTransferDisabled =
     rawAmountNum <= 0 ||
     rawAmountNum < minimumAmount ||
-    rawAmountNum > spendable;
+    // Allow a 0.001 epsilon for floating point comparison safety
+    rawAmountNum > (spendable + 0.001);
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        {/* Header - Updated to match btc-bsc screen */}
         <View style={styles.header}>
           <View style={styles.headerContainer}>
             <TouchableOpacity 
               style={styles.backButton} 
               onPress={() => router.back()}
               activeOpacity={0.7}
-              delayPressIn={0}
               hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             >
               <Image source={backIcon} style={styles.backIcon} />
@@ -159,8 +163,8 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollViewContent}
+          keyboardShouldPersistTaps="handled" 
         >
-          {/* Amount Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Amount</Text>
             <View style={styles.inputCard}>
@@ -196,7 +200,6 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
             </Text>
           </View>
 
-          {/* Fee Information */}
           <View style={styles.feeContainer}>
             <View style={styles.feeRow}>
               <Text style={styles.feeLabel}>Transaction fee:</Text>
@@ -208,7 +211,6 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
             </View>
           </View>
 
-          {/* Transfer Button */}
           <View style={styles.transferContainer}>
             <TouchableOpacity
               style={[styles.transferButton, isTransferDisabled && styles.transferButtonDisabled]}
@@ -223,7 +225,6 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
         </ScrollView>
       </SafeAreaView>
 
-      {/* Loading Screen - full-screen overlay during processing */}
       {isLoading && (
         <Loading />
       )}
