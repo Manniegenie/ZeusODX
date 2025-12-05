@@ -13,16 +13,17 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.manniegenie.zeusodx",
-      "buildNumber": "85",
+      "buildNumber": "86",
       "icon": "./assets/images/app-icon.png",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "ZeusODX uses the camera for identity verification and biometric authentication.",
-        "NSFaceIDUsageDescription": "Face ID may be used for secure authentication.",
-        "UIBackgroundModes": [
-          "remote-notification"
-        ]
-      }
+     "infoPlist": {
+  "ITSAppUsesNonExemptEncryption": false,
+  "NSCameraUsageDescription": "ZeusODX uses the camera for identity verification and biometric authentication.",
+  "NSFaceIDUsageDescription": "Face ID may be used for secure authentication.",
+  "NSPhotoLibraryUsageDescription": "ZeusODX requires access to your photo library to allow you to upload identity documents or proof of transaction images.",
+  "UIBackgroundModes": [
+    "remote-notification"
+  ]
+}
     },
     "android": {
       "package": "com.manniegenie.zeusodx",
