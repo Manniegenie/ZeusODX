@@ -114,7 +114,7 @@ const GiftCardScreen = ({ onGiftCardSelect }) => {
               </TouchableOpacity>
 
               {/* Title */}
-              <Text style={styles.headerTitle}>Gift Card</Text>
+              <Text style={styles.headerTitle}>Reedeem Gift Card</Text>
 
               {/* Empty space for alignment - Updated to match BTC screen */}
               <View style={styles.headerRight} />
@@ -129,7 +129,7 @@ const GiftCardScreen = ({ onGiftCardSelect }) => {
               </View>
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search for giftcard"
+                placeholder="Search for giftcard to reedeem"
                 placeholderTextColor={Colors.text?.secondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
