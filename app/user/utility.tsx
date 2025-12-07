@@ -2,15 +2,15 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-    Image,
-    ImageSourcePropType,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ImageSourcePropType,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Colors } from '../../constants/Colors';
@@ -19,7 +19,6 @@ import { Typography } from '../../constants/Typography';
 
 // Utility service icons
 import utilityAirtimeIcon from '../../components/icons/utility-airtime.png';
-import utilityBettingIcon from '../../components/icons/utility-betting.png';
 import utilityCableIcon from '../../components/icons/utility-cable.png';
 import utilityDataIcon from '../../components/icons/utility-data.png';
 import utilityElectricityIcon from '../../components/icons/utility-electricity.png';
@@ -40,8 +39,8 @@ interface UtilityService {
 const UtilityScreen: React.FC = () => {
   const router = useRouter();
 
-  // Utility services configuration
-  const utilityServices: UtilityService[] = [
+  // Utility services configuration - organized by columns
+  const leftColumnServices: UtilityService[] = [
     { 
       id: 'airtime', 
       name: 'Airtime', 
@@ -50,11 +49,11 @@ const UtilityScreen: React.FC = () => {
       color: '#6366F1'
     },
     { 
-      id: 'data', 
-      name: 'Data', 
-      iconSrc: utilityDataIcon, 
-      route: '/user/Data',
-      color: '#F59E0B'
+      id: 'giftcard', 
+      name: 'Giftcard', 
+      iconSrc: utilityGiftcardIcon, 
+      route: '/user/Giftcard',
+      color: '#B45309'
     },
     { 
       id: 'electricity', 
@@ -63,26 +62,22 @@ const UtilityScreen: React.FC = () => {
       route: '/user/Electricity',
       color: '#DC2626'
     },
+  ];
+
+  const rightColumnServices: UtilityService[] = [
+    { 
+      id: 'data', 
+      name: 'Data', 
+      iconSrc: utilityDataIcon, 
+      route: '/user/Data',
+      color: '#F59E0B'
+    },
     { 
       id: 'cable', 
       name: 'Cable', 
       iconSrc: utilityCableIcon, 
       route: '/user/CableTV',
       color: '#2563EB'
-    },
-    { 
-      id: 'betting', 
-      name: 'Betting', 
-      iconSrc: utilityBettingIcon, 
-      route: '/user/Betting',
-      color: '#059669'
-    },
-    { 
-      id: 'giftcard', 
-      name: 'Giftcard', 
-      iconSrc: utilityGiftcardIcon, 
-      route: '/user/Giftcard',
-      color: '#B45309'
     },
   ];
 
@@ -92,7 +87,7 @@ const UtilityScreen: React.FC = () => {
   };
 
   const handleServiceSelect = (service: UtilityService): void => {
-    router.push(service.route);
+    router.push(service.route as any);
   };
 
   return (
@@ -131,19 +126,36 @@ const UtilityScreen: React.FC = () => {
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
-          {/* Utility Services Grid */}
+          {/* Utility Services - Two Columns */}
           <View style={styles.servicesContainer}>
-            <View style={styles.servicesGrid}>
-              {utilityServices.map((service) => (
-                <TouchableOpacity
-                  key={service.id}
-                  style={styles.serviceCard}
-                  onPress={() => handleServiceSelect(service)}
-                  activeOpacity={0.8}
-                >
-                  <Image source={service.iconSrc} style={styles.serviceIcon} />
-                </TouchableOpacity>
-              ))}
+            <View style={styles.columnsContainer}>
+              {/* Left Column: Airtime, Giftcard, Electricity */}
+              <View style={styles.column}>
+                {leftColumnServices.map((service) => (
+                  <TouchableOpacity
+                    key={service.id}
+                    style={styles.serviceCard}
+                    onPress={() => handleServiceSelect(service)}
+                    activeOpacity={0.8}
+                  >
+                    <Image source={service.iconSrc} style={styles.serviceIcon} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Right Column: Data, Cable */}
+              <View style={styles.column}>
+                {rightColumnServices.map((service) => (
+                  <TouchableOpacity
+                    key={service.id}
+                    style={styles.serviceCard}
+                    onPress={() => handleServiceSelect(service)}
+                    activeOpacity={0.8}
+                  >
+                    <Image source={service.iconSrc} style={styles.serviceIcon} />
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
           </View>
 
@@ -227,23 +239,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.spacing.md,
     paddingTop: Layout.verticalSpacing.lg,
   },
-  servicesGrid: {
+  columnsContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    columnGap: Layout.spacing.sm,
-    rowGap: Layout.spacing.sm,
-    maxWidth: '100%',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  column: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: Layout.spacing.xs,
   },
   serviceCard: {
-    width: '45%',                    // Use percentage for responsive sizing
+    width: '100%',                    // Full width of column
     maxWidth: Layout.scale(140),     // Scaled maximum width
     minWidth: Layout.scale(110),     // Scaled minimum width for very small screens
     height: Layout.scaleVertical(80), // Scaled height
     borderRadius: Layout.borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Layout.spacing.sm,
+    marginBottom: Layout.spacing.md,
   },
   serviceIcon: {
     width: '100%',

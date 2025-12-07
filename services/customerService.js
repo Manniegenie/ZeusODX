@@ -16,12 +16,6 @@ class CustomerService {
 
   static CABLE_TV_SERVICES = ['dstv', 'gotv', 'startimes', 'showmax'];
 
-  static BETTING_SERVICES = [
-    '1xBet', 'BangBet', 'Bet9ja', 'BetKing', 'BetLand', 'BetLion',
-    'BetWay', 'CloudBet', 'LiveScoreBet', 'MerryBet', 'NaijaBet',
-    'NairaBet', 'SupaBet'
-  ];
-
   static VALID_METER_TYPES = ['prepaid', 'postpaid'];
 
   /**
@@ -46,8 +40,7 @@ class CustomerService {
     } else {
       const allValidServices = [
         ...CustomerService.ELECTRICITY_SERVICES, 
-        ...CustomerService.CABLE_TV_SERVICES, 
-        ...CustomerService.BETTING_SERVICES
+        ...CustomerService.CABLE_TV_SERVICES
       ];
       if (!allValidServices.includes(verificationData.service_id)) {
         errors.push(`Invalid service ID. Must be one of: ${allValidServices.join(', ')}`);
@@ -82,7 +75,6 @@ class CustomerService {
   getServiceCategory(serviceId) {
     if (CustomerService.ELECTRICITY_SERVICES.includes(serviceId)) return 'electricity';
     if (CustomerService.CABLE_TV_SERVICES.includes(serviceId)) return 'cable_tv';
-    if (CustomerService.BETTING_SERVICES.includes(serviceId)) return 'betting';
     return 'unknown';
   }
 
@@ -104,9 +96,6 @@ class CustomerService {
       case 'cable_tv':
         // Smart card numbers: typically 10-12 digits
         return /^\d{10,12}$/.test(trimmedId);
-      case 'betting':
-        // Account IDs: alphanumeric, 6-20 characters
-        return /^[a-zA-Z0-9]{6,20}$/.test(trimmedId);
       default:
         return trimmedId.length >= 8;
     }
@@ -160,22 +149,7 @@ class CustomerService {
       'dstv': 'DStv',
       'gotv': 'GOtv',
       'startimes': 'StarTimes',
-      'showmax': 'Showmax',
-      
-      // Betting services
-      '1xBet': '1xBet',
-      'BangBet': 'BangBet',
-      'Bet9ja': 'Bet9ja',
-      'BetKing': 'BetKing',
-      'BetLand': 'BetLand',
-      'BetLion': 'BetLion',
-      'BetWay': 'BetWay',
-      'CloudBet': 'CloudBet',
-      'LiveScoreBet': 'LiveScoreBet',
-      'MerryBet': 'MerryBet',
-      'NaijaBet': 'NaijaBet',
-      'NairaBet': 'NairaBet',
-      'SupaBet': 'SupaBet'
+      'showmax': 'Showmax'
     };
     
     return serviceNames[serviceId] || serviceId;
@@ -380,19 +354,6 @@ class CustomerService {
   }
 
   /**
-   * Verify betting account customer
-   * @param {string} customerId - Betting account ID
-   * @param {string} serviceId - Betting service ID
-   * @returns {Promise<Object>} Verification result
-   */
-  async verifyBettingCustomer(customerId, serviceId) {
-    return this.verifyCustomer({
-      customer_id: customerId,
-      service_id: serviceId
-    });
-  }
-
-  /**
    * Get available electricity services
    * @returns {Array} Electricity services
    */
@@ -417,26 +378,13 @@ class CustomerService {
   }
 
   /**
-   * Get available betting services
-   * @returns {Array} Betting services
-   */
-  getBettingServices() {
-    return CustomerService.BETTING_SERVICES.map(serviceId => ({
-      id: serviceId,
-      name: this.getServiceDisplayName(serviceId),
-      category: 'betting'
-    }));
-  }
-
-  /**
    * Get all available services
    * @returns {Array} All services
    */
   getAllServices() {
     return [
       ...this.getElectricityServices(),
-      ...this.getCableTVServices(),
-      ...this.getBettingServices()
+      ...this.getCableTVServices()
     ];
   }
 

@@ -55,10 +55,6 @@ type UtilityDetails = {
   // Cable TV specific
   smartCardNumber?: string;
   packageName?: string;
-  // Betting specific
-  betReference?: string;
-  gameType?: string;
-  betAmount?: string | number;
 };
 
 export type UtilityTransaction = {
@@ -175,17 +171,6 @@ const generateUtilityReceiptHTML = (
   }
   if (details.packageName) {
     detailRows.push(`<tr><td>Package</td><td>${asText(details.packageName)}</td></tr>`);
-  }
-  
-  // Betting specific fields
-  if (details.betReference) {
-    detailRows.push(`<tr><td>Bet Reference</td><td>${asText(details.betReference)}</td></tr>`);
-  }
-  if (details.gameType) {
-    detailRows.push(`<tr><td>Game Type</td><td>${asText(details.gameType)}</td></tr>`);
-  }
-  if (details.betAmount) {
-    detailRows.push(`<tr><td>Bet Amount</td><td>${formatAmount(details.betAmount, details.paymentCurrency)}</td></tr>`);
   }
   
   detailRows.push(`<tr><td>Network</td><td>${asText(details.network)}</td></tr>`);
@@ -564,25 +549,6 @@ export default function UtilityReceipt() {
           )}
           {details.packageName && (
             <Row label="Package" value={asText(details.packageName)} />
-          )}
-          
-          {/* Betting specific fields */}
-          {details.betReference && (
-            <Row 
-              label="Bet Reference" 
-              value={asText(details.betReference)}
-              copyableValue={details.betReference}
-              onCopy={(v) => handleCopy('Bet Reference', v)}
-            />
-          )}
-          {details.gameType && (
-            <Row label="Game Type" value={asText(details.gameType)} />
-          )}
-          {details.betAmount && (
-            <Row 
-              label="Bet Amount" 
-              value={formatAmount(details.betAmount, details.paymentCurrency)} 
-            />
           )}
           
           <Row label="Network" value={asText(details.network)} />

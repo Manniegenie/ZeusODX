@@ -218,7 +218,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.spacing.lg,
     flex: 1,
     position: 'relative',
-  },
+    marginTop: -12, // Ensure no margin is adding space
+    // OR
+    // marginTop: -10, // Use negative to pull it closer if necessary
+},
   tokenTabs: {
     flexDirection: 'row',
     gap: Layout.spacing.lg,

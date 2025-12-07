@@ -22,7 +22,6 @@ import { Typography } from '../../constants/Typography';
 import amexIcon from '../../components/icons/amex.png';
 import amazonIcon from '../../components/icons/azn.png';
 import ebayIcon from '../../components/icons/ebay.png';
-import googlePlayIcon from '../../components/icons/google-play.png';
 import itunesIcon from '../../components/icons/iTunes.png';
 import lensIcon from '../../components/icons/lens-icon.png';
 
@@ -61,7 +60,6 @@ const GiftCardScreen = ({ onGiftCardSelect }) => {
     { id: 'nordstrom', name: 'Nordstrom', iconSrc: nordstromIcon },
     { id: 'macy', name: 'Macy', iconSrc: macyIcon },
     { id: 'nike', name: 'Nike Gift Card', iconSrc: nikeIcon },
-    { id: 'google-play', name: 'Google Play Store', iconSrc: googlePlayIcon },
     { id: 'visa', name: 'Visa Card', iconSrc: visaIcon },
     { id: 'vanilla', name: 'Vanilla Cards', iconSrc: vanillaIcon },
     { id: 'razor-gold', name: 'Razor Gold Gift Card', iconSrc: razorGoldIcon },
