@@ -10,12 +10,6 @@ const ELECTRICITY_SERVICES = [
 
 const CABLE_TV_SERVICES = ['dstv', 'gotv', 'startimes', 'showmax'];
 
-const BETTING_SERVICES = [
-  '1xBet', 'BangBet', 'Bet9ja', 'BetKing', 'BetLand', 'BetLion',
-  'BetWay', 'CloudBet', 'LiveScoreBet', 'MerryBet', 'NaijaBet',
-  'NairaBet', 'SupaBet'
-];
-
 export const useCustomer = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -27,7 +21,6 @@ export const useCustomer = () => {
   const getServiceCategory = (serviceId) => {
     if (ELECTRICITY_SERVICES.includes(serviceId)) return 'electricity';
     if (CABLE_TV_SERVICES.includes(serviceId)) return 'cable_tv';
-    if (BETTING_SERVICES.includes(serviceId)) return 'betting';
     return 'unknown';
   };
 
@@ -35,7 +28,7 @@ export const useCustomer = () => {
   const clearError = useCallback(() => setError(null), []);
   const clearCustomerData = useCallback(() => setCustomerData(null), []);
 
-  /** MAIN: Verify customer (electricity/cable/betting) */
+  /** MAIN: Verify customer (electricity/cable) */
   const verifyCustomer = useCallback(async (customerId, serviceId, variationId = null) => {
     if (!customerId?.trim()) {
       setError('INVALID_CUSTOMER_ID');
@@ -134,11 +127,6 @@ export const useCustomer = () => {
     }
   }, []);
 
-  /** Wrapper for betting */
-  const verifyBettingCustomer = useCallback((customerId, serviceId) => {
-    return verifyCustomer(customerId, serviceId);
-  }, [verifyCustomer]);
-
   /** Format customer name for display */
   const formatCustomerName = useCallback((name) => {
     if (!name) return '';
@@ -178,7 +166,6 @@ export const useCustomer = () => {
     verifyCustomer,
     verifyElectricityCustomer,
     verifyCableTVCustomer,
-    verifyBettingCustomer,
     clearError,
     clearCustomerData,
     setCustomerData,

@@ -5,17 +5,17 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    Alert,
-    Image,
-    Linking,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    Share,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  Linking,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import AddressCopied from '../../components/AddressCopied';
 import { Colors } from '../../constants/Colors';
@@ -565,7 +565,7 @@ export default function TransactionReceiptScreen() {
     if ('orderId' in d || 'productName' in d || 'billType' in d || 'customerInfo' in d)
       return 'utility';
     const t = (transaction?.type || '').toLowerCase();
-    return ['airtime', 'data', 'electricity', 'cable tv', 'internet', 'betting', 'education', 'other'].includes(t)
+    return ['airtime', 'data', 'electricity', 'cable tv', 'internet', 'education', 'other'].includes(t)
       ? 'utility'
       : 'token';
   }, [transaction, isNGNZWithdrawal]);

@@ -164,7 +164,7 @@ function TransactionReceiptScreen() {
     if ('orderId' in d || 'productName' in d || 'billType' in d || 'customerInfo' in d)
       return 'utility';
     const t = (transaction?.type || '').toLowerCase();
-    return ['airtime', 'data', 'electricity', 'cable tv', 'internet', 'betting', 'education', 'other'].includes(t)
+    return ['airtime', 'data', 'electricity', 'cable tv', 'internet', 'education', 'other'].includes(t)
       ? 'utility'
       : 'token';
   }, [transaction]);
