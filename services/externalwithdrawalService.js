@@ -347,16 +347,51 @@ export const withdrawalService = {
     const raw =
       (typeof errorResponse.message === 'string' && errorResponse.message) ||
       (typeof errorResponse.error === 'string' && errorResponse.error) ||
+      (errorResponse.response?.data?.message) ||
+      (errorResponse.response?.data?.error) ||
       null;
 
     // Try to find a machine-readable code
     const codeFromResponse =
       errorResponse.code ||
+      (errorResponse.response?.data?.error) ||
       (typeof errorResponse.error === 'string' && /^[A-Z0-9_]+$/.test(errorResponse.error)
         ? errorResponse.error
         : null);
 
-    const errorCode = codeFromResponse || 'SERVICE_ERROR';
+    // Parse error message to detect OTP/PIN invalid errors
+    let errorCode = codeFromResponse || 'SERVICE_ERROR';
+    const errorText = (raw || '').toLowerCase();
+
+    // Check for OTP invalid errors
+    if (errorText.includes('invalid otp') || errorText.includes('otp invalid') || 
+        errorText.includes('incorrect otp') || errorText.includes('otp is incorrect') ||
+        errorText.includes('invalid verification code') || errorText.includes('verification code invalid')) {
+      errorCode = 'INVALID_OTP';
+    }
+    // Check for PIN invalid errors
+    else if (errorText.includes('invalid pin') || errorText.includes('pin invalid') ||
+             errorText.includes('invalid passwordpin') || errorText.includes('passwordpin invalid') ||
+             errorText.includes('invalid password pin') || errorText.includes('password pin invalid') ||
+             errorText.includes('incorrect pin') || errorText.includes('pin is incorrect') ||
+             errorText.includes('incorrect passwordpin') || errorText.includes('passwordpin is incorrect')) {
+      errorCode = 'INVALID_PASSWORDPIN';
+    }
+    // Check for 2FA invalid errors
+    else if (errorText.includes('invalid 2fa') || errorText.includes('2fa invalid') ||
+             errorText.includes('invalid two-factor') || errorText.includes('two-factor invalid') ||
+             errorText.includes('incorrect 2fa') || errorText.includes('2fa is incorrect')) {
+      errorCode = 'INVALID_2FA_CODE';
+    }
+    // Check for setup required errors
+    else if (errorText.includes('2fa not set up') || errorText.includes('two-factor not set up') ||
+             errorText.includes('2fa not enabled') || errorText.includes('two-factor not enabled')) {
+      errorCode = 'SETUP_2FA_REQUIRED';
+    }
+    else if (errorText.includes('pin not set up') || errorText.includes('passwordpin not set up') ||
+             errorText.includes('pin not enabled') || errorText.includes('passwordpin not enabled')) {
+      errorCode = 'SETUP_PIN_REQUIRED';
+    }
 
     const errorMessages = {
       VALIDATION_ERROR: 'Please check your input and try again',
@@ -369,6 +404,11 @@ export const withdrawalService = {
       BALANCE_RESERVATION_ERROR: 'Failed to reserve balance for withdrawal',
       INTERNAL_SERVER_ERROR: 'Withdrawal service temporarily unavailable',
       STATUS_FETCH_ERROR: 'Failed to fetch withdrawal status',
+      INVALID_OTP: 'The OTP you entered is incorrect. Please try again.',
+      INVALID_PASSWORDPIN: 'The password PIN you entered is incorrect. Please try again.',
+      INVALID_2FA_CODE: 'The 2FA code you entered is incorrect. Please try again.',
+      SETUP_2FA_REQUIRED: 'Two-factor authentication is required. Please set it up first.',
+      SETUP_PIN_REQUIRED: 'Password PIN is required. Please set it up first.',
       SERVICE_ERROR: 'Withdrawal failed. Please try again.'
     };
 
@@ -381,6 +421,7 @@ export const withdrawalService = {
       errorResponse.details ||
       errorResponse.kycDetails ||
       (errorResponse.data && errorResponse.data.kycDetails) ||
+      (errorResponse.response?.data?.details) ||
       null;
 
     console.log('❌ Handling withdrawal error:', {

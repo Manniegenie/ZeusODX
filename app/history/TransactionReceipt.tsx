@@ -5,17 +5,17 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
-  Image,
-  Linking,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    Linking,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import AddressCopied from '../../components/AddressCopied';
 import { Colors } from '../../constants/Colors';

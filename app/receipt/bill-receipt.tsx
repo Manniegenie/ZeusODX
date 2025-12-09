@@ -115,6 +115,7 @@ const generateBillReceiptHTML = (
   statusStyle: any,
   billType: string
 ) => {
+  const billTypeLower = (billType || '').toLowerCase();
   const currentDate = new Date().toLocaleString();
   const logoBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAACjQAAAIACAYAAAAvoxf9AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUABP5aSURBVHgB7P0JtCTZeR92fneJJSP3t7/au7t6R4MgAVkESdOgLcsiRdmmRMCkPZ7RyD6kl2N5tJFnKIEsmBJtS+dY1ozsH1HWoceSZathUrJEQqJECU0SIAgBDQLo7uqt9uXtL/fMWO+9c29kvqpX1d21dFd1v+r6/6ri5RYRGZkZ+/3i+xg95IwxbP9Dxhi9d6fkU4d3mmFzfskztCCYXyt0ERlSNU5mgRhraUMV4kySocBORNM+V2ekQ0bcsyOwz1HVTkzFTo20j+1gtiPyDTM+EePlc8y4593rwnZuwu3Us/JjEAAAwC0UuR6MhslgNEqHhsz2/FztzBNPLb/01HOPzz359NH1Z59a3H7uE0fXg9BL7822EQAAAAAAAAAAAAAAAAAAAODWJD3kGGPmnV6bBTu+XRQH/8Y3vsF+7dd+zbzzgqb5eWMfv1o5d66IAiPC1tzlUPitmijUAkmvrY2KOLFQM1a1b9YyxBqMUWA0k8wFKZKuM8Nq5J4zRtpp8tx9OwWefV4a+8dOqAtiFPYONy6YkcwsyPF6ACPCTQAAAAAAAAAAAAAAAAAAAAAAAOBB9dAHNN7OP/7HZ7xjxxpepeIJ3xfC8xpy9+r58Ny5zPe85/jjj1/h585d9XTarDarcZUZ7kvpB4axyAjRJM2axE1omAmYodAFMxKjmr3vERlBzHjcBTpqE3Hi0jCSxr7GGPMZad+ORxiXN5K5LI1lsGOZmdFMMzZOAxunGCE7IwAAAAAAAAAAAAAAAAAAAAAAADygPrQBjfeilLTL3vjFXzrP3ty+GDBfBvWl0OPFRmU8iRubV4e1wfbYj4eFV6Q88OzL';
 
@@ -141,7 +142,7 @@ const generateBillReceiptHTML = (
   }
   
   // Electricity specific fields
-  if (billType === 'electricity') {
+  if (billTypeLower === 'electricity') {
     if (merged.customerName) {
       detailRows.push(`<tr><td>Customer Name</td><td>${asText(merged.customerName)}</td></tr>`);
     }
@@ -149,7 +150,7 @@ const generateBillReceiptHTML = (
       detailRows.push(`<tr><td>Address</td><td>${asText(merged.customerAddress)}</td></tr>`);
     }
     if (merged.token) {
-      detailRows.push(`<tr><td>Token</td><td>${asText(merged.token)}</td></tr>`);
+      detailRows.push(`<tr><td>Token</td><td>${formatToken(merged.token)}</td></tr>`);
     }
     if (merged.units) {
       detailRows.push(`<tr><td>Units</td><td>${asText(merged.units)} kWh</td></tr>`);
@@ -183,25 +184,23 @@ const generateBillReceiptHTML = (
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           margin: 0;
-          padding: calc(24px * var(--spacing-scale));
+          padding: calc(28px * var(--spacing-scale)) calc(18px * var(--spacing-scale));
           background: #EEF2FF;
           color: #1f2937;
           line-height: calc(1.5 * var(--font-scale));
           min-height: 100vh;
-          overflow: hidden;
-        }
-        .scaled-block {
-          width: calc(100% / var(--content-scale));
-          transform: scale(var(--content-scale));
-          transform-origin: top center;
+          display: flex;
+          align-items: flex-start;
+          justify-content: center;
         }
         .receipt-container {
-          max-width: 420px;
-          margin: 0 auto;
+          width: min(680px, 100%);
           background: white;
           border-radius: 16px;
           box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
           overflow: hidden;
+          transform: scale(var(--content-scale));
+          transform-origin: top center;
         }
         .header {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -308,6 +307,26 @@ const generateBillReceiptHTML = (
           margin: calc(12px * var(--spacing-scale)) 0;
           word-break: break-word;
         }
+        .token-block {
+          padding: calc(12px * var(--spacing-scale));
+          background: #f8fafc;
+          border-radius: 10px;
+          margin-top: calc(12px * var(--spacing-scale));
+          border: 1px dashed #d1d5db;
+        }
+        .token-block .label {
+          font-weight: 600;
+          font-size: calc(13px * var(--font-scale));
+          color: #374151;
+          margin-bottom: calc(8px * var(--spacing-scale));
+        }
+        .token-block .value {
+          font-family: 'Courier New', monospace;
+          font-size: calc(15px * var(--font-scale));
+          color: #111827;
+          word-break: break-word;
+          letter-spacing: 0.5px;
+        }
         @media print {
           body { background: #EEF2FF; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           @page { margin: 0; }
@@ -315,7 +334,7 @@ const generateBillReceiptHTML = (
       </style>
     </head>
     <body>
-      <div class="receipt-container scaled-block">
+      <div class="receipt-container">
         <div class="header">
           <div class="logo">Z</div>
           <h1 class="title">${billType} Receipt</h1>
@@ -332,6 +351,13 @@ const generateBillReceiptHTML = (
           <table class="details-table">
             ${detailRows.join('')}
           </table>
+
+          ${billTypeLower === 'electricity' && merged.token ? `
+            <div class="token-block">
+              <div class="label">Token</div>
+              <div class="value">${formatToken(merged.token)}</div>
+            </div>
+          ` : ''}
         </div>
         
         <div class="footer">
@@ -366,9 +392,25 @@ const BillReceiptScreen = () => {
   }, [params.raw]);
 
   const merged = useMemo(() => {
-    if (!transaction?.details) return {};
-    return { ...transaction.details };
-  }, [transaction]);
+    if (!transaction) return {};
+    const base = transaction.details || {};
+    const fallback = raw?.metaData || raw?.data || {};
+
+    return {
+      ...base,
+      orderId: base.orderId ?? fallback.orderId,
+      requestId: base.requestId ?? fallback.requestId,
+      productName: base.productName ?? fallback.product_name ?? fallback.productName,
+      network: base.network ?? fallback.service_name ?? fallback.network,
+      customerInfo: base.customerInfo ?? fallback.customer_id ?? fallback.customerId,
+      paymentCurrency: base.paymentCurrency ?? fallback.paymentCurrency,
+      token: base.token ?? fallback.token,
+      units: base.units ?? fallback.units ?? fallback.unit,
+      customerName: base.customerName ?? fallback.customer_name ?? fallback.customerName,
+      customerAddress: base.customerAddress ?? fallback.customer_address ?? fallback.customerAddress,
+      band: base.band ?? fallback.band
+    };
+  }, [transaction, raw]);
 
   const statusStyle = useMemo(() => {
     return statusStyles(transaction?.status || '');

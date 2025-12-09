@@ -8,11 +8,11 @@ import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
 
 // Tab icon imports
-const homeIcon = require('../components/icons/home-icon.png');
-const tradeIcon = require('../components/icons/trade-icon.png');
-const giftcardIcon = require('../components/icons/giftcard-icon.png');
-const activityIcon = require('../components/icons/wallet-icon.png');
-const profileIcon = require('../components/icons/profile-icon.png');
+const homeIcon = require('./icons/home-icon.png');
+const tradeIcon = require('./icons/trade-icon.png');
+const giftcardIcon = require('./icons/giftcard-icon.png');
+const activityIcon = require('./icons/wallet-icon.png');
+const profileIcon = require('./icons/profile-icon.png');
 
 interface Tab {
   id: string;

@@ -66,18 +66,41 @@ function parseError(err) {
   const status = err?.response?.status;
   const body = err?.response?.data || {};
   const code = body?.error;
-  const apiMsg = body?.message;
+  const apiMsg = body?.message || body?.error || err?.message || 'Network error';
 
   let error = 'NETWORK_ERROR';
-  let message = apiMsg || err?.message || 'Network error';
+  let message = apiMsg;
+
+  // Parse error message to detect OTP/PIN invalid errors
+  const errorText = (apiMsg || '').toLowerCase();
 
   if (status === 400) {
     if (code === '2FA_NOT_SETUP') error = '2FA_NOT_SETUP';
     else if (code === 'PIN_NOT_SETUP') error = 'PIN_NOT_SETUP';
+    else if (code === 'INVALID_OTP' || errorText.includes('invalid otp') || errorText.includes('otp invalid') ||
+             errorText.includes('incorrect otp') || errorText.includes('invalid verification code')) {
+      error = 'INVALID_OTP';
+    }
+    else if (code === 'INVALID_PASSWORDPIN' || errorText.includes('invalid pin') || errorText.includes('pin invalid') ||
+             errorText.includes('invalid passwordpin') || errorText.includes('passwordpin invalid') ||
+             errorText.includes('invalid password pin') || errorText.includes('incorrect pin')) {
+      error = 'INVALID_PASSWORDPIN';
+    }
     else error = 'VALIDATION_ERROR';
   } else if (status === 401) {
-    if (code === 'INVALID_2FA_CODE') error = 'INVALID_2FA_CODE';
-    else if (code === 'INVALID_PASSWORDPIN') error = 'INVALID_PASSWORDPIN';
+    if (code === 'INVALID_2FA_CODE' || errorText.includes('invalid 2fa') || errorText.includes('2fa invalid') ||
+        errorText.includes('invalid two-factor') || errorText.includes('incorrect 2fa')) {
+      error = 'INVALID_2FA_CODE';
+    }
+    else if (code === 'INVALID_PASSWORDPIN' || errorText.includes('invalid pin') || errorText.includes('pin invalid') ||
+             errorText.includes('invalid passwordpin') || errorText.includes('passwordpin invalid') ||
+             errorText.includes('invalid password pin') || errorText.includes('incorrect pin')) {
+      error = 'INVALID_PASSWORDPIN';
+    }
+    else if (code === 'INVALID_OTP' || errorText.includes('invalid otp') || errorText.includes('otp invalid') ||
+             errorText.includes('incorrect otp') || errorText.includes('invalid verification code')) {
+      error = 'INVALID_OTP';
+    }
     else error = 'UNAUTHORIZED';
   } else if (status === 404) {
     error = 'NOT_FOUND';

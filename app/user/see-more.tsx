@@ -16,6 +16,7 @@ const DataIcon = require('../../components/icons/Airtimeicon.png');
 const ElectricityIcon = require('../../components/icons/electricity.png');
 const CableTVIcon = require('../../components/icons/cabletv.png');
 const GiftCardIcon = require('../../components/icons/giftcard.png');
+const BettingIcon = require('../../components/icons/betting.png');
 const CloseIcon = require('../../components/icons/close.png');
 
 interface Service {
@@ -57,6 +58,12 @@ const UtilitiesScreen: React.FC = () => {
       title: 'Gift Cards',
       icon: GiftCardIcon,
       route: 'Giftcard'
+    },
+    {
+      id: 'betting',
+      title: 'Betting',
+      icon: BettingIcon,
+      route: 'Betting'
     }
   ];
 
@@ -110,10 +117,11 @@ const UtilitiesScreen: React.FC = () => {
             {renderServiceItem(services[2])}
           </View>
 
-          {/* Second Row - Cable TV, Gift Cards */}
+          {/* Second Row - Cable TV, Gift Cards, Betting */}
           <View style={styles.serviceRow}>
             {renderServiceItem(services[3])}
             {renderServiceItem(services[4])}
+            {renderServiceItem(services[5])}
           </View>
         </View>
       </View>
