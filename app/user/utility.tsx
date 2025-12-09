@@ -2,15 +2,15 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-  Image,
-  ImageSourcePropType,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    ImageSourcePropType,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Colors } from '../../constants/Colors';
@@ -19,6 +19,7 @@ import { Typography } from '../../constants/Typography';
 
 // Utility service icons
 import utilityAirtimeIcon from '../../components/icons/utility-airtime.png';
+import utilityBettingIcon from '../../components/icons/utility-betting.png';
 import utilityCableIcon from '../../components/icons/utility-cable.png';
 import utilityDataIcon from '../../components/icons/utility-data.png';
 import utilityElectricityIcon from '../../components/icons/utility-electricity.png';
@@ -78,6 +79,13 @@ const UtilityScreen: React.FC = () => {
       iconSrc: utilityCableIcon, 
       route: '/user/CableTV',
       color: '#2563EB'
+    },
+    { 
+      id: 'betting', 
+      name: 'Betting', 
+      iconSrc: utilityBettingIcon, 
+      route: '/user/Betting',
+      color: '#7C3AED'
     },
   ];
 
@@ -143,7 +151,7 @@ const UtilityScreen: React.FC = () => {
                 ))}
               </View>
 
-              {/* Right Column: Data, Cable */}
+              {/* Right Column: Data, Cable, Betting */}
               <View style={styles.column}>
                 {rightColumnServices.map((service) => (
                   <TouchableOpacity

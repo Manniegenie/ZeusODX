@@ -174,6 +174,7 @@ export const usernameTransferService = {
         'DUPLICATE_TRANSFER',
         'TRANSFER_EXECUTION_FAILED',
         'UNSUPPORTED_CURRENCY',
+        'INVALID_OTP',
         'INVALID_2FA_CODE',
         'INVALID_PASSWORDPIN',
         'SETUP_2FA_REQUIRED',
@@ -186,11 +187,19 @@ export const usernameTransferService = {
 
     const msg = errorMessage.toLowerCase().trim();
 
-    if (msg.includes('two-factor authentication')) {
+    // Check for OTP invalid errors
+    if (msg.includes('invalid otp') || msg.includes('otp invalid') || 
+        msg.includes('incorrect otp') || msg.includes('otp is incorrect') ||
+        msg.includes('invalid verification code') || msg.includes('verification code invalid')) {
+      return 'INVALID_OTP';
+    }
+    // Check for 2FA invalid errors
+    if (msg.includes('two-factor authentication') || msg.includes('2fa')) {
       if (msg.includes('not set up') || msg.includes('not enabled')) return 'SETUP_2FA_REQUIRED';
       if (msg.includes('invalid') || msg.includes('incorrect')) return 'INVALID_2FA_CODE';
     }
-    if (msg.includes('password pin') || msg.includes('passwordpin')) {
+    // Check for PIN invalid errors
+    if (msg.includes('password pin') || msg.includes('passwordpin') || msg.includes('pin')) {
       if (msg.includes('not set up') || msg.includes('not enabled')) return 'SETUP_PIN_REQUIRED';
       if (msg.includes('invalid') || msg.includes('incorrect')) return 'INVALID_PASSWORDPIN';
     }
@@ -238,6 +247,7 @@ export const usernameTransferService = {
     const actionMap = {
       SETUP_2FA_REQUIRED: 'SETUP_2FA',
       SETUP_PIN_REQUIRED: 'SETUP_PIN',
+      INVALID_OTP: 'RETRY_OTP',
       INVALID_2FA_CODE: 'RETRY_2FA',
       INVALID_PASSWORDPIN: 'RETRY_PIN',
       RECIPIENT_NOT_FOUND: 'CHECK_USERNAME',
@@ -257,6 +267,7 @@ export const usernameTransferService = {
     const friendly = {
       SETUP_2FA_REQUIRED: 'Two-factor authentication is required for transfers. Please set it up in your security settings.',
       SETUP_PIN_REQUIRED: 'A password PIN is required for transfers. Please set it up in your security settings.',
+      INVALID_OTP: 'The OTP you entered is incorrect. Please try again.',
       INVALID_2FA_CODE: 'The 2FA code you entered is incorrect. Please check your authenticator app and try again.',
       INVALID_PASSWORDPIN: 'The password PIN you entered is incorrect. Please try again.',
       RECIPIENT_NOT_FOUND: 'The username you entered was not found or you cannot send to yourself.',
