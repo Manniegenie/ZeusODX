@@ -1,16 +1,16 @@
 // components/TransferMethodModal.tsx
 import React, { useEffect, useRef } from 'react';
 import {
-    Animated,
-    Dimensions,
-    FlatList,
-    Image,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
@@ -20,8 +20,8 @@ const internalWalletIcon = require('../components/icons/internal-wallet.png');
 const externalWalletIcon = require('../components/icons/external-wallet.png');
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-// ↓↓↓ smaller height here
-const MODAL_HEIGHT = 250;
+// ↓↓↓ increased height to prevent safe area overlap
+const MODAL_HEIGHT = 300;
 
 export interface TransferMethod {
   id: string;
@@ -174,7 +174,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 20,
+    paddingBottom: 8,
     overflow: 'hidden',
   },
   safeAreaExtension: { backgroundColor: Colors.surface || '#FFFFFF', alignSelf: 'center', width: '100%' },
@@ -185,14 +186,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E7EB',
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
 
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   modalTitle: {
     fontFamily: Typography.bold || 'System',
@@ -206,16 +207,16 @@ const styles = StyleSheet.create({
   },
 
   listContent: {
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
 
   transferMethodItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 18,
+    paddingVertical: 16,
     paddingHorizontal: 16,
     backgroundColor: '#F0EFFF',
-    marginBottom: 12,
+    marginBottom: 10,
     borderRadius: 16,
   },
   transferMethodIcon: {

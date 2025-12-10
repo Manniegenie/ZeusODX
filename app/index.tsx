@@ -1,3 +1,4 @@
+import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -11,21 +12,18 @@ export default function HomeScreen() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   
-  // ========== CORRECTED: Use simplified notification hook ==========
   const {
     checkStatus,
-    enable,
-    autoEnable,
-    openSettings,
+    requestPermission,
     setupListeners,
     removeListeners,
-    clearBadge,
-    isEnabled,
-    isLoading: isNotificationLoading,
   } = useNotifications();
 
   useEffect(() => {
     console.log('🚀 Starting HomeScreen useEffect');
+    // CRITICAL: Initialize push token early - must happen before everything else
+    // This ensures token is generated and registered for Android devices
+    initializePushTokenEarly();
     initializeApp();
 
     // Handle notification that opened the app from closed state
@@ -45,6 +43,25 @@ export default function HomeScreen() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * Initialize push token early - CRITICAL for Android
+   * Must be called before other app initialization
+   */
+  const initializePushTokenEarly = async () => {
+    try {
+      console.log('📱 [EARLY] Initializing push token on app boot...');
+      if (Device.isDevice) {
+        await NotificationService.initializePushNotifications();
+        console.log('✅ [EARLY] Push token initialization completed');
+      } else {
+        console.log('⚠️ [EARLY] Not a physical device, skipping token generation');
+      }
+    } catch (error) {
+      console.error('❌ [EARLY] Error initializing push token:', (error as Error).message);
+      // Don't block app initialization if token generation fails
+    }
+  };
 
   const initializeApp = async () => {
     console.log('🚀 Initializing app...');
@@ -66,63 +83,37 @@ export default function HomeScreen() {
   };
 
   const setupNotifications = async () => {
-    console.log('🔔 Starting notification setup');
     try {
-      // Check current notification status
+      // Token is already generated in initializePushTokenEarly()
+      // Here we only set up listeners for displaying notifications
       const enabled = await checkStatus();
-      console.log('📊 Notification status:', enabled ? 'Enabled' : 'Disabled');
       
       if (enabled) {
-        console.log('🔧 Setting up notification listeners');
         setupListeners(
-          // Notification received while app is open
           (notification: any) => {
-            console.log('📨 Received notification while app is open:', JSON.stringify(notification, null, 2));
-            // You can show an in-app notification banner here if you want
+            // Notification received while app is open
           },
-          // Notification tapped
           (response: any) => {
-            console.log('👆 Handling notification tap');
             handleNotificationTap(response);
           }
         );
-        
-        // IMPORTANT: Register token even if notifications are already enabled
-        // This ensures tokens are registered on app start, especially for Android
-        console.log('📱 Registering push token (notifications already enabled)');
-        const registerResult = await NotificationService.registerPushToken();
-        if (registerResult.success) {
-          console.log('✅ Token registration completed');
-        } else {
-          console.warn('⚠️ Token registration failed:', registerResult.error);
-        }
-        
-        console.log('🔍 Clearing notification badge');
-        await clearBadge();
-        console.log('✅ Notification setup complete');
       } else {
-        console.log('ℹ️ Notifications not enabled, attempting auto-enable for Android');
-        // Try to auto-enable notifications (works for Android)
-        const autoEnableResult = await autoEnable();
-        if (autoEnableResult.success) {
-          console.log('✅ Notifications auto-enabled successfully');
-          // Set up listeners after auto-enabling
+        // Try to request permission for displaying notifications (optional)
+        // Token generation doesn't require permission
+        const permissionResult = await requestPermission();
+        if (permissionResult.success) {
           setupListeners(
             (notification: any) => {
-              console.log('📨 Received notification while app is open:', JSON.stringify(notification, null, 2));
+              // Notification received while app is open
             },
             (response: any) => {
-              console.log('👆 Handling notification tap');
               handleNotificationTap(response);
             }
           );
-          await clearBadge();
-        } else {
-          console.log('ℹ️ Auto-enable failed, notifications will need manual setup');
         }
       }
     } catch (error) {
-      console.error('❌ Error setting up notifications:', (error as Error).message, (error as Error).stack);
+      console.error('Error setting up notifications:', (error as Error).message);
     }
   };
 

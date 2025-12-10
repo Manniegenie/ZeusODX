@@ -22,8 +22,6 @@ class NotificationService {
   constructor() {
     this.notificationListener = null;
     this.responseListener = null;
-    this.expoPushToken = null;
-    this.isInitialized = false;
   }
 
   /**
@@ -40,9 +38,9 @@ class NotificationService {
   }
 
   /**
-   * Request notification permissions
+   * Request notification permissions (works on all platforms, Android auto-grants)
    */
-  async enable() {
+  async requestPermission() {
     try {
       const { status } = await Notifications.requestPermissionsAsync();
       return {
@@ -50,32 +48,7 @@ class NotificationService {
         status
       };
     } catch (error) {
-      console.error('Error enabling notifications:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-
-  /**
-   * Auto-enable notifications (for Android)
-   */
-  async autoEnable() {
-    try {
-      if (Platform.OS === 'android') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        return {
-          success: status === 'granted',
-          status
-        };
-      }
-      return {
-        success: false,
-        message: 'Auto-enable only available on Android'
-      };
-    } catch (error) {
-      console.error('Error auto-enabling notifications:', error);
+      console.error('Error requesting notification permission:', error);
       return {
         success: false,
         error: error.message
@@ -106,72 +79,39 @@ class NotificationService {
   }
 
   /**
-   * Get Expo push token
+   * Get Expo push token - ALWAYS generates token regardless of permission
+   * Permission is only needed for displaying notifications, not for generating tokens
    */
   async getExpoPushToken() {
     try {
-      // Return cached token if available
-      if (this.expoPushToken) {
-        console.log('📱 Using cached Expo Push Token:', this.expoPushToken);
-        return this.expoPushToken;
-      }
-
-      // For simulators, create a mock token for testing
+      // Simulators don't support push tokens
       if (!Device.isDevice) {
-        const mockToken = `ExponentPushToken[simulator-${Date.now()}]`;
-        console.log('📱 Using simulator - mock Expo Push Token:', mockToken);
-        this.expoPushToken = mockToken;
-        return mockToken;
-      }
-
-      // Check if we have permission first (especially important for Android)
-      const { status } = await Notifications.getPermissionsAsync();
-      if (status !== 'granted') {
-        console.warn('⚠️ Notification permission not granted, requesting...');
-        const { status: newStatus } = await Notifications.requestPermissionsAsync();
-        if (newStatus !== 'granted') {
-          console.error('❌ Notification permission denied, cannot get push token');
-          return null;
-        }
+        console.log('⚠️ Not a physical device, skipping token generation');
+        return null;
       }
 
       // Get project ID from config
-      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+      const projectId = Constants.easConfig?.projectId || Constants.expoConfig?.extra?.eas?.projectId;
       if (!projectId) {
         console.error('❌ EAS projectId not found in app config');
-        console.log('📱 Available config:', {
-          hasExpoConfig: !!Constants.expoConfig,
-          hasExtra: !!Constants.expoConfig?.extra,
-          hasEas: !!Constants.expoConfig?.extra?.eas,
-        });
         return null;
       }
 
-      console.log('📱 Requesting Expo Push Token with projectId:', projectId);
-      console.log('📱 Platform:', Platform.OS);
-
-      // Get real token from Expo
-      const token = await Notifications.getExpoPushTokenAsync({
-        projectId: projectId,
-      });
+      // Generate token regardless of permission status
+      // On Android, this will work without permission
+      // Permission is only needed for displaying notifications to user
+      console.log('📱 Generating Expo push token (permission not required for token generation)...');
+      const token = await Notifications.getExpoPushTokenAsync({ projectId });
       
       if (!token || !token.data) {
-        console.error('❌ Invalid token response from Expo:', token);
+        console.error('❌ Failed to get Expo push token');
         return null;
       }
 
-      this.expoPushToken = token.data;
-      console.log('✅ Expo Push Token obtained successfully:', token.data);
-      console.log('📱 Token length:', token.data.length);
+      console.log('✅ Expo push token generated:', token.data.substring(0, 30) + '...');
       return token.data;
     } catch (error) {
-      console.error('❌ Error getting Expo push token:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack,
-        platform: Platform.OS,
-      });
+      console.error('❌ Error getting Expo push token:', error.message);
       return null;
     }
   }
@@ -182,47 +122,163 @@ class NotificationService {
   getDeviceId() {
     try {
       if (Device.isDevice) {
-        // Try multiple methods to get device ID for better Android compatibility
         const deviceId = Device.osInternalBuildId || Device.modelId || Device.deviceName || Device.brand;
-        if (deviceId) {
-          return `${Platform.OS}-${deviceId}`;
-        }
-        // Fallback: use a combination of platform and timestamp for unique ID
-        return `${Platform.OS}-device-${Date.now()}`;
-      } else {
-        // For simulators, create a consistent ID
-        return `${Platform.OS}-simulator-test`;
+        return deviceId ? `${Platform.OS}-${deviceId}` : `${Platform.OS}-${Date.now()}`;
       }
+      return `${Platform.OS}-simulator`;
     } catch (error) {
-      console.error('Error getting device ID:', error);
-      // Fallback device ID
-      return `${Platform.OS}-unknown-device-${Date.now()}`;
+      return `${Platform.OS}-${Date.now()}`;
     }
   }
 
   /**
-   * Register push token with backend
+   * Check if device has a token in the database (uses deviceId, no auth required)
+   */
+  async checkTokenExists() {
+    try {
+      const deviceId = this.getDeviceId();
+      if (!deviceId) {
+        return {
+          success: false,
+          hasToken: false,
+          error: 'Could not get device ID'
+        };
+      }
+
+      // Call endpoint with deviceId (no auth required)
+      const params = new URLSearchParams({ deviceId });
+      const response = await apiClient.get(`/notification/check-token?${params.toString()}`);
+      
+      if (response.success && response.data) {
+        return {
+          success: true,
+          hasToken: response.data.hasToken || false
+        };
+      } else {
+        return {
+          success: false,
+          hasToken: false,
+          error: response.error || 'Failed to check token'
+        };
+      }
+    } catch (error) {
+      console.error('Error checking token existence:', error.message);
+      return {
+        success: false,
+        hasToken: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Initialize push notifications - ALWAYS generates and registers token
+   * Checks DB first, generates if missing, registers with deviceId
+   */
+  async initializePushNotifications() {
+    try {
+      // Step 1: Check if device already has a token in DB
+      console.log('🔍 Checking if device has push token in database...');
+      const checkResult = await this.checkTokenExists();
+
+      // If device already has a token, skip
+      if (checkResult.success && checkResult.hasToken) {
+        console.log('✅ Device already has a push token registered');
+        return {
+          success: true,
+          skipped: true,
+          message: 'Device already has a push token registered'
+        };
+      }
+
+      // Step 2: Generate token (ALWAYS - no permission check)
+      console.log('📱 No token found, generating Expo push token...');
+      const expoPushToken = await this.getExpoPushToken();
+      
+      if (!expoPushToken) {
+        console.error('❌ CRITICAL: Could not generate Expo push token');
+        return {
+          success: false,
+          error: 'Could not generate Expo push token'
+        };
+      }
+
+      // Step 3: Register token with backend using deviceId
+      console.log('📤 Registering push token with backend...');
+      const deviceId = this.getDeviceId();
+      
+      // Try to get userId if available (optional)
+      let userId = null;
+      try {
+        const userData = await AsyncStorage.getItem('user_data');
+        if (userData) {
+          const user = JSON.parse(userData);
+          userId = user._id || user.id;
+        }
+      } catch (err) {
+        // Silent fail - userId is optional
+      }
+
+      const payload = {
+        expoPushToken,
+        deviceId,
+        platform: Platform.OS,
+        ...(userId && { userId })
+      };
+
+      console.log('📤 Registering token:', { deviceId, platform: Platform.OS, hasUserId: !!userId });
+      const response = await apiClient.post('/notification/register-token', payload);
+
+      if (response.success) {
+        console.log('✅ Push token registered successfully in database');
+        return {
+          success: true,
+          data: response
+        };
+      } else {
+        console.error('❌ Failed to register push token:', response.error);
+        return {
+          success: false,
+          error: response.error || 'Failed to register push token'
+        };
+      }
+    } catch (error) {
+      console.error('❌ Error initializing push notifications:', error.message);
+      return {
+        success: false,
+        error: error.message || 'Unknown error initializing push notifications'
+      };
+    }
+  }
+
+  /**
+   * Register push token with backend (only if token changed or missing)
+   * @deprecated Use initializePushNotifications instead
    */
   async registerPushToken() {
     try {
-      console.log('📱 Starting push token registration...');
-      console.log('📱 Platform:', Platform.OS);
-      
       const expoPushToken = await this.getExpoPushToken();
       if (!expoPushToken) {
-        console.error('❌ Could not get Expo push token');
         return {
           success: false,
           error: 'Could not get Expo push token'
         };
       }
 
-      const deviceId = this.getDeviceId();
-      const platform = Platform.OS;
-
-      console.log('📱 Device ID:', deviceId);
-      console.log('📱 Platform:', platform);
-      console.log('📱 Expo Push Token:', expoPushToken.substring(0, 20) + '...');
+      // Check if token has changed
+      try {
+        const lastRegisteredToken = await AsyncStorage.getItem('last_registered_push_token');
+        if (lastRegisteredToken === expoPushToken) {
+          // Token unchanged, skip registration
+          return {
+            success: true,
+            skipped: true,
+            message: 'Token already registered'
+          };
+        }
+      } catch (err) {
+        // If check fails, proceed with registration
+      }
 
       // Try to get userId from stored user data
       let userId = null;
@@ -231,100 +287,42 @@ class NotificationService {
         if (userData) {
           const user = JSON.parse(userData);
           userId = user._id || user.id;
-          console.log('📱 User ID found:', userId);
-        } else {
-          console.log('📱 No user data found in storage');
         }
       } catch (err) {
-        console.warn('⚠️ Could not get userId from storage:', err);
+        // Silent fail
       }
 
-      // Prepare request payload
       const payload = {
         expoPushToken,
-        deviceId,
-        platform,
-        ...(userId && { userId }) // Include userId if available
+        deviceId: this.getDeviceId(),
+        platform: Platform.OS,
+        ...(userId && { userId })
       };
 
-      console.log('📱 Registering token with backend...');
-      console.log('📱 Payload:', { ...payload, expoPushToken: expoPushToken.substring(0, 20) + '...' });
-
-      // Register with backend using authenticated API client
       const response = await apiClient.post('/notification/register-token', payload);
 
       if (response.success) {
-        console.log('✅ Push token registered successfully', userId ? `for user ${userId}` : '');
-        console.log('📱 Response:', response);
+        // Store registered token
+        try {
+          await AsyncStorage.setItem('last_registered_push_token', expoPushToken);
+        } catch (err) {
+          // Silent fail - not critical
+        }
         return {
           success: true,
           data: response
         };
       } else {
-        console.error('❌ Failed to register push token:', response);
-        console.error('❌ Response details:', JSON.stringify(response, null, 2));
         return {
           success: false,
           error: response.error || 'Failed to register push token'
         };
       }
     } catch (error) {
-      console.error('❌ Error registering push token:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        code: error.code,
-        stack: error.stack,
-        platform: Platform.OS,
-      });
+      console.error('Error registering push token:', error.message);
       return {
         success: false,
         error: error.message || 'Unknown error registering push token'
-      };
-    }
-  }
-
-  /**
-   * Initialize notifications (request permission and register token)
-   */
-  async initialize() {
-    if (this.isInitialized) {
-      console.log('📱 Notifications already initialized');
-      return { success: true, message: 'Already initialized' };
-    }
-
-    try {
-      console.log('🚀 Initializing notifications...');
-
-      // Request permission
-      const hasPermission = await this.isEnabled();
-      if (!hasPermission) {
-        const result = await this.enable();
-        if (!result.success) {
-          return {
-            success: false,
-            error: 'Notification permission denied'
-          };
-        }
-      }
-
-      // Register push token
-      const registerResult = await this.registerPushToken();
-      if (!registerResult.success) {
-        console.warn('⚠️ Failed to register push token, but continuing...');
-      }
-
-      this.isInitialized = true;
-      console.log('✅ Notifications initialized successfully');
-      
-      return {
-        success: true,
-        tokenRegistered: registerResult.success
-      };
-    } catch (error) {
-      console.error('Error initializing notifications:', error);
-      return {
-        success: false,
-        error: error.message
       };
     }
   }
@@ -367,10 +365,14 @@ class NotificationService {
   /**
    * Reset service (useful for logout)
    */
-  reset() {
+  async reset() {
     this.removeListeners();
-    this.expoPushToken = null;
-    this.isInitialized = false;
+    // Clear stored token on logout
+    try {
+      await AsyncStorage.removeItem('last_registered_push_token');
+    } catch (err) {
+      // Silent fail
+    }
   }
 }
 
