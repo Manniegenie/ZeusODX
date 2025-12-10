@@ -2,8 +2,7 @@
  * useNotifications Hook
  * Provides notification functionality to components
  */
-import { useCallback, useEffect, useState } from 'react';
-import { AppState } from 'react-native';
+import { useCallback, useState } from 'react';
 import NotificationService from '../services/notificationService';
 
 export const useNotifications = () => {
@@ -17,31 +16,13 @@ export const useNotifications = () => {
     return enabled;
   }, []);
 
-  // Enable notifications
-  const enable = useCallback(async () => {
+  // Request notification permission
+  const requestPermission = useCallback(async () => {
     setIsLoading(true);
     try {
-      const result = await NotificationService.enable();
+      const result = await NotificationService.requestPermission();
       if (result.success) {
         setIsEnabled(true);
-        // Register token after enabling
-        await NotificationService.registerPushToken();
-      }
-      return result;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Auto-enable notifications (for Android)
-  const autoEnable = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const result = await NotificationService.autoEnable();
-      if (result.success) {
-        setIsEnabled(true);
-        // Register token after enabling
-        await NotificationService.registerPushToken();
       }
       return result;
     } finally {
@@ -69,48 +50,14 @@ export const useNotifications = () => {
     NotificationService.removeListeners();
   }, []);
 
-  // Initialize notifications
-  const initialize = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const result = await NotificationService.initialize();
-      if (result.success) {
-        setIsEnabled(true);
-      }
-      return result;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Check status on mount
-  useEffect(() => {
-    checkStatus();
-  }, [checkStatus]);
-
-  // Re-check when app comes to foreground
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (nextAppState === 'active') {
-        checkStatus();
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, [checkStatus]);
-
   return {
     isEnabled,
     isLoading,
-    enable,
-    autoEnable,
+    requestPermission,
     openSettings,
     clearBadge,
     setupListeners,
     removeListeners,
     checkStatus,
-    initialize,
   };
 };

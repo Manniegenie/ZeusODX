@@ -61,32 +61,15 @@ class ApiClient {
   }
 
   async getRefreshToken() {
-    try {
-      const session = await this.getAuthSession();
-      if (session?.refreshToken) {
-        return session.refreshToken;
-      }
-      const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
-      if (refreshToken) {
-        await this.updateAuthSession({ refreshToken });
-      }
-      return refreshToken;
-    } catch (error) {
-      console.error('Error getting refresh token from SecureStore:', error);
-      return null;
-    }
+    // Refresh tokens are no longer used
+    return null;
   }
 
   async setRefreshToken(token) {
     try {
-      if (token) {
-        await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, token);
-        console.log('✅ Refresh token stored securely (apiClient)');
-      } else {
-        await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
-        console.log('✅ Refresh token cleared (apiClient)');
-      }
-      await this.updateAuthSession({ refreshToken: token ?? null });
+      // Refresh tokens are deprecated; always clear storage/session
+      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+      await this.updateAuthSession({ refreshToken: null });
     } catch (error) {
       console.error('Error storing refresh token in SecureStore:', error);
       throw error;
@@ -103,74 +86,8 @@ class ApiClient {
   }
 
   async refreshAccessToken() {
-    if (this.refreshPromise) {
-      return this.refreshPromise;
-    }
-
-    this.refreshPromise = (async () => {
-      const refreshToken = await this.getRefreshToken();
-      if (!refreshToken) {
-        console.warn('⚠️ No refresh token available for refresh attempt');
-        return { success: false, error: 'No refresh token' };
-      }
-
-      try {
-        console.log('🔄 Attempting to refresh access token...');
-        const response = await fetch(`${this.baseURL}/auth/refresh`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({ refreshToken }),
-        });
-
-        const text = await response.text();
-        let data;
-        try {
-          data = JSON.parse(text);
-        } catch {
-          data = { message: text };
-        }
-
-        if (!response.ok) {
-          console.error(`❌ Refresh token request failed ${response.status}:`, data);
-          return {
-            success: false,
-            error: data?.message || data?.error || 'Refresh token request failed',
-            status: response.status,
-          };
-        }
-
-        const newAccessToken = data?.accessToken ?? data?.data?.accessToken;
-        const newRefreshToken = data?.refreshToken ?? data?.data?.refreshToken;
-
-        if (!newAccessToken) {
-          console.error('❌ No access token in refresh response:', data);
-          return {
-            success: false,
-            error: 'No access token received from refresh endpoint',
-          };
-        }
-
-        // Store tokens before returning
-        await this.setAuthToken(newAccessToken);
-        
-        if (newRefreshToken) {
-          await this.setRefreshToken(newRefreshToken);
-        }
-
-        console.log('✅ Access token refreshed successfully');
-        return { success: true, data };
-      } catch (error) {
-        console.error('❌ Error refreshing access token:', error);
-        return { success: false, error: error.message || 'Refresh token failed' };
-      } finally {
-        this.refreshPromise = null;
-      }
-    })();
-
-    return this.refreshPromise;
+    // Refresh flow removed; force caller to restart
+    return { success: false, error: 'Refresh disabled' };
   }
 
   async handleAuthError(status, errorData) {
@@ -186,12 +103,7 @@ class ApiClient {
       return false;
     }
 
-    const refreshResult = await this.refreshAccessToken();
-    if (refreshResult?.success) {
-      return true;
-    }
-
-    console.warn('⚠️ Refresh token attempt failed, clearing tokens.');
+    console.warn('⚠️ Auth error detected; clearing session and restarting app.');
     await this.clearSession();
 
     try {
