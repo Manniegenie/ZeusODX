@@ -75,6 +75,9 @@ function parseError(err) {
   const errorText = (apiMsg || '').toLowerCase();
 
   if (status === 400) {
+    if (code === 'LIMIT_EXCEEDED' || errorText.includes('limit exceeded')) {
+      error = 'LIMIT_EXCEEDED';
+    }
     if (code === '2FA_NOT_SETUP') error = '2FA_NOT_SETUP';
     else if (code === 'PIN_NOT_SETUP') error = 'PIN_NOT_SETUP';
     else if (code === 'INVALID_OTP' || errorText.includes('invalid otp') || errorText.includes('otp invalid') ||
@@ -144,13 +147,37 @@ export const ngnzWithdrawalService = {
         headers: { 'Idempotency-Key': idempotencyKey }
       });
 
-      const data = res?.data || {};
-      if (!data?.success) {
-        dbg('❌ unexpected success=false shape', data);
+      // Handle apiClient error response (when res.success === false)
+      if (!res?.success) {
+        // apiClient now returns { success: false, error: "...", status: 400, data: {...} } for error responses
+        // The full error response body is in res.data
+        const errorData = res?.data || {};
+        // Extract error code from nested data structure: errorData.error or errorData.data?.error
+        const errorCode = errorData?.error || errorData?.data?.error || res?.error || 'UNEXPECTED_RESPONSE';
+        // Extract message from nested data structure: errorData.message or errorData.data?.message
+        const message = errorData?.message || errorData?.data?.message || res?.error || 'Unexpected response from withdrawal endpoint';
+        const status = res?.status || errorData?.status;
+        
+        dbg('❌ apiClient returned success=false', { error: errorCode, message, status, details: errorData });
         return {
           success: false,
-          error: 'UNEXPECTED_RESPONSE',
-          message: data?.message || 'Unexpected response from withdrawal endpoint',
+          error: errorCode,
+          message,
+          details: errorData,
+          status,
+          idempotencyKey
+        };
+      }
+
+      const data = res?.data || {};
+      if (!data?.success) {
+        const errorCode = data?.error || 'UNEXPECTED_RESPONSE';
+        const message = data?.message || 'Unexpected response from withdrawal endpoint';
+        dbg('❌ unexpected success=false shape', { error: errorCode, message, details: data });
+        return {
+          success: false,
+          error: errorCode,
+          message,
           details: data,
           idempotencyKey
         };
@@ -183,11 +210,13 @@ export const ngnzWithdrawalService = {
       const data = res?.data || {};
 
       if (!data?.success) {
-        dbg('❌ unexpected success=false shape', data);
+        const errorCode = data?.error || 'UNEXPECTED_RESPONSE';
+        const message = data?.message || 'Unexpected response from status endpoint';
+        dbg('❌ unexpected success=false shape', { error: errorCode, message, details: data });
         return {
           success: false,
-          error: 'UNEXPECTED_RESPONSE',
-          message: data?.message || 'Unexpected response from status endpoint',
+          error: errorCode,
+          message,
           details: data
         };
       }

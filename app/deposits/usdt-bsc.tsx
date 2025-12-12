@@ -254,17 +254,6 @@ export default function UsdtBscDepositScreen() {
             )}
           </View>
 
-          <View style={styles.warningSection}>
-            <View style={styles.warningContainer}>
-              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-              <Text style={styles.warningText}>
-                • Only send USDT on BNB Smart Chain (BSC) network to this address{'\n'}
-                • Sending USDT from other networks (like Ethereum, Tron, or Polygon) may result in loss of funds{'\n'}
-                • Ensure your wallet supports BSC USDT (BEP-20) before sending
-              </Text>
-            </View>
-          </View>
-
           <View style={styles.shareSection}>
             <TouchableOpacity
               style={[

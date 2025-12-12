@@ -237,15 +237,6 @@ export default function UsdtSolanaDepositScreen() {
             )}
           </View>
 
-          <View style={styles.warningSection}>
-            <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-            <Text style={styles.warningText}>
-              • Only send USDT on Solana network to this address{'\n'}
-              • Sending from other networks may result in loss of funds{'\n'}
-              • Ensure your wallet supports SPL tokens before sending
-            </Text>
-          </View>
-
           <View style={styles.shareSection}>
             <TouchableOpacity
               style={[

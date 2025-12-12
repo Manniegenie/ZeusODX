@@ -2,16 +2,16 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Image,
-  Modal,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Image,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -162,7 +162,11 @@ const BankAccountsScreen = () => {
         return 'setup';
       case 'PIN_NOT_SETUP':
         return 'setup';
+      case 'LIMIT_EXCEEDED':
+        return 'limit';
       case 'INVALID_2FA_CODE':
+        return 'auth';
+      case 'INVALID_OTP':
         return 'auth';
       case 'INVALID_PASSWORDPIN':
         return 'auth';
@@ -402,6 +406,30 @@ const BankAccountsScreen = () => {
       // clear selection after we captured it for the receipt
       setSelectedBankForTransfer(null);
       return;
+    } else {
+      const errorCode = (res as any)?.error || 'GENERAL_ERROR';
+      const errorMessage =
+        (res as any)?.message ||
+        (res as any)?.details?.message ||
+        'Withdrawal failed. Please try again.';
+      const details = (res as any)?.details || {};
+
+      if (errorCode === 'LIMIT_EXCEEDED') {
+        const rec = details?.upgradeRecommendation;
+        // Show the API error message first, append recommendation if available
+        const displayMessage = rec ? `${errorMessage}\n\n${rec}` : errorMessage;
+        showError(
+          mapErrorType(errorCode),
+          'Daily limit exceeded',
+          displayMessage
+        );
+      } else if (errorCode === 'INVALID_PASSWORDPIN') {
+        showError(mapErrorType(errorCode), 'Invalid PIN', 'The password PIN you entered is incorrect.');
+      } else if (errorCode === 'INVALID_2FA_CODE' || errorCode === 'INVALID_OTP') {
+        showError(mapErrorType(errorCode), 'Invalid 2FA', 'The two-factor code you entered is incorrect.');
+      } else {
+        showError(mapErrorType(errorCode), 'Withdrawal failed', errorMessage);
+      }
     }
 
     // Re-open relevant modal for quick retry

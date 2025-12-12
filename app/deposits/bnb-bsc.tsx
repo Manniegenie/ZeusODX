@@ -256,16 +256,6 @@ export default function BnbBscDepositScreen() {
             )}
           </View>
 
-          <View style={styles.warningSection}>
-            <View style={styles.warningContainer}>
-              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-              <Text style={styles.warningText}>
-                Only send BNB on the Binance Smart Chain (BSC) network to this address. 
-                Sending BNB from other networks (like Ethereum or Binance Chain) may result in permanent loss of funds.
-              </Text>
-            </View>
-          </View>
-
           <View style={styles.shareSection}>
             <TouchableOpacity
               style={[

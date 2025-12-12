@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  ScrollView
-} from 'react-native';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+    ScrollView,
+    StyleSheet,
+    View
+} from 'react-native';
+import BottomTabNavigator from '../../components/BottomNavigator';
 import { Colors } from '../../constants/Colors';
 import DashboardHeader from './DashboardHeader';
+import DashboardModals from './DashboardModals'; // Import the modals component
 import WalletPortfolioSection from './WalletPortfolioSection';
 import WalletTokensSection from './WalletTokensSection';
-import DashboardModals from './DashboardModals'; // Import the modals component
-import BottomTabNavigator from '../../components/BottomNavigator';
 
 interface QuickLink {
   id: string;
@@ -90,8 +90,8 @@ export default function WalletScreen({
     // Route to specific deposit screens based on wallet ID and network
     switch (wallet.id) {
       case 'ngnz':
-        router.push('/deposits/ngnz');
-        break;
+        // NGNZ deposit disabled
+        return;
       case 'btc':
         router.push('/deposits/btc');
         break;

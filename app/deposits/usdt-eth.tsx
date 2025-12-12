@@ -254,17 +254,6 @@ export default function UsdtEthDepositScreen() {
             )}
           </View>
 
-          <View style={styles.warningSection}>
-            <View style={styles.warningContainer}>
-              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-              <Text style={styles.warningText}>
-                • Only send USDT on Ethereum network to this address{'\n'}
-                • Sending USDT from other networks (like BSC, Tron, or Polygon) may result in loss of funds{'\n'}
-                • Ensure your wallet supports Ethereum USDT (ERC-20) before sending
-              </Text>
-            </View>
-          </View>
-
           <View style={styles.shareSection}>
             <TouchableOpacity
               style={[

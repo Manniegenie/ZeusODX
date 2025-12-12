@@ -254,16 +254,6 @@ export default function BnbEthDepositScreen() {
             )}
           </View>
 
-          <View style={styles.warningSection}>
-            <View style={styles.warningContainer}>
-              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-              <Text style={styles.warningText}>
-                Only send BNB on the Ethereum network to this address. 
-                Sending BNB from other networks (like BSC or Binance Chain) may result in permanent loss of funds.
-              </Text>
-            </View>
-          </View>
-
           <View style={styles.shareSection}>
             <TouchableOpacity
               style={[

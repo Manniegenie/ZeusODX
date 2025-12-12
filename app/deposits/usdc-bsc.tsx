@@ -254,17 +254,6 @@ export default function UsdcBscDepositScreen() {
             )}
           </View>
 
-          <View style={styles.warningSection}>
-            <View style={styles.warningContainer}>
-              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-              <Text style={styles.warningText}>
-                • Only send USDC on BNB Smart Chain (BSC) network to this address{'\n'}
-                • Sending USDC from other networks (like Ethereum) may result in loss of funds{'\n'}
-                • Ensure your wallet supports BSC USDC (BEP-20) before sending
-              </Text>
-            </View>
-          </View>
-
           <View style={styles.shareSection}>
             <TouchableOpacity
               style={[

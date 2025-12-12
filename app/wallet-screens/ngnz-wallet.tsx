@@ -102,7 +102,7 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   }, [openNetworkModal]);
 
   const quickActions = [
-    { id: 'deposit', title: 'Deposit', iconSrc: depositIcon },
+    { id: 'deposit', title: 'Deposit', iconSrc: depositIcon, disabled: true },
     { id: 'transfer', title: 'Transfer', iconSrc: transferIcon },
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
@@ -117,8 +117,8 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
   const handleQuickAction = (actionId) => {
     if (actionId === 'deposit') {
-      // Updated to route directly to NGNZ deposit screen
-      router.push('/deposits/ngnz');
+      // Deposit disabled for NGNZ
+      return;
     } else if (actionId === 'transfer') {
       setShowTransferMethodModal(true);
     } else if (actionId === 'buy-sell') {
@@ -164,7 +164,6 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   };
 
   const handleNetworkSelect = (network) => {
-    if (network.id === 'ngnz') router.push('../deposits/ngnz');
     setShowNetworkModal(false);
   };
 
@@ -404,12 +403,26 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
           <View style={styles.quickActionsSection}>
             <Text style={styles.quickActionsTitle}>Quick Actions</Text>
             <View style={styles.quickActionsContainer}>
-              {quickActions.map((action) => (
-                <TouchableOpacity key={action.id} style={styles.actionItem} onPress={() => handleQuickAction(action.id)}>
-                  <Image source={action.iconSrc} style={styles.actionIconImage} />
-                  <Text style={styles.actionLabel}>{action.title}</Text>
-                </TouchableOpacity>
-              ))}
+              {quickActions.map((action) => {
+                const isDisabled = action.disabled;
+                return (
+                  <TouchableOpacity
+                    key={action.id}
+                    style={[styles.actionItem, isDisabled && styles.actionItemDisabled]}
+                    onPress={() => handleQuickAction(action.id)}
+                    disabled={isDisabled}
+                    activeOpacity={isDisabled ? 1 : 0.7}
+                  >
+                    <Image
+                      source={action.iconSrc}
+                      style={[styles.actionIconImage, isDisabled && styles.actionIconImageDisabled]}
+                    />
+                    <Text style={[styles.actionLabel, isDisabled && styles.actionLabelDisabled]}>
+                      {action.title}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
@@ -578,8 +591,11 @@ const styles = StyleSheet.create({
   quickActionsTitle: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
   quickActionsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   actionItem: { alignItems: 'center' },
+  actionItemDisabled: { opacity: 0.5 },
   actionIconImage: { width: 44, height: 44 },
+  actionIconImageDisabled: { tintColor: '#A0A0A0' },
   actionLabel: { fontSize: 12, color: '#292d32', marginTop: 4 },
+  actionLabelDisabled: { color: '#A0A0A0' },
   recentHistorySection: { 
     paddingHorizontal: Layout.spacing.lg, 
     paddingBottom: Layout.spacing.xl 

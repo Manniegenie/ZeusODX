@@ -92,6 +92,59 @@ export default function RootLayout() {
     configureModernEdgeToEdge();
   }, []);
 
+  // CRITICAL: Initialize push token early - runs for ALL users on app boot
+  // Must happen before navigation to ensure token is registered
+  useEffect(() => {
+    const initializePushTokenEarly = async () => {
+      try {
+        const Device = await import('expo-device');
+        if (!Device.isDevice) {
+          console.log('⚠️ [LAYOUT] Not a physical device, skipping token generation');
+          return;
+        }
+
+        // Wait a bit for network to be ready
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        console.log('📱 [LAYOUT] Initializing push token on app boot...');
+        const result = await NotificationService.initializePushNotifications();
+        
+        if (result.success) {
+          if (result.skipped) {
+            console.log('✅ [LAYOUT] Push token already exists, skipped');
+          } else {
+            console.log('✅ [LAYOUT] Push token initialized and registered successfully');
+          }
+        } else {
+          console.error('❌ [LAYOUT] Push token initialization failed:', result.error);
+          // Retry after 3 seconds
+          setTimeout(async () => {
+            console.log('🔄 [LAYOUT] Retrying push token initialization...');
+            const retryResult = await NotificationService.initializePushNotifications();
+            if (retryResult.success) {
+              console.log('✅ [LAYOUT] Push token initialized on retry');
+            } else {
+              console.error('❌ [LAYOUT] Push token initialization failed on retry:', retryResult.error);
+            }
+          }, 3000);
+        }
+      } catch (error) {
+        console.error('❌ [LAYOUT] Error initializing push token:', (error as Error).message, (error as Error).stack);
+        // Retry after 5 seconds
+        setTimeout(async () => {
+          try {
+            console.log('🔄 [LAYOUT] Retrying push token initialization after error...');
+            await NotificationService.initializePushNotifications();
+          } catch (retryError) {
+            console.error('❌ [LAYOUT] Push token initialization failed on retry:', (retryError as Error).message);
+          }
+        }, 5000);
+      }
+    };
+
+    initializePushTokenEarly();
+  }, []);
+
   // Setup global notification listeners
   useEffect(() => {
     // Setup listeners for notifications received while app is running
