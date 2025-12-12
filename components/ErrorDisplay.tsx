@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Animated, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
 
@@ -115,18 +115,9 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
             <Text style={[styles.title, { color: errorContent.color }]} numberOfLines={2}>
               {displayTitle}
             </Text>
-            <Text style={styles.message} numberOfLines={2}>
+            <Text style={styles.message} numberOfLines={4}>
               {displayMessage}
             </Text>
-            {errorAction && onActionPress && (
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: errorContent.color }]}
-                onPress={onActionPress}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.actionButtonText}>{errorAction.actionText}</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
       </TouchableWithoutFeedback>

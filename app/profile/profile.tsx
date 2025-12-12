@@ -79,7 +79,7 @@ const ProfileScreen = () => {
   const { 
     isEnabled: isNotificationEnabled, 
     isLoading: isNotificationLoading,
-    enable: enableNotifications,
+    requestPermission: requestNotificationPermission,
     openSettings: openNotificationSettings,
   } = useNotifications();
 
@@ -263,7 +263,7 @@ const ProfileScreen = () => {
     if (isAnyOperationInProgress) return;
 
     if (value) {
-      const result = await enableNotifications();
+      const result = await requestNotificationPermission();
       if (result?.success) {
         showInfo('Notifications Enabled', 'You will now receive notifications.');
       } else {
@@ -280,7 +280,7 @@ const ProfileScreen = () => {
         openNotificationSettings as (() => void) | null
       );
     }
-  }, [isAnyOperationInProgress, enableNotifications, openNotificationSettings, showInfo]);
+  }, [isAnyOperationInProgress, requestNotificationPermission, openNotificationSettings, showInfo]);
 
   // Biometric handlers
   const handleBiometricToggle = useCallback(async (value: boolean) => {

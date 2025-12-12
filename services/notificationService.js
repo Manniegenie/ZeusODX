@@ -117,17 +117,51 @@ class NotificationService {
   }
 
   /**
-   * Get device ID
+   * Get device ID - stores and reuses consistent device ID
    */
-  getDeviceId() {
+  async getDeviceId() {
     try {
-      if (Device.isDevice) {
-        const deviceId = Device.osInternalBuildId || Device.modelId || Device.deviceName || Device.brand;
-        return deviceId ? `${Platform.OS}-${deviceId}` : `${Platform.OS}-${Date.now()}`;
+      const STORAGE_KEY = 'zeusodx_device_id';
+      
+      // Try to get stored device ID first
+      try {
+        const storedDeviceId = await AsyncStorage.getItem(STORAGE_KEY);
+        if (storedDeviceId) {
+          console.log('✅ Using stored device ID:', storedDeviceId);
+          return storedDeviceId;
+        }
+      } catch (err) {
+        // Silent fail, continue to generate new one
       }
-      return `${Platform.OS}-simulator`;
+
+      // Generate new device ID
+      let deviceId;
+      if (Device.isDevice) {
+        const osId = Device.osInternalBuildId || Device.modelId || Device.deviceName || Device.brand;
+        if (osId) {
+          deviceId = `${Platform.OS}-${osId}`;
+        } else {
+          // Fallback: Use a more stable identifier
+          deviceId = `${Platform.OS}-${Device.modelName || Device.deviceType || 'unknown'}-${Device.brand || 'device'}`;
+        }
+      } else {
+        deviceId = `${Platform.OS}-simulator`;
+      }
+
+      // Store device ID for future use
+      try {
+        await AsyncStorage.setItem(STORAGE_KEY, deviceId);
+        console.log('💾 Stored new device ID:', deviceId);
+      } catch (err) {
+        console.warn('⚠️ Failed to store device ID:', err.message);
+      }
+
+      return deviceId;
     } catch (error) {
-      return `${Platform.OS}-${Date.now()}`;
+      // Last resort fallback
+      const fallbackId = `${Platform.OS}-${Date.now()}`;
+      console.error('❌ Error generating device ID, using fallback:', fallbackId);
+      return fallbackId;
     }
   }
 
@@ -136,7 +170,7 @@ class NotificationService {
    */
   async checkTokenExists() {
     try {
-      const deviceId = this.getDeviceId();
+      const deviceId = await this.getDeviceId();
       if (!deviceId) {
         return {
           success: false,
@@ -205,8 +239,15 @@ class NotificationService {
 
       // Step 3: Register token with backend using deviceId
       console.log('📤 Registering push token with backend...');
-      const deviceId = this.getDeviceId();
+      const deviceId = await this.getDeviceId();
       
+      if (!deviceId) {
+        return {
+          success: false,
+          error: 'Could not get device ID'
+        };
+      }
+
       // Try to get userId if available (optional)
       let userId = null;
       try {
@@ -292,9 +333,17 @@ class NotificationService {
         // Silent fail
       }
 
+      const deviceId = await this.getDeviceId();
+      if (!deviceId) {
+        return {
+          success: false,
+          error: 'Could not get device ID'
+        };
+      }
+
       const payload = {
         expoPushToken,
-        deviceId: this.getDeviceId(),
+        deviceId,
         platform: Platform.OS,
         ...(userId && { userId })
       };

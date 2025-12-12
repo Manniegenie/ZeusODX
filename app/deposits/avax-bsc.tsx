@@ -256,16 +256,6 @@ export default function AvaxBscDepositScreen() {
             )}
           </View>
 
-          <View style={styles.warningSection}>
-            <View style={styles.warningContainer}>
-              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-              <Text style={styles.warningText}>
-                Only send AVAX on the Binance Smart Chain (BSC) network to this address. 
-                Sending AVAX from other networks (like Avalanche C-Chain or Ethereum) may result in permanent loss of funds.
-              </Text>
-            </View>
-          </View>
-
           <View style={styles.shareSection}>
             <TouchableOpacity
               style={[

@@ -254,16 +254,6 @@ export default function TrxTronDepositScreen() {
             )}
           </View>
 
-          <View style={styles.warningSection}>
-            <View style={styles.warningContainer}>
-              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-              <Text style={styles.warningText}>
-                Only send TRX on the Tron network to this address. 
-                Sending TRX from other networks or sending other tokens may result in permanent loss of funds.
-              </Text>
-            </View>
-          </View>
-
           <View style={styles.shareSection}>
             <TouchableOpacity
               style={[

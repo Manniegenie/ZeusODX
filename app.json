@@ -46,7 +46,7 @@
         "com.google.android.c2dm.permission.RECEIVE",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "versionCode": 93
+      "versionCode": 95
     },
     "web": {
       "bundler": "metro",

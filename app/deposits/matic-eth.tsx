@@ -254,17 +254,6 @@ export default function MaticEthDepositScreen() {
             )}
           </View>
 
-          <View style={styles.warningSection}>
-            <View style={styles.warningContainer}>
-              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-              <Text style={styles.warningText}>
-                • Only send MATIC on Ethereum network to this address{'\n'}
-                • Sending MATIC from other networks (like Polygon or BSC) may result in loss of funds{'\n'}
-                • Ensure your wallet supports Ethereum MATIC (ERC-20) before sending
-              </Text>
-            </View>
-          </View>
-
           <View style={styles.shareSection}>
             <TouchableOpacity
               style={[

@@ -178,6 +178,7 @@ class ApiClient {
           success: false,
           error: errorMessage,
           status: response.status,
+          data: data, // Include full error response data for detailed error handling
         };
       }
 

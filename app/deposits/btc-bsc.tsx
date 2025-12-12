@@ -251,17 +251,6 @@ export default function BtcBscDepositScreen() {
             )}
           </View>
 
-          <View style={styles.warningSection}>
-            <View style={styles.warningContainer}>
-              <Text style={styles.warningTitle}>⚠️ Important Notice</Text>
-              <Text style={styles.warningText}>
-                • Only send BTC on BNB Smart Chain (BSC) network to this address{'\n'}
-                • Sending from other networks may result in loss of funds{'\n'}
-                • Ensure your wallet supports BSC BTC (BEP-20) before sending
-              </Text>
-            </View>
-          </View>
-
           <View style={styles.shareSection}>
             <TouchableOpacity
               style={[
