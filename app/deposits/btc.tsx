@@ -135,7 +135,7 @@ export default function BtcDepositScreen() {
   const isWalletSetupNeeded = addressError && addressError.includes('needs to be set up');
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
-  const minDeposit = '0.0001 BTC';
+  const minDeposit = '0.00005 BTC';
   const network = depositData?.network || 'Bitcoin';
 
   const copyToClipboard = async () => {

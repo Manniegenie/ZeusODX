@@ -1,23 +1,23 @@
 // app/components/FiatWithdrawalReceiptModal.tsx
+import { Asset } from 'expo-asset';
+import * as Clipboard from 'expo-clipboard';
+import * as FileSystem from 'expo-file-system';
+import * as Print from 'expo-print';
+import { useRouter } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import React, { useMemo } from 'react';
 import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  Alert,
+    Alert,
+    Image,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import Clipboard from '@react-native-clipboard/clipboard';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-import { useRouter } from 'expo-router';
-import { Asset } from 'expo-asset';
-import * as FileSystem from 'expo-file-system';
-import { Typography } from '../constants/Typography';
 import { Colors } from '../constants/Colors';
+import { Typography } from '../constants/Typography';
 // @ts-ignore - Layout typing may be loose in your project
 import { Layout } from '../constants/Layout';
 
@@ -141,10 +141,10 @@ export default function FiatWithdrawalReceiptModal({
     };
   }, [tx, raw]);
 
-  const handleCopy = (label: string, value?: string) => {
+  const handleCopy = async (label: string, value?: string) => {
     if (!value) return;
     try {
-      Clipboard.setString(value);
+      await Clipboard.setStringAsync(value);
       Alert.alert('Copied!', `${label} copied to clipboard`);
     } catch {
       Alert.alert('Copy failed', `Unable to copy ${label.toLowerCase()}`);

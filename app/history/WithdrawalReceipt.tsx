@@ -1,5 +1,5 @@
 // screens/withdrawal/WithdrawalReceiptScreen.tsx
-import Clipboard from '@react-native-clipboard/clipboard';
+import * as Clipboard from 'expo-clipboard';
 import * as Print from 'expo-print';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
@@ -398,10 +398,10 @@ export default function WithdrawalReceiptScreen() {
 
   const s = statusStyles(transaction?.status || '');
 
-  const handleCopy = (label: string, value?: string) => {
+  const handleCopy = async (label: string, value?: string) => {
     if (!value) return;
     try {
-      Clipboard.setString(value);
+      await Clipboard.setStringAsync(value);
       setShowCopied(true);
     } catch {
       Alert.alert('Copy failed', `Unable to copy ${label.toLowerCase()}`);

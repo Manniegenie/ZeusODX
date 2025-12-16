@@ -148,7 +148,7 @@ export default function EthDepositScreen() {
   const isWalletSetupNeeded = addressError && addressError.includes('needs to be set up');
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
-  const minDeposit = '0.001 ETH';
+  const minDeposit = '-';
   const network = 'Ethereum';
 
   return (

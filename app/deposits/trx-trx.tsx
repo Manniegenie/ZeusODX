@@ -148,7 +148,7 @@ export default function TrxTronDepositScreen() {
   const isWalletSetupNeeded = addressError && addressError.includes('needs to be set up');
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
-  const minDeposit = '10 TRX';
+  const minDeposit = '5 TRX';
   const network = depositData?.network || 'Tron';
 
   return (

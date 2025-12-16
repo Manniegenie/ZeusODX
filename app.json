@@ -46,7 +46,7 @@
         "com.google.android.c2dm.permission.RECEIVE",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "versionCode": 95
+      "versionCode": 99
     },
     "web": {
       "bundler": "metro",
@@ -71,7 +71,13 @@
             "enableR8": false,
             "enableHermes": true,
             "enableNewArchitecture": false,
-            "ndkVersion": "28.0.12433564"
+            "ndkVersion": "28.0.12433564",
+            "enable16KbPageSize": true,
+            "packagingOptions": {
+              "pickFirst": [
+                "**/libc++_shared.so"
+              ]
+            }
           },
           "ios": {
             "deploymentTarget": "15.1"

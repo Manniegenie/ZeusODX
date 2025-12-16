@@ -2,7 +2,7 @@
  * useNotifications Hook
  * Provides notification functionality to components
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import NotificationService from '../services/notificationService';
 
 export const useNotifications = () => {
@@ -16,13 +16,24 @@ export const useNotifications = () => {
     return enabled;
   }, []);
 
+  // Check status on mount
+  useEffect(() => {
+    checkStatus();
+  }, [checkStatus]);
+
   // Request notification permission
   const requestPermission = useCallback(async () => {
     setIsLoading(true);
     try {
       const result = await NotificationService.requestPermission();
+      // Re-check status after requesting permission to ensure sync
       if (result.success) {
-        setIsEnabled(true);
+        const enabled = await NotificationService.isEnabled();
+        setIsEnabled(enabled);
+      } else {
+        // Even if request failed, check actual status (user might have enabled in settings)
+        const enabled = await NotificationService.isEnabled();
+        setIsEnabled(enabled);
       }
       return result;
     } finally {
