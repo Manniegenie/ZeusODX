@@ -149,7 +149,7 @@ export default function BtcBscDepositScreen() {
   const isWalletSetupNeeded = addressError && addressError.includes('needs to be set up');
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
-  const minDeposit = '0.0001 BTC';
+  const minDeposit = '0.00005 BTC';
   const network = 'BNB Smart Chain (BSC)';
 
   return (

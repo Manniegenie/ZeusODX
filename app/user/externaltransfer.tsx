@@ -861,21 +861,23 @@ const ExternalWalletTransferScreen: React.FC = () => {
         </ScrollView>
 
         {/* Continue Button */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.continueButton,
-              !isFormValid && styles.continueButtonDisabled
-            ]}
-            onPress={handleContinue}
-            disabled={!isFormValid || isInitiating || isCalculatingFee}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.continueButtonText}>
-              {isInitiating ? 'Processing...' : isCalculatingFee ? 'Calculating...' : 'Continue'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <SafeAreaView edges={['bottom']} style={styles.buttonSafeArea}>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[
+                styles.continueButton,
+                !isFormValid && styles.continueButtonDisabled
+              ]}
+              onPress={handleContinue}
+              disabled={!isFormValid || isInitiating || isCalculatingFee}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.continueButtonText}>
+                {isInitiating ? 'Processing...' : isCalculatingFee ? 'Calculating...' : 'Continue'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
 
         <NetworkSelectionModal
           visible={showNetworkModal}
@@ -1163,9 +1165,13 @@ const styles = StyleSheet.create({
   },
 
   // Button styles
+  buttonSafeArea: {
+    backgroundColor: Colors.background || '#F8F9FA',
+  },
   buttonContainer: {
     paddingHorizontal: horizontalPadding,
-    paddingVertical: 24,
+    paddingTop: 16,
+    paddingBottom: 16,
     backgroundColor: Colors.background || '#F8F9FA',
   },
   continueButton: {

@@ -1,5 +1,5 @@
 // app/receipt/bill-receipt.tsx
-import Clipboard from '@react-native-clipboard/clipboard';
+import * as Clipboard from 'expo-clipboard';
 import * as Print from 'expo-print';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
@@ -466,16 +466,16 @@ const BillReceiptScreen = () => {
     }
   };
 
-  const copyToken = () => {
+  const copyToken = async () => {
     if (merged.token) {
-      Clipboard.setString(merged.token);
+      await Clipboard.setStringAsync(merged.token);
       setShowCopied(true);
     }
   };
 
-  const copyOrderId = () => {
+  const copyOrderId = async () => {
     if (merged.orderId) {
-      Clipboard.setString(merged.orderId);
+      await Clipboard.setStringAsync(merged.orderId);
       setShowCopied(true);
     }
   };

@@ -94,6 +94,7 @@ export default function RootLayout() {
 
   // CRITICAL: Initialize push token early - runs for ALL users on app boot
   // Must happen before navigation to ensure token is registered
+  // For Android production, this MUST happen after app is fully loaded
   useEffect(() => {
     const initializePushTokenEarly = async () => {
       try {
@@ -103,8 +104,12 @@ export default function RootLayout() {
           return;
         }
 
-        // Wait a bit for network to be ready
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // CRITICAL: Wait longer for Android production builds to fully initialize
+        // Android production builds need more time for native modules to be ready
+        const Platform = await import('react-native');
+        const waitTime = Platform.Platform.OS === 'android' ? 2000 : 1000;
+        console.log(`⏳ [LAYOUT] Waiting ${waitTime}ms for app to fully initialize...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
         
         console.log('📱 [LAYOUT] Initializing push token on app boot...');
         const result = await NotificationService.initializePushNotifications();

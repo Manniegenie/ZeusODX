@@ -4,6 +4,9 @@ import * as Updates from 'expo-updates';
 const AUTH_TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const AUTH_SESSION_KEY = 'auth_session_bundle';
+const LOGIN_TIME_KEY = 'login_time';
+const SESSION_TIMEOUT_MS = 50 * 60 * 1000; // 50 minutes in milliseconds
+const SESSION_CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
 
 class ApiClient {
   constructor() {
@@ -16,6 +19,11 @@ class ApiClient {
       'Accept': 'application/json',
     };
     this.refreshPromise = null;
+    this.loginTime = null;
+    this.sessionTimer = null;
+    
+    // Initialize session timer if user is already logged in
+    this.initializeSessionTimer();
   }
 
   async getAuthToken() {
@@ -40,9 +48,13 @@ class ApiClient {
       if (token) {
         await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
         console.log('✅ Auth token stored securely');
+        // Start session timer when token is set
+        this.startSessionTimer();
       } else {
         await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
         console.log('✅ Auth token cleared');
+        // Stop session timer when token is cleared
+        this.stopSessionTimer();
       }
       await this.updateAuthSession({ accessToken: token ?? null });
     } catch (error) {
@@ -293,6 +305,105 @@ class ApiClient {
       await SecureStore.deleteItemAsync('userId');
     } catch (error) {
       console.error('Error clearing auth session tokens:', error);
+    }
+    // Stop session timer when session is cleared
+    this.stopSessionTimer();
+  }
+
+  /**
+   * Initialize session timer on app start if user is already logged in
+   */
+  async initializeSessionTimer() {
+    try {
+      const token = await this.getAuthToken();
+      if (token) {
+        // Try to restore login time from storage
+        const storedLoginTime = await SecureStore.getItemAsync(LOGIN_TIME_KEY);
+        if (storedLoginTime) {
+          this.loginTime = parseInt(storedLoginTime, 10);
+          // Check if we should restart immediately
+          await this.checkSessionTimeout();
+        } else {
+          // If no stored time, assume login just happened
+          this.loginTime = Date.now();
+          await SecureStore.setItemAsync(LOGIN_TIME_KEY, String(this.loginTime));
+        }
+        // Start the timer
+        this.startSessionTimerInterval();
+      }
+    } catch (error) {
+      console.error('Error initializing session timer:', error);
+    }
+  }
+
+  /**
+   * Start the session timer that will restart the app after 50 minutes
+   * This is called automatically when a token is set
+   */
+  startSessionTimer() {
+    // Clear any existing timer
+    this.stopSessionTimer();
+    
+    // Record login time
+    this.loginTime = Date.now();
+    
+    // Store login time for persistence across app restarts
+    SecureStore.setItemAsync(LOGIN_TIME_KEY, String(this.loginTime)).catch(error => {
+      console.error('Error storing login time:', error);
+    });
+    
+    // Start the interval
+    this.startSessionTimerInterval();
+    
+    console.log('🕐 Session timer started (50 minute timeout)');
+  }
+
+  /**
+   * Start the interval timer (internal method)
+   */
+  startSessionTimerInterval() {
+    // Set up interval to check session timeout
+    this.sessionTimer = setInterval(() => {
+      this.checkSessionTimeout();
+    }, SESSION_CHECK_INTERVAL_MS);
+  }
+
+  /**
+   * Stop the session timer
+   * This is called automatically when token is cleared or session ends
+   */
+  stopSessionTimer() {
+    if (this.sessionTimer) {
+      clearInterval(this.sessionTimer);
+      this.sessionTimer = null;
+    }
+    this.loginTime = null;
+    // Clear stored login time
+    SecureStore.deleteItemAsync(LOGIN_TIME_KEY).catch(error => {
+      console.error('Error clearing login time:', error);
+    });
+    console.log('🕐 Session timer stopped');
+  }
+
+  /**
+   * Check if session has exceeded 50 minutes and restart app if needed
+   */
+  async checkSessionTimeout() {
+    if (!this.loginTime) {
+      return;
+    }
+
+    const elapsed = Date.now() - this.loginTime;
+    
+    if (elapsed >= SESSION_TIMEOUT_MS) {
+      console.log('⏰ Session timeout reached (50 minutes), restarting app...');
+      this.stopSessionTimer();
+      
+      try {
+        await Updates.reloadAsync();
+      } catch (error) {
+        console.error('❌ Failed to restart app after session timeout:', error);
+      }
     }
   }
 }

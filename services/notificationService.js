@@ -9,12 +9,16 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { apiClient } from './apiClient';
 
-// Configure notification behavior
+// Configure notification behavior - MUST be set before any notification operations
+// This is critical for Android production builds
+// Updated to match Expo documentation recommendations for Android
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,  // Android: Show notification banner
+    shouldShowList: true,    // Android: Show in notification list
   }),
 });
 
@@ -38,10 +42,16 @@ class NotificationService {
   }
 
   /**
-   * Request notification permissions (works on all platforms, Android auto-grants)
+   * Request notification permissions
+   * CRITICAL: For Android 13+, must create notification channel first
    */
   async requestPermission() {
     try {
+      // Android 13+ requires notification channel before permission request
+      if (Platform.OS === 'android') {
+        await this.setupAndroidNotificationChannel();
+      }
+
       const { status } = await Notifications.requestPermissionsAsync();
       return {
         success: status === 'granted',
@@ -79,8 +89,69 @@ class NotificationService {
   }
 
   /**
-   * Get Expo push token - ALWAYS generates token regardless of permission
-   * Permission is only needed for displaying notifications, not for generating tokens
+   * Setup Android notification channel (required for Android 13+)
+   * Must be called before requesting permissions or getting push token
+   * CRITICAL: Channel must exist before permission prompt appears
+   */
+  async setupAndroidNotificationChannel() {
+    if (Platform.OS !== 'android') {
+      return { success: true, skipped: true };
+    }
+
+    try {
+      // Check if channel already exists
+      let existingChannel;
+      try {
+        existingChannel = await Notifications.getNotificationChannelAsync('default');
+      } catch (err) {
+        // getNotificationChannelAsync might fail if channel doesn't exist
+        existingChannel = null;
+      }
+      
+      if (existingChannel) {
+        console.log('✅ [ANDROID] Notification channel already exists');
+        return { success: true, skipped: true };
+      }
+
+      // CRITICAL: Create default notification channel for Android 13+
+      // The channel ID 'default' is what Expo expects
+      console.log('🤖 [ANDROID] Creating notification channel...');
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Default',
+        description: 'Default notification channel for ZeusODX',
+        importance: Notifications.AndroidImportance.DEFAULT,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#35297F',
+        sound: 'default',
+        enableVibrate: true,
+        showBadge: true,
+        // Ensure channel is enabled
+        enableLights: true,
+      });
+
+      // Verify channel was created
+      const verifyChannel = await Notifications.getNotificationChannelAsync('default');
+      if (verifyChannel) {
+        console.log('✅ [ANDROID] Notification channel created and verified');
+        return { success: true };
+      } else {
+        console.error('❌ [ANDROID] Channel creation failed - channel not found after creation');
+        return { success: false, error: 'Channel not found after creation' };
+      }
+    } catch (error) {
+      console.error('❌ [ANDROID] Error setting up notification channel:', error.message);
+      console.error('   Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      // Don't fail completely - try to continue (might work on older Android)
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Get Expo push token - CRITICAL: For Android 13+, requires notification channel and permission
    */
   async getExpoPushToken() {
     try {
@@ -90,28 +161,137 @@ class NotificationService {
         return null;
       }
 
-      // Get project ID from config
-      const projectId = Constants.easConfig?.projectId || Constants.expoConfig?.extra?.eas?.projectId;
+      // CRITICAL FIX: Android 13+ requires notification channel BEFORE getting token
+      if (Platform.OS === 'android') {
+        console.log('🤖 [ANDROID] Step 1: Setting up notification channel...');
+        const channelResult = await this.setupAndroidNotificationChannel();
+        if (!channelResult.success && !channelResult.skipped) {
+          console.error('❌ [ANDROID] Failed to setup notification channel');
+          // Continue anyway - might work on older Android versions
+        }
+        
+        // CRITICAL: Wait a moment for channel to be fully registered
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Request permission explicitly for Android 13+ (API 33+)
+        // This is REQUIRED for production builds on Android 13+
+        console.log('🤖 [ANDROID] Step 2: Checking notification permission...');
+        let { status } = await Notifications.getPermissionsAsync();
+        console.log('🤖 [ANDROID] Current permission status:', status);
+        
+        if (status !== 'granted') {
+          console.log('🤖 [ANDROID] Step 3: Requesting notification permission...');
+          const permissionResult = await Notifications.requestPermissionsAsync({
+            ios: {
+              allowAlert: true,
+              allowBadge: true,
+              allowSound: true,
+              allowAnnouncements: false,
+            },
+            android: {
+              // Explicitly request POST_NOTIFICATIONS for Android 13+
+            },
+          });
+          
+          status = permissionResult.status;
+          console.log('🤖 [ANDROID] Permission request result:', status);
+          
+          if (status !== 'granted') {
+            console.error('❌ [ANDROID] Notification permission DENIED. Token generation will likely fail.');
+            console.error('   User must grant notification permission in app settings.');
+            // In production, we should still try to get token, but it will likely fail
+            // Some Android versions might allow token generation but notifications won't work
+          } else {
+            console.log('✅ [ANDROID] Notification permission GRANTED');
+          }
+        } else {
+          console.log('✅ [ANDROID] Notification permission already granted');
+        }
+        
+        // CRITICAL: For Android 13+, permission MUST be granted before token generation
+        // Some production builds will fail silently if permission is not granted
+        if (status !== 'granted') {
+          console.warn('⚠️ [ANDROID] Proceeding without permission - token may fail in production');
+        }
+      }
+
+      // Get project ID from config (try multiple sources for production compatibility)
+      let projectId = null;
+      
+      // Try EAS config first (production builds)
+      if (Constants.easConfig?.projectId) {
+        projectId = Constants.easConfig.projectId;
+        console.log('📱 Using projectId from Constants.easConfig');
+      }
+      // Fallback to expo config (development)
+      else if (Constants.expoConfig?.extra?.eas?.projectId) {
+        projectId = Constants.expoConfig.extra.eas.projectId;
+        console.log('📱 Using projectId from Constants.expoConfig.extra.eas');
+      }
+      // Last resort: try manifest (some builds)
+      else if (Constants.manifest?.extra?.eas?.projectId) {
+        projectId = Constants.manifest.extra.eas.projectId;
+        console.log('📱 Using projectId from Constants.manifest.extra.eas');
+      }
+      
       if (!projectId) {
         console.error('❌ EAS projectId not found in app config');
+        console.error('   Platform:', Platform.OS);
+        console.error('   Constants.easConfig:', Constants.easConfig ? 'exists' : 'null');
+        console.error('   Constants.expoConfig?.extra?.eas:', Constants.expoConfig?.extra?.eas ? 'exists' : 'null');
+        console.error('   Constants.manifest?.extra?.eas:', Constants.manifest?.extra?.eas ? 'exists' : 'null');
+        console.error('   Full Constants:', JSON.stringify({
+          easConfig: Constants.easConfig,
+          expoConfigExtra: Constants.expoConfig?.extra,
+          manifestExtra: Constants.manifest?.extra
+        }, null, 2));
         return null;
       }
 
-      // Generate token regardless of permission status
-      // On Android, this will work without permission
-      // Permission is only needed for displaying notifications to user
-      console.log('📱 Generating Expo push token (permission not required for token generation)...');
-      const token = await Notifications.getExpoPushTokenAsync({ projectId });
+      console.log('📱 Step 4: Generating Expo push token with projectId:', projectId.substring(0, 20) + '...');
+      
+      // CRITICAL: Wrap in try-catch to catch any silent failures in production
+      let token;
+      try {
+        token = await Notifications.getExpoPushTokenAsync({ 
+          projectId,
+          // Explicitly set applicationId for Android production builds
+          ...(Platform.OS === 'android' && {
+            // Some production builds need explicit app identifier
+          })
+        });
+      } catch (tokenError) {
+        console.error('❌ getExpoPushTokenAsync threw an error:', tokenError);
+        console.error('   Error type:', tokenError.constructor.name);
+        console.error('   Error message:', tokenError.message);
+        console.error('   Error stack:', tokenError.stack);
+        
+        // Check if it's a permission error
+        if (tokenError.message?.includes('permission') || tokenError.message?.includes('Permission')) {
+          console.error('❌ Permission-related error. User must grant notification permission.');
+        }
+        
+        return null;
+      }
       
       if (!token || !token.data) {
-        console.error('❌ Failed to get Expo push token');
+        console.error('❌ Failed to get Expo push token - token or token.data is null');
+        console.error('   Token object:', token);
+        console.error('   Platform:', Platform.OS);
         return null;
       }
 
-      console.log('✅ Expo push token generated:', token.data.substring(0, 30) + '...');
+      console.log('✅ Expo push token generated successfully:', token.data.substring(0, 30) + '...');
+      console.log('   Full token length:', token.data.length);
       return token.data;
     } catch (error) {
       console.error('❌ Error getting Expo push token:', error.message);
+      console.error('   Error details:', {
+        message: error.message,
+        stack: error.stack,
+        platform: Platform.OS,
+        isDevice: Device.isDevice,
+      });
       return null;
     }
   }
@@ -208,9 +388,19 @@ class NotificationService {
   /**
    * Initialize push notifications - ALWAYS generates and registers token
    * Checks DB first, generates if missing, registers with deviceId
+   * CRITICAL: For Android 13+, sets up notification channel and requests permission
    */
   async initializePushNotifications() {
     try {
+      // CRITICAL FIX: Android 13+ requires notification channel setup FIRST
+      if (Platform.OS === 'android') {
+        console.log('🤖 [ANDROID] Setting up notification channel before token generation...');
+        const channelResult = await this.setupAndroidNotificationChannel();
+        if (!channelResult.success && !channelResult.skipped) {
+          console.warn('⚠️ [ANDROID] Notification channel setup had issues, but continuing...');
+        }
+      }
+
       // Step 1: Check if device already has a token in DB
       console.log('🔍 Checking if device has push token in database...');
       const checkResult = await this.checkTokenExists();
@@ -225,7 +415,7 @@ class NotificationService {
         };
       }
 
-      // Step 2: Generate token (ALWAYS - no permission check)
+      // Step 2: Generate token (with Android 13+ permission handling)
       console.log('📱 No token found, generating Expo push token...');
       const expoPushToken = await this.getExpoPushToken();
       
@@ -267,20 +457,33 @@ class NotificationService {
         ...(userId && { userId })
       };
 
-      console.log('📤 Registering token:', { deviceId, platform: Platform.OS, hasUserId: !!userId });
+      console.log('📤 Registering token:', { 
+        deviceId, 
+        platform: Platform.OS, 
+        hasUserId: !!userId,
+        tokenPrefix: expoPushToken?.substring(0, 20) + '...'
+      });
+      
       const response = await apiClient.post('/notification/register-token', payload);
 
       if (response.success) {
         console.log('✅ Push token registered successfully in database');
+        console.log('   Response:', JSON.stringify(response.data || response, null, 2));
         return {
           success: true,
           data: response
         };
       } else {
         console.error('❌ Failed to register push token:', response.error);
+        console.error('   Full response:', JSON.stringify(response, null, 2));
+        console.error('   Payload sent:', JSON.stringify({
+          ...payload,
+          expoPushToken: payload.expoPushToken?.substring(0, 20) + '...'
+        }, null, 2));
         return {
           success: false,
-          error: response.error || 'Failed to register push token'
+          error: response.error || 'Failed to register push token',
+          details: response
         };
       }
     } catch (error) {

@@ -81,6 +81,7 @@ const ProfileScreen = () => {
     isLoading: isNotificationLoading,
     requestPermission: requestNotificationPermission,
     openSettings: openNotificationSettings,
+    checkStatus: checkNotificationStatus,
   } = useNotifications();
 
   // 2FA
@@ -111,6 +112,17 @@ const ProfileScreen = () => {
   useEffect(() => {
     setNotificationEnabled(isNotificationEnabled);
   }, [isNotificationEnabled]);
+
+  // Check notification status when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      // Re-check notification status when screen is focused
+      // This ensures toggle updates if user changes permission in settings
+      if (checkNotificationStatus) {
+        checkNotificationStatus();
+      }
+    }, [checkNotificationStatus])
+  );
 
   // Sync 2FA state from profile
   useEffect(() => {
@@ -264,6 +276,10 @@ const ProfileScreen = () => {
 
     if (value) {
       const result = await requestNotificationPermission();
+      // Re-check status after permission request to update toggle
+      if (checkNotificationStatus) {
+        await checkNotificationStatus();
+      }
       if (result?.success) {
         showInfo('Notifications Enabled', 'You will now receive notifications.');
       } else {
@@ -274,13 +290,30 @@ const ProfileScreen = () => {
         );
       }
     } else {
-      showInfo(
+      // When toggling off, open settings
+      // Status will be checked automatically when screen comes back into focus (useFocusEffect)
+      Alert.alert(
         'Disable Notifications',
         'To disable notifications, please turn them off in your device Settings.',
-        openNotificationSettings as (() => void) | null
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel' as const,
+          },
+          {
+            text: 'Open Settings',
+            onPress: async () => {
+              if (openNotificationSettings) {
+                await openNotificationSettings();
+                // Status will be automatically checked when screen comes back into focus
+                // via the useFocusEffect hook above
+              }
+            },
+          },
+        ]
       );
     }
-  }, [isAnyOperationInProgress, requestNotificationPermission, openNotificationSettings, showInfo]);
+  }, [isAnyOperationInProgress, requestNotificationPermission, openNotificationSettings, showInfo, checkNotificationStatus]);
 
   // Biometric handlers
   const handleBiometricToggle = useCallback(async (value: boolean) => {

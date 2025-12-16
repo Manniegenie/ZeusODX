@@ -1,20 +1,20 @@
 // app/receipt/fiat-transfer.tsx
-import Clipboard from '@react-native-clipboard/clipboard';
+import * as Clipboard from 'expo-clipboard';
 import * as Print from 'expo-print';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import React, { useMemo } from 'react';
 import {
-  Alert,
-  Image,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    Share,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -412,8 +412,8 @@ export default function FiatTransferReceiptScreen() {
     }
   };
 
-  const copyToClipboard = (text: string, label: string) => {
-    Clipboard.setString(text);
+  const copyToClipboard = async (text: string, label: string) => {
+    await Clipboard.setStringAsync(text);
     Alert.alert('Copied', `${label} copied to clipboard`);
   };
 

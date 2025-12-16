@@ -2,19 +2,19 @@
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Clipboard,
-    Dimensions,
-    Image,
-    RefreshControl,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Clipboard,
+  Dimensions,
+  Image,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import AddressCopied from '../../components/AddressCopied';
 import BottomTabNavigator from '../../components/BottomNavigator';
@@ -149,7 +149,7 @@ export default function MaticEthDepositScreen() {
   const isWalletSetupNeeded = addressError && addressError.includes('needs to be set up');
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
-  const minDeposit = '1 MATIC';
+  const minDeposit = '-';
   const network = 'BNB Smart Chain (BSC)';
 
   return (
