@@ -115,17 +115,15 @@ class ApiClient {
       return false;
     }
 
-    console.warn('⚠️ Auth error detected; clearing session and restarting app.');
+    console.warn('⚠️ Auth error detected; clearing session.');
+    
+    // Just clear the session data so the app knows the user is logged out
     await this.clearSession();
 
-    try {
-      await Updates.reloadAsync();
-    } catch (restartError) {
-      console.error('❌ Failed to restart app after auth error:', restartError);
-    }
-
+    // Return false so the request method passes the error back to your UI
     return false;
   }
+
 
   async request(endpoint, options = {}, retry = true) {
     try {
