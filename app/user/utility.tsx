@@ -19,11 +19,9 @@ import { Typography } from '../../constants/Typography';
 
 // Utility service icons
 import utilityAirtimeIcon from '../../components/icons/utility-airtime.png';
-import utilityBettingIcon from '../../components/icons/utility-betting.png';
 import utilityCableIcon from '../../components/icons/utility-cable.png';
 import utilityDataIcon from '../../components/icons/utility-data.png';
 import utilityElectricityIcon from '../../components/icons/utility-electricity.png';
-import utilityGiftcardIcon from '../../components/icons/utility-giftcard.png';
 
 // use same back icon as other screens
 import backIcon from '../../components/icons/backy.png';
@@ -49,13 +47,13 @@ const UtilityScreen: React.FC = () => {
       route: '/user/Airtime',
       color: '#6366F1'
     },
-    { 
-      id: 'giftcard', 
-      name: 'Giftcard', 
-      iconSrc: utilityGiftcardIcon, 
-      route: '/user/Giftcard',
-      color: '#B45309'
-    },
+    // { 
+    //   id: 'giftcard', 
+    //   name: 'Giftcard', 
+    //   iconSrc: utilityGiftcardIcon, 
+    //   route: '/user/Giftcard',
+    //   color: '#B45309'
+    // }, // TEMPORARILY HIDDEN
     { 
       id: 'electricity', 
       name: 'Electricity', 
@@ -80,13 +78,13 @@ const UtilityScreen: React.FC = () => {
       route: '/user/CableTV',
       color: '#2563EB'
     },
-    { 
-      id: 'betting', 
-      name: 'Betting', 
-      iconSrc: utilityBettingIcon, 
-      route: '/user/Betting',
-      color: '#7C3AED'
-    },
+    // { 
+    //   id: 'betting', 
+    //   name: 'Betting', 
+    //   iconSrc: utilityBettingIcon, 
+    //   route: '/user/Betting',
+    //   color: '#7C3AED'
+    // }, // TEMPORARILY HIDDEN
   ];
 
   // Navigation handlers
@@ -137,7 +135,7 @@ const UtilityScreen: React.FC = () => {
           {/* Utility Services - Two Columns */}
           <View style={styles.servicesContainer}>
             <View style={styles.columnsContainer}>
-              {/* Left Column: Airtime, Giftcard, Electricity */}
+              {/* Left Column: Airtime, Electricity (Giftcard temporarily hidden) */}
               <View style={styles.column}>
                 {leftColumnServices.map((service) => (
                   <TouchableOpacity
@@ -151,7 +149,7 @@ const UtilityScreen: React.FC = () => {
                 ))}
               </View>
 
-              {/* Right Column: Data, Cable, Betting */}
+              {/* Right Column: Data, Cable (Betting temporarily hidden) */}
               <View style={styles.column}>
                 {rightColumnServices.map((service) => (
                   <TouchableOpacity

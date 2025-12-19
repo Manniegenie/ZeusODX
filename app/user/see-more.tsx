@@ -53,18 +53,18 @@ const UtilitiesScreen: React.FC = () => {
       icon: CableTVIcon,
       route: 'CableTV'
     },
-    {
-      id: 'gift_cards',
-      title: 'Gift Cards',
-      icon: GiftCardIcon,
-      route: 'Giftcard'
-    },
-    {
-      id: 'betting',
-      title: 'Betting',
-      icon: BettingIcon,
-      route: 'Betting'
-    }
+    // {
+    //   id: 'gift_cards',
+    //   title: 'Gift Cards',
+    //   icon: GiftCardIcon,
+    //   route: 'Giftcard'
+    // }, // TEMPORARILY HIDDEN
+    // {
+    //   id: 'betting',
+    //   title: 'Betting',
+    //   icon: BettingIcon,
+    //   route: 'Betting'
+    // } // TEMPORARILY HIDDEN
   ];
 
   const handleServicePress = (service: Service): void => {
@@ -117,11 +117,13 @@ const UtilitiesScreen: React.FC = () => {
             {renderServiceItem(services[2])}
           </View>
 
-          {/* Second Row - Cable TV, Gift Cards, Betting */}
+          {/* Second Row - Cable TV, Gift Cards (hidden), Betting (hidden) */}
           <View style={styles.serviceRow}>
             {renderServiceItem(services[3])}
-            {renderServiceItem(services[4])}
-            {renderServiceItem(services[5])}
+            {/* Placeholder for Gift Cards - TEMPORARILY HIDDEN */}
+            <View style={styles.serviceItem} />
+            {/* Placeholder for Betting - TEMPORARILY HIDDEN */}
+            <View style={styles.serviceItem} />
           </View>
         </View>
       </View>

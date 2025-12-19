@@ -29,6 +29,11 @@ export function useUserProfile() {
     }
   }, []);
 
+  // Fetch profile on mount
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
   // Memoized computed values
   const displayName = useMemo(() => {
     if (!profile) return '';
