@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Image,
@@ -43,9 +43,14 @@ export default function VerifyEmailSendScreen() {
   const router = useRouter();
 
   // Profile → current email
-  const { profile, loading: profileLoading } = useUserProfile();
+  const { profile, loading: profileLoading, refetch } = useUserProfile();
   const currentEmail = useMemo(() => String(profile?.email || ''), [profile]);
   const hasValidEmail = useMemo(() => EMAIL_RE.test(currentEmail), [currentEmail]);
+
+  // Refetch profile when screen comes into focus
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   // Email verification (initiate)
   const { initiate, initiating, initError } = useEmailVerification();
@@ -193,7 +198,7 @@ export default function VerifyEmailSendScreen() {
 
           <TouchableOpacity
             style={styles.linkBtn}
-            onPress={() => router.push('/kyc/change-email')}
+            onPress={() => router.push('/profile/personal-details')}
             activeOpacity={0.7}
             testID="changeEmailLink"
           >

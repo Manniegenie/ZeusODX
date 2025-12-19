@@ -2,7 +2,7 @@
   "expo": {
     "name": "ZeusODX",
     "slug": "zeusodx",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "default",
     "icon": "./assets/images/app-icon.png",
     "scheme": "zeusodx",
@@ -13,7 +13,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.manniegenie.zeusodx",
-      "buildNumber": "92",
+      "buildNumber": "106",
       "icon": "./assets/images/app-icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -46,7 +46,7 @@
         "com.google.android.c2dm.permission.RECEIVE",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "versionCode": 99
+      "versionCode": 93
     },
     "web": {
       "bundler": "metro",
@@ -71,13 +71,7 @@
             "enableR8": false,
             "enableHermes": true,
             "enableNewArchitecture": false,
-            "ndkVersion": "28.0.12433564",
-            "enable16KbPageSize": true,
-            "packagingOptions": {
-              "pickFirst": [
-                "**/libc++_shared.so"
-              ]
-            }
+            "ndkVersion": "28.0.12433564"
           },
           "ios": {
             "deploymentTarget": "15.1"
