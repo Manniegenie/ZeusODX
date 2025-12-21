@@ -1,5 +1,7 @@
 // services/accountDeletionService.js
 import { apiClient } from './apiClient';
+import * as SecureStore from 'expo-secure-store';
+import { router } from 'expo-router';
 
 export const accountDeletionService = {
   /**
@@ -13,14 +15,23 @@ export const accountDeletionService = {
       const resp = await apiClient.post('/delete-account/initiate', {}, { signal: opts.signal });
       const payload = resp?.data ?? resp;
 
-      if (resp.status !== 200) {
-        const code = this._codeFromMessage(payload?.message || payload?.error);
-        return { success: false, error: code, message: payload?.message || 'Failed to initiate deletion' };
+      console.log('📊 Full response:', { status: resp.status, hasData: !!resp.data, payload });
+      
+      // SUCCESS - Check if we got valid data (status might be undefined if apiClient returns data directly)
+      if (payload?.scheduledDeletionDate || payload?.message?.includes('scheduled')) {
+        const data = this._normalizeSchedule(payload);
+        console.log('✅ Deletion scheduled successfully:', { when: data.scheduledDeletionDate });
+        
+        // LOG OUT USER
+        await this._handleLogout();
+        
+        return { success: true, data, message: payload?.message || 'Account scheduled for deletion' };
       }
 
-      const data = this._normalizeSchedule(payload);
-      console.log('✅ Deletion scheduled?', { when: data.scheduledDeletionDate, fundsBlocked: payload?.fundsAvailable });
-      return { success: true, data, message: payload?.message || 'Account scheduled for deletion' };
+      // ERROR - No deletion date returned
+      console.log('❌ No valid response received');
+      const code = this._codeFromMessage(payload?.message || payload?.error);
+      return { success: false, error: code, message: payload?.message || 'Failed to initiate deletion' };
     } catch (error) {
       console.error('❌ Initiate deletion error:', {
         message: error?.message,
@@ -30,7 +41,6 @@ export const accountDeletionService = {
 
       const errData = error?.response?.data;
       if (errData) {
-        // Funds present branch returns details from server
         const msg = String(errData?.message || errData?.error || '');
         const code = this._codeFromMessage(msg);
         return {
@@ -55,14 +65,23 @@ export const accountDeletionService = {
       const resp = await apiClient.post('/delete-account/delete', {}, { signal: opts.signal });
       const payload = resp?.data ?? resp;
 
-      if (resp.status !== 200) {
-        const code = this._codeFromMessage(payload?.message || payload?.error);
-        return { success: false, error: code, message: payload?.message || 'Failed to schedule deletion' };
+      console.log('📊 Full response:', { status: resp.status, hasData: !!resp.data, payload });
+      
+      // SUCCESS - Check if we got valid data (status might be undefined if apiClient returns data directly)
+      if (payload?.scheduledDeletionDate || payload?.message?.includes('scheduled')) {
+        const data = this._normalizeSchedule(payload);
+        console.log('✅ Account scheduled for deletion:', { when: data.scheduledDeletionDate });
+        
+        // LOG OUT USER
+        await this._handleLogout();
+        
+        return { success: true, data, message: payload?.message || 'Account scheduled for deletion' };
       }
 
-      const data = this._normalizeSchedule(payload);
-      console.log('✅ Account scheduled for deletion:', { when: data.scheduledDeletionDate });
-      return { success: true, data, message: payload?.message || 'Account scheduled for deletion' };
+      // ERROR - No deletion date returned
+      console.log('❌ No valid response received');
+      const code = this._codeFromMessage(payload?.message || payload?.error);
+      return { success: false, error: code, message: payload?.message || 'Failed to schedule deletion' };
     } catch (error) {
       console.error('❌ Finalize deletion error:', {
         message: error?.message,
@@ -82,6 +101,22 @@ export const accountDeletionService = {
         };
       }
       return { success: false, error: 'NETWORK_ERROR', message: 'Network error. Check your connection.' };
+    }
+  },
+
+  // ===== LOGOUT HANDLER (Same as Profile.tsx) =====
+  async _handleLogout() {
+    try {
+      console.log('🚪 Logging out user after account deletion...');
+      await SecureStore.deleteItemAsync('accessToken');
+      await SecureStore.deleteItemAsync('refreshToken');
+      await SecureStore.deleteItemAsync('userId');
+      router.replace('/login/login-phone');
+      console.log('✅ User logged out successfully');
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      // Force navigation even if SecureStore fails
+      router.replace('/login/login-phone');
     }
   },
 
