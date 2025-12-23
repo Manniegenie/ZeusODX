@@ -542,22 +542,26 @@ export const withdrawalService = {
   getSupportedNetworks(currency) {
     const networkMap = {
       BTC: [{ code: 'BTC', name: 'Bitcoin Network' }],
-      ETH: [{ code: 'ERC20', name: 'Ethereum (ERC20)' }],
+      ETH: [
+        { code: 'ETH', name: 'Ethereum (ERC20)' },
+        { code: 'BSC', name: 'BSC (BEP20)' }
+      ],
       SOL: [{ code: 'SOL', name: 'Solana Network' }],
       USDT: [
-        { code: 'ERC20', name: 'Ethereum (ERC20)' },
-        { code: 'TRC20', name: 'Tron (TRC20)' },
-        { code: 'BEP20', name: 'BSC (BEP20)' }
+        { code: 'ETH', name: 'Ethereum (ERC20)' },
+        { code: 'TRX', name: 'Tron (TRC20)' },
+        { code: 'BSC', name: 'BSC (BEP20)' },
+        { code: 'MATIC', name: 'Polygon' }
       ],
       USDC: [
-        { code: 'ERC20', name: 'Ethereum (ERC20)' },
-        { code: 'TRC20', name: 'Tron (TRC20)' },
-        { code: 'BEP20', name: 'BSC (BEP20)' }
+        { code: 'ETH', name: 'Ethereum (ERC20)' },
+        { code: 'TRX', name: 'Tron (TRC20)' },
+        { code: 'BSC', name: 'BSC (BEP20)' }
       ],
-      BNB: [{ code: 'BEP20', name: 'BSC (BEP20)' }],
-      MATIC: [{ code: 'POLYGON', name: 'Polygon Network' }],
-      TRX: [{ code: 'TRC20', name: 'Tron (TRC20)' }],
-      NGNB: [{ code: 'ERC20', name: 'Ethereum (ERC20)' }]
+      BNB: [{ code: 'BSC', name: 'BSC (BEP20)' }],
+      MATIC: [{ code: 'MATIC', name: 'Polygon Network' }],
+      TRX: [{ code: 'TRX', name: 'Tron (TRC20)' }],
+      NGNB: [{ code: 'ETH', name: 'Ethereum (ERC20)' }]
     };
 
     return networkMap[currency?.toUpperCase()] || [];
