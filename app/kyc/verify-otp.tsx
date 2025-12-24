@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   TextInput,
   Vibration,
+  Keyboard,                 // <--- IMPORTED
+  TouchableWithoutFeedback, // <--- IMPORTED
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Typography } from '../../constants/Typography';
@@ -60,6 +62,7 @@ export default function VerifyEmailOtpScreen() {
 
   // ---- Helpers: ErrorDisplay ----
   const showError = (type: ErrorType, title: string, message: string) => {
+    Keyboard.dismiss(); 
     setErrorType(type);
     setErrorTitle(title);
     setErrorMessage(message);
@@ -117,7 +120,10 @@ export default function VerifyEmailOtpScreen() {
   };
 
   // ---- Navigation ----
-  const handleBackPress = () => router.back();
+  const handleBackPress = () => {
+    Keyboard.dismiss();
+    router.back();
+  };
 
   // ---- OTP input handlers ----
   const handleOtpChange = (index: number, value: string) => {
@@ -127,6 +133,10 @@ export default function VerifyEmailOtpScreen() {
     setOtp(next);
     if (clean && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
+    }
+    // Dismiss keyboard only if the last digit is filled
+    if (clean && index === OTP_LENGTH - 1) {
+      Keyboard.dismiss();
     }
   };
 
@@ -138,6 +148,7 @@ export default function VerifyEmailOtpScreen() {
 
   // ---- Actions ----
   const handleVerify = async () => {
+    Keyboard.dismiss(); // Dismisses keyboard when Verify is clicked
     hideError();
     const code = otp.join('');
     if (code.length !== OTP_LENGTH) {
@@ -148,7 +159,6 @@ export default function VerifyEmailOtpScreen() {
     try {
       const res = await verify({ otp: code, email: currentEmail });
       if (res?.success) {
-        // Email verified — go back to KYC level 2
         router.replace('/kyc/kyc-upgrade');
       } else {
         showError(mapErrorType(res?.error), 'Verification Failed', res?.message || 'Failed to verify email address.');
@@ -160,13 +170,13 @@ export default function VerifyEmailOtpScreen() {
 
   const handleResend = async () => {
     if (!canResend || initiating) return;
+    Keyboard.dismiss();
     hideError();
     try {
       const res = await initiate({ email: currentEmail });
       if (res?.success) {
         setOtp(Array(OTP_LENGTH).fill(''));
         inputRefs.current[0]?.focus?.();
-        // restart timer
         setCountdown(TIMER_SECS);
         setCanResend(false);
         const timer = setInterval(() => {
@@ -191,111 +201,115 @@ export default function VerifyEmailOtpScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ErrorDisplay */}
-      {showErrorDisplay && (
-        <ErrorDisplay
-          type={errorType}
-          title={errorTitle}
-          message={errorMessage}
-          autoHide
-          duration={4000}
-          dismissible
-          onDismiss={hideError}
-        />
-      )}
+      {/* This wrapper ensures tapping anywhere outside inputs dismisses keyboard */}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={{ flex: 1 }}>
+          
+          {showErrorDisplay && (
+            <ErrorDisplay
+              type={errorType}
+              title={errorTitle}
+              message={errorMessage}
+              autoHide
+              duration={4000}
+              dismissible
+              onDismiss={hideError}
+            />
+          )}
 
-      <View style={styles.content}>
-        {/* Header */}
-        <View style={styles.headerSection}>
-          <View style={styles.headerContainer}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={handleBackPress}
-              activeOpacity={0.7}
-              delayPressIn={0}
-              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-            >
-              <Text style={styles.backButtonText}>←</Text>
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Enter Verification Code</Text>
-            <View style={styles.emptySpace} />
-          </View>
-        </View>
+          <View style={styles.content}>
+            {/* Header */}
+            <View style={styles.headerSection}>
+              <View style={styles.headerContainer}>
+                <TouchableOpacity
+                  style={styles.backButton}
+                  onPress={handleBackPress}
+                  activeOpacity={0.7}
+                  delayPressIn={0}
+                  hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                >
+                  <Text style={styles.backButtonText}>←</Text>
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Enter Verification Code</Text>
+                <View style={styles.emptySpace} />
+              </View>
+            </View>
 
-        {/* Copy */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Check your email</Text>
-          <Text style={styles.subtitle}>
-            Enter the 6-digit code we sent to
-            {currentEmail ? ` ${currentEmail}` : ' your email address'}.
-          </Text>
-        </View>
-
-        {/* OTP boxes */}
-        <View style={styles.otpContainer}>
-          <View style={styles.otpInputs}>
-            {otp.map((digit, i) => (
-              <TextInput
-                key={i}
-                ref={ref => (inputRefs.current[i] = ref)}
-                style={[styles.otpInput, digit && styles.filledInput]}
-                value={digit}
-                onChangeText={v => handleOtpChange(i, v)}
-                onKeyPress={({ nativeEvent }) => handleKeyPress(i, nativeEvent.key)}
-                keyboardType="numeric"
-                maxLength={1}
-                textAlign="center"
-                autoFocus={i === 0}
-                selectionColor={Colors.primary}
-              />
-            ))}
-          </View>
-        </View>
-
-        {/* Resend */}
-        <View style={styles.resendContainer}>
-          <View style={styles.resendTextContainer}>
-            <Text style={styles.resendText}>Did not receive the code? </Text>
-            <TouchableOpacity onPress={handleResend} disabled={!canResend || initiating} activeOpacity={0.7}>
-              <Text
-                style={[
-                  styles.resendLink,
-                  canResend && !initiating ? styles.activeResendLink : styles.inactiveResendLink,
-                ]}
-              >
-                {initiating ? 'Sending…' : 'Resend'}
+            {/* Copy */}
+            <View style={styles.header}>
+              <Text style={styles.title}>Check your email</Text>
+              <Text style={styles.subtitle}>
+                Enter the 6-digit code we sent to
+                {currentEmail ? ` ${currentEmail}` : ' your email address'}.
               </Text>
-            </TouchableOpacity>
-            {!canResend && <Text style={styles.resendText}> in {formatTime(countdown)}</Text>}
+            </View>
+
+            {/* OTP boxes */}
+            <View style={styles.otpContainer}>
+              <View style={styles.otpInputs}>
+                {otp.map((digit, i) => (
+                  <TextInput
+                    key={i}
+                    ref={ref => (inputRefs.current[i] = ref)}
+                    style={[styles.otpInput, digit && styles.filledInput]}
+                    value={digit}
+                    onChangeText={v => handleOtpChange(i, v)}
+                    onKeyPress={({ nativeEvent }) => handleKeyPress(i, nativeEvent.key)}
+                    keyboardType="numeric"
+                    maxLength={1}
+                    textAlign="center"
+                    autoFocus={i === 0}
+                    selectionColor={Colors.primary}
+                  />
+                ))}
+              </View>
+            </View>
+
+            {/* Resend */}
+            <View style={styles.resendContainer}>
+              <View style={styles.resendTextContainer}>
+                <Text style={styles.resendText}>Did not receive the code? </Text>
+                <TouchableOpacity onPress={handleResend} disabled={!canResend || initiating} activeOpacity={0.7}>
+                  <Text
+                    style={[
+                      styles.resendLink,
+                      canResend && !initiating ? styles.activeResendLink : styles.inactiveResendLink,
+                    ]}
+                  >
+                    {initiating ? 'Sending…' : 'Resend'}
+                  </Text>
+                </TouchableOpacity>
+                {!canResend && <Text style={styles.resendText}> in {formatTime(countdown)}</Text>}
+              </View>
+            </View>
+
+            <View style={styles.spacer} />
+
+            {/* Verify */}
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.verifyButton, isComplete ? styles.activeButton : styles.inactiveButton]}
+                onPress={handleVerify}
+                activeOpacity={0.7}
+                disabled={verifying}
+              >
+                <Text
+                  style={[
+                    styles.verifyButtonText,
+                    isComplete ? styles.activeButtonText : styles.inactiveButtonText,
+                  ]}
+                >
+                  {verifying ? 'Verifying…' : 'Verify & Continue'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-
-        <View style={styles.spacer} />
-
-        {/* Verify */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.verifyButton, isComplete ? styles.activeButton : styles.inactiveButton]}
-            onPress={handleVerify}
-            activeOpacity={0.7}
-            disabled={verifying}
-          >
-            <Text
-              style={[
-                styles.verifyButtonText,
-                isComplete ? styles.activeButtonText : styles.inactiveButtonText,
-              ]}
-            >
-              {verifying ? 'Verifying…' : 'Verify & Continue'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }
 
-// ——— Styles (same look/feel as your reset-pin OTP screen) ———
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { flex: 1, paddingHorizontal: Layout.spacing.lg },

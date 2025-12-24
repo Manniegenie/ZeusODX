@@ -85,7 +85,7 @@ export default function PinResetSendScreen() {
       const res = await initiate();
       if (res && res.success === true) {
         // IMPORTANT: route name must match the file EXACTLY: app/profile/verify-otp.tsx
-        router.push('/profile/verify-otp');
+        router.push('/profile/verifyOTP');
       } else {
         // Use ErrorDisplay instead of simple error banner
         const errorType = getErrorType(res?.errorCode);
