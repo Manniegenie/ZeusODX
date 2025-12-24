@@ -5,10 +5,11 @@ import {
   Image,
   Keyboard,
   SafeAreaView,
+  ScrollView, // Added ScrollView
   StyleSheet,
   Text,
   TouchableOpacity,
-  TouchableWithoutFeedback,
+  // TouchableWithoutFeedback removed
   View
 } from 'react-native';
 import ErrorDisplay from '../../components/ErrorDisplay';
@@ -137,108 +138,108 @@ export default function VerifyEmailSendScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Wrap the entire content in TouchableWithoutFeedback 
-        to detect background taps and dismiss the keyboard 
-      */}
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={{ flex: 1 }}>
-          
-          {/* Error banners */}
-          {showErrorDisplay && errorDisplayData && (
-            <ErrorDisplay
-              type={errorDisplayData.type}
-              title={errorDisplayData.title}
-              message={errorDisplayData.message}
-              errorAction={errorDisplayData.errorAction}
-              onActionPress={errorDisplayData.onActionPress}
-              autoHide={errorDisplayData.autoHide !== false}
-              duration={errorDisplayData.duration || 4000}
-              dismissible={errorDisplayData.dismissible !== false}
-              onDismiss={hideErrorDisplay}
-            />
-          )}
-          {showInlineError && (
-            <ErrorDisplay
-              type="general"
-              title="Email Verification"
-              message={String(initError)}
-              autoHide
-              duration={4000}
-              dismissible
-              onDismiss={hideErrorDisplay}
-            />
-          )}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        
+        {/* Error banners */}
+        {showErrorDisplay && errorDisplayData && (
+          <ErrorDisplay
+            type={errorDisplayData.type}
+            title={errorDisplayData.title}
+            message={errorDisplayData.message}
+            errorAction={errorDisplayData.errorAction}
+            onActionPress={errorDisplayData.onActionPress}
+            autoHide={errorDisplayData.autoHide !== false}
+            duration={errorDisplayData.duration || 4000}
+            dismissible={errorDisplayData.dismissible !== false}
+            onDismiss={hideErrorDisplay}
+          />
+        )}
+        {showInlineError && (
+          <ErrorDisplay
+            type="general"
+            title="Email Verification"
+            message={String(initError)}
+            autoHide
+            duration={4000}
+            dismissible
+            onDismiss={hideErrorDisplay}
+          />
+        )}
 
-          <View style={styles.content}>
-            {/* Header */}
-            <View style={styles.headerSection}>
-              <View style={styles.headerContainer}>
-                <TouchableOpacity 
-                  style={styles.backButton} 
-                  onPress={() => router.back()}
-                  activeOpacity={0.7}
-                  delayPressIn={0}
-                  hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                >
-                  <Image source={backIcon} style={styles.backIcon} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Verify Email</Text>
-                <View style={styles.emptySpace} />
-              </View>
-            </View>
-
-            {/* Copy */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Verify your email</Text>
-              <Text style={styles.subtitle}>We will send an OTP to:</Text>
-
-              {/* Plain email text (no white background) */}
-              <View style={styles.emailRow}>
-                {profileLoading ? (
-                  <View style={styles.loadingRow}>
-                    <ActivityIndicator size="small" />
-                    <Text style={styles.loadingText}>Loading…</Text>
-                  </View>
-                ) : (
-                  <Text style={styles.emailText}>
-                    {currentEmail || 'No email on file'}
-                  </Text>
-                )}
-              </View>
-
-              <TouchableOpacity
-                style={styles.linkBtn}
-                onPress={() => router.push('/profile/personal-details')}
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.headerSection}>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={() => router.back()}
                 activeOpacity={0.7}
-                testID="changeEmailLink"
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               >
-                <Text style={styles.linkBtnText}>Change Email Address</Text>
+                <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
+              <Text style={styles.headerTitle}>Verify Email</Text>
+              <View style={styles.emptySpace} />
             </View>
+          </View>
 
-            <View style={styles.spacer} />
+          {/* Copy */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Verify your email</Text>
+            <Text style={styles.subtitle}>We will send an OTP to:</Text>
 
-            {/* Send OTP */}
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[styles.sendButton, (initiating || !hasValidEmail) && { opacity: 0.6 }]}
-                onPress={handleSendOtp}
-                disabled={initiating || !hasValidEmail}
-                activeOpacity={0.7}
-                testID="sendOtpButton"
-              >
-                <Text style={styles.sendButtonText}>{initiating ? 'Sending…' : 'Send OTP'}</Text>
-              </TouchableOpacity>
-
-              {!hasValidEmail && !profileLoading && (
-                <Text style={styles.helperText}>
-                  {currentEmail ? 'Email looks invalid. Update it first.' : 'Add an email to continue.'}
+            {/* Plain email text (no white background) */}
+            <View style={styles.emailRow}>
+              {profileLoading ? (
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator size="small" />
+                  <Text style={styles.loadingText}>Loading…</Text>
+                </View>
+              ) : (
+                <Text style={styles.emailText}>
+                  {currentEmail || 'No email on file'}
                 </Text>
               )}
             </View>
+
+            <TouchableOpacity
+              style={styles.linkBtn}
+              onPress={() => router.push('/profile/personal-details')}
+              activeOpacity={0.7}
+              testID="changeEmailLink"
+            >
+              <Text style={styles.linkBtnText}>Change Email Address</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.spacer} />
+
+          {/* Send OTP */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.sendButton, (initiating || !hasValidEmail) && { opacity: 0.6 }]}
+              onPress={handleSendOtp}
+              disabled={initiating || !hasValidEmail}
+              activeOpacity={0.7}
+              testID="sendOtpButton"
+            >
+              <Text style={styles.sendButtonText}>{initiating ? 'Sending…' : 'Send OTP'}</Text>
+            </TouchableOpacity>
+
+            {!hasValidEmail && !profileLoading && (
+              <Text style={styles.helperText}>
+                {currentEmail ? 'Email looks invalid. Update it first.' : 'Add an email to continue.'}
+              </Text>
+            )}
           </View>
         </View>
-      </TouchableWithoutFeedback>
+      </ScrollView>
     </SafeAreaView>
   );
 }
