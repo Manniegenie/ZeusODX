@@ -47,13 +47,6 @@ const UtilityScreen: React.FC = () => {
       route: '/user/Airtime',
       color: '#6366F1'
     },
-    // { 
-    //   id: 'giftcard', 
-    //   name: 'Giftcard', 
-    //   iconSrc: utilityGiftcardIcon, 
-    //   route: '/user/Giftcard',
-    //   color: '#B45309'
-    // }, // TEMPORARILY HIDDEN
     { 
       id: 'electricity', 
       name: 'Electricity', 
@@ -78,13 +71,6 @@ const UtilityScreen: React.FC = () => {
       route: '/user/CableTV',
       color: '#2563EB'
     },
-    // { 
-    //   id: 'betting', 
-    //   name: 'Betting', 
-    //   iconSrc: utilityBettingIcon, 
-    //   route: '/user/Betting',
-    //   color: '#7C3AED'
-    // }, // TEMPORARILY HIDDEN
   ];
 
   // Navigation handlers
@@ -135,7 +121,7 @@ const UtilityScreen: React.FC = () => {
           {/* Utility Services - Two Columns */}
           <View style={styles.servicesContainer}>
             <View style={styles.columnsContainer}>
-              {/* Left Column: Airtime, Electricity (Giftcard temporarily hidden) */}
+              {/* Left Column: Airtime, Electricity */}
               <View style={styles.column}>
                 {leftColumnServices.map((service) => (
                   <TouchableOpacity
@@ -149,7 +135,7 @@ const UtilityScreen: React.FC = () => {
                 ))}
               </View>
 
-              {/* Right Column: Data, Cable (Betting temporarily hidden) */}
+              {/* Right Column: Data, Cable */}
               <View style={styles.column}>
                 {rightColumnServices.map((service) => (
                   <TouchableOpacity
@@ -170,8 +156,8 @@ const UtilityScreen: React.FC = () => {
         </ScrollView>
       </SafeAreaView>
 
-      {/* Bottom Tab Navigator */}
-      <BottomTabNavigator activeTab="home" />
+      {/* Bottom Tab Navigator - Updated activeTab to "utility" */}
+      <BottomTabNavigator activeTab="utility" />
     </View>
   );
 };
@@ -184,8 +170,6 @@ const styles = StyleSheet.create({
   safeArea: { 
     flex: 1 
   },
-
-  // Header styles - Responsive scaling
   headerSection: {
     paddingHorizontal: Layout.spacing.md,
     paddingTop: Layout.verticalSpacing.xs,
@@ -219,7 +203,6 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.lg,
     fontWeight: '600',
     textAlign: 'center',
-    pointerEvents: 'none',
   },
   headerSpacer: {
     width: Layout.scale(40),
@@ -230,8 +213,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginHorizontal: -16,
   },
-
-  // Scroll container
   scrollContainer: {
     flex: 1,
   },
@@ -239,8 +220,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: Layout.verticalSpacing.lg,
   },
-
-  // Services grid styles - Responsive scaling
   servicesContainer: {
     paddingHorizontal: Layout.spacing.md,
     paddingTop: Layout.verticalSpacing.lg,
@@ -257,10 +236,10 @@ const styles = StyleSheet.create({
     marginHorizontal: Layout.spacing.xs,
   },
   serviceCard: {
-    width: '100%',                    // Full width of column
-    maxWidth: Layout.scale(140),     // Scaled maximum width
-    minWidth: Layout.scale(110),     // Scaled minimum width for very small screens
-    height: Layout.scaleVertical(80), // Scaled height
+    width: '100%',
+    maxWidth: Layout.scale(140),
+    minWidth: Layout.scale(110),
+    height: Layout.scaleVertical(80),
     borderRadius: Layout.borderRadius.md,
     justifyContent: 'center',
     alignItems: 'center',
@@ -272,8 +251,6 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     borderRadius: Layout.borderRadius.md,
   },
-
-  // Bottom spacer for navigation
   bottomSpacer: {
     height: Layout.scaleVertical(100),
   },
