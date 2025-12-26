@@ -13,7 +13,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.manniegenie.zeusodx",
-      "buildNumber": "108",
+      "buildNumber": "110",
       "icon": "./assets/images/app-icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,

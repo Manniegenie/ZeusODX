@@ -1,5 +1,4 @@
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 
 const AUTH_TOKEN_KEY = 'auth_token';
 const AUTH_SESSION_KEY = 'auth_session_bundle';
@@ -51,8 +50,7 @@ class ApiClient {
 
   async getRefreshToken() {
     try {
-      const token = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
-      return token;
+      return await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
     } catch (error) {
       console.error('Error getting refresh token:', error);
       return null;
@@ -72,43 +70,6 @@ class ApiClient {
     }
   }
 
-  // --- RESTART LOGIC ---
-
-  /**
-   * Restarts the app immediately on authentication failure
-   */
-  async handleAuthError(status) {
-    if (status === 401 || status === 403) {
-      console.warn(`⚠️ HTTP ${status} detected. Clearing session and restarting...`);
-      
-      // Wipe the session so the user lands back at the login screen
-      await this.clearSession();
-      
-      try {
-        // Use react-native-restart for both dev and production
-        const RNRestart = require('react-native-restart');
-        console.log('🔄 Restarting app...');
-        RNRestart.default.restart();
-      } catch (e) {
-        console.error('Failed to restart app:', e);
-        
-        // Fallback: Force exit on Android
-        if (Platform.OS === 'android') {
-          try {
-            const { BackHandler } = require('react-native');
-            console.log('⚠️ Fallback: Closing app (Android)');
-            BackHandler.exitApp();
-          } catch (exitError) {
-            console.error('Failed to exit app:', exitError);
-          }
-        } else {
-          console.error('⚠️ Unable to restart app on iOS. Please close and reopen manually.');
-        }
-      }
-    }
-    return false;
-  }
-
   // --- CORE REQUEST LOGIC ---
 
   async request(endpoint, options = {}) {
@@ -126,8 +87,8 @@ class ApiClient {
       };
 
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
-      
-      // Get the response body
+
+      // Parse response
       const responseText = await response.text();
       let data;
       try {
@@ -138,17 +99,13 @@ class ApiClient {
 
       if (!response.ok) {
         console.error(`❌ API Error ${response.status}:`, data);
-        
-        // RESTART TRIGGER: Reload if the session is invalid (401 or 403)
-        if (response.status === 401 || response.status === 403) {
-          await this.handleAuthError(response.status);
-        }
 
+        // Removed restart logic; just return error
         return {
           success: false,
           error: data.message || data.error || `HTTP ${response.status}`,
           status: response.status,
-          data
+          data,
         };
       }
 
@@ -170,7 +127,7 @@ class ApiClient {
     const isFormData = data instanceof FormData;
     return this.request(endpoint, {
       method: 'POST',
-      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+      body: isFormData ? data : data ? JSON.stringify(data) : undefined,
       ...options,
     });
   }
@@ -179,7 +136,7 @@ class ApiClient {
     const isFormData = data instanceof FormData;
     return this.request(endpoint, {
       method: 'PUT',
-      body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
+      body: isFormData ? data : data ? JSON.stringify(data) : undefined,
       ...options,
     });
   }
