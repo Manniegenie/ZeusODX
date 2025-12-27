@@ -2,47 +2,39 @@
 import 'react-native-gesture-handler';
 
 import {
-    BricolageGrotesque_200ExtraLight,
-    BricolageGrotesque_300Light,
-    BricolageGrotesque_400Regular,
-    BricolageGrotesque_500Medium,
-    BricolageGrotesque_600SemiBold,
-    BricolageGrotesque_700Bold,
-    BricolageGrotesque_800ExtraBold,
-    useFonts,
+  BricolageGrotesque_200ExtraLight,
+  BricolageGrotesque_300Light,
+  BricolageGrotesque_400Regular,
+  BricolageGrotesque_500Medium,
+  BricolageGrotesque_600SemiBold,
+  BricolageGrotesque_700Bold,
+  BricolageGrotesque_800ExtraBold,
+  useFonts,
 } from '@expo-google-fonts/bricolage-grotesque';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
+import { Modal } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+
+// Components & Config
 import ProfessionalSplashScreen from '../components/ProfessionalSplashScreen';
+import SimpleLock from '../components/Security-lock';
+import { TawkPrefetcher } from '../components/TawkSupport';
+import { Colors } from '../constants/Colors';
 import { disableFontScaling } from '../constants/Typography';
 import { AuthContext, useAuthProvider } from '../hooks/useAuth';
+import { useSecurityLock } from '../hooks/userestart';
 import NotificationService from '../services/notificationService';
 import { configureModernEdgeToEdge } from '../utils/edgeToEdgeConfig';
-import { TawkPrefetcher } from '../components/TawkSupport';
-import { useAutoRestartAfterTimeout } from '../hooks/userestart';
 
-const TAWK_DIRECT_LINK =
-  process.env.EXPO_PUBLIC_TAWK_DIRECT_LINK ||
-  'https://tawk.to/chat/68b186eb517e5918ffb583a8/1j3qne2kl';
-
-function AuthProvider({ children }: { children: React.ReactNode }) {
-  const auth = useAuthProvider();
-  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
-}
+const TAWK_DIRECT_LINK = process.env.EXPO_PUBLIC_TAWK_DIRECT_LINK || 'https://tawk.to/chat/68b186eb517e5918ffb583a8/1j3qne2kl';
 
 export default function RootLayout() {
-  // Disable font scaling globally
-  useEffect(() => {
-    disableFontScaling();
-    const { TextInput } = require('react-native');
-    if (TextInput && TextInput.defaultProps == null) {
-      (TextInput as any).defaultProps = { allowFontScaling: false };
-    }
-  }, []);
+  const auth = useAuthProvider();
+  const pathname = usePathname();
 
-  // Fonts
+  // 1. Font Loading & App States
   const [loaded, error] = useFonts({
     BricolageGrotesque_200ExtraLight,
     BricolageGrotesque_300Light,
@@ -53,122 +45,114 @@ export default function RootLayout() {
     BricolageGrotesque_800ExtraBold,
   });
 
-  // App state
   const [isAppReady, setIsAppReady] = useState(false);
   const [isSplashAnimationComplete, setIsSplashAnimationComplete] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  // Simulate async auth readiness
+  // Security Lock logic
+  const { panHandlers, isLocked, unlockApp, activateSession } = useSecurityLock(isAppReady, 120000);
+
+  // 2. Global Configurations (Font Scaling & Edge-to-Edge)
+  useEffect(() => {
+    disableFontScaling();
+    const { TextInput } = require('react-native');
+    if (TextInput && TextInput.defaultProps) {
+      TextInput.defaultProps.allowFontScaling = false;
+    }
+    configureModernEdgeToEdge();
+  }, []);
+
+  // 3. Auth Readiness check
   useEffect(() => {
     let mounted = true;
     const timer = setTimeout(() => {
       if (mounted) setIsAuthReady(true);
     }, 0);
-
-    return () => {
-      mounted = false;
-      clearTimeout(timer);
-    };
+    return () => { mounted = false; clearTimeout(timer); };
   }, []);
 
-  // App ready when fonts and auth are ready
+  // Set overall app ready state
   useEffect(() => {
-    if ((loaded || error) && isAuthReady) setIsAppReady(true);
+    if ((loaded || error) && isAuthReady) {
+      setIsAppReady(true);
+    }
   }, [loaded, error, isAuthReady]);
 
-  // Configure modern edge-to-edge
-  useEffect(() => {
-    configureModernEdgeToEdge();
-  }, []);
-
-  // Initialize push token
+  // 4. Robust Notification Initialization (with Retries)
   useEffect(() => {
     const initializePushTokenEarly = async () => {
       try {
         const Device = await import('expo-device');
-        if (!Device.isDevice) {
-          console.log('⚠️ [LAYOUT] Not a physical device, skipping token generation');
-          return;
-        }
+        if (!Device.isDevice) return;
 
         await new Promise(resolve => setTimeout(resolve, 1000));
-
-        console.log('📱 [LAYOUT] Initializing push token on app boot...');
+        console.log('📱 [LAYOUT] Initializing push token...');
         const result = await NotificationService.initializePushNotifications();
 
-        if (result.success) {
-          console.log(result.skipped
-            ? '✅ [LAYOUT] Push token already exists, skipped'
-            : '✅ [LAYOUT] Push token initialized and registered successfully'
-          );
-        } else {
-          console.error('❌ [LAYOUT] Push token initialization failed:', result.error);
+        if (!result.success) {
           setTimeout(async () => {
-            console.log('🔄 [LAYOUT] Retrying push token initialization...');
+            console.log('🔄 [LAYOUT] Retrying push token...');
             await NotificationService.initializePushNotifications();
           }, 3000);
         }
-      } catch (error) {
-        console.error('❌ [LAYOUT] Error initializing push token:', (error as Error).message);
-        setTimeout(async () => {
-          try {
-            console.log('🔄 [LAYOUT] Retrying push token initialization after error...');
-            await NotificationService.initializePushNotifications();
-          } catch (retryError) {
-            console.error('❌ [LAYOUT] Push token initialization failed on retry:', (retryError as Error).message);
-          }
-        }, 5000);
+      } catch (err) {
+        console.error('❌ [LAYOUT] Push Init Error:', err);
       }
     };
 
     initializePushTokenEarly();
-  }, []);
 
-  // Notification listeners
-  useEffect(() => {
     NotificationService.setupListeners(
-      (notification: any) => console.log('📨 Notification received:', notification),
-      (response: any) => console.log('👆 Notification tapped:', response)
+      (notification) => console.log('📨 Received:', notification),
+      (response) => console.log('👆 Tapped:', response)
     );
 
     return () => NotificationService.removeListeners();
   }, []);
 
-  // Splash completion
+  // 5. Security Lock activation
+  useEffect(() => {
+    if (pathname.includes('user/dashboard')) {
+      activateSession();
+    }
+  }, [pathname]);
+
   const handleSplashAnimationComplete = useCallback(() => {
     setIsSplashAnimationComplete(true);
   }, []);
 
-  // -----------------------------
-  // Auto-restart after 30 minutes
-  // -----------------------------
-  // Hook is ALWAYS called, enabled only when app and auth are ready
-  useAutoRestartAfterTimeout(isAppReady && isAuthReady, 30 * 60 * 1000);
-
-  // Show splash until ready
+  // Show splash until fonts, auth, and animation are done
   if (!isAppReady || !isSplashAnimationComplete) {
     return <ProfessionalSplashScreen onAnimationComplete={handleSplashAnimationComplete} />;
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#F4F2FF' }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.background || '#F4F2FF' }} {...panHandlers}>
       <SafeAreaProvider>
-        <SafeAreaView
-          edges={['top']}
-          style={{ flex: 1, backgroundColor: '#F4F2FF', width: '100%' }}
-        >
-          <AuthProvider>
+        <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: Colors.background || '#F4F2FF' }}>
+          <AuthContext.Provider value={auth}>
+            
             <Stack
               screenOptions={{
                 headerShown: false,
                 contentStyle: { backgroundColor: 'transparent' },
-                gestureEnabled: true,
-                gestureDirection: 'horizontal',
                 animation: 'slide_from_right',
               }}
             />
+
             <TawkPrefetcher directLink={TAWK_DIRECT_LINK} />
-          </AuthProvider>
+
+            {/* Security Lock Modal */}
+            <Modal 
+              visible={isLocked} 
+              animationType="fade" 
+              transparent={false}
+              statusBarTranslucent={true}
+            >
+              {isLocked && <SimpleLock onSuccess={unlockApp} />}
+            </Modal>
+
+          </AuthContext.Provider>
         </SafeAreaView>
       </SafeAreaProvider>
     </GestureHandlerRootView>

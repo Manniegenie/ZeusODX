@@ -28,6 +28,7 @@
     },
     "android": {
       "package": "com.manniegenie.zeusodx",
+      "googleServicesFile": "./google-services.json", 
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/app-icon.png",
         "backgroundColor": "#35297F"
