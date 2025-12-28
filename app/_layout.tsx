@@ -1,28 +1,23 @@
-// IMPORTANT: This must be the first import!
-import 'react-native-gesture-handler';
+// app/_layout.tsx
 
-import {
-  BricolageGrotesque_200ExtraLight,
-  BricolageGrotesque_300Light,
-  BricolageGrotesque_400Regular,
-  BricolageGrotesque_500Medium,
-  BricolageGrotesque_600SemiBold,
-  BricolageGrotesque_700Bold,
-  BricolageGrotesque_800ExtraBold,
-  useFonts,
-} from '@expo-google-fonts/bricolage-grotesque';
+import 'react-native-gesture-handler';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
 import { Stack, usePathname } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Modal } from 'react-native';
+import { Modal, Platform, TextInput } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-// Components & Config
+// Fonts & Styles
+import { useFonts, BricolageGrotesque_200ExtraLight, BricolageGrotesque_300Light, BricolageGrotesque_400Regular, BricolageGrotesque_500Medium, BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold } from '@expo-google-fonts/bricolage-grotesque';
+import { Colors } from '../constants/Colors';
+import { disableFontScaling } from '../constants/Typography';
+
+// Components & Hooks
 import ProfessionalSplashScreen from '../components/ProfessionalSplashScreen';
 import SimpleLock from '../components/Security-lock';
 import { TawkPrefetcher } from '../components/TawkSupport';
-import { Colors } from '../constants/Colors';
-import { disableFontScaling } from '../constants/Typography';
 import { AuthContext, useAuthProvider } from '../hooks/useAuth';
 import { useSecurityLock } from '../hooks/userestart';
 import NotificationService from '../services/notificationService';
@@ -30,98 +25,97 @@ import { configureModernEdgeToEdge } from '../utils/edgeToEdgeConfig';
 
 const TAWK_DIRECT_LINK = process.env.EXPO_PUBLIC_TAWK_DIRECT_LINK || 'https://tawk.to/chat/68b186eb517e5918ffb583a8/1j3qne2kl';
 
+/**
+ * CRITICAL FOR ANDROID:
+ * This handler determines how the OS behaves when a notification 
+ * is received while the app is in the foreground.
+ */
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
 export default function RootLayout() {
   const auth = useAuthProvider();
   const pathname = usePathname();
 
-  // 1. Font Loading & App States
-  const [loaded, error] = useFonts({
-    BricolageGrotesque_200ExtraLight,
-    BricolageGrotesque_300Light,
-    BricolageGrotesque_400Regular,
-    BricolageGrotesque_500Medium,
-    BricolageGrotesque_600SemiBold,
-    BricolageGrotesque_700Bold,
-    BricolageGrotesque_800ExtraBold,
+  const [fontsLoaded] = useFonts({
+    BricolageGrotesque_200ExtraLight, BricolageGrotesque_300Light, BricolageGrotesque_400Regular,
+    BricolageGrotesque_500Medium, BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold,
   });
 
   const [isAppReady, setIsAppReady] = useState(false);
   const [isSplashAnimationComplete, setIsSplashAnimationComplete] = useState(false);
-  const [isAuthReady, setIsAuthReady] = useState(false);
 
-  // Security Lock logic
   const { panHandlers, isLocked, unlockApp, activateSession } = useSecurityLock(isAppReady, 120000);
 
-  // 2. Global Configurations (Font Scaling & Edge-to-Edge)
+  // 1. Initial System Configurations
   useEffect(() => {
     disableFontScaling();
-    const { TextInput } = require('react-native');
-    if (TextInput && TextInput.defaultProps) {
-      TextInput.defaultProps.allowFontScaling = false;
-    }
+    if (TextInput.defaultProps) TextInput.defaultProps.allowFontScaling = false;
     configureModernEdgeToEdge();
   }, []);
 
-  // 3. Auth Readiness check
+  // 2. Set Overall App Ready State
   useEffect(() => {
-    let mounted = true;
-    const timer = setTimeout(() => {
-      if (mounted) setIsAuthReady(true);
-    }, 0);
-    return () => { mounted = false; clearTimeout(timer); };
-  }, []);
+    if (fontsLoaded) setIsAppReady(true);
+  }, [fontsLoaded]);
 
-  // Set overall app ready state
+  // 3. CRITICAL: Setup Android notification channels EARLY
+  // This must happen BEFORE any notifications are sent from backend
   useEffect(() => {
-    if ((loaded || error) && isAuthReady) {
-      setIsAppReady(true);
-    }
-  }, [loaded, error, isAuthReady]);
-
-  // 4. Robust Notification Initialization (with Retries)
-  useEffect(() => {
-    const initializePushTokenEarly = async () => {
-      try {
-        const Device = await import('expo-device');
-        if (!Device.isDevice) return;
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log('📱 [LAYOUT] Initializing push token...');
-        const result = await NotificationService.initializePushNotifications();
-
-        if (!result.success) {
-          setTimeout(async () => {
-            console.log('🔄 [LAYOUT] Retrying push token...');
-            await NotificationService.initializePushNotifications();
-          }, 3000);
+    if (!isAppReady) return;
+    
+    const setupChannelsEarly = async () => {
+      if (Platform.OS === 'android' && Device.isDevice) {
+        try {
+          console.log('📱 [LAYOUT] Creating Android notification channels...');
+          await NotificationService.setupAndroidNotificationChannel();
+          console.log('✅ [LAYOUT] Android notification channels ready');
+        } catch (error) {
+          console.error('❌ [LAYOUT] Failed to create notification channels:', error);
         }
-      } catch (err) {
-        console.error('❌ [LAYOUT] Push Init Error:', err);
       }
     };
+    
+    setupChannelsEarly();
+  }, [isAppReady]);
 
-    initializePushTokenEarly();
-
-    NotificationService.setupListeners(
-      (notification) => console.log('📨 Received:', notification),
-      (response) => console.log('👆 Tapped:', response)
-    );
-
-    return () => NotificationService.removeListeners();
-  }, []);
-
-  // 5. Security Lock activation
+  // 4. Setup notification listeners (passive, no token registration)
   useEffect(() => {
-    if (pathname.includes('user/dashboard')) {
-      activateSession();
-    }
+    if (!isAppReady) return;
+
+    // Foreground notification listener
+    const subReceived = Notifications.addNotificationReceivedListener(notification => {
+      console.log('📨 Foreground Notification Received:', notification.request.content);
+    });
+
+    // Notification tap listener
+    const subResponse = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('👆 Notification Tapped:', response.notification.request.content);
+      // TODO: Add navigation based on notification data
+      // const data = response.notification.request.content.data;
+      // if (data?.screen) router.push(data.screen);
+    });
+
+    return () => {
+      subReceived.remove();
+      subResponse.remove();
+    };
+  }, [isAppReady]);
+
+  // 5. Security Session Tracking
+  useEffect(() => {
+    if (pathname.includes('user/dashboard')) activateSession();
   }, [pathname]);
 
   const handleSplashAnimationComplete = useCallback(() => {
     setIsSplashAnimationComplete(true);
   }, []);
 
-  // Show splash until fonts, auth, and animation are done
   if (!isAppReady || !isSplashAnimationComplete) {
     return <ProfessionalSplashScreen onAnimationComplete={handleSplashAnimationComplete} />;
   }
@@ -131,7 +125,6 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: Colors.background || '#F4F2FF' }}>
           <AuthContext.Provider value={auth}>
-            
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -139,19 +132,10 @@ export default function RootLayout() {
                 animation: 'slide_from_right',
               }}
             />
-
             <TawkPrefetcher directLink={TAWK_DIRECT_LINK} />
-
-            {/* Security Lock Modal */}
-            <Modal 
-              visible={isLocked} 
-              animationType="fade" 
-              transparent={false}
-              statusBarTranslucent={true}
-            >
+            <Modal visible={isLocked} animationType="fade" transparent={false} statusBarTranslucent={true}>
               {isLocked && <SimpleLock onSuccess={unlockApp} />}
             </Modal>
-
           </AuthContext.Provider>
         </SafeAreaView>
       </SafeAreaProvider>
