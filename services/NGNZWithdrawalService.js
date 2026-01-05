@@ -1,8 +1,10 @@
+// services/ngnzWithdrawalService.js
 import { apiClient } from './apiClient';
 
 const DEBUG_NGNZ_WD = true;
 const dbg = (...args) => { if (DEBUG_NGNZ_WD) console.log('[ngnzWithdrawalService]', ...args); };
 
+// If your router is mounted at /ngnz, keep this; if mounted at root, set to ''.
 const BASE_PATH = '/ngnz-withdrawal';
 
 const paths = {
@@ -10,19 +12,8 @@ const paths = {
   status: (withdrawalId) => `${BASE_PATH}/status/${encodeURIComponent(withdrawalId)}`
 };
 
-/**
- * NEW: Standard UUID v4 Generator
- * Ensures consistency across your withdrawal services.
- */
-function generateUUID() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = (Math.random() * 16) | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
+function genIdempotencyKey(prefix = 'ngnz-wd') {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function normalizeWithdrawal(data = {}) {
@@ -30,13 +21,13 @@ function normalizeWithdrawal(data = {}) {
     withdrawalId: data?.withdrawalId || data?.reference || null,
     transactionId: data?.transactionId || null,
     correlationId: data?.correlationId || null,
-    status: data?.status || null,
+    status: data?.status || null, // e.g. SUCCESSFUL | PENDING | FAILED
     amount: typeof data?.amount === 'number' ? data.amount : null,
     currency: data?.currency || 'NGNZ',
     destination: {
       bankName: data?.destination?.bankName || null,
       accountName: data?.destination?.accountName || null,
-      accountNumber: data?.destination?.accountNumber || null,
+      accountNumber: data?.destination?.accountNumber || null, // masked by backend
     },
     obiex: data?.obiex || null,
     balanceAfter: typeof data?.balanceAfter === 'number' ? data.balanceAfter : null,
@@ -52,13 +43,13 @@ function normalizeStatus(data = {}) {
   return {
     withdrawalId: data?.withdrawalId || null,
     transactionId: data?.transactionId || null,
-    status: data?.status || null,
+    status: data?.status || null, // PENDING | SUCCESSFUL | FAILED
     amount: typeof data?.amount === 'number' ? data.amount : null,
     currency: data?.currency || 'NGNZ',
     destination: {
       bankName: data?.destination?.bankName || null,
       accountName: data?.destination?.accountName || null,
-      accountNumber: data?.destination?.accountNumber || null,
+      accountNumber: data?.destination?.accountNumber || null, // masked
     },
     obiex: data?.obiex || null,
     createdAt: data?.createdAt || null,
@@ -75,24 +66,18 @@ function parseError(err) {
   const status = err?.response?.status;
   const body = err?.response?.data || {};
   const code = body?.error;
-  const apiMsg = body?.message || body?.error || err?.message || 'Network error';
+  const apiMsg = body?.message;
 
   let error = 'NETWORK_ERROR';
-  let message = apiMsg;
-
-  const errorText = (apiMsg || '').toLowerCase();
+  let message = apiMsg || err?.message || 'Network error';
 
   if (status === 400) {
-    if (code === 'LIMIT_EXCEEDED' || errorText.includes('limit exceeded')) error = 'LIMIT_EXCEEDED';
     if (code === '2FA_NOT_SETUP') error = '2FA_NOT_SETUP';
     else if (code === 'PIN_NOT_SETUP') error = 'PIN_NOT_SETUP';
-    else if (errorText.includes('otp') || errorText.includes('verification code')) error = 'INVALID_OTP';
-    else if (errorText.includes('pin') || errorText.includes('passwordpin')) error = 'INVALID_PASSWORDPIN';
-    else if (errorText.includes('idempotency')) error = 'IDEMPOTENCY_ERROR';
     else error = 'VALIDATION_ERROR';
   } else if (status === 401) {
-    if (errorText.includes('2fa') || errorText.includes('two-factor')) error = 'INVALID_2FA_CODE';
-    else if (errorText.includes('pin') || errorText.includes('passwordpin')) error = 'INVALID_PASSWORDPIN';
+    if (code === 'INVALID_2FA_CODE') error = 'INVALID_2FA_CODE';
+    else if (code === 'INVALID_PASSWORDPIN') error = 'INVALID_PASSWORDPIN';
     else error = 'UNAUTHORIZED';
   } else if (status === 404) {
     error = 'NOT_FOUND';
@@ -106,14 +91,20 @@ function parseError(err) {
 export const ngnzWithdrawalService = {
   /**
    * POST /withdraw
-   * Now attaches X-Idempotency-Key UUID automatically.
+   * @param {{
+   *   amount:number,
+   *   destination:{bankName:string, bankCode:string, accountNumber:string, accountName:string},
+   *   narration?:string,
+   *   twoFactorCode:string,
+   *   passwordpin:string  // exactly 6 digits
+   * }} payload
+   * @param {{ idempotencyKey?: string }} opts
    */
   async initiateWithdrawal(payload, opts = {}) {
     const path = paths.withdraw();
-    
-    // ATTACH UUID FOR IDEMPOTENCY
-    const idempotencyKey = opts.idempotencyKey || generateUUID();
+    const idempotencyKey = opts.idempotencyKey || genIdempotencyKey();
 
+    // Avoid logging secrets
     const safePreview = {
       ...payload,
       twoFactorCode: payload?.twoFactorCode ? '[REDACTED]' : undefined,
@@ -127,33 +118,40 @@ export const ngnzWithdrawalService = {
       dbg('→ POST', path, { payload: safePreview, idempotencyKey });
 
       const res = await apiClient.post(path, payload, {
-        headers: { 'X-Idempotency-Key': idempotencyKey }
+        headers: { 'Idempotency-Key': idempotencyKey }
       });
-
-      if (!res?.success) {
-        const errorData = res?.data || {};
-        const errorCode = errorData?.error || errorData?.data?.error || res?.error || 'UNEXPECTED_RESPONSE';
-        const message = errorData?.message || errorData?.data?.message || res?.error || 'Unexpected response';
-        const status = res?.status || errorData?.status;
-        
-        return { success: false, error: errorCode, message, details: errorData, status, idempotencyKey };
-      }
 
       const data = res?.data || {};
       if (!data?.success) {
-        return { success: false, error: data?.error || 'UNEXPECTED_RESPONSE', message: data?.message || 'Unexpected response', idempotencyKey };
+        dbg('❌ unexpected success=false shape', data);
+        return {
+          success: false,
+          error: 'UNEXPECTED_RESPONSE',
+          message: data?.message || 'Unexpected response from withdrawal endpoint',
+          details: data,
+          idempotencyKey
+        };
       }
 
       const normalized = normalizeWithdrawal(data?.data);
       dbg('← OK initiate', { ...normalized, destination: { ...normalized.destination, accountNumber: '****' } });
 
-      return { success: true, data: normalized, message: data?.message || 'Success', idempotencyKey };
+      return {
+        success: true,
+        data: normalized,
+        message: data?.message || 'NGNZ withdrawal processed successfully',
+        idempotencyKey
+      };
     } catch (err) {
       const mapped = parseError(err);
+      dbg('❌ POST failed', mapped);
       return { success: false, ...mapped, idempotencyKey };
     }
   },
 
+  /**
+   * GET /status/:withdrawalId
+   */
   async getWithdrawalStatus(withdrawalId) {
     const path = paths.status(withdrawalId);
     try {
@@ -162,13 +160,26 @@ export const ngnzWithdrawalService = {
       const data = res?.data || {};
 
       if (!data?.success) {
-        return { success: false, error: data?.error || 'UNEXPECTED_RESPONSE', message: data?.message || 'Status retrieval failed' };
+        dbg('❌ unexpected success=false shape', data);
+        return {
+          success: false,
+          error: 'UNEXPECTED_RESPONSE',
+          message: data?.message || 'Unexpected response from status endpoint',
+          details: data
+        };
       }
 
       const normalized = normalizeStatus(data?.data);
-      return { success: true, data: normalized, message: data?.message || 'Status retrieved' };
+      dbg('← OK status', { ...normalized, destination: { ...normalized.destination, accountNumber: '****' } });
+
+      return {
+        success: true,
+        data: normalized,
+        message: data?.message || 'Withdrawal status retrieved'
+      };
     } catch (err) {
       const mapped = parseError(err);
+      dbg('❌ GET failed', mapped);
       return { success: false, ...mapped };
     }
   },

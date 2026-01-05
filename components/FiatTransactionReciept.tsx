@@ -171,7 +171,7 @@ export default function FiatWithdrawalReceiptModal({
       .filter(([, v]) => v !== undefined && v !== null && `${v}`.length)
       .map(
         ([k, v]) =>
-          `<tr><td style="padding:8px 0;font-weight:600;color:#6B7280;width:40%">${k}</td><td style="padding:8px 0;text-align:right">${v}</td></tr>`
+          `<tr><td style="padding:10px 12px;font-weight:400;color:#6B7280;font-size:13px;width:130px;border-bottom:1px solid #E5E7EB;">${k}</td><td style="padding:10px 12px;text-align:right;color:#111827;font-size:13px;font-weight:500;border-bottom:1px solid #E5E7EB;">${v}</td></tr>`
       )
       .join('');
 
@@ -183,27 +183,30 @@ export default function FiatWithdrawalReceiptModal({
           <meta name="viewport" content="width=device-width,initial-scale=1"/>
           <title>${title}</title>
         </head>
-        <body style="font-family: Arial, Helvetica, sans-serif; color:#111827; padding:24px;">
-          <div style="max-width:680px;margin:0 auto;">
-            <div style="text-align:center; background:#F3F0FF; padding:20px; border-radius:8px;">
-              <img src="${logoDataUri}" alt="logo" style="height:40px; display:block; margin:0 auto 8px;" />
-              <h2 style="margin:0; color:#111827;">${title}</h2>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#111827; padding:0; margin:0; background:#FFFFFF;">
+          <div style="max-width:100%; margin:0; background:#FFFFFF;">
+            <div style="text-align:center; background:#F3F0FF; padding:24px;">
+              <img src="${logoDataUri}" alt="logo" style="height:44px; width:100px; object-fit:contain; display:inline-block;" />
             </div>
 
-            <div style="margin-top:20px; text-align:center;">
-              <div style="font-size:20px; font-weight:700;">${amount}</div>
-              <div style="display:inline-block; margin-top:8px; padding:6px 10px; border-radius:20px; background:${s.bg}; color:${s.text}; border:1px solid ${s.border};">
-                ${tx?.status ?? '—'}
+            <div style="padding:0 24px; margin-top:8px;">
+              <div style="text-align:center; margin-bottom:6px;">
+                <div style="font-size:20px; font-weight:700; color:#111827; margin-bottom:8px;">${amount}</div>
+                <div style="display:inline-block; padding:6px 10px; border-radius:999px; background:${s.bg}; color:${s.text}; border:1px solid ${s.border}; font-size:12px; font-weight:500;">
+                  ${tx?.status ?? '—'}
+                </div>
+                <div style="margin-top:12px; color:#6B7280; font-size:12px; text-align:center;">${date}</div>
               </div>
-              <div style="margin-top:8px;color:#6B7280">${date}</div>
-            </div>
 
-            <table style="width:100%; margin-top:20px; border-collapse:collapse;">
-              ${rowsHtml}
-            </table>
+              <div style="width:100%; background:#F8F9FA; border-radius:12px; padding:12px; border:1px solid #E5E7EB; margin-top:12px; margin-bottom:16px;">
+                <table style="width:100%; border-collapse:collapse;">
+                  ${rowsHtml}
+                </table>
+              </div>
 
-            <div style="margin-top:24px; color:#6B7280; font-size:12px; border-top:1px solid #E5E7EB; padding-top:12px; text-align:center;">
-              Thank you for using our services.
+              <div style="margin-top:24px; padding-bottom:24px; color:#6B7280; font-size:12px; text-align:center;">
+                Thank you for using our services.
+              </div>
             </div>
           </div>
         </body>
@@ -213,34 +216,64 @@ export default function FiatWithdrawalReceiptModal({
 
   const onShare = async () => {
     try {
+      console.log('📤 Share button pressed - starting PDF generation');
+
+      if (!tx) {
+        Alert.alert('Error', 'No transaction data available');
+        return;
+      }
+
       // Load asset and convert to base64
+      console.log('📷 Loading logo asset...');
       const asset = Asset.fromModule(successImage);
       await asset.downloadAsync();
       const localUri = asset.localUri || asset.uri;
+
       let base64 = '';
       if (localUri) {
+        console.log('🔄 Converting logo to base64...');
         base64 = await FileSystem.readAsStringAsync(localUri, { encoding: FileSystem.EncodingType.Base64 });
       }
       const logoDataUri = `data:image/png;base64,${base64}`;
 
+      console.log('📄 Generating HTML...');
       const html = await generateHtmlWithLogo(logoDataUri);
+
+      console.log('🖨️ Creating PDF...');
       const { uri } = await Print.printToFileAsync({ html });
-      if (!uri) throw new Error('Failed to generate PDF');
+
+      if (!uri) {
+        throw new Error('Failed to generate PDF');
+      }
+
+      console.log('✅ PDF generated at:', uri);
+
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
+        console.log('📤 Sharing PDF...');
         await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: title });
+        console.log('✅ PDF shared successfully');
       } else {
         Alert.alert('Share not available', `PDF generated at: ${uri}`);
       }
-    } catch (err) {
-      console.error('PDF/Share error', err);
-      Alert.alert('Share failed', 'Could not generate or share PDF. Please try again.');
+    } catch (err: any) {
+      console.error('❌ PDF/Share error:', err);
+      Alert.alert('Share failed', err?.message || 'Could not generate or share PDF. Please try again.');
     }
   };
 
   const handleDone = () => {
-    router.push('../../user/wallet');
-    onClose?.();
+    console.log('✅ Done button pressed');
+    try {
+      onClose?.();
+      // Navigate after closing the modal
+      setTimeout(() => {
+        router.push('/(tabs)/wallet' as any);
+      }, 100);
+    } catch (err) {
+      console.error('❌ Navigation error:', err);
+      onClose?.();
+    }
   };
 
   if (!visible) return null;
@@ -321,10 +354,24 @@ export default function FiatWithdrawalReceiptModal({
 
             {/* CTAs */}
             <View style={styles.ctaRow}>
-              <TouchableOpacity style={styles.primaryButton} onPress={handleDone} activeOpacity={0.95}>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => {
+                  console.log('🔘 Done button touch detected');
+                  handleDone();
+                }}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.primaryButtonText}>Done</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.secondaryButton} onPress={onShare} activeOpacity={0.85}>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => {
+                  console.log('🔘 Share button touch detected');
+                  onShare();
+                }}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.secondaryButtonText}>Share</Text>
               </TouchableOpacity>
             </View>

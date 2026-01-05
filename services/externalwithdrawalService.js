@@ -1,22 +1,19 @@
 import { apiClient } from './apiClient';
 
+/**
+ * Generate a UUID v4 for idempotency keys
+ */
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 export const withdrawalService = {
   // Active withdrawals tracking
   activeWithdrawals: new Map(),
-
-  /**
-   * Helper: Generate a unique ID (UUID v4) for idempotency
-   */
-  generateIdempotencyKey() {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
-  },
 
   /**
    * Calculate withdrawal fee and receiver amount
@@ -25,8 +22,10 @@ export const withdrawalService = {
     try {
       console.log('🔄 Calculating withdrawal fee:', { amount, currency, network });
 
+      // Client-side validation
       const validation = this.validateFeeCalculationRequest({ amount, currency, network });
       if (!validation.success) {
+        console.log('❌ Fee calculation validation failed:', validation.errors);
         return {
           success: false,
           error: 'VALIDATION_ERROR',
@@ -35,21 +34,32 @@ export const withdrawalService = {
         };
       }
 
+      // Prepare request payload
       const payload = {
         amount: Number(amount),
         currency: currency.toUpperCase(),
         network: network?.toUpperCase()
       };
 
-      const idempotencyKey = this.generateIdempotencyKey();
-
-      const response = await apiClient.post('/withdraw/initiate', payload, {
-        headers: { 'X-Idempotency-Key': idempotencyKey }
-      });
+      // Make API request to initiate endpoint (fee preview)
+      const response = await apiClient.post('/withdraw/initiate', payload);
 
       if (response.success) {
+        // Access the nested data properly
         const feeData = (response.data && response.data.data) || response.data;
-        const respMessage = (response.data && response.data.message) || response.message || 'Fee calculated successfully';
+        const respMessage =
+          (response.data && response.data.message) ||
+          response.message ||
+          'Fee calculated successfully';
+
+        console.log('✅ Fee calculation successful:', {
+          currency: feeData.currency,
+          network: feeData.network,
+          amount: feeData.amount,
+          fee: feeData.fee,
+          receiverAmount: feeData.receiverAmount,
+          totalAmount: feeData.totalAmount
+        });
 
         return {
           success: true,
@@ -63,9 +73,11 @@ export const withdrawalService = {
           }
         };
       } else {
+        console.log('❌ Fee calculation API error:', response.error || response.message);
         return this.handleWithdrawalError(response);
       }
     } catch (error) {
+      console.log('❌ Fee calculation service error:', error);
       return this.handleWithdrawalError(error);
     }
   },
@@ -75,15 +87,37 @@ export const withdrawalService = {
    */
   async initiateWithdrawal(withdrawalData) {
     try {
-      const { destination, amount, currency, twoFactorCode, passwordpin, memo, narration } = withdrawalData;
+      const {
+        destination,
+        amount,
+        currency,
+        twoFactorCode,
+        passwordpin,
+        memo,
+        narration,
+        idempotencyKey
+      } = withdrawalData;
 
+      console.log('🔄 Initiating crypto withdrawal:', {
+        currency,
+        amount,
+        network: destination?.network,
+        address: destination?.address?.substring(0, 10) + '...'
+      });
+
+      // Client-side validation
       const validation = this.validateWithdrawalRequest(withdrawalData);
       if (!validation.success) {
-        return { success: false, error: 'VALIDATION_ERROR', message: validation.message, errors: validation.errors };
+        console.log('❌ Withdrawal validation failed:', validation.errors);
+        return {
+          success: false,
+          error: 'VALIDATION_ERROR',
+          message: validation.message,
+          errors: validation.errors
+        };
       }
 
-      const idempotencyKey = this.generateIdempotencyKey();
-
+      // Prepare request payload
       const payload = {
         destination: {
           address: destination.address.trim(),
@@ -98,51 +132,437 @@ export const withdrawalService = {
         narration: narration?.trim() || null
       };
 
+      // Use provided idempotency key or generate a new one as fallback
+      const requestIdempotencyKey = idempotencyKey || generateUUID();
+      console.log('🔑 Using idempotency key:', requestIdempotencyKey);
+
+      // Make API request with idempotency header
       const response = await apiClient.post('/withdraw/crypto', payload, {
-        headers: { 'X-Idempotency-Key': idempotencyKey }
+        headers: {
+          'X-Idempotency-Key': requestIdempotencyKey
+        }
       });
 
       if (response.success) {
+        // Access the nested data properly
         const wdData = (response.data && response.data.data) || response.data;
+        const respMessage =
+          (response.data && response.data.message) ||
+          response.message ||
+          'Crypto withdrawal initiated successfully';
+
+        // Track active withdrawal
         this.trackActiveWithdrawal(wdData.transactionId, {
           ...wdData,
-          idempotencyKey,
           initiatedAt: new Date().toISOString()
         });
 
-        return { success: true, message: response.message || 'Success', data: { ...wdData } };
+        console.log('✅ Crypto withdrawal initiated successfully:', {
+          transactionId: wdData.transactionId,
+          obiexTransactionId: wdData.obiexTransactionId,
+          currency: wdData.currency,
+          network: wdData.network,
+          amount: wdData.amount,
+          fee: wdData.fee,
+          totalAmount: wdData.totalAmount
+        });
+
+        return {
+          success: true,
+          message: respMessage,
+          data: {
+            ...wdData
+          }
+        };
       } else {
+        console.log('❌ Withdrawal API error:', response.error || response.message);
         return this.handleWithdrawalError(response);
       }
     } catch (error) {
+      console.log('❌ Withdrawal service error:', error);
       return this.handleWithdrawalError(error);
     }
   },
 
   /**
-   * Get withdrawal status
+   * Get withdrawal status by transaction ID
    */
   async getWithdrawalStatus(transactionId) {
     try {
-      if (!transactionId) return { success: false, error: 'INVALID_ID', message: 'ID required' };
+      console.log('📊 Fetching withdrawal status for:', transactionId);
+
+      if (!transactionId) {
+        return {
+          success: false,
+          error: 'INVALID_TRANSACTION_ID',
+          message: 'Transaction ID is required'
+        };
+      }
+
       const response = await apiClient.get(`/withdraw/status/${transactionId}`);
 
       if (response.success) {
+        // Access the nested data properly
         const statusData = (response.data && response.data.data) || response.data;
+        const respMessage =
+          (response.data && response.data.message) ||
+          response.message ||
+          'Withdrawal status retrieved';
+
+        // Update tracked withdrawal if exists
         if (this.activeWithdrawals.has(transactionId)) {
           const existing = this.activeWithdrawals.get(transactionId);
-          this.activeWithdrawals.set(transactionId, { ...existing, ...statusData, lastUpdated: new Date().toISOString() });
+          this.activeWithdrawals.set(transactionId, {
+            ...existing,
+            ...statusData,
+            lastUpdated: new Date().toISOString()
+          });
         }
-        return { success: true, data: { ...statusData, statusDescription: this.getStatusDescription(statusData.status) } };
+
+        console.log('✅ Withdrawal status retrieved:', {
+          transactionId,
+          status: statusData.status,
+          currency: statusData.currency,
+          network: statusData.network,
+          amount: statusData.amount,
+          obiexTransactionId: statusData.obiexTransactionId
+        });
+
+        return {
+          success: true,
+          message: respMessage,
+          data: {
+            ...statusData,
+            statusDescription: this.getStatusDescription(statusData.status),
+            isCompleted: ['COMPLETED', 'SUCCESS'].includes(statusData.status),
+            isFailed: ['FAILED', 'CANCELLED', 'REJECTED'].includes(statusData.status),
+            isPending: ['PENDING', 'PROCESSING'].includes(statusData.status),
+            amountFormatted: this.formatWithdrawalAmount(statusData.amount, statusData.currency),
+            feeFormatted: this.formatWithdrawalAmount(statusData.fee, statusData.currency)
+          }
+        };
+      } else {
+        console.log('❌ Failed to fetch withdrawal status:', response.error || response.message);
+        return this.handleWithdrawalError(response);
       }
-      return this.handleWithdrawalError(response);
     } catch (error) {
+      console.log('❌ Error fetching withdrawal status:', error);
       return this.handleWithdrawalError(error);
     }
   },
 
   /**
-   * RESTORED: Get minimum withdrawal amounts
+   * Validate fee calculation request client-side
+   */
+  validateFeeCalculationRequest(data) {
+    const { amount, currency, network } = data;
+    const errors = [];
+
+    if (!amount) {
+      errors.push('Amount is required');
+    }
+    if (!currency?.trim()) {
+      errors.push('Currency is required');
+    }
+    if (!network?.trim()) {
+      errors.push('Network is required');
+    }
+
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      errors.push('Amount must be a positive number');
+    }
+
+    if (errors.length > 0) {
+      return {
+        success: false,
+        errors,
+        message: errors.join('; ')
+      };
+    }
+
+    return { success: true };
+  },
+
+  /**
+   * Validate withdrawal request client-side
+   */
+  validateWithdrawalRequest(withdrawalData) {
+    const {
+      destination,
+      amount,
+      currency,
+      twoFactorCode,
+      passwordpin,
+      memo
+    } = withdrawalData;
+
+    const errors = [];
+
+    if (!destination?.address?.trim()) {
+      errors.push('Withdrawal address is required');
+    }
+    if (!destination?.network?.trim()) {
+      errors.push('Network is required');
+    }
+    if (!amount) {
+      errors.push('Withdrawal amount is required');
+    }
+    if (!currency?.trim()) {
+      errors.push('Currency is required');
+    }
+    if (!twoFactorCode?.trim()) {
+      errors.push('Two-factor authentication code is required');
+    }
+    if (!passwordpin?.trim()) {
+      errors.push('Password PIN is required');
+    }
+
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      errors.push('Amount must be a positive number');
+    }
+
+    if (passwordpin) {
+      const pinStr = String(passwordpin).trim();
+      if (!/^\d{6}$/.test(pinStr)) {
+        errors.push('Password PIN must be exactly 6 digits');
+      }
+    }
+
+    if (twoFactorCode) {
+      const codeStr = String(twoFactorCode).trim();
+      if (!/^\d{6}$/.test(codeStr)) {
+        errors.push('Two-factor code must be exactly 6 digits');
+      }
+    }
+
+    if (destination?.address && destination.address.length < 10) {
+      errors.push('Invalid withdrawal address format');
+    }
+
+    if (memo && memo.length > 200) {
+      errors.push('Memo cannot exceed 200 characters');
+    }
+
+    if (errors.length > 0) {
+      return {
+        success: false,
+        errors,
+        message: errors.join('; ')
+      };
+    }
+
+    return { success: true };
+  },
+
+  /**
+   * Handle withdrawal errors with exact server message preservation
+   */
+  handleWithdrawalError(errorResponse) {
+    // HTTP status
+    const statusCode = errorResponse.status || errorResponse.statusCode || 500;
+
+    // Prefer server-provided human text as "raw"
+    const raw =
+      (typeof errorResponse.message === 'string' && errorResponse.message) ||
+      (typeof errorResponse.error === 'string' && errorResponse.error) ||
+      null;
+
+    // Try to find a machine-readable code
+    const codeFromResponse =
+      errorResponse.code ||
+      (typeof errorResponse.error === 'string' && /^[A-Z0-9_]+$/.test(errorResponse.error)
+        ? errorResponse.error
+        : null);
+
+    const errorCode = codeFromResponse || 'SERVICE_ERROR';
+
+    const errorMessages = {
+      VALIDATION_ERROR: 'Please check your input and try again',
+      INSUFFICIENT_BALANCE: 'Insufficient balance for this withdrawal',
+      KYC_LIMIT_EXCEEDED: 'Withdrawal exceeds your KYC limits',
+      DUPLICATE_WITHDRAWAL: 'Similar withdrawal is already pending',
+      FEE_CALCULATION_ERROR: 'Unable to calculate withdrawal fee',
+      PRICE_DATA_ERROR: 'Unable to fetch current price data',
+      OBIEX_API_ERROR: 'Withdrawal service temporarily unavailable',
+      BALANCE_RESERVATION_ERROR: 'Failed to reserve balance for withdrawal',
+      INTERNAL_SERVER_ERROR: 'Withdrawal service temporarily unavailable',
+      STATUS_FETCH_ERROR: 'Failed to fetch withdrawal status',
+      SERVICE_ERROR: 'Withdrawal failed. Please try again.'
+    };
+
+    // message shows the EXACT server message when present; friendlyMessage is your UI-safe fallback
+    const friendlyMessage = errorMessages[errorCode] || errorMessages.SERVICE_ERROR;
+    const message = raw || friendlyMessage;
+
+    // Pass through any structured details (e.g., KYC)
+    const details =
+      errorResponse.details ||
+      errorResponse.kycDetails ||
+      (errorResponse.data && errorResponse.data.kycDetails) ||
+      null;
+
+    console.log('❌ Handling withdrawal error:', {
+      errorCode,
+      statusCode,
+      rawMessage: raw,
+      friendlyMessage,
+      details
+    });
+
+    return {
+      success: false,
+      error: errorCode,
+      message,
+      friendlyMessage,
+      rawMessage: raw,
+      statusCode,
+      details
+    };
+  },
+
+  /**
+   * Get human-readable status description
+   */
+  getStatusDescription(status) {
+    const descriptions = {
+      PENDING: 'Withdrawal is being processed',
+      PROCESSING: 'Withdrawal in progress',
+      COMPLETED: 'Withdrawal completed successfully',
+      SUCCESS: 'Withdrawal completed successfully',
+      FAILED: 'Withdrawal failed',
+      CANCELLED: 'Withdrawal was cancelled',
+      REJECTED: 'Withdrawal was rejected'
+    };
+    return descriptions[status] || 'Unknown status';
+  },
+
+  /**
+   * Track active withdrawal
+   */
+  trackActiveWithdrawal(transactionId, data) {
+    this.activeWithdrawals.set(transactionId, {
+      ...data,
+      trackedAt: new Date().toISOString()
+    });
+
+    // Cleanup old withdrawals (older than 24 hours)
+    const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+    for (const [id, withdrawal] of this.activeWithdrawals.entries()) {
+      if (new Date(withdrawal.trackedAt).getTime() < oneDayAgo) {
+        this.activeWithdrawals.delete(id);
+      }
+    }
+  },
+
+  /**
+   * Get all active tracked withdrawals
+   */
+  getActiveWithdrawals() {
+    return Array.from(this.activeWithdrawals.entries()).map(([id, data]) => ({
+      transactionId: id,
+      ...data
+    }));
+  },
+
+  /**
+   * Format withdrawal amount with proper decimals for all supported tokens
+   */
+  formatWithdrawalAmount(amount, currency) {
+    const formatters = {
+      BTC: (amt) => amt.toFixed(8),
+      ETH: (amt) => amt.toFixed(6),
+      SOL: (amt) => amt.toFixed(6),
+      USDT: (amt) => amt.toFixed(2),
+      USDC: (amt) => amt.toFixed(2),
+      BNB: (amt) => amt.toFixed(4),
+      MATIC: (amt) => amt.toFixed(4),
+      TRX: (amt) => amt.toFixed(6),
+      NGNB: (amt) => amt.toFixed(2)
+    };
+
+    const formatter = formatters[currency?.toUpperCase()];
+    return formatter ? formatter(amount) : amount.toFixed(4);
+  },
+
+  /**
+   * Format currency amount
+   */
+  formatCurrency(amount, currency = 'USD') {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: currency === 'USD' ? 2 : 0,
+      maximumFractionDigits: currency === 'USD' ? 2 : 0
+    }).format(amount);
+  },
+
+  /**
+   * Get supported currencies for withdrawal
+   */
+  getSupportedCurrencies() {
+    return [
+      { symbol: 'BTC', name: 'Bitcoin', decimals: 8 },
+      { symbol: 'ETH', name: 'Ethereum', decimals: 6 },
+      { symbol: 'SOL', name: 'Solana', decimals: 6 },
+      { symbol: 'USDT', name: 'Tether', decimals: 2 },
+      { symbol: 'USDC', name: 'USD Coin', decimals: 2 },
+      { symbol: 'BNB', name: 'Binance Coin', decimals: 4 },
+      { symbol: 'MATIC', name: 'Polygon', decimals: 4 },
+      { symbol: 'TRX', name: 'Tron', decimals: 6 },
+      { symbol: 'NGNB', name: 'NGNB Token', decimals: 2 }
+    ];
+  },
+
+  /**
+   * Get supported networks for a currency
+   */
+  getSupportedNetworks(currency) {
+    const networkMap = {
+      BTC: [{ code: 'BTC', name: 'Bitcoin Network' }],
+      ETH: [{ code: 'ERC20', name: 'Ethereum (ERC20)' }],
+      SOL: [{ code: 'SOL', name: 'Solana Network' }],
+      USDT: [
+        { code: 'ERC20', name: 'Ethereum (ERC20)' },
+        { code: 'TRC20', name: 'Tron (TRC20)' },
+        { code: 'BEP20', name: 'BSC (BEP20)' }
+      ],
+      USDC: [
+        { code: 'ERC20', name: 'Ethereum (ERC20)' },
+        { code: 'TRC20', name: 'Tron (TRC20)' },
+        { code: 'BEP20', name: 'BSC (BEP20)' }
+      ],
+      BNB: [{ code: 'BEP20', name: 'BSC (BEP20)' }],
+      MATIC: [{ code: 'POLYGON', name: 'Polygon Network' }],
+      TRX: [{ code: 'TRC20', name: 'Tron (TRC20)' }],
+      NGNB: [{ code: 'ERC20', name: 'Ethereum (ERC20)' }]
+    };
+
+    return networkMap[currency?.toUpperCase()] || [];
+  },
+
+  /**
+   * Clear all withdrawal data
+   */
+  async clearAllData() {
+    console.log('🧹 Clearing all withdrawal data...');
+    this.activeWithdrawals.clear();
+    console.log('✅ All withdrawal data cleared');
+  },
+
+  /**
+   * Get cache status for debugging
+   */
+  getCacheStatus() {
+    return {
+      activeWithdrawalsCount: this.activeWithdrawals.size,
+      activeWithdrawals: Array.from(this.activeWithdrawals.keys())
+    };
+  },
+
+  /**
+   * Validate minimum withdrawal amounts (optional, can be configured per currency)
    */
   getMinimumWithdrawalAmount(currency) {
     const minimums = {
@@ -156,73 +576,25 @@ export const withdrawalService = {
       TRX: 10,
       NGNB: 100
     };
+
     return minimums[currency?.toUpperCase()] || 0;
   },
 
   /**
-   * RESTORED: Validate minimum amount
+   * Validate withdrawal amount against minimum
    */
   validateMinimumAmount(amount, currency) {
     const minimum = this.getMinimumWithdrawalAmount(currency);
     const numericAmount = Number(amount);
+
     if (numericAmount < minimum) {
-      return { success: false, message: `Minimum withdrawal for ${currency} is ${minimum}`, minimum };
+      return {
+        success: false,
+        message: `Minimum withdrawal amount for ${currency} is ${minimum}`,
+        minimum
+      };
     }
+
     return { success: true };
-  },
-
-  validateFeeCalculationRequest(data) {
-    const { amount, currency, network } = data;
-    if (!amount || !currency?.trim() || !network?.trim()) return { success: false, message: 'Missing fields' };
-    return { success: true };
-  },
-
-  validateWithdrawalRequest(data) {
-    const { destination, amount, currency, twoFactorCode, passwordpin } = data;
-    if (!destination?.address || !amount || !currency || !twoFactorCode || !passwordpin) return { success: false, message: 'Missing required fields' };
-    return { success: true };
-  },
-
-  handleWithdrawalError(error) {
-    const raw = error.message || error.error || error.response?.data?.message || 'Withdrawal error';
-    return { success: false, message: raw, error: 'SERVICE_ERROR' };
-  },
-
-  getStatusDescription(status) {
-    const descriptions = { PENDING: 'Processing', SUCCESS: 'Completed', FAILED: 'Failed' };
-    return descriptions[status] || 'Unknown';
-  },
-
-  trackActiveWithdrawal(transactionId, data) {
-    this.activeWithdrawals.set(transactionId, { ...data, trackedAt: new Date().toISOString() });
-  },
-
-  getActiveWithdrawals() {
-    return Array.from(this.activeWithdrawals.entries()).map(([id, data]) => ({ transactionId: id, ...data }));
-  },
-
-  formatWithdrawalAmount(amount, currency) {
-    return amount.toFixed(currency?.toUpperCase() === 'BTC' ? 8 : 4);
-  },
-
-  formatCurrency(amount, currency = 'USD') {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
-  },
-
-  getSupportedCurrencies() {
-    return [{ symbol: 'BTC', name: 'Bitcoin' }, { symbol: 'ETH', name: 'Ethereum' }, { symbol: 'USDT', name: 'Tether' }];
-  },
-
-  getSupportedNetworks(currency) {
-    const networks = { BTC: [{ code: 'BTC' }], ETH: [{ code: 'ETH' }, { code: 'BSC' }], USDT: [{ code: 'TRX' }, { code: 'ETH' }] };
-    return networks[currency?.toUpperCase()] || [];
-  },
-
-  getCacheStatus() {
-    return { activeCount: this.activeWithdrawals.size };
-  },
-
-  async clearAllData() {
-    this.activeWithdrawals.clear();
   }
 };

@@ -1,8 +1,9 @@
+// app.config.js
 export default {
   expo: {
     name: "ZeusODX",
     slug: "zeusodx",
-    version: "1.0.1",
+    version: "1.0.2",
     orientation: "default",
     icon: "./assets/images/app-icon.png",
     scheme: "zeusodx",
@@ -13,7 +14,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.manniegenie.zeusodx",
-      buildNumber: "110",
+      buildNumber: "116", // Incremented build number for fresh submission
       icon: "./assets/images/app-icon.png",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
@@ -26,7 +27,6 @@ export default {
     },
     android: {
       package: "com.manniegenie.zeusodx",
-      // Keeps your EAS secret working with a local fallback
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
       adaptiveIcon: {
         foregroundImage: "./assets/images/app-icon.png",
@@ -46,7 +46,7 @@ export default {
         "com.google.android.c2dm.permission.RECEIVE",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      versionCode: 93
+      versionCode: 102 // Incremented for Android submission
     },
     web: {
       bundler: "metro",
@@ -74,7 +74,12 @@ export default {
             "ndkVersion": "28.0.12433564"
           },
           "ios": {
-            "deploymentTarget": "15.1"
+            "deploymentTarget": "15.1",
+            "useFrameworks": "static", // CRITICAL: Required for Firebase
+            "extraPods": [
+              { "name": "GoogleUtilities", "modular_headers": true },
+              { "name": "FirebaseCoreInternal", "modular_headers": true }
+            ]
           }
         }
       ],

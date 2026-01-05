@@ -64,8 +64,6 @@ const NotificationScreen = () => {
         unreadOnly: false,
       });
 
-      console.log('📱 Notification API Response:', JSON.stringify(response, null, 2));
-
       // apiClient wraps the response, so we need to access response.data.data
       if (response?.success && response?.data) {
         // The API returns { success: true, data: [...], count: 14 }
@@ -73,13 +71,11 @@ const NotificationScreen = () => {
         const apiData = response.data;
         const notificationsArray = Array.isArray(apiData.data) ? apiData.data : apiData;
         const count = apiData.count || notificationsArray.length;
-        
+
         if (Array.isArray(notificationsArray)) {
-          console.log(`✅ Loaded ${notificationsArray.length} notifications (total: ${count})`);
-          
           // Replace notifications (initial load or refresh)
           setNotifications(notificationsArray);
-          
+
           // Update pagination state (same pattern as transaction history)
           const totalPages = Math.ceil(count / LIMIT);
           setPagination({
@@ -96,8 +92,8 @@ const NotificationScreen = () => {
           setPagination(null);
         }
       } else {
-        console.error('❌ Failed to load notifications:', response);
-        setError(response?.error || 'Failed to load notifications');
+        console.error('❌ Failed to load notifications');
+        setError((response as any)?.error || 'Failed to load notifications');
         setNotifications([]);
         setPagination(null);
       }
@@ -177,13 +173,11 @@ const NotificationScreen = () => {
         const apiData = response.data;
         const notificationsArray = Array.isArray(apiData.data) ? apiData.data : apiData;
         const count = apiData.count || (pagination.totalCount || 0);
-        
+
         if (Array.isArray(notificationsArray)) {
-          console.log(`✅ Loaded ${notificationsArray.length} more notifications (page: ${nextPage})`);
-          
           // Append new notifications to existing list (same pattern as transaction history)
           setNotifications(prev => [...prev, ...notificationsArray]);
-          
+
           // Update pagination state
           const totalPages = Math.ceil(count / LIMIT);
           setPagination({
@@ -196,7 +190,7 @@ const NotificationScreen = () => {
         }
       }
     } catch (err: any) {
-      console.error('Load more notifications error:', err);
+      console.error('❌ Load more notifications failed:', err?.message || 'Unknown error');
       // Don't set error state for load more failures - just log it
     } finally {
       setLoading(false);

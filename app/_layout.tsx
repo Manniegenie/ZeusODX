@@ -133,9 +133,17 @@ export default function RootLayout() {
               }}
             />
             <TawkPrefetcher directLink={TAWK_DIRECT_LINK} />
-            <Modal visible={isLocked} animationType="fade" transparent={false} statusBarTranslucent={true}>
-              {isLocked && <SimpleLock onSuccess={unlockApp} />}
-            </Modal>
+            {isLocked && (
+              <Modal
+                visible={isLocked}
+                animationType="fade"
+                transparent={false}
+                statusBarTranslucent={false}
+                presentationStyle="fullScreen"
+              >
+                <SimpleLock onSuccess={unlockApp} />
+              </Modal>
+            )}
           </AuthContext.Provider>
         </SafeAreaView>
       </SafeAreaProvider>

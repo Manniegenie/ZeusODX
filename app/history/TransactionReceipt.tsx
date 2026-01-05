@@ -415,14 +415,17 @@ const generateTransactionReceiptHTML = (
                 transform: scale(var(--content-scale));
                 transform-origin: top center;
             }
-            .content { 
-                padding: 0 calc(36px * var(--spacing-scale)) calc(48px * var(--spacing-scale)) calc(36px * var(--spacing-scale)); 
+            .content {
+                padding: 0 calc(36px * var(--spacing-scale)) calc(48px * var(--spacing-scale)) calc(36px * var(--spacing-scale));
                 display: flex;
                 flex-direction: column;
                 gap: calc(18px * var(--spacing-scale));
+                max-width: 720px;
+                margin-left: auto;
+                margin-right: auto;
             }
             .amount-section { text-align: center; margin: calc(30px * var(--spacing-scale)) 0 calc(9px * var(--spacing-scale)) 0; }
-            .amount-text { font-size: calc(42px * var(--font-scale)); font-weight: bold; color: #111827; }
+            .amount-text { font-size: calc(48px * var(--font-scale)); font-weight: bold; color: #111827; }
             .status-container { text-align: center; margin-bottom: calc(24px * var(--spacing-scale)); }
             .status-pill {
                 display: inline-block;
@@ -431,57 +434,57 @@ const generateTransactionReceiptHTML = (
                 border: 1px solid ${statusStyle.border};
                 background-color: ${statusStyle.bg};
                 color: ${statusStyle.text};
-                font-size: calc(18px * var(--font-scale));
+                font-size: calc(20px * var(--font-scale));
                 font-weight: 600;
             }
             .details-card {
                 width: 100%;
                 background: #F8F9FA;
                 border-radius: 12px;
-                padding: calc(30px * var(--spacing-scale)) calc(24px * var(--spacing-scale));
+                padding: 20px 16px;
                 border: 1px solid #E5E7EB;
                 margin-bottom: calc(30px * var(--spacing-scale));
                 page-break-inside: avoid;
             }
             .details-table { width: 100%; border-collapse: collapse; }
-            .details-table tr { border-bottom: none; }
-            .details-table td { padding: calc(18px * var(--spacing-scale)) 0; vertical-align: middle; border-bottom: none; }
+            .details-table tr { border-bottom: 1px solid #E5E7EB; }
+            .details-table td { padding: 12px 0; vertical-align: middle; }
             .details-table td:first-child {
-                width: 195px;
+                width: 130px;
                 flex-shrink: 0;
                 color: #6B7280;
-                font-size: calc(21px * var(--font-scale));
-                font-weight: normal;
+                font-size: 16px;
+                font-weight: 400;
             }
             .details-table td:last-child {
                 color: #111827;
-                font-size: calc(21px * var(--font-scale));
+                font-size: 16px;
                 font-weight: 500;
                 text-align: right;
                 word-break: break-word;
             }
-            .footer-message { 
-                margin-bottom: calc(30px * var(--spacing-scale)); 
-                padding: 0 calc(36px * var(--spacing-scale)); 
+            .footer-message {
+                margin-bottom: calc(30px * var(--spacing-scale));
+                padding: 0 calc(36px * var(--spacing-scale));
+                max-width: 720px;
+                margin-left: auto;
+                margin-right: auto;
             }
-            .footer-text { 
-                font-size: calc(19px * var(--font-scale)); 
-                color: #6B7280; 
-                line-height: calc(1.4 * var(--font-scale)); 
-                margin: 0; 
-                text-align: left; 
+            .footer-text {
+                font-size: calc(20px * var(--font-scale));
+                color: #6B7280;
+                line-height: calc(1.4 * var(--font-scale));
+                margin: 0;
+                text-align: left;
             }
             .generation-footer {
                 text-align: center;
                 padding: calc(30px * var(--spacing-scale)) calc(36px * var(--spacing-scale));
                 color: #9CA3AF;
-                font-size: calc(18px * var(--font-scale));
+                font-size: calc(19px * var(--font-scale));
                 border-top: 1px solid #E5E7EB;
                 margin-top: calc(30px * var(--spacing-scale));
-            }
-            .footer-message,
-            .generation-footer,
-            .content {
+                max-width: 720px;
                 margin-left: auto;
                 margin-right: auto;
             }
@@ -690,9 +693,7 @@ export default function TransactionReceiptScreen() {
       'charges',
       'transactionFee',
       'receiptData.withdrawalFee'
-    ]),
-    
-    swapDetails: d.swapDetails,
+    ])
   };
 
   // Debug: Log the merged object to see what's actually in it
@@ -722,27 +723,21 @@ export default function TransactionReceiptScreen() {
 
   const swapInfo = useMemo(() => {
     if (!isSwap) return null;
-    
-    const swapDetails = (transaction?.details as any)?.swapDetails;
-    if (swapDetails && swapDetails.fromAmount && swapDetails.toCurrency) {
+
+    // Get swap data directly from rawTx.details (backend sends it there)
+    const details = (rawTx?.details as any);
+
+    if (details?.fromCurrency && details?.toCurrency) {
       return {
-        fromAmount: parseFloat(swapDetails.fromAmount),
-        fromCurrency: swapDetails.fromCurrency,
-        toAmount: parseFloat(swapDetails.toAmount),
-        toCurrency: swapDetails.toCurrency,
+        fromAmount: details.fromAmount,
+        fromCurrency: details.fromCurrency,
+        toAmount: details.toAmount,
+        toCurrency: details.toCurrency,
       };
     }
-    
-    const viaNarr = parseSwapFromNarration(String(merged.narration || ''));
-    if (viaNarr) return viaNarr;
-    
-    const fromCurrency = (merged.currency || '').toString().toUpperCase();
-    const toCurrency = extractField(transaction, d, rawTx, ['toCurrency', 'toSymbol', 'toAsset'])?.toString().toUpperCase();
-    const toAmount = extractField(transaction, d, rawTx, ['toAmount', 'amountOut', 'received']);
-    return (fromCurrency || toCurrency)
-      ? { fromAmount: undefined, fromCurrency, toAmount, toCurrency }
-      : null;
-  }, [isSwap, transaction?.details, merged.narration, merged.currency, d, rawTx]);
+
+    return null;
+  }, [isSwap, rawTx]);
 
   const onShare = async () => {
     try {

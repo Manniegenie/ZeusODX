@@ -20,19 +20,36 @@ export function useSecurityLock(enabled = true, timeoutMs = 120000) {
   };
 
   const lockApp = () => {
-    // CRITICAL: Won't lock if user hasn't reached protected content yet
-    if (!isSessionActive || isExcluded || isLocked) {
-      console.log('Lock prevented:', { isSessionActive, isExcluded, isLocked });
-      return;
+    try {
+      // CRITICAL: Won't lock if user hasn't reached protected content yet
+      if (!isSessionActive || isExcluded || isLocked) {
+        if (__DEV__) {
+          console.log('Lock prevented:', { isSessionActive, isExcluded, isLocked });
+        }
+        return;
+      }
+      if (__DEV__) {
+        console.log('Locking app');
+      }
+      setIsLocked(true);
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error locking app:', error);
+      }
+      // Don't lock if there's an error
     }
-    console.log('Locking app');
-    setIsLocked(true);
   };
 
   const unlockApp = () => {
-    console.log('Unlocking app');
-    setIsLocked(false);
-    resetTimer();
+    try {
+      console.log('Unlocking app');
+      setIsLocked(false);
+      resetTimer();
+    } catch (error) {
+      console.error('Error unlocking app:', error);
+      // Try to unlock anyway to prevent permanent lock
+      setIsLocked(false);
+    }
   };
 
   const resetTimer = () => {
@@ -62,16 +79,35 @@ export function useSecurityLock(enabled = true, timeoutMs = 120000) {
   ).current;
 
   // Handle app state changes (background/foreground)
+  // DISABLED: Auto-lock on background causes issues with share dialogs
+  // Only inactivity timer will lock the app
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (appState.current === 'active' && nextAppState.match(/inactive|background/)) {
-        console.log('App going to background - locking');
-        lockApp();
+      try {
+        appState.current = nextAppState;
+
+        // Just track state changes, don't auto-lock
+        // User will be locked out only after inactivity timeout
+        if (__DEV__) {
+          console.log('App state changed to:', nextAppState);
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error('Error in AppState change handler:', error);
+        }
       }
-      appState.current = nextAppState;
     });
-    return () => subscription.remove();
-  }, [isLocked, isSessionActive, pathname]);
+
+    return () => {
+      try {
+        subscription.remove();
+      } catch (error) {
+        if (__DEV__) {
+          console.error('Error removing AppState listener:', error);
+        }
+      }
+    };
+  }, [pathname]);
 
   // Reset timer when dependencies change
   useEffect(() => {
