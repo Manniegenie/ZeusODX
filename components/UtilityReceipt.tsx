@@ -55,6 +55,10 @@ type UtilityDetails = {
   // Cable TV specific
   smartCardNumber?: string;
   packageName?: string;
+  // Betting specific
+  betReference?: string;
+  gameType?: string;
+  betAmount?: string | number;
 };
 
 export type UtilityTransaction = {
@@ -173,6 +177,17 @@ const generateUtilityReceiptHTML = (
     detailRows.push(`<tr><td>Package</td><td>${asText(details.packageName)}</td></tr>`);
   }
   
+  // Betting specific fields
+  if (details.betReference) {
+    detailRows.push(`<tr><td>Bet Reference</td><td>${asText(details.betReference)}</td></tr>`);
+  }
+  if (details.gameType) {
+    detailRows.push(`<tr><td>Game Type</td><td>${asText(details.gameType)}</td></tr>`);
+  }
+  if (details.betAmount) {
+    detailRows.push(`<tr><td>Bet Amount</td><td>${formatAmount(details.betAmount, details.paymentCurrency)}</td></tr>`);
+  }
+  
   detailRows.push(`<tr><td>Network</td><td>${asText(details.network)}</td></tr>`);
   detailRows.push(`<tr><td>Payment Currency</td><td>${asText(details.paymentCurrency)}</td></tr>`);
 
@@ -257,24 +272,24 @@ const generateUtilityReceiptHTML = (
                 width: 100%;
                 background: #F8F9FA;
                 border-radius: 12px;
-                padding: calc(30px * var(--spacing-scale)) calc(24px * var(--spacing-scale));
+                padding: 20px 16px;
                 border: 1px solid #E5E7EB;
                 margin-bottom: calc(30px * var(--spacing-scale));
                 page-break-inside: avoid;
             }
             .details-table { width: 100%; border-collapse: collapse; }
-            .details-table tr { border-bottom: none; }
-            .details-table td { padding: calc(18px * var(--spacing-scale)) 0; vertical-align: middle; border-bottom: none; }
+            .details-table tr { border-bottom: 1px solid #E5E7EB; }
+            .details-table td { padding: 12px 0; vertical-align: middle; }
             .details-table td:first-child {
-                width: 195px;
+                width: 130px;
                 flex-shrink: 0;
                 color: #6B7280;
-                font-size: calc(21px * var(--font-scale));
-                font-weight: normal;
+                font-size: 14px;
+                font-weight: 400;
             }
             .details-table td:last-child {
                 color: #111827;
-                font-size: calc(21px * var(--font-scale));
+                font-size: 14px;
                 font-weight: 500;
                 text-align: right;
                 word-break: break-word;
@@ -549,6 +564,25 @@ export default function UtilityReceipt() {
           )}
           {details.packageName && (
             <Row label="Package" value={asText(details.packageName)} />
+          )}
+          
+          {/* Betting specific fields */}
+          {details.betReference && (
+            <Row 
+              label="Bet Reference" 
+              value={asText(details.betReference)}
+              copyableValue={details.betReference}
+              onCopy={(v) => handleCopy('Bet Reference', v)}
+            />
+          )}
+          {details.gameType && (
+            <Row label="Game Type" value={asText(details.gameType)} />
+          )}
+          {details.betAmount && (
+            <Row 
+              label="Bet Amount" 
+              value={formatAmount(details.betAmount, details.paymentCurrency)} 
+            />
           )}
           
           <Row label="Network" value={asText(details.network)} />

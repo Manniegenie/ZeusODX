@@ -446,9 +446,9 @@ export const transactionService = {
   // ✅ NEW: Detect if transaction is an NGNZ withdrawal
   detectNGNZWithdrawal(transaction) {
     if (!transaction) return false;
-    
+
     const details = transaction.details || {};
-    
+
     // Check multiple indicators
     const indicators = [
       details.isNGNZWithdrawal === true,
@@ -460,16 +460,17 @@ export const transactionService = {
       details.hasReceiptData === true,
       details.receiptDetails?.category === 'withdrawal'
     ];
-    
+
     const trueCount = indicators.filter(Boolean).length;
     const isNGNZ = trueCount >= 2;
-    
+
     if (isNGNZ) {
       dbg('detectNGNZWithdrawal: NGNZ withdrawal detected', { id: transaction.id, indicators: trueCount });
     }
-    
+
     return isNGNZ;
   },
+
 
   // ✅ UPDATED: formatTransaction now detects and delegates NGNZ withdrawals
   formatTransaction(transaction, currency) {
@@ -477,7 +478,7 @@ export const transactionService = {
 
     // CRITICAL: Detect NGNZ withdrawals early
     const isNGNZWithdrawal = this.detectNGNZWithdrawal(transaction);
-    
+
     if (isNGNZWithdrawal) {
       dbg('formatTransaction: Detected NGNZ withdrawal, delegating to formatNGNZWithdrawal');
       return this.formatNGNZWithdrawal(transaction);
@@ -716,20 +717,20 @@ export const transactionService = {
     if (!transaction) return null;
 
     const parsedISO = this.tryParseToISO(transaction.createdAt);
-    
+
     // Check for NGNZ withdrawal using detection method
     if (this.detectNGNZWithdrawal(transaction)) {
       return this.formatNGNZWithdrawal(transaction);
     }
-    
+
     if (transaction.details?.category === 'utility') {
       return this.formatBillTransaction(transaction);
     }
-    
+
     if (transaction.details?.category === 'giftcard') {
       return this.formatGiftCardTransaction(transaction);
     }
-    
+
     return this.formatTransaction(transaction);
   },
 
@@ -777,10 +778,14 @@ export const transactionService = {
 
   extractAmountFromString(amountString, currency) {
     if (!amountString) return 0;
-    const cleanAmount = amountString
-      .replace(/[+\-₦,\s]/g, '')
+
+    // Simple extraction - remove currency and symbols, parse as number
+    const cleanAmount = String(amountString)
       .replace(currency || '', '')
+      .replace(/[₦,\s]/g, '')
+      .replace(/^[+\-]/, '') // Remove leading sign only
       .trim();
+
     return parseFloat(cleanAmount) || 0;
   },
 

@@ -41,7 +41,7 @@
     },
     "production": {
       "extends": "base",
-      "autoIncrement": true,
+      "autoIncrement": false,
       "env": {
         "NODE_ENV": "production"
       },

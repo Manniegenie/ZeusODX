@@ -8,11 +8,11 @@ import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
 
 // Tab icon imports
-const homeIcon = require('./icons/home-icon.png');
-const tradeIcon = require('./icons/trade-icon.png');
-const utilityIcon = require('./icons/util.png');
-const activityIcon = require('./icons/wallet-icon.png');
-const profileIcon = require('./icons/profile-icon.png');
+const homeIcon = require('../components/icons/home-icon.png');
+const tradeIcon = require('../components/icons/trade-icon.png');
+const giftcardIcon = require('../components/icons/giftcard-icon.png');
+const activityIcon = require('../components/icons/wallet-icon.png');
+const profileIcon = require('../components/icons/profile-icon.png');
 
 interface Tab {
   id: string;
@@ -142,11 +142,10 @@ const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({ activeTab }) =>
   const insets = useSafeAreaInsets();
 
   const tabs: Tab[] = [
-    { id: 'home',      label: 'Home',     icon: homeIcon,     route: '../user/dashboard' },
-    // { id: 'giftcard',  label: 'Giftcard', icon: giftcardIcon, route: '/user/Giftcard' }, // TEMPORARILY HIDDEN
-    { id: 'utility',   label: 'Utility',  icon: utilityIcon, route: '/user/utility' }, // TEMPORARY: Replaced giftcard with utility
-    { id: 'swap',      label: 'Buy/Sell', icon: tradeIcon,    route: '../user/Swap' },
-    { id: 'wallet',  label: 'Wallet', icon: activityIcon, route: '../user/wallet' },
+    { id: 'home',      label: 'Home',     icon: homeIcon,     route: '/user/dashboard' },
+    { id: 'giftcard',  label: 'Giftcard', icon: giftcardIcon, route: '/user/Giftcard' },
+    { id: 'swap',      label: 'Buy/Sell', icon: tradeIcon,    route: '/user/Swap' },
+    { id: 'wallet',    label: 'Wallet',   icon: activityIcon, route: '/user/wallet' },
     { id: 'profile',   label: 'Profile',  icon: profileIcon,  route: '/profile/profile' },
   ];
 

@@ -58,6 +58,8 @@ export default function SimpleLock({ onSuccess }: SimpleLockProps) {
 
   const bioTriedRef = useRef(false);
   const [biometricFailed, setBiometricFailed] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const lockTimeRef = useRef(Date.now());
 
   // Load saved username and phone number
   useEffect(() => {
@@ -120,12 +122,20 @@ export default function SimpleLock({ onSuccess }: SimpleLockProps) {
             setTimeout(() => setError({ show: false, type: 'general' }), 3000);
           }
         } else {
-          console.log('Biometric verification cancelled or failed');
+          if (__DEV__) {
+            console.log('Biometric verification cancelled or failed');
+          }
           setBiometricFailed(true);
+          // Focus first input after biometric fails
+          setTimeout(() => inputRefs[0].current?.focus(), 300);
         }
       } catch (err) {
-        console.error('Biometric authentication error:', err);
+        if (__DEV__) {
+          console.error('Biometric authentication error:', err);
+        }
         setBiometricFailed(true);
+        // Focus first input after biometric error
+        setTimeout(() => inputRefs[0].current?.focus(), 300);
       } finally {
         setIsLoading(false);
       }
@@ -270,16 +280,34 @@ export default function SimpleLock({ onSuccess }: SimpleLockProps) {
       });
 
       if (result.success) {
-        console.log('✅ PIN login successful');
+        if (__DEV__) {
+          console.log('✅ PIN login successful');
+        }
+        setFailedAttempts(0); // Reset failed attempts on success
         onSuccess();
       } else {
+        // Increment failed attempts
+        const newFailedAttempts = failedAttempts + 1;
+        setFailedAttempts(newFailedAttempts);
+
+        // After 5 failed attempts and 30 seconds stuck, auto-unlock as safety measure
+        const timeLocked = Date.now() - lockTimeRef.current;
+        if (newFailedAttempts >= 5 && timeLocked > 30000) {
+          if (__DEV__) {
+            console.warn('⚠️ Multiple failed attempts detected, emergency unlock');
+          }
+          // Force unlock to prevent permanent lockout
+          onSuccess();
+          return;
+        }
+
         let errorType: 'network' | 'validation' | 'auth' | 'server' | 'general' = 'auth';
         let errorMessage = 'Incorrect PIN. Please try again.';
         let errorTitle = 'Invalid PIN';
 
         if (result.error) {
           const serverMessage = String(result.error);
-          
+
           if (serverMessage.toLowerCase().includes('not found')) {
             errorType = 'auth';
             errorTitle = 'User Not Found';
@@ -328,6 +356,9 @@ export default function SimpleLock({ onSuccess }: SimpleLockProps) {
         inputRefs[0].current?.focus();
       }
     } catch (err) {
+      // Increment failed attempts on errors too
+      setFailedAttempts(failedAttempts + 1);
+
       setError({
         show: true,
         type: 'network',

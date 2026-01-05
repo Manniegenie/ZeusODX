@@ -152,6 +152,26 @@ class NotificationService {
   }
 
   /* ----------------------------------------------------
+   * Badge Management
+   * -------------------------------------------------- */
+
+  async clearBadge() {
+    try {
+      await Notifications.setBadgeCountAsync(0);
+    } catch (error) {
+      console.error('Failed to clear badge:', error);
+    }
+  }
+
+  async openSettings() {
+    try {
+      await Notifications.openSettingsAsync();
+    } catch (error) {
+      console.error('Failed to open notification settings:', error);
+    }
+  }
+
+  /* ----------------------------------------------------
    * Listeners (OPTIONAL)
    * -------------------------------------------------- */
 

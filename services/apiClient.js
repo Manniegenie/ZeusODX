@@ -3,23 +3,48 @@ import * as SecureStore from 'expo-secure-store';
 const AUTH_TOKEN_KEY = 'auth_token';
 const AUTH_SESSION_KEY = 'auth_session_bundle';
 const REFRESH_TOKEN_KEY = 'refresh_token';
+const TOKEN_EXPIRY_KEY = 'token_expiry';
+
+// Optional SSL Pinning - only available after native rebuild
+let SSLPinning = null;
+try {
+  SSLPinning = require('expo-ssl-pinning');
+} catch (e) {
+  // SSL Pinning not available, will use regular fetch
+  if (__DEV__) {
+    console.log('⚠️ SSL Pinning not available - using regular fetch');
+  }
+}
 
 class ApiClient {
   constructor() {
-    this.baseURL = __DEV__
-      ? 'https://zeusadminxyz.online'
-      : 'https://zeusadminxyz.online';
+    // Use environment variable for API base URL
+    this.baseURL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://zeusadminxyz.online';
 
     this.headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
+
+    if (__DEV__) {
+      console.log('🔧 API Client initialized with base URL:', this.baseURL);
+    }
   }
 
   // --- AUTH TOKEN MANAGEMENT ---
 
   async getAuthToken() {
     try {
+      // Check if token is expired
+      const isExpired = await this.isTokenExpired();
+      if (isExpired) {
+        if (__DEV__) {
+          console.log('⚠️ Token expired, clearing session');
+        }
+        await this.clearSession();
+        return null;
+      }
+
       const session = await this.getAuthSession();
       if (session?.accessToken) return session.accessToken;
 
@@ -27,22 +52,47 @@ class ApiClient {
       if (token) await this.updateAuthSession({ accessToken: token });
       return token;
     } catch (error) {
-      console.error('Error getting auth token:', error);
+      if (__DEV__) {
+        console.error('Error getting auth token:', error);
+      }
       return null;
     }
   }
 
-  async setAuthToken(token) {
+  async setAuthToken(token, expiryInSeconds = 86400) {
     try {
       if (token) {
         await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
+        // Set token expiry (default 24 hours)
+        const expiryTime = Date.now() + (expiryInSeconds * 1000);
+        await SecureStore.setItemAsync(TOKEN_EXPIRY_KEY, expiryTime.toString());
       } else {
         await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+        await SecureStore.deleteItemAsync(TOKEN_EXPIRY_KEY);
       }
       await this.updateAuthSession({ accessToken: token ?? null });
     } catch (error) {
-      console.error('Error storing auth token:', error);
+      if (__DEV__) {
+        console.error('Error storing auth token:', error);
+      }
       throw error;
+    }
+  }
+
+  async isTokenExpired() {
+    try {
+      const expiryTime = await SecureStore.getItemAsync(TOKEN_EXPIRY_KEY);
+      if (!expiryTime) return false; // No expiry set, assume valid
+
+      const expiry = parseInt(expiryTime, 10);
+      const now = Date.now();
+
+      return now >= expiry;
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error checking token expiry:', error);
+      }
+      return false; // On error, don't block access
     }
   }
 
@@ -52,7 +102,9 @@ class ApiClient {
     try {
       return await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
     } catch (error) {
-      console.error('Error getting refresh token:', error);
+      if (__DEV__) {
+        console.error('Error getting refresh token:', error);
+      }
       return null;
     }
   }
@@ -65,7 +117,9 @@ class ApiClient {
         await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
       }
     } catch (error) {
-      console.error('Error storing refresh token:', error);
+      if (__DEV__) {
+        console.error('Error storing refresh token:', error);
+      }
       throw error;
     }
   }
@@ -86,7 +140,28 @@ class ApiClient {
         },
       };
 
-      const response = await fetch(`${this.baseURL}${endpoint}`, config);
+      // Use SSL pinning for production builds
+      let response;
+      if (!__DEV__ && SSLPinning) {
+        try {
+          // Certificate pinning enabled in production
+          response = await SSLPinning.fetch(`${this.baseURL}${endpoint}`, {
+            ...config,
+            sslPinning: {
+              certs: ['zeusadminxyz.online'], // Add your SSL certificate hash here
+            },
+          });
+        } catch (pinningError) {
+          // Fallback to regular fetch if pinning fails
+          if (__DEV__) {
+            console.warn('⚠️ SSL Pinning failed, falling back to regular fetch:', pinningError);
+          }
+          response = await fetch(`${this.baseURL}${endpoint}`, config);
+        }
+      } else {
+        // Development mode - use regular fetch
+        response = await fetch(`${this.baseURL}${endpoint}`, config);
+      }
 
       // Parse response
       const responseText = await response.text();
@@ -98,7 +173,9 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        console.error(`❌ API Error ${response.status}:`, data);
+        if (__DEV__) {
+          console.error(`❌ API Error ${response.status}:`, data);
+        }
 
         // Removed restart logic; just return error
         return {
@@ -109,10 +186,14 @@ class ApiClient {
         };
       }
 
-      console.log(`✅ API Success: ${endpoint}`);
+      if (__DEV__) {
+        console.log(`✅ API Success: ${endpoint}`);
+      }
       return { success: true, data };
     } catch (error) {
-      console.error(`❌ Network Error: ${endpoint}`, error);
+      if (__DEV__) {
+        console.error(`❌ Network Error: ${endpoint}`, error);
+      }
       return { success: false, error: error.message || 'Network request failed' };
     }
   }

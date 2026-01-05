@@ -14,9 +14,9 @@ import {
 const AirtimeIcon = require('../../components/icons/Airtimeicon.png');
 const DataIcon = require('../../components/icons/Airtimeicon.png');
 const ElectricityIcon = require('../../components/icons/electricity.png');
+const BettingIcon = require('../../components/icons/betting.png');
 const CableTVIcon = require('../../components/icons/cabletv.png');
 const GiftCardIcon = require('../../components/icons/giftcard.png');
-const BettingIcon = require('../../components/icons/betting.png');
 const CloseIcon = require('../../components/icons/close.png');
 
 interface Service {
@@ -48,23 +48,23 @@ const UtilitiesScreen: React.FC = () => {
       route: 'Electricity'
     },
     {
+      id: 'betting',
+      title: 'Betting',
+      icon: BettingIcon,
+      route: 'Betting'
+    },
+    {
+      id: 'gift_cards',
+      title: 'Gift Cards',
+      icon: GiftCardIcon,
+      route: 'Giftcard'
+    },
+    {
       id: 'cable_tv',
       title: 'Cable TV',
       icon: CableTVIcon,
       route: 'CableTV'
     },
-    // {
-    //   id: 'gift_cards',
-    //   title: 'Gift Cards',
-    //   icon: GiftCardIcon,
-    //   route: 'Giftcard'
-    // }, // TEMPORARILY HIDDEN
-    // {
-    //   id: 'betting',
-    //   title: 'Betting',
-    //   icon: BettingIcon,
-    //   route: 'Betting'
-    // } // TEMPORARILY HIDDEN
   ];
 
   const handleServicePress = (service: Service): void => {
@@ -117,13 +117,11 @@ const UtilitiesScreen: React.FC = () => {
             {renderServiceItem(services[2])}
           </View>
 
-          {/* Second Row - Cable TV, Gift Cards (hidden), Betting (hidden) */}
+          {/* Second Row - Betting, Gift Cards, Cable TV */}
           <View style={styles.serviceRow}>
             {renderServiceItem(services[3])}
-            {/* Placeholder for Gift Cards - TEMPORARILY HIDDEN */}
-            <View style={styles.serviceItem} />
-            {/* Placeholder for Betting - TEMPORARILY HIDDEN */}
-            <View style={styles.serviceItem} />
+            {renderServiceItem(services[4])}
+            {renderServiceItem(services[5])}
           </View>
         </View>
       </View>

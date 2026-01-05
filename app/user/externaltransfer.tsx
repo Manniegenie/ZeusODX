@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import TwoFactorAuthModal from '../../components/2FA';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import ExternalWithdrawalConfirm from '../../components/ExternalWithdrawalConfirm';
 import Loading from '../../components/Loading';
 import NetworkSelectionModal from '../../components/NetworkSelectionModal';
 import PinEntryModal from '../../components/PinEntry';
@@ -135,6 +136,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
   // Modal states
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
   const [showTwoFactorModal, setShowTwoFactorModal] = useState<boolean>(false);
+  const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
 
   // Error display state
   const [showErrorDisplay, setShowErrorDisplay] = useState<boolean>(false);
@@ -143,6 +145,9 @@ const ExternalWalletTransferScreen: React.FC = () => {
   // Authentication data
   const [passwordPin, setPasswordPin] = useState<string>('');
   const [twoFactorCode, setTwoFactorCode] = useState<string>('');
+
+  // Idempotency key - generated once per withdrawal attempt
+  const [idempotencyKey, setIdempotencyKey] = useState<string>('');
 
   // Get search params for token selection
   const searchParams = useLocalSearchParams();
@@ -314,7 +319,16 @@ const ExternalWalletTransferScreen: React.FC = () => {
   };
 
   const handleContinue = (): void => {
-    if (validateForm()) setShowPinModal(true);
+    if (validateForm()) {
+      // Generate idempotency key once per withdrawal attempt
+      const newKey = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+      setIdempotencyKey(newKey);
+      setShowConfirmModal(true);
+    }
   };
 
   const handleMaxPress = (): void => {
@@ -335,10 +349,15 @@ const ExternalWalletTransferScreen: React.FC = () => {
     setPasswordPin('');
   };
 
+  const handleConfirmPress = (): void => {
+    setShowConfirmModal(false);
+    setShowPinModal(true);
+  };
+
   const handleTwoFactorSubmit = async (code: string): Promise<void> => {
     setTwoFactorCode(code);
     setShowTwoFactorModal(false);
-    
+
     try {
       if (!selectedNetwork || !selectedToken) throw new Error('Missing data');
 
@@ -349,12 +368,16 @@ const ExternalWalletTransferScreen: React.FC = () => {
         twoFactorCode: code,
         passwordpin: passwordPin,
         memo: '',
-        narration: `External wallet transfer - ${selectedToken.symbol}`
+        narration: `External wallet transfer - ${selectedToken.symbol}`,
+        idempotencyKey // Pass the stored idempotency key
       };
 
       const result = await initiateWithdrawal(withdrawalData);
 
       if (result.success) {
+        // Clear idempotency key on success - new one will be generated for next withdrawal
+        setIdempotencyKey('');
+
         const transactionData: APITransaction = {
           id: result.transactionId || result.id || Date.now().toString(),
           type: 'Withdrawal', status: 'Successful', amount: `-${amount} ${selectedToken.symbol}`,
@@ -377,18 +400,18 @@ const ExternalWalletTransferScreen: React.FC = () => {
           },
         });
       } else {
-          const errorAction = getErrorAction?.(result.requiresAction) as ErrorAction | undefined;
-          showErrorMessage({
-            type: getErrorType(result.error || 'GENERAL_ERROR'),
-            title: errorAction?.title || 'Withdrawal Failed',
-            message: errorAction?.message || (result as any)?.message || 'Something went wrong.',
-            errorAction: errorAction,
-            onActionPress: () => {
-              if (errorAction?.route) router.push(errorAction.route as any);
-              else if (result.requiresAction === 'RETRY_PIN') setShowPinModal(true);
-            },
-            autoHide: false, dismissible: true
-          });
+        const errorAction = getErrorAction?.(result.requiresAction) as ErrorAction | undefined;
+        showErrorMessage({
+          type: getErrorType(result.error || 'GENERAL_ERROR'),
+          title: errorAction?.title || 'Withdrawal Failed',
+          message: errorAction?.message || (result as any)?.message || 'Something went wrong.',
+          errorAction: errorAction,
+          onActionPress: () => {
+            if (errorAction?.route) router.push(errorAction.route as any);
+            else if (result.requiresAction === 'RETRY_PIN') setShowPinModal(true);
+          },
+          autoHide: false, dismissible: true
+        });
       }
     } catch (error) {
       showErrorMessage({ type: 'server', title: 'Unexpected Error', message: 'An unexpected error occurred.', autoHide: true });
@@ -553,6 +576,24 @@ const ExternalWalletTransferScreen: React.FC = () => {
           title="Two-Factor Authentication"
         />
 
+        <ExternalWithdrawalConfirm
+          visible={showConfirmModal}
+          onClose={() => setShowConfirmModal(false)}
+          onConfirm={handleConfirmPress}
+          transactionData={{
+            destination: {
+              address: walletAddress.trim(),
+              network: selectedNetwork?.code || '',
+              memo: ''
+            },
+            amount: parseFloat(amount || '0'),
+            currency: selectedToken?.symbol || '',
+            fee: (feeCalculation as any)?.fee || 0,
+            receiverAmount: (feeCalculation as any)?.receiverAmount,
+            networkName: selectedNetwork?.name
+          }}
+        />
+
         {isInitiating && <Loading />}
       </SafeAreaView>
     </View>
@@ -598,7 +639,7 @@ const styles = StyleSheet.create({
   summaryLabel: { color: Colors.text?.secondary || '#6B7280', fontSize: 11 },
   summaryValue: { color: Colors.text?.primary || '#111827', fontFamily: Typography.medium || 'System', fontSize: 11, fontWeight: '600', flex: 1, textAlign: 'right' },
   buttonSafeArea: { backgroundColor: Colors.background || '#F8F9FA' },
-  buttonContainer: { paddingHorizontal: horizontalPadding, paddingTop: 16, paddingBottom: 16 },
+  buttonContainer: { paddingHorizontal: horizontalPadding, paddingTop: 16, paddingBottom: 50 },
   continueButton: { backgroundColor: Colors.primary || '#35297F', borderRadius: 8, paddingVertical: 16, justifyContent: 'center', alignItems: 'center' },
   continueButtonDisabled: { backgroundColor: '#9CA3AF' },
   continueButtonText: { color: '#FFFFFF', fontFamily: Typography.medium || 'System', fontSize: 16, fontWeight: '600' },
