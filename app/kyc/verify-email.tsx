@@ -5,11 +5,11 @@ import {
   Image,
   Keyboard,
   SafeAreaView,
-  ScrollView, // Added ScrollView
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  // TouchableWithoutFeedback removed
+  TouchableWithoutFeedback,
   View
 } from 'react-native';
 import ErrorDisplay from '../../components/ErrorDisplay';
@@ -138,40 +138,41 @@ export default function VerifyEmailSendScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        
-        {/* Error banners */}
-        {showErrorDisplay && errorDisplayData && (
-          <ErrorDisplay
-            type={errorDisplayData.type}
-            title={errorDisplayData.title}
-            message={errorDisplayData.message}
-            errorAction={errorDisplayData.errorAction}
-            onActionPress={errorDisplayData.onActionPress}
-            autoHide={errorDisplayData.autoHide !== false}
-            duration={errorDisplayData.duration || 4000}
-            dismissible={errorDisplayData.dismissible !== false}
-            onDismiss={hideErrorDisplay}
-          />
-        )}
-        {showInlineError && (
-          <ErrorDisplay
-            type="general"
-            title="Email Verification"
-            message={String(initError)}
-            autoHide
-            duration={4000}
-            dismissible
-            onDismiss={hideErrorDisplay}
-          />
-        )}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={{ flex: 1 }}>
+          {/* Error banners */}
+          {showErrorDisplay && errorDisplayData && (
+            <ErrorDisplay
+              type={errorDisplayData.type}
+              title={errorDisplayData.title}
+              message={errorDisplayData.message}
+              errorAction={errorDisplayData.errorAction}
+              onActionPress={errorDisplayData.onActionPress}
+              autoHide={errorDisplayData.autoHide !== false}
+              duration={errorDisplayData.duration || 4000}
+              dismissible={errorDisplayData.dismissible !== false}
+              onDismiss={hideErrorDisplay}
+            />
+          )}
+          {showInlineError && (
+            <ErrorDisplay
+              type="general"
+              title="Email Verification"
+              message={String(initError)}
+              autoHide
+              duration={4000}
+              dismissible
+              onDismiss={hideErrorDisplay}
+            />
+          )}
 
-        <View style={styles.content}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.content}>
           {/* Header */}
           <View style={styles.headerSection}>
             <View style={styles.headerContainer}>
@@ -218,8 +219,6 @@ export default function VerifyEmailSendScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.spacer} />
-
           {/* Send OTP */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
@@ -238,8 +237,10 @@ export default function VerifyEmailSendScreen() {
               </Text>
             )}
           </View>
+            </View>
+          </ScrollView>
         </View>
-      </ScrollView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }
@@ -306,9 +307,7 @@ const styles = StyleSheet.create({
   linkBtn: { marginTop: Layout.spacing.sm },
   linkBtnText: { color: Colors.primary, fontWeight: '600' },
 
-  spacer: { flex: 1 },
-
-  buttonContainer: { paddingBottom: Layout.spacing.xl, paddingTop: Layout.spacing.lg, alignItems: 'center', width: '100%' },
+  buttonContainer: { paddingBottom: Layout.spacing.xl, paddingTop: Layout.spacing.xl, alignItems: 'center', width: '100%' },
   sendButton: {
     width: '100%',
     backgroundColor: Colors.primary,

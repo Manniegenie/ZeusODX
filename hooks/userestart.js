@@ -10,7 +10,7 @@ export function useSecurityLock(enabled = true, timeoutMs = 120000) {
   const timerRef = useRef(null);
   const appState = useRef(AppState.currentState);
 
-  const isExcluded = pathname === '/' || pathname.includes('login') || pathname.includes('onboarding');
+  const isExcluded = pathname === '/' || pathname.includes('login') || pathname.includes('onboarding') || pathname.includes('signup');
 
   const activateSession = () => {
     if (!isSessionActive) {

@@ -7,6 +7,7 @@ export const signupService = {
     const response = await apiClient.post('/signup/add-user', {
       email: userData.email,
       firstname: userData.firstname,
+      middlename: userData.middlename,
       lastname: userData.lastname,
       phonenumber: userData.phonenumber
     });
@@ -18,6 +19,7 @@ export const signupService = {
         email: userData.email,
         phonenumber: userData.phonenumber,
         firstname: userData.firstname,
+        middlename: userData.middlename,
         lastname: userData.lastname
       }));
     } else {
