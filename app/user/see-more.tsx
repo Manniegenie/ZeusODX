@@ -33,42 +33,42 @@ const UtilitiesScreen: React.FC = () => {
       id: 'airtime',
       title: 'Buy Airtime',
       icon: AirtimeIcon,
-      route: 'Airtime'
+      route: '/user/Airtime'
     },
     {
       id: 'data',
       title: 'Buy Data',
       icon: DataIcon,
-      route: 'Data'
+      route: '/user/Data'
     },
     {
       id: 'electricity',
       title: 'Electricity',
       icon: ElectricityIcon,
-      route: 'Electricity'
+      route: '/user/Electricity'
     },
     {
       id: 'betting',
       title: 'Betting',
       icon: BettingIcon,
-      route: 'Betting'
+      route: '/user/Betting'
     },
     {
       id: 'gift_cards',
       title: 'Gift Cards',
       icon: GiftCardIcon,
-      route: 'Giftcard'
+      route: '/user/Giftcard'
     },
     {
       id: 'cable_tv',
       title: 'Cable TV',
       icon: CableTVIcon,
-      route: 'CableTV'
+      route: '/user/CableTV'
     },
   ];
 
   const handleServicePress = (service: Service): void => {
-    router.push(`/user/${service.route}` as any);
+    router.push(service.route as any);
   };
 
   const renderServiceItem = (service: Service): ReactElement => (

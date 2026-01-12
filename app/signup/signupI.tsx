@@ -12,6 +12,7 @@ export default function SignupScreen() {
   const { isLoading, addUser } = useSignup();
   
   const [firstName, setFirstName] = useState('');
+  const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -50,6 +51,7 @@ export default function SignupScreen() {
     try {
       const result = await addUser({
         firstname: firstName.trim(),
+        middlename: middleName.trim(),
         lastname: lastName.trim(),
         email: email.trim().toLowerCase(),
         phonenumber: fullPhoneNumber
@@ -169,6 +171,20 @@ export default function SignupScreen() {
                   placeholderTextColor={Colors.text.muted}
                   value={firstName}
                   onChangeText={handleInputChange(setFirstName)}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  editable={!isLoading}
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Middle name (Optional)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter Middle name"
+                  placeholderTextColor={Colors.text.muted}
+                  value={middleName}
+                  onChangeText={handleInputChange(setMiddleName)}
                   autoCapitalize="words"
                   autoCorrect={false}
                   editable={!isLoading}

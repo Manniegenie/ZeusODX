@@ -38,7 +38,7 @@ type TokenDetails = {
   fee?: number | string;
   narration?: string;
   createdAt?: string;
-  category?: 'token' | 'withdrawal';
+  category?: 'token' | 'withdrawal' | 'transfer';
   isNGNZWithdrawal?: boolean;
   hasReceiptData?: boolean;
   withdrawalReference?: string;
@@ -55,6 +55,14 @@ type TokenDetails = {
     rate?: string | number;
     exchangeRate?: string | number;
   };
+  // Internal transfer specific fields
+  recipientUsername?: string;
+  recipientFullName?: string;
+  senderUsername?: string;
+  senderFullName?: string;
+  transferReference?: string;
+  reference?: string;
+  memo?: string;
   // Electricity specific fields
   token?: string;
   units?: number | string;
@@ -78,7 +86,7 @@ type UtilityDetails = {
 export type APIDetail =
   | TokenDetails
   | UtilityDetails
-  | (Record<string, any> & { category?: 'token' | 'utility' | 'withdrawal' });
+  | (Record<string, any> & { category?: 'token' | 'utility' | 'withdrawal' | 'transfer' });
 
 export type APITransaction = {
   id: string;
@@ -96,6 +104,14 @@ export type APITransaction = {
   amountSentToBank?: number | string;
   withdrawalFee?: number | string;
   receiptData?: any;
+  // Internal transfer fields
+  recipientUsername?: string;
+  recipientFullName?: string;
+  senderUsername?: string;
+  senderFullName?: string;
+  transferReference?: string;
+  reference?: string;
+  memo?: string;
 };
 
 // ---------- helpers ----------
@@ -275,7 +291,7 @@ const generateTransactionReceiptHTML = (
   transaction: APITransaction,
   merged: TokenDetails & UtilityDetails,
   statusStyle: any,
-  category: 'token' | 'utility' | 'withdrawal',
+  category: 'token' | 'utility' | 'withdrawal' | 'transfer',
   isNGNZWithdrawal: boolean,
   isSwap: boolean,
   swapInfo?: any,
@@ -298,7 +314,32 @@ const generateTransactionReceiptHTML = (
     detailRows.push(`<tr><td>Sent to Bank</td><td>${formatAmtSym(merged.amountSentToBank, 'NGN')}</td></tr>`);
     detailRows.push(`<tr><td>Withdrawal Fee</td><td>${formatAmtSym(merged.withdrawalFee, 'NGN')}</td></tr>`);
     detailRows.push(`<tr><td>Currency</td><td>${asText(merged.currency)}</td></tr>`);
-    
+
+  } else if (category === 'transfer') {
+    // Internal Transfer fields
+    if (merged.transferReference || merged.reference) {
+      detailRows.push(`<tr><td>Transfer Reference</td><td>${asText(merged.transferReference || merged.reference)}</td></tr>`);
+    }
+    if (merged.recipientUsername) {
+      detailRows.push(`<tr><td>Recipient</td><td>@${asText(merged.recipientUsername)}</td></tr>`);
+    }
+    if (merged.recipientFullName) {
+      detailRows.push(`<tr><td>Recipient Name</td><td>${asText(merged.recipientFullName)}</td></tr>`);
+    }
+    if (merged.senderUsername) {
+      detailRows.push(`<tr><td>Sender</td><td>@${asText(merged.senderUsername)}</td></tr>`);
+    }
+    if (merged.senderFullName) {
+      detailRows.push(`<tr><td>Sender Name</td><td>${asText(merged.senderFullName)}</td></tr>`);
+    }
+    detailRows.push(`<tr><td>Currency</td><td>${asText(merged.currency)}</td></tr>`);
+    if (merged.memo) {
+      detailRows.push(`<tr><td>Memo</td><td>${asText(merged.memo)}</td></tr>`);
+    }
+    if (merged.narration) {
+      detailRows.push(`<tr><td>Narration</td><td>${asText(merged.narration)}</td></tr>`);
+    }
+
   } else if (category === 'token') {
     if (isSwap) {
       detailRows.push(`<tr><td>From</td><td>${swapInfo ? formatAmtSym(swapInfo.fromAmount, swapInfo.fromCurrency || merged.currency) : merged.currency || '—'}</td></tr>`);
@@ -557,17 +598,28 @@ export default function TransactionReceiptScreen() {
             transaction?.type?.toLowerCase().includes('withdrawal'));
   }, [transaction]);
 
-  const cat: 'token' | 'utility' | 'withdrawal' = useMemo(() => {
+  const cat: 'token' | 'utility' | 'withdrawal' | 'transfer' = useMemo(() => {
     if (isNGNZWithdrawal) return 'withdrawal';
-    
+
+    // Check if it's an internal transfer
+    const t = (transaction?.type || '').toLowerCase();
+    if (t.includes('internal_transfer') || t.includes('username transfer')) {
+      return 'transfer';
+    }
+
     const c = transaction?.details?.category;
-    if (c === 'token' || c === 'utility' || c === 'withdrawal') return c;
+    if (c === 'token' || c === 'utility' || c === 'withdrawal' || c === 'transfer') return c;
     const d = transaction?.details || {};
+
+    // Check for internal transfer fields
+    if ('recipientUsername' in d || 'senderUsername' in d || 'transferReference' in d) {
+      return 'transfer';
+    }
+
     if ('transactionId' in d || 'currency' in d || 'hash' in d || 'address' in d)
       return 'token';
     if ('orderId' in d || 'productName' in d || 'billType' in d || 'customerInfo' in d)
       return 'utility';
-    const t = (transaction?.type || '').toLowerCase();
     return ['airtime', 'data', 'electricity', 'cable tv', 'internet', 'education', 'other'].includes(t)
       ? 'utility'
       : 'token';
@@ -693,6 +745,44 @@ export default function TransactionReceiptScreen() {
       'charges',
       'transactionFee',
       'receiptData.withdrawalFee'
+    ]),
+
+    // Internal transfer fields
+    recipientUsername: extractField(transaction, d, rawTx, [
+      'recipientUsername',
+      'recipient.username',
+      'to.username',
+      'details.recipientUsername'
+    ]),
+    recipientFullName: extractField(transaction, d, rawTx, [
+      'recipientFullName',
+      'recipient.fullName',
+      'recipient.name',
+      'details.recipientFullName'
+    ]),
+    senderUsername: extractField(transaction, d, rawTx, [
+      'senderUsername',
+      'sender.username',
+      'from.username',
+      'details.senderUsername'
+    ]),
+    senderFullName: extractField(transaction, d, rawTx, [
+      'senderFullName',
+      'sender.fullName',
+      'sender.name',
+      'details.senderFullName'
+    ]),
+    transferReference: extractField(transaction, d, rawTx, [
+      'transferReference',
+      'reference',
+      'ref',
+      'details.transferReference',
+      'details.reference'
+    ]),
+    memo: extractField(transaction, d, rawTx, [
+      'memo',
+      'note',
+      'details.memo'
     ])
   };
 
@@ -877,15 +967,53 @@ export default function TransactionReceiptScreen() {
                 copyableValue={merged.accountNumber as string}
                 onCopy={(v) => handleCopy('Account Number', v)}
               />
-              <Row 
-                label="Sent to Bank" 
-                value={formatAmtSym(merged.amountSentToBank, 'NGN')} 
+              <Row
+                label="Sent to Bank"
+                value={formatAmtSym(merged.amountSentToBank, 'NGN')}
               />
-              <Row 
-                label="Withdrawal Fee" 
-                value={formatAmtSym(merged.withdrawalFee, 'NGN')} 
+              <Row
+                label="Withdrawal Fee"
+                value={formatAmtSym(merged.withdrawalFee, 'NGN')}
               />
               <Row label="Currency" value={asText(merged.currency)} />
+            </>
+          ) : cat === 'transfer' ? (
+            <>
+              <Row
+                label="Transfer Reference"
+                value={asText(merged.transferReference || merged.reference)}
+                copyableValue={(merged.transferReference || merged.reference) as string}
+                onCopy={(v) => handleCopy('Transfer Reference', v)}
+              />
+              {merged.recipientUsername && (
+                <Row
+                  label="Recipient"
+                  value={`@${asText(merged.recipientUsername)}`}
+                />
+              )}
+              {merged.recipientFullName && (
+                <Row
+                  label="Recipient Name"
+                  value={asText(merged.recipientFullName)}
+                />
+              )}
+              {merged.senderUsername && (
+                <Row
+                  label="Sender"
+                  value={`@${asText(merged.senderUsername)}`}
+                />
+              )}
+              {merged.senderFullName && (
+                <Row
+                  label="Sender Name"
+                  value={asText(merged.senderFullName)}
+                />
+              )}
+              <Row label="Currency" value={asText(merged.currency)} />
+              {merged.memo && (
+                <Row label="Memo" value={asText(merged.memo)} />
+              )}
+              {!!merged.narration && <Row label="Narration" value={asText(merged.narration)} />}
             </>
           ) : cat === 'token' ? (
             <>

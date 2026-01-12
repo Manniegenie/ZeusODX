@@ -126,14 +126,12 @@ export default function NGNZWithdrawalReceiptScreen() {
   // ---------- PDF Generation ----------
   const generateWithdrawalReceiptHTML = (withdrawal: WithdrawalDetails) => {
     const currentDate = new Date().toLocaleString();
-    const logoBase64 = '';
-    const statusStyle = statusStyles(withdrawal.status || '');
-    const amount = formatAmtSym(withdrawal.amount, 'NGN');
-    const date = formatDate(withdrawal.createdAt);
-    
+    const logoBase64 = "";
+
+    // Build detail rows
     const detailRows: string[] = [];
     detailRows.push(`<tr><td>Type</td><td>Withdrawal</td></tr>`);
-    detailRows.push(`<tr><td>Date</td><td>${date}</td></tr>`);
+    detailRows.push(`<tr><td>Date</td><td>${formatDate(withdrawal.createdAt)}</td></tr>`);
     detailRows.push(`<tr><td>Reference</td><td>${asText(withdrawal.reference || withdrawal.withdrawalId)}</td></tr>`);
     detailRows.push(`<tr><td>Bank Name</td><td>${asText(withdrawal.bankName)}</td></tr>`);
     detailRows.push(`<tr><td>Account Name</td><td>${asText(withdrawal.accountName)}</td></tr>`);
@@ -142,10 +140,17 @@ export default function NGNZWithdrawalReceiptScreen() {
     detailRows.push(`<tr><td>Currency</td><td>${asText(withdrawal.currency || 'NGN')}</td></tr>`);
     detailRows.push(`<tr><td>Status</td><td>${asText(withdrawal.obiexStatus || withdrawal.status)}</td></tr>`);
 
-    const layoutScale = getPdfLayoutScale(detailRows.length, { extraSections: 5, baseRows: 9 });
+    // Calculate layout scale based on number of rows
+    const layoutScale = getPdfLayoutScale(detailRows.length, { extraSections: 6, baseRows: 10 });
     const fontScale = layoutScale.fontScale.toFixed(3);
     const spacingScale = layoutScale.spacingScale.toFixed(3);
     const contentScale = layoutScale.contentScale.toFixed(3);
+
+    // Format amount
+    const amount = formatAmtSym(withdrawal.amount, 'NGN');
+
+    // Get status styles
+    const statusStyle = statusStyles(withdrawal.status || '');
 
     return `
       <!DOCTYPE html>
@@ -163,7 +168,7 @@ export default function NGNZWithdrawalReceiptScreen() {
               * { margin: 0; padding: 0; box-sizing: border-box; }
               @page { size: A4; margin: 0; }
               html, body { height: 100%; }
-              body { 
+              body {
                   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                   background: #F3F0FF;
                   color: #111827;
@@ -176,23 +181,23 @@ export default function NGNZWithdrawalReceiptScreen() {
                   min-height: 100vh;
                   overflow: hidden;
               }
-              .container { 
-                  width: 100%; 
-                  margin: 0; 
-                  background: #F3F0FF; 
-                  min-height: 100vh; 
+              .container {
+                  width: 100%;
+                  margin: 0;
+                  background: #F3F0FF;
+                  min-height: 100vh;
                   max-height: 100vh;
                   display: flex;
                   flex-direction: column;
                   justify-content: space-between;
                   page-break-inside: avoid;
               }
-              .header { 
-                  background: #F3F0FF; 
-                  padding: calc(24px * var(--spacing-scale)) calc(36px * var(--spacing-scale)); 
-                  display: flex; 
-                  align-items: center; 
-                  justify-content: center; 
+              .header {
+                  background: #F3F0FF;
+                  padding: calc(24px * var(--spacing-scale)) calc(36px * var(--spacing-scale));
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
               }
               .header-logo { width: 150px; height: 66px; object-fit: contain; }
               .scaled-block {
@@ -200,14 +205,17 @@ export default function NGNZWithdrawalReceiptScreen() {
                   transform: scale(var(--content-scale));
                   transform-origin: top center;
               }
-              .content { 
-                  padding: 0 calc(36px * var(--spacing-scale)) calc(48px * var(--spacing-scale)) calc(36px * var(--spacing-scale)); 
+              .content {
+                  padding: 0 calc(36px * var(--spacing-scale)) calc(48px * var(--spacing-scale)) calc(36px * var(--spacing-scale));
                   display: flex;
                   flex-direction: column;
                   gap: calc(18px * var(--spacing-scale));
+                  max-width: 720px;
+                  margin-left: auto;
+                  margin-right: auto;
               }
               .amount-section { text-align: center; margin: calc(30px * var(--spacing-scale)) 0 calc(9px * var(--spacing-scale)) 0; }
-              .amount-text { font-size: calc(42px * var(--font-scale)); font-weight: bold; color: #111827; }
+              .amount-text { font-size: calc(48px * var(--font-scale)); font-weight: bold; color: #111827; }
               .status-container { text-align: center; margin-bottom: calc(24px * var(--spacing-scale)); }
               .status-pill {
                   display: inline-block;
@@ -216,45 +224,48 @@ export default function NGNZWithdrawalReceiptScreen() {
                   border: 1px solid ${statusStyle.border};
                   background-color: ${statusStyle.bg};
                   color: ${statusStyle.text};
-                  font-size: calc(18px * var(--font-scale));
+                  font-size: calc(20px * var(--font-scale));
                   font-weight: 600;
               }
               .details-card {
                   width: 100%;
                   background: #F8F9FA;
                   border-radius: 12px;
-                  padding: calc(30px * var(--spacing-scale)) calc(24px * var(--spacing-scale));
+                  padding: 20px 16px;
                   border: 1px solid #E5E7EB;
                   margin-bottom: calc(30px * var(--spacing-scale));
                   page-break-inside: avoid;
               }
               .details-table { width: 100%; border-collapse: collapse; }
-              .details-table tr { border-bottom: none; }
-              .details-table td { padding: calc(18px * var(--spacing-scale)) 0; vertical-align: middle; border-bottom: none; }
+              .details-table tr { border-bottom: 1px solid #E5E7EB; }
+              .details-table td { padding: 12px 0; vertical-align: middle; }
               .details-table td:first-child {
-                  width: 195px;
+                  width: 130px;
                   flex-shrink: 0;
                   color: #6B7280;
-                  font-size: calc(21px * var(--font-scale));
-                  font-weight: normal;
+                  font-size: 16px;
+                  font-weight: 400;
               }
               .details-table td:last-child {
                   color: #111827;
-                  font-size: calc(21px * var(--font-scale));
+                  font-size: 16px;
                   font-weight: 500;
                   text-align: right;
                   word-break: break-word;
               }
-              .footer-message { 
-                  margin-bottom: calc(30px * var(--spacing-scale)); 
-                  padding: 0 calc(36px * var(--spacing-scale)); 
+              .footer-message {
+                  margin-bottom: calc(30px * var(--spacing-scale));
+                  padding: 0 calc(36px * var(--spacing-scale));
+                  max-width: 720px;
+                  margin-left: auto;
+                  margin-right: auto;
               }
-              .footer-text { 
-                  font-size: calc(19px * var(--font-scale)); 
-                  color: #6B7280; 
-                  line-height: calc(1.4 * var(--font-scale)); 
-                  margin: 0; 
-                  text-align: left; 
+              .footer-text {
+                  font-size: calc(19px * var(--font-scale));
+                  color: #6B7280;
+                  line-height: calc(1.4 * var(--font-scale));
+                  margin: 0;
+                  text-align: left;
               }
               .generation-footer {
                   text-align: center;
@@ -263,10 +274,7 @@ export default function NGNZWithdrawalReceiptScreen() {
                   font-size: calc(18px * var(--font-scale));
                   border-top: 1px solid #E5E7EB;
                   margin-top: calc(30px * var(--spacing-scale));
-              }
-              .footer-message,
-              .generation-footer,
-              .content {
+                  max-width: 720px;
                   margin-left: auto;
                   margin-right: auto;
               }
@@ -282,7 +290,7 @@ export default function NGNZWithdrawalReceiptScreen() {
               <div class="header">
                   <img src="${logoBase64}" alt="Logo" class="header-logo">
               </div>
-          <div class="content scaled-block">
+              <div class="content scaled-block">
                   <div class="amount-section">
                       <div class="amount-text">${amount}</div>
                   </div>
@@ -295,10 +303,10 @@ export default function NGNZWithdrawalReceiptScreen() {
                       </table>
                   </div>
               </div>
-          <div class="footer-message scaled-block">
+              <div class="footer-message scaled-block">
                   <p class="footer-text">Thank you for choosing ZeusODX.</p>
               </div>
-          <div class="generation-footer scaled-block">
+              <div class="generation-footer scaled-block">
                   Generated on: ${currentDate}
               </div>
           </div>
