@@ -140,6 +140,14 @@ export default function VerifyEmailOtpScreen() {
     }
   };
 
+  // Auto-verify when all digits are entered
+  useEffect(() => {
+    const code = otp.join('');
+    if (code.length === OTP_LENGTH && !verifying) {
+      handleVerify();
+    }
+  }, [otp]);
+
   const handleKeyPress = (index: number, key: string) => {
     if (key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();

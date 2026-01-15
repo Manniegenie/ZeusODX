@@ -126,6 +126,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 export default function DriversLicenseVerify() {
   const router = useRouter();
   const [licenseNumber, setLicenseNumber] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [step, setStep] = useState<Step>('input');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(3);
@@ -138,7 +140,8 @@ export default function DriversLicenseVerify() {
     isVerifying,
     isValidating,
     submitBiometricVerification,
-    validateBiometricData
+    validateDriversLicense,
+    formatIdNumber
   } = useBiometricVerification();
 
   const [showError, setShowError] = useState(false);
@@ -151,21 +154,11 @@ export default function DriversLicenseVerify() {
   }, []);
 
   const closeError = useCallback(() => setShowError(false), []);
-  const handleLicenseChange = (value: string) => {
-    const formatted = value.toUpperCase().replace(/\s/g, '');
-    setLicenseNumber(formatted);
-  };
-
-  const validation = useMemo(() => {
-    if (licenseNumber.length === 0) return { valid: false, message: '' };
-    if (licenseNumber.length < 8) return { valid: false, message: 'License number must be at least 8 characters' };
-    if (licenseNumber.length > 20) return { valid: false, message: 'License number cannot exceed 20 characters' };
-    const alphanumericRegex = /^[A-Z0-9]+$/;
-    if (!alphanumericRegex.test(licenseNumber)) return { valid: false, message: 'License number can only contain letters and numbers' };
-    return { valid: true, message: 'Valid license format' };
-  }, [licenseNumber]);
+  const handleLicenseChange = (value: string) => setLicenseNumber(formatIdNumber('drivers_license', value));
+  const validation = useMemo(() => (!licenseNumber ? { valid: false, message: '' } : validateDriversLicense(licenseNumber)), [licenseNumber]);
 
   const isValidFormat = validation?.valid === true;
+  const isFormComplete = isValidFormat && firstName.trim().length > 0 && lastName.trim().length > 0;
 
   useEffect(() => {
     if (isCountingDown && countdown > 0) {
@@ -189,7 +182,7 @@ export default function DriversLicenseVerify() {
   const handleBiometricSubmit = async () => {
     setStep('processing');
     try {
-      const res = await submitBiometricVerification({ idType: 'drivers_license', idNumber: licenseNumber, selfieImage: capturedImage! });
+      const res = await submitBiometricVerification({ idType: 'drivers_license', idNumber: licenseNumber, selfieImage: capturedImage!, firstName: firstName.trim(), lastName: lastName.trim() });
       if (res?.success) setShowSuccess(true);
       else { openError(res?.message || 'Verification failed'); setStep('preview'); }
     } catch (e) { setStep('input'); openError('Verification failed'); }
@@ -209,7 +202,36 @@ export default function DriversLicenseVerify() {
 
       <View style={styles.section}>
         <Text style={styles.sub}>Enter your Nigerian drivers license number for identity verification.</Text>
-        
+
+        <View style={styles.nameNoticeContainer}>
+          <Text style={styles.nameNoticeText}>
+            {`Please enter your name exactly as it appears on your driver's license.`}
+          </Text>
+        </View>
+
+        <View style={styles.nameFieldsContainer}>
+          <View style={styles.nameFieldWrapper}>
+            <Text style={styles.inputLabel}>First Name</Text>
+            <TextInput
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Enter first name"
+              style={styles.input}
+              autoCapitalize="words"
+            />
+          </View>
+          <View style={styles.nameFieldWrapper}>
+            <Text style={styles.inputLabel}>Last Name</Text>
+            <TextInput
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Enter last name"
+              style={styles.input}
+              autoCapitalize="words"
+            />
+          </View>
+        </View>
+
         <View style={styles.noticeContainer}>
           <Text style={styles.noticeText}>
             {`💡 Note: Driver's license verification may use additional identity checks for enhanced security.`}
@@ -217,6 +239,7 @@ export default function DriversLicenseVerify() {
         </View>
 
         <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>License Number</Text>
           <TextInput
             value={licenseNumber}
             onChangeText={handleLicenseChange}
@@ -235,9 +258,9 @@ export default function DriversLicenseVerify() {
           <Text style={styles.infoText}>• Remove glasses if possible</Text>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.cta, { opacity: isValidFormat && !isValidating ? 1 : 0.5 }]} 
-          disabled={!isValidFormat || isValidating} 
+        <TouchableOpacity
+          style={[styles.cta, { opacity: isFormComplete && !isValidating ? 1 : 0.5 }]}
+          disabled={!isFormComplete || isValidating}
           onPress={() => setStep('camera')}
         >
           {isValidating ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.ctaText}>Continue to Face Verification</Text>}
@@ -324,6 +347,11 @@ const styles = StyleSheet.create({
   headerSpacer: { width: 40 },
   section: { paddingHorizontal: 16, marginBottom: 24 },
   sub: { color: '#6B7280', fontSize: 14, marginBottom: 16, lineHeight: 20 },
+  nameNoticeContainer: { backgroundColor: '#FFF7ED', borderLeftWidth: 4, borderLeftColor: '#F59E0B', padding: 12, marginBottom: 16, borderRadius: 8 },
+  nameNoticeText: { fontSize: 13, color: '#B45309', lineHeight: 18, fontWeight: '500' },
+  nameFieldsContainer: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  nameFieldWrapper: { flex: 1 },
+  inputLabel: { fontSize: 14, fontWeight: '500', color: '#374151', marginBottom: 6 },
   noticeContainer: { backgroundColor: '#F3F4F6', borderLeftWidth: 4, borderLeftColor: '#35297F', padding: 12, marginBottom: 16, borderRadius: 8 },
   noticeText: { fontSize: 13, color: '#4B5563', lineHeight: 18 },
   inputContainer: { marginBottom: 16 },

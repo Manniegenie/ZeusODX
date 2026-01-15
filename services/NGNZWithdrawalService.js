@@ -12,8 +12,13 @@ const paths = {
   status: (withdrawalId) => `${BASE_PATH}/status/${encodeURIComponent(withdrawalId)}`
 };
 
-function genIdempotencyKey(prefix = 'ngnz-wd') {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+function genIdempotencyKey() {
+  // Generate UUID v4 to match backend validation requirements
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
 
 function normalizeWithdrawal(data = {}) {
@@ -118,7 +123,7 @@ export const ngnzWithdrawalService = {
       dbg('→ POST', path, { payload: safePreview, idempotencyKey });
 
       const res = await apiClient.post(path, payload, {
-        headers: { 'Idempotency-Key': idempotencyKey }
+        headers: { 'X-Idempotency-Key': idempotencyKey }
       });
 
       const data = res?.data || {};

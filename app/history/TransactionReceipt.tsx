@@ -320,18 +320,23 @@ const generateTransactionReceiptHTML = (
     if (merged.transferReference || merged.reference) {
       detailRows.push(`<tr><td>Transfer Reference</td><td>${asText(merged.transferReference || merged.reference)}</td></tr>`);
     }
+
+    // Show recipient if we have recipient info
     if (merged.recipientUsername) {
       detailRows.push(`<tr><td>Recipient</td><td>@${asText(merged.recipientUsername)}</td></tr>`);
+      if (merged.recipientFullName) {
+        detailRows.push(`<tr><td>Recipient Name</td><td>${asText(merged.recipientFullName)}</td></tr>`);
+      }
     }
-    if (merged.recipientFullName) {
-      detailRows.push(`<tr><td>Recipient Name</td><td>${asText(merged.recipientFullName)}</td></tr>`);
+
+    // Show sender if we have sender info (and no recipient info to avoid showing both)
+    if (merged.senderUsername && !merged.recipientUsername) {
+      detailRows.push(`<tr><td>From</td><td>@${asText(merged.senderUsername)}</td></tr>`);
+      if (merged.senderFullName) {
+        detailRows.push(`<tr><td>Sender Name</td><td>${asText(merged.senderFullName)}</td></tr>`);
+      }
     }
-    if (merged.senderUsername) {
-      detailRows.push(`<tr><td>Sender</td><td>@${asText(merged.senderUsername)}</td></tr>`);
-    }
-    if (merged.senderFullName) {
-      detailRows.push(`<tr><td>Sender Name</td><td>${asText(merged.senderFullName)}</td></tr>`);
-    }
+
     detailRows.push(`<tr><td>Currency</td><td>${asText(merged.currency)}</td></tr>`);
     if (merged.memo) {
       detailRows.push(`<tr><td>Memo</td><td>${asText(merged.memo)}</td></tr>`);
@@ -985,29 +990,34 @@ export default function TransactionReceiptScreen() {
                 copyableValue={(merged.transferReference || merged.reference) as string}
                 onCopy={(v) => handleCopy('Transfer Reference', v)}
               />
+              {/* Determine transfer direction: show recipient if we have recipient info, sender if we have sender info */}
               {merged.recipientUsername && (
-                <Row
-                  label="Recipient"
-                  value={`@${asText(merged.recipientUsername)}`}
-                />
+                <>
+                  <Row
+                    label="Recipient"
+                    value={`@${asText(merged.recipientUsername)}`}
+                  />
+                  {merged.recipientFullName && (
+                    <Row
+                      label="Recipient Name"
+                      value={asText(merged.recipientFullName)}
+                    />
+                  )}
+                </>
               )}
-              {merged.recipientFullName && (
-                <Row
-                  label="Recipient Name"
-                  value={asText(merged.recipientFullName)}
-                />
-              )}
-              {merged.senderUsername && (
-                <Row
-                  label="Sender"
-                  value={`@${asText(merged.senderUsername)}`}
-                />
-              )}
-              {merged.senderFullName && (
-                <Row
-                  label="Sender Name"
-                  value={asText(merged.senderFullName)}
-                />
+              {merged.senderUsername && !merged.recipientUsername && (
+                <>
+                  <Row
+                    label="From"
+                    value={`@${asText(merged.senderUsername)}`}
+                  />
+                  {merged.senderFullName && (
+                    <Row
+                      label="Sender Name"
+                      value={asText(merged.senderFullName)}
+                    />
+                  )}
+                </>
               )}
               <Row label="Currency" value={asText(merged.currency)} />
               {merged.memo && (

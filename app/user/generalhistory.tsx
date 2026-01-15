@@ -478,15 +478,57 @@ const TransactionHistoryScreen = () => {
               style={styles.transactionItem}
               activeOpacity={0.85}
               onPress={() => {
-                // Route exactly like before
-                const apiTx = toAPITransaction(tx);
-                router.push({
-                  pathname: '/history/TransactionReceipt',
-                  params: {
-                    tx: encodeURIComponent(JSON.stringify(apiTx)),
-                    raw: encodeURIComponent(JSON.stringify(tx)),
-                  },
-                });
+                // Detect internal transfers and route to dedicated receipt
+                const isInternalTransfer =
+                  tx.type === 'INTERNAL_TRANSFER_SENT' ||
+                  tx.type === 'INTERNAL_TRANSFER_RECEIVED' ||
+                  tx.details?.rawType === 'INTERNAL_TRANSFER_SENT' ||
+                  tx.details?.rawType === 'INTERNAL_TRANSFER_RECEIVED' ||
+                  tx.recipientUsername ||
+                  tx.senderUsername ||
+                  tx.details?.recipientUsername ||
+                  tx.details?.senderUsername ||
+                  tx.details?.category === 'transfer';
+
+                if (isInternalTransfer) {
+                  // Extract transfer data from top level or details object
+                  const transferData = {
+                    transactionId: tx.id || tx._id || tx.details?.transactionId,
+                    reference: tx.reference || tx.transferReference || tx.details?.transferReference || tx.details?.reference,
+                    transferReference: tx.transferReference || tx.reference || tx.details?.transferReference,
+                    amount: String(tx.amount || tx.details?.amount || 0),
+                    currency: tx.currency || tx.details?.currency || 'NGNZ',
+                    recipientUsername: tx.recipientUsername || tx.details?.recipientUsername,
+                    recipientFullName: tx.recipientFullName || tx.details?.recipientFullName,
+                    senderUsername: tx.senderUsername || tx.details?.senderUsername,
+                    senderFullName: tx.senderFullName || tx.details?.senderFullName,
+                    memo: tx.memo || tx.details?.memo,
+                    narration: tx.narration || tx.details?.narration,
+                    status: tx.status,
+                    createdAt: tx.createdAt || tx.details?.createdAt,
+                    fee: tx.fee || tx.details?.fee,
+                  };
+
+                  // Route to dedicated internal transfer receipt
+                  router.push({
+                    pathname: '/receipt/internal-transfer',
+                    params: {
+                      ...transferData,
+                      amount: String(transferData.amount),
+                      fee: transferData.fee ? String(transferData.fee) : undefined,
+                    },
+                  });
+                } else {
+                  // Route to generic transaction receipt
+                  const apiTx = toAPITransaction(tx);
+                  router.push({
+                    pathname: '/history/TransactionReceipt',
+                    params: {
+                      tx: encodeURIComponent(JSON.stringify(apiTx)),
+                      raw: encodeURIComponent(JSON.stringify(tx)),
+                    },
+                  });
+                }
               }}
             >
               <View style={styles.transactionLeft}>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, Vibration } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, Vibration, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
 import { Colors } from '../../constants/Colors';
@@ -49,11 +49,23 @@ export default function VerifyOtpScreen() {
     next[index] = clean;
     setOtp(next);
     if (clean && index < OTP_LENGTH - 1) inputRefs.current[index + 1]?.focus();
+    // Dismiss keyboard when last digit is filled
+    if (clean && index === OTP_LENGTH - 1) {
+      Keyboard.dismiss();
+    }
   };
 
   const handleKeyPress = (index: number, key: string) => {
     if (key === 'Backspace' && !otp[index] && index > 0) inputRefs.current[index - 1]?.focus();
   };
+
+  // Auto-verify when all digits are entered
+  useEffect(() => {
+    const code = otp.join('');
+    if (code.length === OTP_LENGTH && !verifying) {
+      handleVerify();
+    }
+  }, [otp]);
 
   const handleVerify = async () => {
     const code = otp.join('');

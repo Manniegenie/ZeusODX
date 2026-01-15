@@ -126,6 +126,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 export default function NINVerify() {
   const router = useRouter();
   const [nin, setNin] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [step, setStep] = useState<Step>('input');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(3);
@@ -149,6 +151,7 @@ export default function NINVerify() {
   const handleNinChange = (value: string) => setNin(formatIdNumber('national_id', value));
   const validation = useMemo(() => (!nin ? { valid: false, message: '' } : validateNIN(nin)), [nin]);
   const isValidFormat = validation?.valid === true;
+  const isFormComplete = isValidFormat && firstName.trim().length > 0 && lastName.trim().length > 0;
 
   useEffect(() => { if (isCountingDown && countdown > 0) {
       const timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
@@ -171,7 +174,7 @@ export default function NINVerify() {
   const handleBiometricSubmit = async () => {
     setStep('processing');
     try {
-      const res = await submitBiometricVerification({ idType: 'national_id', idNumber: nin, selfieImage: capturedImage! });
+      const res = await submitBiometricVerification({ idType: 'national_id', idNumber: nin, selfieImage: capturedImage!, firstName: firstName.trim(), lastName: lastName.trim() });
       if (res?.success) setShowSuccess(true);
       else { openError(res?.message || 'Verification failed'); setStep('preview'); }
     } catch (e) { setStep('input'); openError('Verification failed'); }
@@ -191,7 +194,38 @@ export default function NINVerify() {
 
       <View style={styles.section}>
         <Text style={styles.sub}>Enter your 11-digit National Identification Number (NIN) for identity verification.</Text>
+
+        <View style={styles.nameNoticeContainer}>
+          <Text style={styles.nameNoticeText}>
+            Please enter your name exactly as it appears on your NIN slip/card.
+          </Text>
+        </View>
+
+        <View style={styles.nameFieldsContainer}>
+          <View style={styles.nameFieldWrapper}>
+            <Text style={styles.inputLabel}>First Name</Text>
+            <TextInput
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Enter first name"
+              style={styles.input}
+              autoCapitalize="words"
+            />
+          </View>
+          <View style={styles.nameFieldWrapper}>
+            <Text style={styles.inputLabel}>Last Name</Text>
+            <TextInput
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Enter last name"
+              style={styles.input}
+              autoCapitalize="words"
+            />
+          </View>
+        </View>
+
         <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>NIN Number</Text>
           <TextInput
             value={nin}
             onChangeText={handleNinChange}
@@ -212,9 +246,9 @@ export default function NINVerify() {
           <Text style={styles.infoText}>• Remove glasses if possible</Text>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.cta, { opacity: isValidFormat && !isValidating ? 1 : 0.5 }]} 
-          disabled={!isValidFormat || isValidating} 
+        <TouchableOpacity
+          style={[styles.cta, { opacity: isFormComplete && !isValidating ? 1 : 0.5 }]}
+          disabled={!isFormComplete || isValidating}
           onPress={() => setStep('camera')}
         >
           {isValidating ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.ctaText}>Continue to Face Verification</Text>}
@@ -301,6 +335,11 @@ const styles = StyleSheet.create({
   headerSpacer: { width: 40 },
   section: { paddingHorizontal: 16, marginBottom: 24 },
   sub: { color: '#6B7280', fontSize: 14, marginBottom: 16, lineHeight: 20 },
+  nameNoticeContainer: { backgroundColor: '#FFF7ED', borderLeftWidth: 4, borderLeftColor: '#F59E0B', padding: 12, marginBottom: 16, borderRadius: 8 },
+  nameNoticeText: { fontSize: 13, color: '#B45309', lineHeight: 18, fontWeight: '500' },
+  nameFieldsContainer: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  nameFieldWrapper: { flex: 1 },
+  inputLabel: { fontSize: 14, fontWeight: '500', color: '#374151', marginBottom: 6 },
   inputContainer: { marginBottom: 16 },
   input: { backgroundColor: '#fff', borderColor: '#E5E7EB', borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: '#111827' },
   inputError: { borderColor: '#EF4444' },

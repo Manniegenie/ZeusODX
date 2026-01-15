@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
     Alert,
     Image,
+    Keyboard,
     StyleSheet,
     Text,
     TextInput,
@@ -50,7 +51,18 @@ const TwoFactorAuthModal: React.FC<TwoFactorAuthModalProps> = ({
     const numericValue = value.replace(/[^0-9]/g, '').slice(0, 6);
     setCode(numericValue);
     setError('');
+    // Dismiss keyboard when 6 digits are entered
+    if (numericValue.length === 6) {
+      Keyboard.dismiss();
+    }
   };
+
+  // Auto-submit when all 6 digits are entered
+  useEffect(() => {
+    if (code.length === 6 && !loading) {
+      handleSubmit();
+    }
+  }, [code]);
 
   const handlePasteFromClipboard = async () => {
     try {
