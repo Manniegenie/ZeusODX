@@ -26,8 +26,24 @@ export const useNotifications = () => {
     setIsLoading(true);
     try {
       const result = await NotificationService.requestPermission();
-      // Re-check status after requesting permission to ensure sync
+
       if (result.success) {
+        // Permission granted, register token with backend (like dashboard does)
+        console.log('✅ [PROFILE] Notification permission granted, registering token...');
+
+        try {
+          const registerResult = await NotificationService.initializePushNotifications();
+
+          if (registerResult.success) {
+            console.log('✅ [PROFILE] Notification token registered with backend');
+          } else {
+            console.warn('⚠️ [PROFILE] Token registration failed:', registerResult.error);
+          }
+        } catch (tokenError) {
+          console.error('❌ [PROFILE] Token registration error:', tokenError.message);
+        }
+
+        // Re-check status after registering
         const enabled = await NotificationService.isEnabled();
         setIsEnabled(enabled);
       } else {

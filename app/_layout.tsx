@@ -1,16 +1,16 @@
 // app/_layout.tsx
 
-import 'react-native-gesture-handler';
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
 import { Stack, usePathname } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, Platform, TextInput } from 'react-native';
+import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 // Fonts & Styles
-import { useFonts, BricolageGrotesque_200ExtraLight, BricolageGrotesque_300Light, BricolageGrotesque_400Regular, BricolageGrotesque_500Medium, BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold } from '@expo-google-fonts/bricolage-grotesque';
+import { BricolageGrotesque_200ExtraLight, BricolageGrotesque_300Light, BricolageGrotesque_400Regular, BricolageGrotesque_500Medium, BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold, useFonts } from '@expo-google-fonts/bricolage-grotesque';
 import { Colors } from '../constants/Colors';
 import { disableFontScaling } from '../constants/Typography';
 

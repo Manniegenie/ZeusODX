@@ -1,6 +1,6 @@
 // hooks/useBiometricVerification.js
 import { useState } from 'react';
-import { kycService } from '../services/kycverificationService';
+import { kycService } from'../services/kycverificationService';
 
 export const useBiometricVerification = () => {
   const [isVerifying, setIsVerifying] = useState(false);
@@ -324,6 +324,7 @@ export const useBiometricVerification = () => {
 
       switch (idType) {
         case 'national_id':
+        case 'nin':
         case 'nin_slip':
         case 'bvn':
           return idNumber.replace(/\D/g, '');

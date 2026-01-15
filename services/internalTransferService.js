@@ -1,60 +1,6 @@
 // services/usernameTransferService.js
 import { apiClient } from './apiClient';
 
-function pick(obj, path, fallback = undefined) {
-  return path.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : undefined), obj) ?? fallback;
-}
-
-function normalizeResponse(raw) {
-  // Support both axios responses and pre-unwrapped client responses
-  const root = raw?.data ?? raw;
-
-  // Some backends nest the payload inside data.data
-  const payload = root?.data ?? root;
-
-  const amount = pick(payload, 'amount', 0);
-  const currency = pick(payload, 'currency', '');
-  const recipient = pick(payload, 'recipient', null);
-  const recipientUsername =
-    recipient?.username ??
-    pick(payload, 'recipientUsername', '') ??
-    '';
-
-  const normalized = {
-    transactionId: pick(payload, 'transactionId') ?? pick(payload, '_id') ?? null,
-    reference:
-      pick(payload, 'transferReference') ??
-      pick(payload, 'reference') ??
-      pick(payload, 'transferRef') ??
-      null,
-    transferReference:
-      pick(payload, 'transferReference') ??
-      pick(payload, 'reference') ??
-      null,
-    recipient: recipient
-      ? { username: recipient.username ?? '', fullName: recipient.fullName ?? '' }
-      : { username: recipientUsername, fullName: pick(payload, 'recipient.fullName') ?? pick(payload, 'recipientFullName') ?? '' },
-    amount,
-    currency,
-    status: pick(payload, 'status', null),
-    memo: pick(payload, 'memo', null),
-    completedAt: pick(payload, 'completedAt') ?? pick(payload, 'date') ?? null,
-    securityInfo:
-      pick(payload, 'security_info') ??
-      pick(payload, 'securityInfo') ??
-      null,
-    message: pick(root, 'message') ?? 'Transfer completed successfully',
-  };
-
-  return normalized;
-}
-
-function isSuccess(raw) {
-  const root = raw?.data ?? raw;
-  // Accept truthy success OR presence of typical success fields
-  return Boolean(root?.success ?? pick(root, 'data.status') ?? pick(root, 'status')) || false;
-}
-
 export const usernameTransferService = {
   /**
    * Transfer funds to another user by username
@@ -77,42 +23,51 @@ export const usernameTransferService = {
         memo: transferData.memo?.trim() || null,
       };
 
-      const res = await apiClient.post('/username-withdraw/internal', body);
+      const response = await apiClient.post('/username-withdraw/internal', body);
 
-      if (isSuccess(res)) {
-        const normalized = normalizeResponse(res);
-
-        // Guard to avoid UI crash
-        if (!normalized.recipient?.username) {
-          console.warn('⚠️ Missing recipient.username in backend response. Sample:', res?.data ?? res);
-        }
+      // Handle success response (matching airtime/swap service pattern)
+      if (response.success && response.data) {
+        const data = response.data;
 
         console.log('✅ Username transfer successful:', {
-          transactionId: normalized.transactionId,
-          reference: normalized.reference,
-          recipient: normalized.recipient.username,
-          amount: normalized.amount,
-          currency: normalized.currency,
-          status: normalized.status,
+          transactionId: data.transactionId || data._id,
+          reference: data.transferReference || data.reference,
+          recipient: data.recipient?.username || data.recipientUsername,
+          amount: data.amount,
+          currency: data.currency,
+          status: data.status,
         });
 
         return {
           success: true,
-          data: normalized,
+          data: {
+            transactionId: data.transactionId || data._id || null,
+            reference: data.transferReference || data.reference || data.transferRef || null,
+            transferReference: data.transferReference || data.reference || null,
+            recipient: data.recipient || {
+              username: data.recipientUsername || '',
+              fullName: data.recipientFullName || ''
+            },
+            amount: data.amount || 0,
+            currency: data.currency || '',
+            status: data.status || null,
+            memo: data.memo || null,
+            completedAt: data.completedAt || data.date || null,
+            securityInfo: data.security_info || data.securityInfo || null,
+            message: response.data.message || 'Transfer completed successfully',
+          },
         };
       }
 
-      // Standardize error from backend (non-2xx or success=false)
-      const root = res?.data ?? res ?? {};
-      const backendMessage = root.error || root.message || 'Transfer failed';
-      const statusCode = root.status || root.statusCode || 400;
-      const errorCode = this.generateErrorCode(backendMessage, root.error);
+      // Handle error response - apiClient puts backend message in response.error
+      const backendMessage = response.error || 'Transfer failed';
+      const statusCode = response.status || 400;
+      const errorCode = this.generateErrorCode(backendMessage, response.data?.error);
       const requiresAction = this.getRequiredAction(errorCode, backendMessage);
 
       console.log('❌ Username transfer failed:', {
         backend_message: backendMessage,
         error_code: errorCode,
-        backend_error: root.error,
         requires_action: requiresAction,
         status: statusCode,
       });
@@ -123,35 +78,10 @@ export const usernameTransferService = {
         message: this.getUserFriendlyMessage(errorCode, backendMessage),
         status: statusCode,
         requiresAction,
-        details: root.details || root.kycDetails || null,
+        details: response.data?.details || response.data?.kycDetails || null,
       };
     } catch (error) {
-      // Axios style errors
-      const hasResponse = !!error?.response;
-      if (hasResponse) {
-        const root = error.response?.data ?? {};
-        const backendMessage = root.error || root.message || error.message || 'Transfer failed';
-        const statusCode = error.response?.status || root.status || 400;
-        const errorCode = this.generateErrorCode(backendMessage, root.error);
-        const requiresAction = this.getRequiredAction(errorCode, backendMessage);
-
-        console.error('❌ Username transfer HTTP error:', {
-          status: statusCode,
-          backend_message: backendMessage,
-          error_code: errorCode,
-        });
-
-        return {
-          success: false,
-          error: errorCode,
-          message: this.getUserFriendlyMessage(errorCode, backendMessage),
-          status: statusCode,
-          requiresAction,
-          details: root.details || null,
-        };
-      }
-
-      console.error('❌ Username transfer service network/error:', {
+      console.error('❌ Username transfer service network error:', {
         error: error?.message || String(error),
         type: 'NETWORK_ERROR',
       });

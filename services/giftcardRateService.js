@@ -236,10 +236,9 @@ export function validateRateInput(body) {
   if (!Number.isFinite(amt)) {
     errors.push('Amount is required and must be a number');
   } else if (amt <= 0) {
-    errors.push('Amount must be a positive number');
-  } else if (amt < 5 || amt > 2000) {
-    errors.push('Amount must be between $5 and $2000');
+    errors.push('Amount must be greater than zero');
   }
+  // Backend enforces $25-$1000 range, no need to show frontend validation
 
   // Normalize giftcard with synonym handling
   const normalized = normalizeGiftcard(giftcard);

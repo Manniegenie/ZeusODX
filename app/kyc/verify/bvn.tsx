@@ -126,6 +126,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 export default function BVNVerify() {
   const router = useRouter();
   const [bvn, setBvn] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [step, setStep] = useState<Step>('input');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(3);
@@ -149,6 +151,7 @@ export default function BVNVerify() {
   const handleBvnChange = (value: string) => setBvn(formatIdNumber('bvn', value));
   const validation = useMemo(() => (!bvn ? { valid: false, message: '' } : validateBVN(bvn)), [bvn, validateBVN]);
   const isValidFormat = validation?.valid === true;
+  const isFormComplete = isValidFormat && firstName.trim().length > 0 && lastName.trim().length > 0;
 
   useEffect(() => { if (isCountingDown && countdown > 0) {
       const timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
@@ -171,7 +174,7 @@ export default function BVNVerify() {
   const handleBiometricSubmit = async () => {
     setStep('processing');
     try {
-      const res = await submitBiometricVerification({ idType: 'bvn', idNumber: bvn, selfieImage: capturedImage! });
+      const res = await submitBiometricVerification({ idType: 'bvn', idNumber: bvn, selfieImage: capturedImage!, firstName: firstName.trim(), lastName: lastName.trim() });
       if (res?.success) setShowSuccess(true);
       else { openError(res?.message || 'Verification failed'); setStep('preview'); }
     } catch (e) { setStep('input'); openError('Verification failed'); }
@@ -191,7 +194,36 @@ export default function BVNVerify() {
 
       <View style={styles.section}>
         <Text style={styles.sub}>Enter your 11-digit Bank Verification Number (BVN) for identity verification.</Text>
-        
+
+        <View style={styles.nameNoticeContainer}>
+          <Text style={styles.nameNoticeText}>
+            Please enter your name exactly as it appears on your BVN registration.
+          </Text>
+        </View>
+
+        <View style={styles.nameFieldsContainer}>
+          <View style={styles.nameFieldWrapper}>
+            <Text style={styles.inputLabel}>First Name</Text>
+            <TextInput
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Enter first name"
+              style={styles.input}
+              autoCapitalize="words"
+            />
+          </View>
+          <View style={styles.nameFieldWrapper}>
+            <Text style={styles.inputLabel}>Last Name</Text>
+            <TextInput
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Enter last name"
+              style={styles.input}
+              autoCapitalize="words"
+            />
+          </View>
+        </View>
+
         <View style={styles.noticeContainer}>
           <Text style={styles.noticeText}>
             🏦 Your BVN is used to verify your identity across Nigerian banks. This verification is secure and your banking information remains private.
@@ -199,6 +231,7 @@ export default function BVNVerify() {
         </View>
 
         <View style={styles.inputContainer}>
+          <Text style={styles.inputLabel}>BVN Number</Text>
           <TextInput
             value={bvn}
             onChangeText={handleBvnChange}
@@ -219,9 +252,9 @@ export default function BVNVerify() {
           <Text style={styles.infoText}>• Remove glasses if possible</Text>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.cta, { opacity: isValidFormat && !isVerifying && !isValidating ? 1 : 0.5 }]} 
-          disabled={!isValidFormat || isVerifying || isValidating} 
+        <TouchableOpacity
+          style={[styles.cta, { opacity: isFormComplete && !isVerifying && !isValidating ? 1 : 0.5 }]}
+          disabled={!isFormComplete || isVerifying || isValidating}
           onPress={() => setStep('camera')}
         >
           {isValidating ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.ctaText}>Continue to Face Verification</Text>}
@@ -308,6 +341,11 @@ const styles = StyleSheet.create({
   headerSpacer: { width: 40 },
   section: { paddingHorizontal: 16, marginBottom: 24 },
   sub: { color: '#6B7280', fontSize: 14, marginBottom: 16, lineHeight: 20 },
+  nameNoticeContainer: { backgroundColor: '#FFF7ED', borderLeftWidth: 4, borderLeftColor: '#F59E0B', padding: 12, marginBottom: 16, borderRadius: 8 },
+  nameNoticeText: { fontSize: 13, color: '#B45309', lineHeight: 18, fontWeight: '500' },
+  nameFieldsContainer: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  nameFieldWrapper: { flex: 1 },
+  inputLabel: { fontSize: 14, fontWeight: '500', color: '#374151', marginBottom: 6 },
   noticeContainer: { backgroundColor: '#EEF2FF', borderLeftWidth: 4, borderLeftColor: '#35297F', padding: 12, marginBottom: 16, borderRadius: 8 },
   noticeText: { fontSize: 13, color: '#4338CA', lineHeight: 18 },
   inputContainer: { marginBottom: 16 },

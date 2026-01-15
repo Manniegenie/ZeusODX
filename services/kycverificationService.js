@@ -35,7 +35,7 @@ export const kycService = {
         };
       }
 
-      const { idType, idNumber, selfieImage, livenessImages, dob, partnerParams } = verificationData;
+      const { idType, idNumber, selfieImage, livenessImages, dob, partnerParams, firstName, lastName } = verificationData;
 
       // Validate required fields
       if (!idType || !idNumber || !selfieImage) {
@@ -120,6 +120,8 @@ export const kycService = {
         selfieImage,
         ...(livenessImages && { livenessImages }),
         ...(dob && { dob }),
+        ...(firstName && { firstName: firstName.trim() }),
+        ...(lastName && { lastName: lastName.trim() }),
         // forward partnerParams.user_id if caller provided it (optional)
         ...(partnerParams && partnerParams.user_id && { partnerParams: { user_id: partnerParams.user_id } })
       };
