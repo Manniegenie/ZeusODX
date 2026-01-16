@@ -14,7 +14,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.manniegenie.zeusodx",
-      buildNumber: "1", // Incremented build number for fresh submission
+      buildNumber: "3", // Incremented build number for fresh submission
       icon: "./assets/images/app-icon.png",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
