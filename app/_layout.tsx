@@ -130,6 +130,7 @@ export default function RootLayout() {
                 headerShown: false,
                 contentStyle: { backgroundColor: 'transparent' },
                 animation: 'slide_from_right',
+                gestureEnabled: false,
               }}
             />
             <TawkPrefetcher directLink={TAWK_DIRECT_LINK} />
