@@ -26,6 +26,11 @@ class ApiClient {
       'Accept': 'application/json',
     };
 
+    // Flag to prevent multiple simultaneous refresh attempts
+    this.isRefreshing = false;
+    // Queue of requests waiting for token refresh
+    this.refreshQueue = [];
+
     if (__DEV__) {
       console.log('🔧 API Client initialized with base URL:', this.baseURL);
     }
@@ -39,10 +44,14 @@ class ApiClient {
       const isExpired = await this.isTokenExpired();
       if (isExpired) {
         if (__DEV__) {
-          console.log('⚠️ Token expired, clearing session');
+          console.log('⚠️ Token expired, attempting refresh...');
         }
-        await this.clearSession();
-        return null;
+        // Try to refresh before clearing
+        const refreshed = await this.attemptTokenRefresh();
+        if (!refreshed) {
+          await this.clearSession();
+          return null;
+        }
       }
 
       const session = await this.getAuthSession();
@@ -59,11 +68,11 @@ class ApiClient {
     }
   }
 
-  async setAuthToken(token, expiryInSeconds = 86400) {
+  async setAuthToken(token, expiryInSeconds = 3600) {
     try {
       if (token) {
         await SecureStore.setItemAsync(AUTH_TOKEN_KEY, token);
-        // Set token expiry (default 24 hours)
+        // Set token expiry (default 1 hour to match server's ACCESS_TOKEN_EXPIRES_IN)
         const expiryTime = Date.now() + (expiryInSeconds * 1000);
         await SecureStore.setItemAsync(TOKEN_EXPIRY_KEY, expiryTime.toString());
       } else {
@@ -87,7 +96,8 @@ class ApiClient {
       const expiry = parseInt(expiryTime, 10);
       const now = Date.now();
 
-      return now >= expiry;
+      // Add 30 second buffer to refresh before actual expiry
+      return now >= (expiry - 30000);
     } catch (error) {
       if (__DEV__) {
         console.error('Error checking token expiry:', error);
@@ -124,9 +134,103 @@ class ApiClient {
     }
   }
 
+  async clearRefreshToken() {
+    try {
+      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error clearing refresh token:', error);
+      }
+    }
+  }
+
+  // --- TOKEN REFRESH LOGIC ---
+
+  async attemptTokenRefresh() {
+    // If already refreshing, wait for the result
+    if (this.isRefreshing) {
+      return new Promise((resolve) => {
+        this.refreshQueue.push(resolve);
+      });
+    }
+
+    this.isRefreshing = true;
+
+    try {
+      const refreshToken = await this.getRefreshToken();
+      if (!refreshToken) {
+        if (__DEV__) {
+          console.log('❌ No refresh token available');
+        }
+        return false;
+      }
+
+      if (__DEV__) {
+        console.log('🔄 Attempting to refresh access token...');
+      }
+
+      // Call the server's refresh endpoint directly (not through this.request to avoid loops)
+      const response = await fetch(`${this.baseURL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.accessToken) {
+        if (__DEV__) {
+          console.log('✅ Token refresh successful');
+        }
+
+        // Store new access token (1 hour expiry)
+        await this.setAuthToken(data.accessToken, 3600);
+
+        // Store new refresh token if provided (server rotates tokens)
+        if (data.refreshToken) {
+          await this.setRefreshToken(data.refreshToken);
+        }
+
+        // Resolve all queued requests
+        this.refreshQueue.forEach((resolve) => resolve(true));
+        this.refreshQueue = [];
+
+        return true;
+      } else {
+        if (__DEV__) {
+          console.log('❌ Token refresh failed:', data.message || 'Unknown error');
+        }
+
+        // Clear tokens on refresh failure
+        await this.clearSession();
+
+        // Resolve all queued requests as failed
+        this.refreshQueue.forEach((resolve) => resolve(false));
+        this.refreshQueue = [];
+
+        return false;
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('❌ Token refresh error:', error);
+      }
+
+      // Resolve all queued requests as failed
+      this.refreshQueue.forEach((resolve) => resolve(false));
+      this.refreshQueue = [];
+
+      return false;
+    } finally {
+      this.isRefreshing = false;
+    }
+  }
+
   // --- CORE REQUEST LOGIC ---
 
-  async request(endpoint, options = {}) {
+  async request(endpoint, options = {}, retryCount = 0) {
     try {
       const token = await this.getAuthToken();
       const isFormData = options.body instanceof FormData;
@@ -172,12 +276,33 @@ class ApiClient {
         data = { message: responseText };
       }
 
+      // Handle 401 Unauthorized - attempt token refresh
+      if (response.status === 401 && retryCount === 0 && !endpoint.includes('/auth/refresh')) {
+        if (__DEV__) {
+          console.log('🔄 Received 401, attempting token refresh...');
+        }
+
+        const refreshed = await this.attemptTokenRefresh();
+        if (refreshed) {
+          // Retry the original request with new token
+          return this.request(endpoint, options, retryCount + 1);
+        } else {
+          // Refresh failed, return the 401 error
+          return {
+            success: false,
+            error: 'Session expired. Please log in again.',
+            status: 401,
+            sessionExpired: true,
+            data,
+          };
+        }
+      }
+
       if (!response.ok) {
         if (__DEV__) {
           console.error(`❌ API Error ${response.status}:`, data);
         }
 
-        // Removed restart logic; just return error
         return {
           success: false,
           error: data.message || data.error || `HTTP ${response.status}`,
@@ -252,10 +377,26 @@ class ApiClient {
     return updated;
   }
 
+  async setUserId(userId) {
+    try {
+      if (userId) {
+        await SecureStore.setItemAsync('userId', userId);
+        await this.updateAuthSession({ userId });
+      } else {
+        await SecureStore.deleteItemAsync('userId');
+      }
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error storing userId:', error);
+      }
+    }
+  }
+
   async clearSession() {
     await this.saveAuthSession(null);
     await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
     await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+    await SecureStore.deleteItemAsync(TOKEN_EXPIRY_KEY);
     await SecureStore.deleteItemAsync('userId');
   }
 }

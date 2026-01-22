@@ -192,10 +192,10 @@ export default function SignupScreen() {
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Last name</Text>
+                <Text style={styles.label}>Surname</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter Last name"
+                  placeholder="Enter Surname"
                   placeholderTextColor={Colors.text.muted}
                   value={lastName}
                   onChangeText={handleInputChange(setLastName)}

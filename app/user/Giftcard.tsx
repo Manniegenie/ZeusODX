@@ -18,14 +18,9 @@ import Loading from '../../components/Loading';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 
-// Gift card icons - keeping existing import routes
-import amexIcon from '../../components/icons/amex.png';
-import amazonIcon from '../../components/icons/azn.png';
-import ebayIcon from '../../components/icons/ebay.png';
+// Gift card icons
 import itunesIcon from '../../components/icons/iTunes.png';
 import lensIcon from '../../components/icons/lens-icon.png';
-
-// New gift card icons
 import footlockerIcon from '../../components/icons/footlocker.png';
 import macyIcon from '../../components/icons/macy.png';
 import nikeIcon from '../../components/icons/nike.png';
@@ -33,8 +28,6 @@ import nordstromIcon from '../../components/icons/nordstrom.png';
 import razorGoldIcon from '../../components/icons/razor-gold.png';
 import sephoraIcon from '../../components/icons/sephora.png';
 import steamIcon from '../../components/icons/steam.png';
-import vanillaIcon from '../../components/icons/vanilla.png';
-import visaIcon from '../../components/icons/visa.png';
 import xboxIcon from '../../components/icons/xbox.png';
 
 const GiftCardScreen = ({ onGiftCardSelect }) => {
@@ -54,20 +47,15 @@ const GiftCardScreen = ({ onGiftCardSelect }) => {
   );
 
   const giftCards = [
-    { id: 'amazon', name: 'Amazon', iconSrc: amazonIcon },
     { id: 'itunes', name: 'Apple/iTunes', iconSrc: itunesIcon },
     { id: 'steam', name: 'Steam Card', iconSrc: steamIcon },
     { id: 'nordstrom', name: 'Nordstrom', iconSrc: nordstromIcon },
     { id: 'macy', name: 'Macy', iconSrc: macyIcon },
     { id: 'nike', name: 'Nike Gift Card', iconSrc: nikeIcon },
-    { id: 'visa', name: 'Visa Card', iconSrc: visaIcon },
-    { id: 'vanilla', name: 'Vanilla Cards', iconSrc: vanillaIcon },
     { id: 'razor-gold', name: 'Razor Gold Gift Card', iconSrc: razorGoldIcon },
-    { id: 'amex', name: 'American Express', iconSrc: amexIcon },
     { id: 'sephora', name: 'Sephora', iconSrc: sephoraIcon },
     { id: 'footlocker', name: 'Footlocker', iconSrc: footlockerIcon },
     { id: 'xbox', name: 'Xbox Card', iconSrc: xboxIcon },
-    { id: 'ebay', name: 'eBay', iconSrc: ebayIcon },
   ];
 
   const filteredGiftCards = giftCards.filter(card =>
