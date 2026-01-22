@@ -126,8 +126,6 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 export default function DriversLicenseVerify() {
   const router = useRouter();
   const [licenseNumber, setLicenseNumber] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [step, setStep] = useState<Step>('input');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(3);
@@ -158,7 +156,7 @@ export default function DriversLicenseVerify() {
   const validation = useMemo(() => (!licenseNumber ? { valid: false, message: '' } : validateDriversLicense(licenseNumber)), [licenseNumber]);
 
   const isValidFormat = validation?.valid === true;
-  const isFormComplete = isValidFormat && firstName.trim().length > 0 && lastName.trim().length > 0;
+  const isFormComplete = isValidFormat;
 
   useEffect(() => {
     if (isCountingDown && countdown > 0) {
@@ -182,7 +180,7 @@ export default function DriversLicenseVerify() {
   const handleBiometricSubmit = async () => {
     setStep('processing');
     try {
-      const res = await submitBiometricVerification({ idType: 'drivers_license', idNumber: licenseNumber, selfieImage: capturedImage!, firstName: firstName.trim(), lastName: lastName.trim() });
+      const res = await submitBiometricVerification({ idType: 'drivers_license', idNumber: licenseNumber, selfieImage: capturedImage! });
       if (res?.success) setShowSuccess(true);
       else { openError(res?.message || 'Verification failed'); setStep('preview'); }
     } catch (e) { setStep('input'); openError('Verification failed'); }
@@ -202,35 +200,6 @@ export default function DriversLicenseVerify() {
 
       <View style={styles.section}>
         <Text style={styles.sub}>Enter your Nigerian drivers license number for identity verification.</Text>
-
-        <View style={styles.nameNoticeContainer}>
-          <Text style={styles.nameNoticeText}>
-            {`Please enter your name exactly as it appears on your driver's license.`}
-          </Text>
-        </View>
-
-        <View style={styles.nameFieldsContainer}>
-          <View style={styles.nameFieldWrapper}>
-            <Text style={styles.inputLabel}>First Name</Text>
-            <TextInput
-              value={firstName}
-              onChangeText={setFirstName}
-              placeholder="Enter first name"
-              style={styles.input}
-              autoCapitalize="words"
-            />
-          </View>
-          <View style={styles.nameFieldWrapper}>
-            <Text style={styles.inputLabel}>Last Name</Text>
-            <TextInput
-              value={lastName}
-              onChangeText={setLastName}
-              placeholder="Enter last name"
-              style={styles.input}
-              autoCapitalize="words"
-            />
-          </View>
-        </View>
 
         <View style={styles.noticeContainer}>
           <Text style={styles.noticeText}>

@@ -126,8 +126,6 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 export default function NINVerify() {
   const router = useRouter();
   const [nin, setNin] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [step, setStep] = useState<Step>('input');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(3);
@@ -151,7 +149,7 @@ export default function NINVerify() {
   const handleNinChange = (value: string) => setNin(formatIdNumber('national_id', value));
   const validation = useMemo(() => (!nin ? { valid: false, message: '' } : validateNIN(nin)), [nin]);
   const isValidFormat = validation?.valid === true;
-  const isFormComplete = isValidFormat && firstName.trim().length > 0 && lastName.trim().length > 0;
+  const isFormComplete = isValidFormat;
 
   useEffect(() => { if (isCountingDown && countdown > 0) {
       const timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
@@ -174,7 +172,7 @@ export default function NINVerify() {
   const handleBiometricSubmit = async () => {
     setStep('processing');
     try {
-      const res = await submitBiometricVerification({ idType: 'national_id', idNumber: nin, selfieImage: capturedImage!, firstName: firstName.trim(), lastName: lastName.trim() });
+      const res = await submitBiometricVerification({ idType: 'national_id', idNumber: nin, selfieImage: capturedImage! });
       if (res?.success) setShowSuccess(true);
       else { openError(res?.message || 'Verification failed'); setStep('preview'); }
     } catch (e) { setStep('input'); openError('Verification failed'); }
@@ -194,35 +192,6 @@ export default function NINVerify() {
 
       <View style={styles.section}>
         <Text style={styles.sub}>Enter your 11-digit National Identification Number (NIN) for identity verification.</Text>
-
-        <View style={styles.nameNoticeContainer}>
-          <Text style={styles.nameNoticeText}>
-            Please enter your name exactly as it appears on your NIN slip/card.
-          </Text>
-        </View>
-
-        <View style={styles.nameFieldsContainer}>
-          <View style={styles.nameFieldWrapper}>
-            <Text style={styles.inputLabel}>First Name</Text>
-            <TextInput
-              value={firstName}
-              onChangeText={setFirstName}
-              placeholder="Enter first name"
-              style={styles.input}
-              autoCapitalize="words"
-            />
-          </View>
-          <View style={styles.nameFieldWrapper}>
-            <Text style={styles.inputLabel}>Last Name</Text>
-            <TextInput
-              value={lastName}
-              onChangeText={setLastName}
-              placeholder="Enter last name"
-              style={styles.input}
-              autoCapitalize="words"
-            />
-          </View>
-        </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.inputLabel}>NIN Number</Text>
