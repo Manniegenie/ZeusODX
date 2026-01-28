@@ -32,33 +32,33 @@ export const useData = () => {
       // Validate purchase data first
       const validation = dataService.validatePurchaseData(purchaseData);
       if (!validation.isValid) {
-        const result = {
+        const errorMessage = validation.errors[0] || 'Validation failed';
+        setError(errorMessage);
+        return {
           success: false,
-          error: 'VALIDATION_ERROR',
-          message: validation.errors[0],
+          error: errorMessage, // Client-side validation error directly
+          message: errorMessage,
           errors: validation.errors
         };
-        setError(result.error);
-        return result;
       }
 
       const result = await dataService.purchaseData(purchaseData);
       
       if (!result.success) {
-        setError(result.error);
+        // Set backend error message directly from service
+        setError(result.error || result.message || 'Data purchase failed');
       }
       
       return result;
     } catch (err) {
       console.error('❌ Data purchase hook error:', err);
-      const errorResult = {
+      const errorMessage = err.message || 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
+      return {
         success: false,
-        error: 'UNEXPECTED_ERROR',
-        message: 'An unexpected error occurred. Please try again.',
-        requiresAction: 'RETRY'
+        error: errorMessage, // Network/unexpected error message directly
+        message: errorMessage
       };
-      setError(errorResult.error);
-      return errorResult;
     } finally {
       setLoading(false);
     }
@@ -71,10 +71,12 @@ export const useData = () => {
    */
   const getDataPlans = useCallback(async (networkId) => {
     if (!networkId) {
+      const errorMessage = 'Network provider is required';
+      setError(errorMessage);
       return {
         success: false,
-        error: 'NETWORK_REQUIRED',
-        message: 'Network provider is required',
+        error: errorMessage,
+        message: errorMessage,
         data: []
       };
     }
@@ -97,14 +99,14 @@ export const useData = () => {
       return result;
     } catch (err) {
       console.error('❌ Get data plans hook error:', err);
-      const errorResult = {
+      const errorMessage = err.message || 'Failed to load data plans. Please try again.';
+      setError(errorMessage);
+      return {
         success: false,
-        error: 'FETCH_PLANS_ERROR',
-        message: 'Failed to load data plans. Please try again.',
+        error: errorMessage, // Network error message directly
+        message: errorMessage,
         data: []
       };
-      setError(errorResult.error);
-      return errorResult;
     } finally {
       setLoading(false);
     }
@@ -233,105 +235,6 @@ export const useData = () => {
   }, []);
 
   /**
-   * Get error action based on error type
-   * @param {string} requiresAction - Required action type
-   * @returns {Object|null} Error action object
-   */
-  const getErrorAction = useCallback((requiresAction) => {
-    const errorActions = {
-      'RETRY_2FA': {
-        title: 'Invalid 2FA Code',
-        message: 'The two-factor authentication code you entered is invalid. Please check your authenticator app and try again.',
-        actionText: 'Retry 2FA',
-        priority: 'high'
-      },
-      'RETRY_PIN': {
-        title: 'Invalid Password PIN',
-        message: 'The password PIN you entered is incorrect. Please check and try again.',
-        actionText: 'Retry PIN',
-        priority: 'high'
-      },
-      'UPGRADE_KYC': {
-        title: 'KYC Limit Exceeded',
-        message: 'This transaction exceeds your current KYC limits. Please upgrade your verification level to continue.',
-        actionText: 'Upgrade KYC',
-        route: '/kyc/upgrade',
-        priority: 'high'
-      },
-      'ADD_FUNDS': {
-        title: 'Insufficient Balance',
-        message: 'You don\'t have enough NGNB balance for this purchase. Please top up your wallet.',
-        actionText: 'Add Funds',
-        route: '/wallet/deposit',
-        priority: 'high'
-      },
-      'SELECT_PLAN': {
-        title: 'Invalid Data Plan',
-        message: 'The selected data plan is invalid or no longer available. Please select a different plan.',
-        actionText: 'Select Plan',
-        priority: 'medium'
-      },
-      'CHECK_AMOUNT': {
-        title: 'Amount Mismatch',
-        message: 'The amount you entered doesn\'t match the selected data plan price. Please check and try again.',
-        actionText: 'Check Amount',
-        priority: 'medium'
-      },
-      'WAIT_PENDING': {
-        title: 'Pending Transaction',
-        message: 'You have a pending data transaction. Please wait a few minutes before trying again.',
-        actionText: 'Try Again Later',
-        priority: 'medium'
-      },
-      'FIX_INPUT': {
-        title: 'Invalid Details',
-        message: 'Please check your phone number, network selection, and data plan, then try again.',
-        actionText: 'Check Details',
-        priority: 'medium'
-      },
-      'SETUP_2FA': {
-        title: '2FA Setup Required',
-        message: 'Two-factor authentication is required for transactions. Please set it up in your security settings.',
-        actionText: 'Setup 2FA',
-        route: '/profile/2FA',
-        priority: 'high'
-      },
-      'SETUP_PIN': {
-        title: 'PIN Setup Required',
-        message: 'A password PIN is required for transactions. Please set it up in your security settings.',
-        actionText: 'Setup PIN',
-        route: '/security/pin',
-        priority: 'high'
-      },
-      'CONTACT_SUPPORT': {
-        title: 'Service Issue',
-        message: 'There\'s an issue with the service. Please contact support for assistance.',
-        actionText: 'Contact Support',
-        route: '/support',
-        priority: 'high'
-      },
-      'RETRY_LATER': {
-        title: 'Service Unavailable',
-        message: 'The data service is temporarily unavailable. Please try again later.',
-        actionText: 'Try Later',
-        priority: 'medium'
-      }
-    };
-
-    return errorActions[requiresAction] || null;
-  }, []);
-
-  /**
-   * Get user-friendly error message
-   * @param {string} errorCode - Error code
-   * @param {string} originalMessage - Original error message
-   * @returns {string} User-friendly message
-   */
-  const getUserFriendlyMessage = useCallback((errorCode, originalMessage) => {
-    return dataService.getUserFriendlyMessage(errorCode, originalMessage);
-  }, []);
-
-  /**
    * Get popular data plan ranges
    * @returns {Array} Popular data plan ranges
    */
@@ -369,7 +272,7 @@ export const useData = () => {
   return {
     // State
     loading,
-    error,
+    error, // This now holds the exact backend message (or client-side validation error)
     dataPlans,
     selectedPlan,
 
@@ -399,10 +302,6 @@ export const useData = () => {
     formatValidityPeriod,
 
     // Validation utilities
-    validatePhoneNumber,
-
-    // Error handling utilities
-    getErrorAction,
-    getUserFriendlyMessage
+    validatePhoneNumber
   };
 };

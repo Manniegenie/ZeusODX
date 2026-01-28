@@ -66,8 +66,8 @@ export const useCableTV = () => {
         setError(message);
         return {
           success: false,
-          error: 'VALIDATION_ERROR',
-          message,
+          error: message, // Client-side validation error directly
+          message: message,
           errors: validation.errors,
         };
       }
@@ -75,7 +75,8 @@ export const useCableTV = () => {
       const response = await cableTVService.purchaseCableTV(purchaseData);
 
       if (!response?.success) {
-        setError(response?.message || 'Cable TV purchase failed');
+        // Set backend error message directly from service
+        setError(response?.error || response?.message || 'Cable TV purchase failed');
       }
 
       return response;
@@ -85,8 +86,8 @@ export const useCableTV = () => {
       setError(message);
       return {
         success: false,
-        error: 'NETWORK_ERROR',
-        message,
+        error: message, // Network error message directly
+        message: message,
       };
     } finally {
       setLoading(false);
@@ -102,127 +103,10 @@ export const useCableTV = () => {
   );
   const formatAmount = useCallback((amount) => cableTVService.formatAmount(amount), []);
 
-  /** Friendly error message passthrough */
-  const getUserFriendlyMessage = useCallback(
-    (errorCode, originalMessage) => cableTVService.getUserFriendlyMessage(errorCode, originalMessage),
-    []
-  );
-
   /**
-   * Provide UI metadata for corrective actions
-   * `requiresAction` comes from cableTVService.getRequiredAction result
+   * Quick form completeness check with optional overrides
+   * NOTE: This is client-side validation only
    */
-  const getErrorAction = useCallback((requiresAction) => {
-    if (!requiresAction) return null;
-
-    const map = {
-      RETRY_2FA: {
-        title: 'Invalid 2FA Code',
-        message: 'The two-factor authentication code you entered is incorrect. Please try again.',
-        actionText: 'Retry 2FA',
-        priority: 'high',
-      },
-      RETRY_PIN: {
-        title: 'Invalid Password PIN',
-        message: 'The password PIN you entered is incorrect. Please re-enter your PIN.',
-        actionText: 'Retry PIN',
-        priority: 'high',
-      },
-      SETUP_2FA: {
-        title: 'Set Up 2FA',
-        message: 'Two-factor authentication is required to complete this transaction.',
-        actionText: 'Set Up 2FA',
-        route: '/profile/2FA',
-        priority: 'high',
-      },
-      SETUP_PIN: {
-        title: 'Set Up PIN',
-        message: 'A password PIN is required to complete this transaction.',
-        actionText: 'Set Up PIN',
-        route: '/profile/new-pin',
-        priority: 'high',
-      },
-      ADD_FUNDS: {
-        title: 'Insufficient Balance',
-        message: "You don't have enough balance to complete this purchase.",
-        actionText: 'Add Funds',
-        route: '/wallet',
-        priority: 'high',
-      },
-      UPGRADE_KYC: {
-        title: 'Upgrade Verification',
-        message: 'This transaction exceeds your current account limits. Please upgrade your verification.',
-        actionText: 'Upgrade KYC',
-        route: '/kyc/upgrade',
-        priority: 'high',
-      },
-      CHECK_CUSTOMER_ID: {
-        title: 'Check Smartcard Number',
-        message: 'The smartcard/IUC number appears to be invalid. Please confirm and try again.',
-        actionText: 'Review Number',
-        priority: 'medium',
-      },
-      SELECT_PROVIDER: {
-        title: 'Select Provider',
-        message: 'Please choose a cable TV provider to continue.',
-        actionText: 'Choose Provider',
-        priority: 'medium',
-      },
-      SELECT_PACKAGE: {
-        title: 'Select Package',
-        message: 'Please choose a cable TV package to continue.',
-        actionText: 'Choose Package',
-        priority: 'medium',
-      },
-      INCREASE_AMOUNT: {
-        title: 'Amount Too Low',
-        message: 'The amount entered is below the minimum allowed for this service.',
-        actionText: 'Increase Amount',
-        priority: 'medium',
-      },
-      REDUCE_AMOUNT: {
-        title: 'Amount Too High',
-        message: 'The amount entered exceeds the maximum allowed for this service.',
-        actionText: 'Reduce Amount',
-        priority: 'medium',
-      },
-      VERIFY_AMOUNT: {
-        title: 'Verify Amount',
-        message: 'Please ensure the amount matches the selected package price.',
-        actionText: 'Verify Amount',
-        priority: 'medium',
-      },
-      WAIT_PENDING: {
-        title: 'Pending Transaction',
-        message: 'You already have a pending cable TV transaction. Please wait for it to complete.',
-        actionText: 'Try Again Later',
-        priority: 'medium',
-      },
-      FIX_INPUT: {
-        title: 'Check Details',
-        message: 'Some details are incorrect or missing. Please review and try again.',
-        actionText: 'Review Details',
-        priority: 'medium',
-      },
-      RETRY_LATER: {
-        title: 'Service Unavailable',
-        message: 'The cable TV service is temporarily unavailable. Please try again later.',
-        actionText: 'Try Later',
-        priority: 'medium',
-      },
-      CONTACT_SUPPORT: {
-        title: 'Contact Support',
-        message: 'We could not complete your request. Please reach out to support for assistance.',
-        actionText: 'Contact Support',
-        route: '/support',
-        priority: 'high',
-      },
-    };
-
-    return map[requiresAction] || null;
-  }, []);
-
-  /** Quick form completeness check with optional overrides */
   const isFormComplete = useCallback(
     (overrides = {}) => {
       const {
@@ -256,7 +140,7 @@ export const useCableTV = () => {
 
   return {
     loading,
-    error,
+    error, // This now holds the exact backend message (or client-side validation error)
     providers,
     selectedProvider,
     selectedSubscriptionType,
@@ -273,8 +157,6 @@ export const useCableTV = () => {
     getProviderDisplayName,
     formatAmount,
     isFormComplete,
-    getErrorAction,
-    getUserFriendlyMessage,
     initialize,
   };
 };

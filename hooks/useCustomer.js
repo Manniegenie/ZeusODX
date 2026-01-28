@@ -108,19 +108,29 @@ export const useCustomer = () => {
       console.log('🔍 Raw cable TV verification response:', response);
 
       if (response && response.success) {
-        const normalizedData = {
-          customer_name: response.data?.customerName || '',
-          customerName: response.data?.customerName || '',
-          customer_id: response.data?.smartCardNumber || customerId.trim(),
-          smartCardNumber: response.data?.smartCardNumber || customerId.trim(),
-          service: response.data?.service || serviceId.toUpperCase(),
-          service_id: response.data?.service?.toLowerCase?.() || serviceId.toLowerCase()
-        };
-        setCustomerData(normalizedData);
-        setSelectedService(serviceId);
-        setSelectedServiceCategory('cable_tv');
-        return { success: true, data: normalizedData };
-      } else {
+  const data = response.data || {};
+
+  const normalizedData = {
+    // Use API's `customer_name` and trim whitespace
+    customer_name: data.customer_name?.trim() || '',
+    customerName: data.customer_name?.trim() || '',
+    customer_id: data.customer_id || customerId.trim(),
+    smartCardNumber: data.customer_id || customerId.trim(),
+    service: data.service || serviceId.toUpperCase(),
+    service_id: data.service?.toLowerCase?.() || serviceId.toLowerCase(),
+    balance: data.balance ?? 0,
+    current_bouquet: data.current_bouquet || 'N/A',
+    current_status: data.current_status || 'Unknown',
+    due_date: data.due_date || null,
+    renewal_amount: data.renewal_amount ?? 0
+  };
+
+  setCustomerData(normalizedData);
+  setSelectedService(serviceId);
+  setSelectedServiceCategory('cable_tv');
+
+  return { success: true, data: normalizedData };
+} else {
         const errorMessage = response?.message || 'Cable TV customer verification failed';
         setError('VERIFICATION_FAILED');
         return { success: false, error: 'VERIFICATION_FAILED', message: errorMessage };
