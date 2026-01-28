@@ -347,44 +347,44 @@ class CustomerService {
    * @returns {Promise<Object>} Verification result
    */
   async verifyCableTVCustomer(customerId, serviceId) {
-    try {
-      const response = await apiClient.post('/verifycabletv/verify', {
-        service_id: serviceId,
-        customer_id: customerId,
-        service: serviceId,
-        smartCardNumber: customerId
-      });
+  try {
+    const response = await apiClient.post('/verifycabletv/verify', {
+      service_id: serviceId,
+      customer_id: customerId,
+      service: serviceId,
+      smartCardNumber: customerId
+    });
 
-      const payload = response.data || {};
-      return {
-        ...payload,
-        success: payload.status?.toLowerCase?.() === 'successful'
-      };
-    } catch (error) {
-      // Handle different types of errors
-      if (error.response?.data) {
-        const errorData = error.response.data;
-        throw new Error(errorData.message || 'Cable TV customer verification failed');
-      }
-      
-      if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-        throw new Error('Network connection failed. Please check your internet connection.');
-      }
-      
-      if (error.code === 'TIMEOUT') {
-        throw new Error('Request timed out. Please try again.');
-      }
-      
-      throw new Error(error.message || 'An unexpected error occurred');
+    const payload = response.data || {};
+
+    // ✅ Normalize success flag for consistency
+    const isSuccessful =
+      payload.status?.toLowerCase?.() === 'successful' ||  // e.g., { status: 'Successful' }
+      payload.message?.toLowerCase?.().includes('successful') ||  // fallback if message contains success
+      payload.success === true; // fallback if payload has explicit success flag
+
+    return {
+      ...payload,
+      success: isSuccessful
+    };
+  } catch (error) {
+    if (error.response?.data) {
+      const errorData = error.response.data;
+      throw new Error(errorData.message || 'Cable TV customer verification failed');
     }
-  }
 
-  /**
-   * Verify betting account customer
-   * @param {string} customerId - Betting account ID
-   * @param {string} serviceId - Betting service ID
-   * @returns {Promise<Object>} Verification result
-   */
+    if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
+      throw new Error('Network connection failed. Please check your internet connection.');
+    }
+
+    if (error.code === 'TIMEOUT') {
+      throw new Error('Request timed out. Please try again.');
+    }
+
+    throw new Error(error.message || 'An unexpected error occurred');
+  }
+}
+
   async verifyBettingCustomer(customerId, serviceId) {
     return this.verifyCustomer({
       customer_id: customerId,

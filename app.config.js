@@ -14,7 +14,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.manniegenie.zeusodx",
-      buildNumber: "3", // Incremented build number for fresh submission
+      buildNumber: "4", // Incremented build number for fresh submission
       icon: "./assets/images/app-icon.png",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
@@ -46,7 +46,7 @@ export default {
         "com.google.android.c2dm.permission.RECEIVE",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      versionCode: 105 // Incremented for Android submission
+      versionCode: 111 // Incremented for Android submission
     },
     web: {
       bundler: "metro",

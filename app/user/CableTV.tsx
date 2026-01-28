@@ -36,7 +36,6 @@ const ShowmaxIcon = require('../../components/icons/Showmax.png');
 const checkmarkIcon = require('../../components/icons/green-checkmark.png');
 const profileIcon = require('../../components/icons/profile.png');
 
-
 // Provider icon mapping
 const providerIcons: Record<string, ImageSourcePropType> = {
   'dstv': DstvIcon,
@@ -143,8 +142,6 @@ const CableTvScreen: React.FC = () => {
     getProviderDisplayName,
     formatAmount,
     isFormComplete,
-    getErrorAction,
-    getUserFriendlyMessage,
     initialize
   } = useCableTV();
   
@@ -156,8 +153,10 @@ const CableTvScreen: React.FC = () => {
     clearError: clearCustomerError,
     clearCustomerData,
     formatCustomerName,
-    getUserFriendlyMessage: getCustomerUserFriendlyMessage
+    getUserFriendlyMessage: getCustomerUserFriendlyMessage // REMOVE THIS
   } = useCustomer();
+  
+  // REMOVED: getErrorAction, getUserFriendlyMessage from useCableTV
   
   // Form state
   const [smartcardNumber, setSmartcardNumber] = useState<string>('');
@@ -213,7 +212,6 @@ const CableTvScreen: React.FC = () => {
     if (!backDisabled) router.back();
   };
 
-  // history removed
   const showErrorMessage = (data: ErrorDisplayData) => { 
     setErrorDisplayData(data); 
     setShowErrorDisplay(true); 
@@ -224,18 +222,7 @@ const CableTvScreen: React.FC = () => {
     setErrorDisplayData(null); 
   };
 
-  const getErrorType = (code: string): ErrorDisplayData['type'] => {
-    switch (code) {
-      case 'SETUP_2FA_REQUIRED': case 'SETUP_PIN_REQUIRED': return 'setup';
-      case 'INVALID_2FA_CODE': case 'INVALID_PASSWORDPIN': return 'auth';
-      case 'KYC_LIMIT_EXCEEDED': return 'limit';
-      case 'INSUFFICIENT_BALANCE': return 'balance';
-      case 'VALIDATION_ERROR': case 'INVALID_CUSTOMER_ID': case 'AMOUNT_PACKAGE_MISMATCH': return 'validation';
-      case 'NETWORK_ERROR': return 'network';
-      case 'SERVICE_ERROR': case 'PURCHASE_FAILED': return 'server';
-      default: return 'general';
-    }
-  };
+  // REMOVED: getErrorType function since we're not transforming errors anymore
 
   // Provider selection that preserves customer data for same provider
   const handleProviderSelect = (provider: any): void => {
@@ -286,7 +273,6 @@ const CableTvScreen: React.FC = () => {
   const handleVerifySmartcard = async (): Promise<void> => {
     if (!smartcardNumber.trim()) {
       showErrorMessage({
-        type: 'validation',
         title: 'Smartcard Number Required',
         message: 'Please enter your smartcard/IUC number',
         autoHide: true,
@@ -297,7 +283,6 @@ const CableTvScreen: React.FC = () => {
 
     if (!selectedProvider) {
       showErrorMessage({
-        type: 'validation',
         title: 'Provider Required',
         message: 'Please select a cable TV provider first',
         autoHide: true,
@@ -308,7 +293,6 @@ const CableTvScreen: React.FC = () => {
 
     if (!validateCustomerId(smartcardNumber)) {
       showErrorMessage({
-        type: 'validation',
         title: 'Invalid Smartcard Number',
         message: 'Please enter a valid smartcard/IUC number (8-20 characters, alphanumeric)',
         autoHide: true,
@@ -330,35 +314,19 @@ const CableTvScreen: React.FC = () => {
         console.log('Customer verified successfully');
         // Customer verified successfully - verification state will be updated by useEffect
       } else {
-        // Handle verification failure
-        const errorAction = getErrorAction?.(result?.requiresAction || 'RETRY');
-        const friendlyMessage = getCustomerUserFriendlyMessage?.(result?.error, result?.message);
-        
-        if (errorAction) {
-          showErrorMessage({
-            type: 'validation',
-            title: errorAction.title,
-            message: errorAction.message,
-            autoHide: true,
-            duration: 4000
-          });
-        } else {
-          showErrorMessage({
-            type: 'server',
-            title: 'Verification Failed',
-            message: friendlyMessage || 'Unable to verify customer. Please check your information.',
-            autoHide: true,
-            duration: 4000
-          });
-        }
+        // Use backend error message directly
+        showErrorMessage({
+          title: 'Verification Failed',
+          message: result?.message || 'Unable to verify customer. Please check your information.',
+          autoHide: true,
+          duration: 4000
+        });
       }
     } catch (error) {
-      // Error handling is already done in the hook, but show user-friendly message
-      const friendlyMessage = getCustomerUserFriendlyMessage?.(customerError, 'Unable to verify customer at this time.');
+      // Use error message directly
       showErrorMessage({
-        type: 'server',
         title: 'Verification Error',
-        message: friendlyMessage || 'Unable to verify customer at this time.',
+        message: error instanceof Error ? error.message : 'Unable to verify customer at this time.',
         autoHide: true,
         duration: 4000
       });
@@ -393,7 +361,6 @@ const CableTvScreen: React.FC = () => {
     
     if (!selectedProvider) {
       showErrorMessage({
-        type: 'validation',
         title: 'Provider Required',
         message: 'Please select a cable TV provider',
         autoHide: true,
@@ -404,7 +371,6 @@ const CableTvScreen: React.FC = () => {
     
     if (!smartcardNumber.trim()) {
       showErrorMessage({
-        type: 'validation',
         title: 'Smartcard Number Required',
         message: 'Please enter your smartcard/IUC number',
         autoHide: true,
@@ -415,7 +381,6 @@ const CableTvScreen: React.FC = () => {
     
     if (!validateCustomerId(smartcardNumber)) {
       showErrorMessage({
-        type: 'validation',
         title: 'Invalid Smartcard Number',
         message: 'Please enter a valid smartcard/IUC number',
         autoHide: true,
@@ -427,7 +392,6 @@ const CableTvScreen: React.FC = () => {
     // Use our tracked verification state
     if (!isCustomerVerified || !customerData) {
       showErrorMessage({
-        type: 'validation',
         title: 'Customer Not Verified',
         message: 'Please verify your smartcard number first',
         autoHide: true,
@@ -438,7 +402,6 @@ const CableTvScreen: React.FC = () => {
     
     if (!selectedPackage) {
       showErrorMessage({
-        type: 'validation',
         title: 'Package Required',
         message: 'Please select a subscription package',
         autoHide: true,
@@ -473,7 +436,6 @@ const CableTvScreen: React.FC = () => {
     
     if (!selectedProvider || !selectedPackage || !selectedSubscriptionType) {
       showErrorMessage({
-        type: 'validation',
         title: 'Missing Information',
         message: 'Please ensure all fields are properly selected',
         autoHide: true,
@@ -541,48 +503,34 @@ const CableTvScreen: React.FC = () => {
         });
       } else {
         setShowTwoFactorModal(false);
-        const errorAction = getErrorAction?.(result.requiresAction);
-        const errorType = getErrorType(result.error || 'GENERAL_ERROR');
+        // USE BACKEND ERROR MESSAGE DIRECTLY - NO TRANSFORMATION
+        const errorMessage = result.message || result.error || 'Cable TV purchase failed';
         
-        if (errorAction) {
-          showErrorMessage({
-            type: errorType,
-            title: errorAction.title,
-            message: errorAction.message,
-            errorAction,
-            onActionPress: () => {
-              if (errorAction.route) {
-                router.push(errorAction.route);
-              } else if (result.requiresAction === 'RETRY_PIN') {
-                setPasswordPin('');
-                setShowPinModal(true);
-              } else if (result.requiresAction === 'RETRY_2FA') {
-                setTwoFactorCode('');
-                setShowTwoFactorModal(true);
-              }
-            },
-            autoHide: false,
-            dismissible: true
-          });
-        } else {
-          showErrorMessage({
-            type: errorType,
-            title: 'Purchase Failed',
-            message: getUserFriendlyMessage?.(result.error || 'PURCHASE_FAILED', result.message || 'Cable TV purchase failed'),
-            autoHide: true,
-            duration: 4000
-          });
+        // Check for specific error patterns for action suggestions (optional)
+        let title = 'Purchase Failed';
+        if (errorMessage.includes('balance') || errorMessage.includes('insufficient')) {
+          title = 'Insufficient Balance';
+        } else if (errorMessage.includes('2FA') || errorMessage.includes('two-factor')) {
+          title = 'Authentication Error';
+        } else if (errorMessage.includes('invalid') || errorMessage.includes('valid')) {
+          title = 'Invalid Details';
         }
+        
+        showErrorMessage({
+          title,
+          message: errorMessage, // Direct backend message
+          autoHide: true,
+          duration: 5000
+        });
       }
     } catch (err) {
       console.error("Purchase error:", err);
       setShowTwoFactorModal(false);
       showErrorMessage({
-        type: 'server',
         title: 'Unexpected Error',
-        message: 'An unexpected error occurred. Please try again.',
+        message: err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.',
         autoHide: true,
-        duration: 4000
+        duration: 5000
       });
     }
   };
@@ -903,7 +851,7 @@ const CableTvScreen: React.FC = () => {
   );
 };
 
-// Static styles
+// Static styles (keep as is)
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 

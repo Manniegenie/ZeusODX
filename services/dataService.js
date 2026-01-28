@@ -63,27 +63,22 @@ export const dataService = {
         };
       } 
       
-      // Handle error response - apiClient puts backend message in response.error
+      // Handle error response - pass backend error directly
       else {
-        // The actual backend error message is in response.error
-        const backendMessage = response.error || 'Data purchase failed';
-        const statusCode = response.status || 400;
-        const errorCode = this.generateErrorCode(backendMessage);
-        const requiresAction = this.getRequiredAction(errorCode, backendMessage);
+        // Use backend error message directly, no transformation
+        const backendMessage = response.error || response.message || 'Data purchase failed';
         
         console.log('❌ Data purchase failed:', {
           backend_message: backendMessage,
-          error_code: errorCode,
-          requires_action: requiresAction,
-          status: statusCode
+          status: response.status || 400
         });
 
         return {
           success: false,
-          error: errorCode,
-          message: backendMessage,
-          status: statusCode,
-          requiresAction: requiresAction
+          error: backendMessage, // Direct backend error message
+          message: backendMessage, // Same message for consistency
+          status: response.status || 400
+          // Removed requiresAction mapping
         };
       }
 
@@ -95,8 +90,8 @@ export const dataService = {
       
       return {
         success: false,
-        error: 'NETWORK_ERROR',
-        message: 'Network connection failed. Please check your internet connection and try again.'
+        error: error.message, // Network error message directly
+        message: error.message // Same for consistency
       };
     }
   },
@@ -144,17 +139,15 @@ export const dataService = {
         };
       } else {
         const backendMessage = response.error || 'Failed to load data plans';
-        const errorCode = this.generateErrorCode(backendMessage);
         
         console.log('❌ Failed to fetch data plans:', {
           backend_message: backendMessage,
-          error_code: errorCode,
           network: serviceId
         });
 
         return {
           success: false,
-          error: errorCode,
+          error: backendMessage, // Direct backend error message
           message: backendMessage,
           data: []
         };
@@ -168,163 +161,11 @@ export const dataService = {
       
       return {
         success: false,
-        error: 'NETWORK_ERROR',
-        message: 'Failed to load data plans. Please check your connection.',
+        error: error.message, // Network error message directly
+        message: error.message,
         data: []
       };
     }
-  },
-
-  /**
-   * Generate standardized error code from backend error message
-   * @param {string} errorMessage - Error message from backend
-   * @returns {string} Standardized error code
-   */
-  generateErrorCode(errorMessage) {
-    if (!errorMessage || typeof errorMessage !== 'string') {
-      return 'PURCHASE_FAILED';
-    }
-    
-    const message = errorMessage.toLowerCase().trim();
-    
-    // 2FA related errors
-    if (message.includes('two-factor authentication')) {
-      if (message.includes('not set up') || message.includes('not enabled')) {
-        return 'SETUP_2FA_REQUIRED';
-      }
-      if (message.includes('invalid') || message.includes('incorrect')) {
-        return 'INVALID_2FA_CODE';
-      }
-    }
-    
-    // PIN related errors
-    if (message.includes('password pin') || message.includes('passwordpin')) {
-      if (message.includes('not set up') || message.includes('not enabled')) {
-        return 'SETUP_PIN_REQUIRED';
-      }
-      if (message.includes('invalid') || message.includes('incorrect')) {
-        return 'INVALID_PASSWORDPIN';
-      }
-    }
-    
-    // Balance related errors
-    if (message.includes('insufficient balance') || 
-        message.includes('not enough funds') || 
-        message.includes('balance too low')) {
-      return 'INSUFFICIENT_BALANCE';
-    }
-    
-    // KYC and limit related errors
-    if (message.includes('kyc limit') || 
-        message.includes('transaction limit') || 
-        message.includes('limit exceeded') ||
-        message.includes('exceeds') && message.includes('limit')) {
-      return 'KYC_LIMIT_EXCEEDED';
-    }
-    
-    // Data plan specific errors
-    if (message.includes('variation_id') || 
-        message.includes('data plan') ||
-        message.includes('plan not found') ||
-        message.includes('invalid plan')) {
-      return 'INVALID_DATA_PLAN';
-    }
-    
-    // Amount mismatch errors
-    if (message.includes('amount mismatch') || 
-        message.includes('amount does not match') ||
-        message.includes('price mismatch')) {
-      return 'AMOUNT_PLAN_MISMATCH';
-    }
-    
-    // Pending transaction errors
-    if (message.includes('pending transaction') || 
-        message.includes('already have a pending') ||
-        message.includes('transaction is being processed')) {
-      return 'PENDING_TRANSACTION_EXISTS';
-    }
-    
-    // Validation related errors
-    if (message.includes('validation failed') || 
-        message.includes('invalid phone') || 
-        message.includes('invalid amount') ||
-        message.includes('invalid service') ||
-        message.includes('required field')) {
-      return 'VALIDATION_ERROR';
-    }
-    
-    // Service/API related errors
-    if (message.includes('ebills') || 
-        message.includes('service unavailable') ||
-        message.includes('temporarily unavailable') ||
-        message.includes('api error')) {
-      return 'SERVICE_ERROR';
-    }
-    
-    // Network provider errors
-    if (message.includes('network provider') || 
-        message.includes('operator') ||
-        message.includes('carrier')) {
-      return 'PROVIDER_ERROR';
-    }
-    
-    // Default fallback
-    return 'PURCHASE_FAILED';
-  },
-
-  /**
-   * Determine required user action based on error
-   * @param {string} errorCode - Generated error code
-   * @param {string} errorMessage - Original error message
-   * @returns {string|null} Required action type
-   */
-  getRequiredAction(errorCode, errorMessage) {
-    const actionMap = {
-      'SETUP_2FA_REQUIRED': 'SETUP_2FA',
-      'SETUP_PIN_REQUIRED': 'SETUP_PIN',
-      'INVALID_2FA_CODE': 'RETRY_2FA',
-      'INVALID_PASSWORDPIN': 'RETRY_PIN',
-      'KYC_LIMIT_EXCEEDED': 'UPGRADE_KYC',
-      'INSUFFICIENT_BALANCE': 'ADD_FUNDS',
-      'INVALID_DATA_PLAN': 'SELECT_PLAN',
-      'AMOUNT_PLAN_MISMATCH': 'CHECK_AMOUNT',
-      'PENDING_TRANSACTION_EXISTS': 'WAIT_PENDING',
-      'VALIDATION_ERROR': 'FIX_INPUT',
-      'SERVICE_ERROR': 'RETRY_LATER',
-      'PROVIDER_ERROR': 'CONTACT_SUPPORT'
-    };
-
-    return actionMap[errorCode] || null;
-  },
-
-  /**
-   * Get user-friendly error message
-   * @param {string} errorCode - Generated error code
-   * @param {string} originalMessage - Original backend message
-   * @returns {string} User-friendly message
-   */
-  getUserFriendlyMessage(errorCode, originalMessage) {
-    const friendlyMessages = {
-      'SETUP_2FA_REQUIRED': 'Two-factor authentication is required for transactions. Please set it up in your security settings.',
-      'SETUP_PIN_REQUIRED': 'A password PIN is required for transactions. Please set it up in your security settings.',
-      'INVALID_2FA_CODE': 'The 2FA code you entered is incorrect. Please check your authenticator app and try again.',
-      'INVALID_PASSWORDPIN': 'The password PIN you entered is incorrect. Please try again.',
-      'KYC_LIMIT_EXCEEDED': 'This transaction exceeds your account limit. Please upgrade your verification level.',
-      'INSUFFICIENT_BALANCE': 'You don\'t have enough NGNZ balance for this transaction. Please add funds to your account.',
-      'INVALID_DATA_PLAN': 'The selected data plan is invalid or no longer available. Please select a different plan.',
-      'AMOUNT_PLAN_MISMATCH': 'The amount you entered doesn\'t match the selected data plan price. Please check and try again.',
-      'PENDING_TRANSACTION_EXISTS': 'You have a pending data transaction. Please wait for it to complete.',
-      'VALIDATION_ERROR': 'Please check your input and try again.',
-      'SERVICE_ERROR': 'The data service is temporarily unavailable. Please try again later.',
-      'PROVIDER_ERROR': 'There\'s an issue with the network provider. Please try again or contact support.',
-      'NETWORK_ERROR': 'Network connection failed. Please check your internet connection and try again.',
-      'PURCHASE_FAILED': 'Data purchase failed. Please try again.'
-    };
-
-    // Return friendly message or fall back to original if it's informative
-    return friendlyMessages[errorCode] || 
-           (originalMessage && originalMessage.length > 10 ? originalMessage : 
-            'Something went wrong with your data purchase. Please try again.');
   },
 
   /**

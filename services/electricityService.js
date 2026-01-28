@@ -19,11 +19,12 @@ export const electricityService = {
         console.log('✅ Electricity providers fetched successfully:', providers.length);
         return providers;
       } else {
-        console.warn('⚠️ PayBeta providers API failed, using static providers');
+        const errorMessage = response.error || 'Failed to fetch electricity providers';
+        console.warn('⚠️ PayBeta providers API failed:', errorMessage);
         return this.getStaticElectricityProviders();
       }
     } catch (error) {
-      console.error('❌ Failed to fetch electricity providers:', error);
+      console.error('❌ Failed to fetch electricity providers:', error.message);
       return this.getStaticElectricityProviders();
     }
   },
@@ -89,19 +90,20 @@ export const electricityService = {
           }
         };
       } else {
-        console.log('❌ Electricity customer validation failed:', response.error);
+        const errorMessage = response.error || 'Customer validation failed';
+        console.log('❌ Electricity customer validation failed:', errorMessage);
         
         return {
           success: false,
-          error: 'VALIDATION_FAILED',
-          message: response.error || 'Customer validation failed'
+          error: errorMessage, // Direct backend error message
+          message: errorMessage
         };
       }
     } catch (error) {
       console.error('❌ Electricity customer validation error:', error);
       return {
         success: false,
-        error: 'VALIDATION_ERROR',
+        error: error.message || 'Customer validation failed', // Network error message directly
         message: error.message || 'Customer validation failed'
       };
     }
@@ -136,10 +138,10 @@ export const electricityService = {
         provider: this.getProviderDisplayName(purchaseData.service_id)
       });
 
-      const raw = await apiClient.post('/electricity/purchase', body);
+      const response = await apiClient.post('/electricity/purchase', body);
 
       // If using axios, raw.data is the server body. If a custom client, raw may already be body.
-      return raw?.data ?? raw;
+      return response?.data ?? response;
     } catch (error) {
       console.error('❌ Electricity service error:', {
         error: error?.message,
@@ -155,7 +157,7 @@ export const electricityService = {
       // Fallback for network errors (keep eBills-like keys)
       return {
         code: 'error',
-        message: 'Network connection failed. Please try again.',
+        message: error.message || 'Network connection failed. Please try again.',
         data: null
       };
     }
@@ -191,191 +193,6 @@ export const electricityService = {
       { id: 'prepaid', name: 'Prepaid', description: 'Pay before consumption' },
       { id: 'postpaid', name: 'Postpaid', description: 'Pay after consumption' }
     ];
-  },
-
-  /**
-   * Generate standardized error code from backend error message
-   * @param {string} errorMessage - Error message from backend
-   * @returns {string} Standardized error code
-   */
-  generateErrorCode(errorMessage) {
-    if (!errorMessage || typeof errorMessage !== 'string') {
-      return 'PURCHASE_FAILED';
-    }
-
-    const message = errorMessage.toLowerCase().trim();
-
-    // 2FA related errors
-    if (message.includes('two-factor authentication')) {
-      if (message.includes('not set up') || message.includes('not enabled')) {
-        return 'SETUP_2FA_REQUIRED';
-      }
-      if (message.includes('invalid') || message.includes('incorrect')) {
-        return 'INVALID_2FA_CODE';
-      }
-    }
-
-    // PIN related errors
-    if (message.includes('password pin') || message.includes('passwordpin')) {
-      if (message.includes('not set up') || message.includes('not enabled')) {
-        return 'SETUP_PIN_REQUIRED';
-      }
-      if (message.includes('invalid') || message.includes('incorrect')) {
-        return 'INVALID_PASSWORDPIN';
-      }
-    }
-
-    // Balance related errors
-    if (
-      message.includes('insufficient balance') ||
-      message.includes('not enough funds') ||
-      message.includes('balance too low')
-    ) {
-      return 'INSUFFICIENT_BALANCE';
-    }
-
-    // KYC and limit related errors
-    if (
-      message.includes('kyc limit') ||
-      message.includes('transaction limit') ||
-      message.includes('limit exceeded') ||
-      (message.includes('exceeds') && message.includes('limit'))
-    ) {
-      return 'KYC_LIMIT_EXCEEDED';
-    }
-
-    // Meter number specific errors
-    if (
-      message.includes('customer_id') ||
-      message.includes('meter number') ||
-      message.includes('account number') ||
-      message.includes('invalid meter') ||
-      message.includes('invalid customer')
-    ) {
-      return 'INVALID_METER_NUMBER';
-    }
-
-    // Provider specific errors
-    if (
-      message.includes('service_id') ||
-      message.includes('invalid service') ||
-      message.includes('provider not found') ||
-      message.includes('invalid provider')
-    ) {
-      return 'INVALID_PROVIDER';
-    }
-
-    // Meter type errors
-    if (
-      message.includes('variation_id') ||
-      message.includes('meter type') ||
-      message.includes('invalid variation') ||
-      message.includes('prepaid') ||
-      message.includes('postpaid')
-    ) {
-      return 'INVALID_METER_TYPE';
-    }
-
-    // Amount related errors
-    if (message.includes('amount below minimum') || message.includes('minimum is')) {
-      return 'AMOUNT_TOO_LOW';
-    }
-
-    if (message.includes('amount above maximum') || message.includes('maximum is')) {
-      return 'AMOUNT_TOO_HIGH';
-    }
-
-    // Pending transaction errors
-    if (
-      message.includes('pending transaction') ||
-      message.includes('already have a pending') ||
-      message.includes('transaction is being processed')
-    ) {
-      return 'PENDING_TRANSACTION_EXISTS';
-    }
-
-    // Validation related errors
-    if (
-      message.includes('validation failed') ||
-      message.includes('invalid amount') ||
-      message.includes('invalid service') ||
-      message.includes('required field')
-    ) {
-      return 'VALIDATION_ERROR';
-    }
-
-    // Service/API related errors
-    if (
-      message.includes('ebills') ||
-      message.includes('service unavailable') ||
-      message.includes('temporarily unavailable') ||
-      message.includes('api error')
-    ) {
-      return 'SERVICE_ERROR';
-    }
-
-    // Default fallback
-    return 'PURCHASE_FAILED';
-  },
-
-  /**
-   * Determine required user action based on error
-   * @param {string} errorCode - Generated error code
-   * @param {string} errorMessage - Original error message
-   * @returns {string|null} Required action type
-   */
-  getRequiredAction(errorCode, errorMessage) {
-    const actionMap = {
-      SETUP_2FA_REQUIRED: 'SETUP_2FA',
-      SETUP_PIN_REQUIRED: 'SETUP_PIN',
-      INVALID_2FA_CODE: 'RETRY_2FA',
-      INVALID_PASSWORDPIN: 'RETRY_PIN',
-      KYC_LIMIT_EXCEEDED: 'UPGRADE_KYC',
-      INSUFFICIENT_BALANCE: 'ADD_FUNDS',
-      INVALID_METER_NUMBER: 'CHECK_METER',
-      INVALID_PROVIDER: 'SELECT_PROVIDER',
-      INVALID_METER_TYPE: 'SELECT_METER_TYPE',
-      AMOUNT_TOO_LOW: 'INCREASE_AMOUNT',
-      AMOUNT_TOO_HIGH: 'REDUCE_AMOUNT',
-      PENDING_TRANSACTION_EXISTS: 'WAIT_PENDING',
-      VALIDATION_ERROR: 'FIX_INPUT',
-      SERVICE_ERROR: 'RETRY_LATER',
-      PURCHASE_FAILED: 'CONTACT_SUPPORT'
-    };
-
-    return actionMap[errorCode] || null;
-  },
-
-  /**
-   * Get user-friendly error message
-   * @param {string} errorCode - Generated error code
-   * @param {string} originalMessage - Original backend message
-   * @returns {string} User-friendly message
-   */
-  getUserFriendlyMessage(errorCode, originalMessage) {
-    const friendlyMessages = {
-      SETUP_2FA_REQUIRED: 'Two-factor authentication is required for transactions. Please set it up in your security settings.',
-      SETUP_PIN_REQUIRED: 'A password PIN is required for transactions. Please set it up in your security settings.',
-      INVALID_2FA_CODE: 'The 2FA code you entered is incorrect. Please check your authenticator app and try again.',
-      INVALID_PASSWORDPIN: 'The password PIN you entered is incorrect. Please try again.',
-      KYC_LIMIT_EXCEEDED: 'This transaction exceeds your account limit. Please upgrade your verification level.',
-      INSUFFICIENT_BALANCE: "You don't have enough NGNZ balance for this transaction. Please add funds to your account.",
-      INVALID_METER_NUMBER: 'The meter/account number you entered is invalid. Please check and try again.',
-      INVALID_PROVIDER: 'Please select a valid electricity provider.',
-      INVALID_METER_TYPE: 'Please select a valid meter type (Prepaid or Postpaid).',
-      AMOUNT_TOO_LOW: 'Minimum electricity purchase amount is ₦1,000.',
-      AMOUNT_TOO_HIGH: 'Maximum electricity purchase amount is ₦100,000.',
-      PENDING_TRANSACTION_EXISTS: 'You have a pending electricity transaction. Please wait for it to complete.',
-      VALIDATION_ERROR: 'Please check your input and try again.',
-      SERVICE_ERROR: 'The electricity service is temporarily unavailable. Please try again later.',
-      NETWORK_ERROR: 'Network connection failed. Please check your internet connection and try again.',
-      PURCHASE_FAILED: 'Electricity purchase failed. Please try again.'
-    };
-
-    return (
-      friendlyMessages[errorCode] ||
-      (originalMessage && originalMessage.length > 10 ? originalMessage : 'Something went wrong with your electricity purchase. Please try again.')
-    );
   },
 
   /**
