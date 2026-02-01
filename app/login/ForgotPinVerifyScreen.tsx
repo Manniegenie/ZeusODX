@@ -2,6 +2,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+    Keyboard,
     SafeAreaView,
     StyleSheet,
     Text,
@@ -102,7 +103,19 @@ export default function ForgotPinVerifyScreen() {
     if (clean && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
+    // Dismiss keyboard when last digit is filled
+    if (clean && index === OTP_LENGTH - 1) {
+      Keyboard.dismiss();
+    }
   };
+
+  // Auto-verify when all digits are entered
+  useEffect(() => {
+    const code = otp.join('');
+    if (code.length === OTP_LENGTH && !verifying) {
+      handleVerify();
+    }
+  }, [otp]);
 
   const handleKeyPress = (index: number, key: string) => {
     if (key === 'Backspace' && !otp[index] && index > 0) {

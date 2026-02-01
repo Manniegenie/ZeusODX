@@ -26,8 +26,9 @@ export const usernameTransferService = {
       const response = await apiClient.post('/username-withdraw/internal', body);
 
       // Handle success response (matching airtime/swap service pattern)
+      // Note: apiClient wraps server response in { success, data }, so server's data is in response.data.data
       if (response.success && response.data) {
-        const data = response.data;
+        const data = response.data.data || response.data;
 
         console.log('✅ Username transfer successful:', {
           transactionId: data.transactionId || data._id,
@@ -219,7 +220,6 @@ export const usernameTransferService = {
     const amount = Number(data.amount);
     if (!data.amount || Number.isNaN(amount)) errors.push('Amount is required');
     else if (amount <= 0) errors.push('Amount must be greater than zero');
-    else if (amount > 1000000) errors.push('Amount is too large');
 
     if (!data.currency?.trim()) {
       errors.push('Currency is required');

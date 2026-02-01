@@ -136,6 +136,24 @@ export default function BVNVerify() {
   const [permission, requestPermission] = useCameraPermissions();
   const { isVerifying, isValidating, submitBiometricVerification, validateBVN, formatIdNumber } = useBiometricVerification();
 
+  const handleCameraStep = useCallback(async () => {
+    if (permission?.granted) {
+      setStep('camera');
+      return;
+    }
+
+    const result = await requestPermission();
+    if (result?.granted) {
+      setStep('camera');
+    } else {
+      Alert.alert(
+        'Camera Permission Required',
+        'Camera access is required for identity verification. Please enable camera access in your device settings to continue.',
+        [{ text: 'OK' }]
+      );
+    }
+  }, [permission, requestPermission]);
+
   const [showError, setShowError] = useState(false);
   const [errorType, setErrorType] = useState<ErrorType>('general');
   const [errorMessage, setErrorMessage] = useState('');
@@ -224,7 +242,7 @@ export default function BVNVerify() {
         <TouchableOpacity
           style={[styles.cta, { opacity: isFormComplete && !isVerifying && !isValidating ? 1 : 0.5 }]}
           disabled={!isFormComplete || isVerifying || isValidating}
-          onPress={() => setStep('camera')}
+          onPress={handleCameraStep}
         >
           {isValidating ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.ctaText}>Continue to Face Verification</Text>}
         </TouchableOpacity>

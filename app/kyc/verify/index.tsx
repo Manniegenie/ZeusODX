@@ -1,12 +1,27 @@
+import { Camera } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import backIcon from '../../../components/icons/backy.png';
 import { Colors } from '../../../constants/Colors';
 import { Typography } from '../../../constants/Typography';
 
 export default function VerifyIndex() {
   const router = useRouter();
+
+  const navigateWithCameraPermission = async (route: string) => {
+    const { status } = await Camera.requestCameraPermissionsAsync();
+
+    if (status === 'granted') {
+      router.push(route as any);
+    } else {
+      Alert.alert(
+        'Camera Permission Required',
+        'Camera access is required for identity verification. Please enable camera access in your device settings to continue.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -29,17 +44,17 @@ export default function VerifyIndex() {
         <View style={styles.section}>
           <Text style={styles.sub}>Choose a method to continue</Text>
 
-          <TouchableOpacity style={styles.card} onPress={() => router.push('/kyc/verify/nin')}>
+          <TouchableOpacity style={styles.card} onPress={() => navigateWithCameraPermission('/kyc/verify/nin')}>
             <Text style={styles.cardTitle}>National ID Number (NIN)</Text>
             <Text style={styles.cardSub}>Authority check + selfie</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.card} onPress={() => router.push('/kyc/verify/passport')}>
+          <TouchableOpacity style={styles.card} onPress={() => navigateWithCameraPermission('/kyc/verify/passport')}>
             <Text style={styles.cardTitle}>Passport</Text>
             <Text style={styles.cardSub}>Authority check + selfie</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.card} onPress={() => router.push('/kyc/verify/drivers-license')}>
+          <TouchableOpacity style={styles.card} onPress={() => navigateWithCameraPermission('/kyc/verify/drivers-license')}>
           <Text style={styles.cardTitle}>{`Driver's License`}</Text>
             <Text style={styles.cardSub}>Authority Check + selfie</Text>
           </TouchableOpacity>

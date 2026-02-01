@@ -3,7 +3,7 @@ export default {
   expo: {
     name: "ZeusODX",
     slug: "zeusodx",
-    version: "1.0.5",
+    version: "1.0.9",
     orientation: "default",
     icon: "./assets/images/app-icon.png",
     scheme: "zeusodx",
@@ -14,7 +14,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.manniegenie.zeusodx",
-      buildNumber: "4", // Incremented build number for fresh submission
+      buildNumber: "1", // Incremented build number for fresh submission
       icon: "./assets/images/app-icon.png",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
@@ -46,7 +46,7 @@ export default {
         "com.google.android.c2dm.permission.RECEIVE",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      versionCode: 111 // Incremented for Android submission
+      versionCode: 120 // Incremented for Android submission
     },
     web: {
       bundler: "metro",
