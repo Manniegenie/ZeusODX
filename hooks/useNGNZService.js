@@ -20,7 +20,6 @@ function validatePayload(payload = {}) {
   if (!dest.bankCode) errors.push('Bank code is required');
 
   if (amt && amt < 100) errors.push('Minimum withdrawal amount is ₦100');
-  if (amt && amt > 1_000_000) errors.push('Maximum withdrawal amount is ₦1,000,000');
 
   const twoFA = String(payload?.twoFactorCode || '').trim();
   if (!twoFA) errors.push('Two-factor authentication code is required');

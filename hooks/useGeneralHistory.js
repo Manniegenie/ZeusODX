@@ -72,20 +72,20 @@ export const useHistory = (currency, options = {}) => {
     setError(null);
 
     try {
-      const { 
+      const {
         status,
         startDate: customStartDate,
         endDate: customEndDate,
         month,
-        ...otherFilters 
+        ...otherFilters
       } = filterParams;
-      
+
       let apiParams = {
         page: 1,
         limit: defaultPageSize,
         ...otherFilters
       };
-      
+
       if (customStartDate && customEndDate) {
         apiParams.startDate = customStartDate;
         apiParams.endDate = customEndDate;
@@ -93,6 +93,12 @@ export const useHistory = (currency, options = {}) => {
         const dateRange = getMonthDateRange(month);
         apiParams.startDate = dateRange.startDate;
         apiParams.endDate = dateRange.endDate;
+      } else {
+        // FIX: Default to last 90 days
+        const now = new Date();
+        const ninetyDaysAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        apiParams.startDate = ninetyDaysAgo.toISOString().split('T')[0];
+        apiParams.endDate = now.toISOString().split('T')[0];
       }
 
       if (status && status !== 'All Status') {
@@ -132,21 +138,21 @@ export const useHistory = (currency, options = {}) => {
     setError(null);
 
     try {
-      const { 
+      const {
         category,
         status,
         startDate: customStartDate,
         endDate: customEndDate,
         month,
-        ...otherFilters 
+        ...otherFilters
       } = filterParams;
-      
+
       let apiParams = {
         page: 1,
         limit: defaultPageSize,
         ...otherFilters
       };
-      
+
       if (customStartDate && customEndDate) {
         apiParams.startDate = customStartDate;
         apiParams.endDate = customEndDate;
@@ -154,6 +160,12 @@ export const useHistory = (currency, options = {}) => {
         const dateRange = getMonthDateRange(month);
         apiParams.startDate = dateRange.startDate;
         apiParams.endDate = dateRange.endDate;
+      } else {
+        // FIX: Default to last 90 days
+        const now = new Date();
+        const ninetyDaysAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        apiParams.startDate = ninetyDaysAgo.toISOString().split('T')[0];
+        apiParams.endDate = now.toISOString().split('T')[0];
       }
 
       if (category && category !== 'All Categories') {
@@ -201,20 +213,20 @@ export const useHistory = (currency, options = {}) => {
     setError(null);
 
     try {
-      const { 
+      const {
         status,
         startDate: customStartDate,
         endDate: customEndDate,
         month,
-        ...otherFilters 
+        ...otherFilters
       } = filterParams;
-      
+
       let apiParams = {
         page: 1,
         limit: defaultPageSize,
         ...otherFilters
       };
-      
+
       if (customStartDate && customEndDate) {
         apiParams.startDate = customStartDate;
         apiParams.endDate = customEndDate;
@@ -222,6 +234,12 @@ export const useHistory = (currency, options = {}) => {
         const dateRange = getMonthDateRange(month);
         apiParams.startDate = dateRange.startDate;
         apiParams.endDate = dateRange.endDate;
+      } else {
+        // FIX: Default to last 90 days
+        const now = new Date();
+        const ninetyDaysAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        apiParams.startDate = ninetyDaysAgo.toISOString().split('T')[0];
+        apiParams.endDate = now.toISOString().split('T')[0];
       }
 
       if (status && status !== 'All Status') {
@@ -262,22 +280,22 @@ export const useHistory = (currency, options = {}) => {
     setError(null);
 
     try {
-      const { 
+      const {
         category, // ADDED: Extract category from filterParams
         status,
         startDate: customStartDate,
         endDate: customEndDate,
         month,
-        ...otherFilters 
+        ...otherFilters
       } = filterParams;
-      
+
       let apiParams = {
         page: 1,
         limit: defaultPageSize,
         transactionType: 'all',
         ...otherFilters
       };
-      
+
       if (customStartDate && customEndDate) {
         apiParams.startDate = customStartDate;
         apiParams.endDate = customEndDate;
@@ -285,6 +303,13 @@ export const useHistory = (currency, options = {}) => {
         const dateRange = getMonthDateRange(month);
         apiParams.startDate = dateRange.startDate;
         apiParams.endDate = dateRange.endDate;
+      } else {
+        // FIX: Default to last 90 days when no date filter is provided
+        // This ensures "Recent History" on wallet screens shows recent transactions
+        const now = new Date();
+        const ninetyDaysAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        apiParams.startDate = ninetyDaysAgo.toISOString().split('T')[0];
+        apiParams.endDate = now.toISOString().split('T')[0];
       }
 
       // ADDED: Handle category filtering by mapping to type
@@ -377,20 +402,20 @@ export const useHistory = (currency, options = {}) => {
     setError(null);
 
     try {
-      const { 
+      const {
         status,
         startDate: customStartDate,
         endDate: customEndDate,
         month,
-        ...otherFilters 
+        ...otherFilters
       } = filterParams;
-      
+
       let apiParams = {
         page: 1,
         limit: defaultPageSize,
         ...otherFilters
       };
-      
+
       if (customStartDate && customEndDate) {
         apiParams.startDate = customStartDate;
         apiParams.endDate = customEndDate;
@@ -398,6 +423,12 @@ export const useHistory = (currency, options = {}) => {
         const dateRange = getMonthDateRange(month);
         apiParams.startDate = dateRange.startDate;
         apiParams.endDate = dateRange.endDate;
+      } else {
+        // FIX: Default to last 90 days
+        const now = new Date();
+        const ninetyDaysAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        apiParams.startDate = ninetyDaysAgo.toISOString().split('T')[0];
+        apiParams.endDate = now.toISOString().split('T')[0];
       }
 
       if (category && category !== 'All Categories') {

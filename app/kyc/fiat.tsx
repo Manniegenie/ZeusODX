@@ -1,3 +1,5 @@
+import { Camera } from 'expo-camera';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import {
   View,
@@ -9,8 +11,8 @@ import {
   StatusBar,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import backIcon from '../../components/icons/backy.png';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
@@ -43,9 +45,20 @@ const FiatScreen: React.FC = () => {
     router.back();
   };
 
-  const handleBvnPress = (): void => {
+  const handleBvnPress = async (): Promise<void> => {
     if (!bvnClickable) return;
-    router.push('/kyc/verify/bvn');
+
+    const { status } = await Camera.requestCameraPermissionsAsync();
+
+    if (status === 'granted') {
+      router.push('/kyc/verify/bvn');
+    } else {
+      Alert.alert(
+        'Camera Permission Required',
+        'Camera access is required for BVN verification. Please enable camera access in your device settings to continue.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const handleBankPress = (): void => {

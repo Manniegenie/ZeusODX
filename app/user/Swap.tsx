@@ -348,36 +348,38 @@ export default function SwapScreen({
 
   const formatUsdValue = (amount: string, token: TokenOption | null): string => {
     const val = parseFloat(unformat(amount)) || 0;
-    
+
     // Return $0.00 if amount is invalid or zero
     if (!val || isNaN(val) || val <= 0) {
       return '$0.00';
     }
-    
+
     if (token?.symbol === 'NGNZ') {
       // Use NGNZ exchange rate to convert to USD
       const exchangeRate = ngnzExchangeRate;
-      
+
       // Handle cases where exchange rate is not available yet
       if (!exchangeRate || isNaN(exchangeRate) || exchangeRate <= 0) {
         return '$0.00';
       }
-      
+
       // For NGNZ: divide by exchange rate to get USD value
       const usdValue = val / exchangeRate;
-      return '$' + usdValue.toFixed(4); // Show 4 decimal places for USD value
+      // Format with 2 decimals for consistency, add commas for thousands
+      return '$' + usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
-    
+
     // For all other tokens, use their current price
     const price = token?.price || 0;
-    
+
     // Handle cases where price is not available yet
     if (!price || isNaN(price) || price <= 0) {
       return '$0.00';
     }
-    
+
     const usdValue = val * price;
-    return '$' + usdValue.toFixed(4); // Show 4 decimal places for USD value
+    // Format with 2 decimals for consistency, add commas for thousands
+    return '$' + usdValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
   const getMaxBalance = (token: TokenOption | null): string => {
@@ -667,7 +669,12 @@ export default function SwapScreen({
                   keyboardType="decimal-pad" 
                   placeholderTextColor={Colors.text.secondary} 
                 />
-                <Text style={styles.usdValue}>{formatUsdValue(fromAmount, selectedFromToken)}</Text>
+                {/* Show received USD value when quote exists, otherwise show sell value */}
+                <Text style={styles.usdValue}>
+                  {(toAmountRaw && toAmountRaw > 0 && selectedToToken)
+                    ? formatUsdValue(String(toAmountRaw), selectedToToken)
+                    : formatUsdValue(fromAmount, selectedFromToken)}
+                </Text>
               </View>
               <View style={styles.inputRight}>
                 <TouchableOpacity style={styles.tokenSelector} onPress={() => handleTokenSelectorPress('from')}>
@@ -698,13 +705,13 @@ export default function SwapScreen({
             <Text style={styles.inputLabel}>Buy</Text>
             <View style={styles.inputCard}>
               <View style={styles.inputLeft}>
-                <TextInput 
-                  style={styles.amountInput} 
-                  value={toAmount === '0' ? '0' : formatWithCommas(formatDisplayAmount(toAmount))} 
-                  editable={false} 
-                  placeholder="0" 
-                  keyboardType="decimal-pad" 
-                  placeholderTextColor={Colors.text.secondary} 
+                <TextInput
+                  style={styles.amountInput}
+                  value={toAmount === '0' ? '0' : formatWithCommas(formatDisplayAmount(toAmount, selectedToToken?.symbol))}
+                  editable={false}
+                  placeholder="0"
+                  keyboardType="decimal-pad"
+                  placeholderTextColor={Colors.text.secondary}
                 />
                 <Text style={styles.usdValue}>{formatUsdValue(toAmount, selectedToToken)}</Text>
               </View>

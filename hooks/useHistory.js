@@ -55,6 +55,12 @@ export const useHistory = (currency, options = {}) => {
       const r = getMonthDateRange(month);
       apiParams.startDate = r.startDate;
       apiParams.endDate = r.endDate;
+    } else {
+      // FIX: Default to last 90 days
+      const now = new Date();
+      const ninetyDaysAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+      apiParams.startDate = ninetyDaysAgo.toISOString().split('T')[0];
+      apiParams.endDate = now.toISOString().split('T')[0];
     }
 
     if (category && category !== 'All Categories' && BILL_CATEGORIES.includes(category)) {
@@ -80,6 +86,12 @@ export const useHistory = (currency, options = {}) => {
       const r = getMonthDateRange(month);
       apiParams.startDate = r.startDate;
       apiParams.endDate = r.endDate;
+    } else {
+      // FIX: Default to last 90 days
+      const now = new Date();
+      const ninetyDaysAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+      apiParams.startDate = ninetyDaysAgo.toISOString().split('T')[0];
+      apiParams.endDate = now.toISOString().split('T')[0];
     }
 
     if (status && status !== 'All Status') {
@@ -154,12 +166,12 @@ export const useHistory = (currency, options = {}) => {
     setError(null);
     try {
       const { category } = filterParams;
-      
+
       // Check if this is specifically for NGNZ withdrawals
       if (normalizedCurrency === 'NGNZ' && category === 'Transfer') {
         return fetchNGNZWithdrawals(filterParams);
       }
-      
+
       // Check if this is a bill payment category
       if (category && BILL_CATEGORIES.includes(category)) {
         return fetchBillPayments(filterParams);
@@ -175,6 +187,13 @@ export const useHistory = (currency, options = {}) => {
         const r = getMonthDateRange(month);
         apiParams.startDate = r.startDate;
         apiParams.endDate = r.endDate;
+      } else {
+        // FIX: Default to last 90 days when no date filter is provided
+        // This ensures "Recent History" on wallet screens shows recent transactions
+        const now = new Date();
+        const ninetyDaysAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        apiParams.startDate = ninetyDaysAgo.toISOString().split('T')[0];
+        apiParams.endDate = now.toISOString().split('T')[0];
       }
 
       if (filterParams.category && filterParams.category !== 'All Categories') {
