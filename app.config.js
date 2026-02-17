@@ -3,7 +3,7 @@ export default {
   expo: {
     name: "ZeusODX",
     slug: "zeusodx",
-    version: "1.0.5",
+    version: "1.1.0",
     orientation: "default",
     icon: "./assets/images/app-icon.png",
     scheme: "zeusodx",
@@ -22,6 +22,7 @@ export default {
         NSMicrophoneUsageDescription: "ZeusODX uses the microphone to record audio during the video identity confirmation process to verify that you are a real person.",
         NSFaceIDUsageDescription: "ZeusODX uses Face ID to allow you to securely log in to your account without typing your password.",
         NSPhotoLibraryUsageDescription: "ZeusODX requires access to your photo library to allow you to upload identity documents or proof of transaction images.",
+        NSUserTrackingUsageDescription: "ZeusODX uses tracking to measure ad performance and improve your experience.",
         UIBackgroundModes: ["remote-notification"]
       }
     },
@@ -57,6 +58,7 @@ export default {
       "expo-router",
       "expo-font",
       "expo-secure-store",
+      "react-native-appsflyer",
       [
         "expo-build-properties",
         {
@@ -100,7 +102,8 @@ export default {
       router: {},
       eas: {
         projectId: "7cc7ad65-2b13-42f3-9865-62b4e1d55984"
-      }
+      },
+      appleAppId: process.env.EXPO_PUBLIC_APPLE_APP_ID || "6755314395"
     },
     owner: "manuelwurld",
     runtimeVersion: {

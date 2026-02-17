@@ -19,6 +19,7 @@ import {
     TouchableWithoutFeedback,
     View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Defs, Mask, Rect } from 'react-native-svg';
 import ErrorDisplay from '../../../components/ErrorDisplay';
 import backIcon from '../../../components/icons/backy.png';
@@ -226,11 +227,14 @@ export default function NINVerify() {
           {nin.length > 0 && isValidFormat && <Text style={styles.successHint}>✓ Valid NIN format</Text>}
         </View>
 
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>💡 Tips for better verification:</Text>
-          <Text style={styles.infoText}>• Ensure your NIN is correct and active</Text>
-          <Text style={styles.infoText}>• Use good lighting for your selfie</Text>
-          <Text style={styles.infoText}>• Remove glasses if possible</Text>
+        <View style={styles.guideBox}>
+          <Ionicons name="bulb-outline" size={18} color={Colors.hintIcon} style={styles.guideIcon} />
+          <View style={styles.guideTextWrap}>
+            <Text style={styles.guideTitle}>Tips for better verification</Text>
+            <Text style={styles.guideText}>• Ensure your NIN is correct and active</Text>
+            <Text style={styles.guideText}>• Use good lighting for your selfie</Text>
+            <Text style={styles.guideText}>• Remove glasses if possible</Text>
+          </View>
         </View>
 
         <TouchableOpacity
@@ -259,11 +263,14 @@ export default function NINVerify() {
         <CameraOverlay />
         <View style={[styles.instructionsContainer, { top: PREVIEW_RECT.minY + PREVIEW_SIZE + 40 }]}>
           {isCountingDown ? <Text style={styles.countdownText}>{countdown}</Text> : (
-            <>
-              <Text style={styles.instructionsText}>Position your face in the circle</Text>
-              <Text style={styles.subInstructionsText}>Hold phone straight at eye level</Text>
-              <Text style={styles.subInstructionsText}>Avoid tilting the phone</Text>
-            </>
+            <View style={styles.guideBubble}>
+              <Ionicons name="bulb-outline" size={16} color="#FEF08A" style={styles.guideBubbleIcon} />
+              <View>
+                <Text style={styles.instructionsText}>Position your face in the circle</Text>
+                <Text style={styles.subInstructionsText}>Hold phone straight at eye level</Text>
+                <Text style={styles.subInstructionsText}>Avoid tilting the phone</Text>
+              </View>
+            </View>
           )}
         </View>
         <View style={styles.cameraControls}>
@@ -332,15 +339,19 @@ const styles = StyleSheet.create({
   inputError: { borderColor: '#EF4444' },
   errorText: { color: '#EF4444', fontSize: 12, marginTop: 4, marginLeft: 4 },
   successHint: { color: '#10B981', fontSize: 12, marginTop: 4, marginLeft: 4 },
-  infoBox: { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD', borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 16 },
-  infoTitle: { fontSize: 14, fontWeight: '600', color: '#0369A1', marginBottom: 8 },
-  infoText: { fontSize: 12, color: '#0369A1', marginBottom: 2 },
+  guideBox: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: Colors.hintBg, borderLeftWidth: 4, borderLeftColor: Colors.hintIcon, borderRadius: 8, padding: 10, marginBottom: 16 },
+  guideIcon: { marginRight: 8, marginTop: 2 },
+  guideTextWrap: { flex: 1 },
+  guideTitle: { fontSize: 12, fontWeight: '600', color: Colors.hint, marginBottom: 4 },
+  guideText: { fontSize: 11, color: Colors.hint, marginBottom: 2, lineHeight: 16 },
+  guideBubble: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(180, 83, 9, 0.85)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, gap: 8 },
+  guideBubbleIcon: { marginRight: 0 },
   cta: { backgroundColor: '#35297F', borderRadius: 10, padding: 14, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
   ctaText: { color: '#fff', fontWeight: '600', fontSize: 16 },
   cameraContainer: { flex: 1, backgroundColor: '#000' },
   instructionsContainer: { position: 'absolute', left: 0, right: 0, paddingHorizontal: 20, alignItems: 'center' },
-  instructionsText: { color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center', marginBottom: 8 },
-  subInstructionsText: { color: '#D1D5DB', fontSize: 14, textAlign: 'center', marginBottom: 4 },
+  instructionsText: { color: '#FEF08A', fontSize: 13, fontWeight: '600', textAlign: 'center', marginBottom: 4 },
+  subInstructionsText: { color: 'rgba(254, 240, 138, 0.95)', fontSize: 11, textAlign: 'center', marginBottom: 2 },
   countdownText: { color: '#fff', fontSize: 72, fontWeight: 'bold' },
   cameraControls: { position: 'absolute', bottom: 60, left: 0, right: 0, paddingHorizontal: 20 },
   captureButton: { backgroundColor: '#35297F', borderRadius: 50, paddingVertical: 16, paddingHorizontal: 32, alignItems: 'center', alignSelf: 'center' },

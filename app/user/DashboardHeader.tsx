@@ -19,18 +19,30 @@ const activityIcon = require('../../components/icons/activity-icon.png');
 interface DashboardHeaderProps {
   onNotificationPress?: () => void;
   onActivityPress?: () => void;
+  /** When false, username greeting is hidden (e.g. on wallet screen). */
+  showUsername?: boolean;
+  /** When false, activity/history icon is hidden. */
+  showActivityIcon?: boolean;
+  /** When false, notification bell icon is hidden. */
+  showNotificationIcon?: boolean;
+  /** Optional centered title (e.g. "Wallet") when no username/icons. */
+  title?: string;
 }
 
-export default function DashboardHeader({ 
+export default function DashboardHeader({
   onNotificationPress,
-  onActivityPress
+  onActivityPress,
+  showUsername = true,
+  showActivityIcon = true,
+  showNotificationIcon = true,
+  title,
 }: DashboardHeaderProps) {
   const router = useRouter();
   const [username, setUsername] = useState<string>('');
 
   useEffect(() => {
-    loadUsername();
-  }, []);
+    if (showUsername) loadUsername();
+  }, [showUsername]);
 
   const loadUsername = async () => {
     try {
@@ -51,14 +63,17 @@ export default function DashboardHeader({
     router.push('/user/notificationpage');
   };
 
+  const showIcons = showActivityIcon || showNotificationIcon;
+
   return (
     <>
       <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
       
-      {/* Header Section */}
       <View style={styles.header}>
         <View style={styles.greetingContainer}>
-          {username ? (
+          {title ? (
+            <Text style={styles.headerTitle}>{title}</Text>
+          ) : showUsername && username ? (
             <Text style={styles.greetingText}>
               Hi, {username} 👋
             </Text>
@@ -67,15 +82,20 @@ export default function DashboardHeader({
           )}
         </View>
         
-        <View style={styles.iconsContainer}>
-          <TouchableOpacity style={styles.iconButton} onPress={handleActivityPress}>
-            <Image source={activityIcon} style={styles.activityIcon} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.iconButton} onPress={handleNotificationPress}>
-            <Image source={bellIcon} style={styles.bellIcon} />
-          </TouchableOpacity>
-        </View>
+        {showIcons && (
+          <View style={styles.iconsContainer}>
+            {showActivityIcon && (
+              <TouchableOpacity style={styles.iconButton} onPress={handleActivityPress}>
+                <Image source={activityIcon} style={styles.activityIcon} />
+              </TouchableOpacity>
+            )}
+            {showNotificationIcon && (
+              <TouchableOpacity style={styles.iconButton} onPress={handleNotificationPress}>
+                <Image source={bellIcon} style={styles.bellIcon} />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </View>
     </>
   );
@@ -100,6 +120,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.text.primary,
     opacity: 0.8,
+  },
+  headerTitle: {
+    fontFamily: Typography.medium,
+    fontSize: 18,
+    color: Colors.primary,
+    textAlign: 'center',
+    fontWeight: '600',
   },
   headerSpacer: {
     width: 24,

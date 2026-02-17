@@ -16,7 +16,7 @@ import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useDashboard } from '../../hooks/useDashboard';
-import { useBanners } from '../../hooks/usebanners'; // Import the new hook
+import { useBanners } from '../../hooks/usebanners';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BANNER_WIDTH = SCREEN_WIDTH - (Layout.spacing.lg * 2);
@@ -57,8 +57,8 @@ export default function PortfolioSection({
 }: PortfolioSectionProps) {
   const router = useRouter();
   const { totalPortfolioBalance, completionPercentage } = useDashboard();
-  const { banners } = useBanners(); // Fetch dynamic banners
-  
+  const { banners } = useBanners();
+
   const flatListRef = useRef<FlatList>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 

@@ -1,9 +1,8 @@
 // app/components/WalletPortfolioSection.tsx
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Image,
-    ImageBackground,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -16,14 +15,14 @@ import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useDashboard } from '../../hooks/useDashboard';
+import { useDisplayCurrency } from '../../contexts/DisplayCurrencyContext';
 import DashboardModals from './DashboardModals';
 
 // Assets
-const depositIcon    = require('../../components/icons/deposit-icon.png');
-const transferIcon   = require('../../components/icons/transfer-icon.png');
-const swapIcon       = require('../../components/icons/swap-icon.png');
-const portfolioBg    = require('../../assets/images/portfolio-bgg.jpg');
-const eyeIcon        = require('../../components/icons/eye-icon.png');
+const depositIcon = require('../../assets/images/depositicon.png');
+const transferIcon = require('../../assets/images/Transfericon.png');
+const swapIcon = require('../../assets/images/Buy:Sell.png');
+const eyeIcon = require('../../components/icons/eye-icon.png');
 
 type QuickLink = {
   id: 'deposit' | 'transfer' | 'buy-sell';
@@ -44,12 +43,22 @@ export default function WalletPortfolioSection({
   const router = useRouter();
 
   // Dashboard-derived data
-  const { totalPortfolioBalance } = useDashboard();
+  const { totalPortfolioBalance, ngnzExchangeRate } = useDashboard();
   const safeBalance = totalPortfolioBalance || 0;
-  const formattedUsdBalance = `$${safeBalance.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+  const rate = ngnzExchangeRate ?? 1600;
+  const balanceNGN = safeBalance * rate;
+
+  const { displayCurrency, setDisplayCurrency } = useDisplayCurrency();
+
+  const setCurrency = (currency: 'USD' | 'NGN') => {
+    if (currency === displayCurrency) return;
+    setDisplayCurrency(currency);
+  };
+
+  const formattedBalance =
+    displayCurrency === 'USD'
+      ? `$${safeBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : `₦${balanceNGN.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   // Modal state management - matching main dashboard exactly
   const [showWalletModal, setShowWalletModal] = useState(false);
@@ -126,25 +135,45 @@ export default function WalletPortfolioSection({
 
   return (
     <View style={styles.container}>
-      {/* Balance Card */}
-      <View style={styles.balanceCard}>
-        <ImageBackground
-          source={portfolioBg}
-          style={styles.balanceBackground}
-          imageStyle={styles.balanceBackgroundImage}
-        >
-          <View style={styles.balanceContent}>
+      {/* Balance - bare to background */}
+      <View style={styles.balanceContent}>
+            <View style={styles.currencySwitch}>
+              <TouchableOpacity
+                style={[
+                  styles.currencySegment,
+                  displayCurrency === 'USD' && styles.currencySegmentActive,
+                  displayCurrency === 'USD' && styles.currencySegmentActiveLeft,
+                ]}
+                onPress={() => setCurrency('USD')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.currencySegmentText, displayCurrency === 'USD' && styles.currencySegmentTextActive]}>
+                  USD
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.currencySegment,
+                  displayCurrency === 'NGN' && styles.currencySegmentActive,
+                  displayCurrency === 'NGN' && styles.currencySegmentActiveRight,
+                ]}
+                onPress={() => setCurrency('NGN')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.currencySegmentText, displayCurrency === 'NGN' && styles.currencySegmentTextActive]}>
+                  NGN
+                </Text>
+              </TouchableOpacity>
+            </View>
             <Text style={styles.balanceLabel}>Total Portfolio Balance</Text>
             <View style={styles.balanceRow}>
               <Text style={styles.balanceAmount}>
-                {balanceVisible ? formattedUsdBalance : '****'}
+                {balanceVisible ? formattedBalance : '****'}
               </Text>
               <TouchableOpacity onPress={onToggleBalanceVisibility}>
                 <Image source={eyeIcon} style={styles.eyeIcon} />
               </TouchableOpacity>
             </View>
-          </View>
-        </ImageBackground>
       </View>
 
       {/* Quick Actions */}
@@ -199,27 +228,52 @@ export default function WalletPortfolioSection({
 const styles = StyleSheet.create({
   container: { marginBottom: Layout.spacing.lg },
 
-  // Balance card
-  balanceCard: {
-    marginHorizontal: Layout.spacing.lg,
-    marginBottom: Layout.spacing.lg,
-    borderRadius: Layout.borderRadius.lg,
-    overflow: 'hidden',
-    borderBottomWidth: 1,
-    borderBottomColor: '#DDDDDD',
-  },
-  balanceBackground: { height: moderateScale(151, 0.1), justifyContent: 'center', backgroundColor: '#4A3FAD' },
-  balanceBackgroundImage: { borderRadius: Layout.borderRadius.lg },
   balanceContent: {
-    padding: Layout.spacing.lg,
+    paddingHorizontal: Layout.spacing.lg,
+    paddingVertical: Layout.spacing.lg,
     justifyContent: 'center',
     alignItems: 'center',
-    height: '100%',
+    marginBottom: Layout.spacing.lg,
+  },
+  currencySwitch: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    backgroundColor: Colors.border,
+    borderRadius: 20,
+    padding: 3,
+    marginTop: -Layout.spacing.lg,
+    marginBottom: Layout.spacing.xl,
+  },
+  currencySegment: {
+    paddingVertical: 7,
+    paddingHorizontal: 16,
+    minWidth: 47,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  currencySegmentActive: {
+    backgroundColor: Colors.primary,
+  },
+  currencySegmentActiveLeft: {
+    borderTopLeftRadius: 17,
+    borderBottomLeftRadius: 17,
+  },
+  currencySegmentActiveRight: {
+    borderTopRightRadius: 17,
+    borderBottomRightRadius: 17,
+  },
+  currencySegmentText: {
+    fontFamily: Typography.medium,
+    fontSize: moderateScale(11, 0.1),
+    color: Colors.text.secondary,
+  },
+  currencySegmentTextActive: {
+    color: Colors.surface,
   },
   balanceLabel: {
     fontFamily: Typography.regular,
     fontSize: moderateScale(14, 0.1),
-    color: Colors.surface,
+    color: '#000000',
     marginBottom: Layout.spacing.sm,
     textAlign: 'center',
   },
@@ -227,11 +281,11 @@ const styles = StyleSheet.create({
   balanceAmount: {
     fontFamily: Typography.medium,
     fontSize: moderateScale(32, 0.15),
-    color: Colors.surface,
+    color: '#000000',
     fontWeight: '500',
     textAlign: 'center',
   },
-  eyeIcon: { width: 12, height: 12, tintColor: Colors.surface, marginLeft: 6 },
+  eyeIcon: { width: 12, height: 12, tintColor: '#000000', marginLeft: 6 },
 
   // Quick links
   quickLinksContainer: { paddingHorizontal: Layout.spacing.lg, marginBottom: Layout.spacing.lg },

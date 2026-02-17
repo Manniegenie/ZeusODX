@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    SafeAreaView,
     ScrollView,
     StyleSheet,
     View
@@ -34,14 +35,12 @@ interface WalletOption {
 }
 
 interface WalletScreenProps {
-  onNotificationPress: () => void;
-  onTokenPress: (token: any) => void;
+  onTokenPress?: (token: any) => void;
 }
 
-export default function WalletScreen({ 
-  onNotificationPress,
-  onTokenPress
-}: WalletScreenProps) {
+export default function WalletScreen({
+  onTokenPress,
+}: WalletScreenProps = {}) {
   const router = useRouter();
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [activeTab, setActiveTab] = useState('All tokens');
@@ -144,10 +143,9 @@ export default function WalletScreen({
 
   return (
     <View style={styles.container}>
-      {/* Use existing DashboardHeader */}
-      <DashboardHeader onNotificationPress={onNotificationPress} />
-      
-      <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+      <SafeAreaView style={styles.safeArea}>
+        <DashboardHeader showUsername={false} showActivityIcon={false} showNotificationIcon={false} />
+        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         {/* Use modified PortfolioSection with proper quick link handling */}
         <WalletPortfolioSection
           balanceVisible={balanceVisible}
@@ -161,9 +159,10 @@ export default function WalletScreen({
         <WalletTokensSection
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          onAssetPress={onTokenPress}
+          onAssetPress={onTokenPress ?? (() => {})}
         />
       </ScrollView>
+      </SafeAreaView>
 
       {/* Add DashboardModals component like in DashboardScreen */}
       <DashboardModals
@@ -187,6 +186,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  safeArea: {
+    flex: 1,
   },
   scrollContainer: {
     flex: 1,
