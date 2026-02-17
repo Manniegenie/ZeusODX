@@ -18,6 +18,7 @@ const BettingIcon = require('../../components/icons/betting.png');
 const CableTVIcon = require('../../components/icons/cabletv.png');
 const GiftCardIcon = require('../../components/icons/giftcard.png');
 const CloseIcon = require('../../components/icons/close.png');
+const ActivityIcon = require('../../components/icons/activity-icon.png');
 
 interface Service {
   id: string;
@@ -64,6 +65,12 @@ const UtilitiesScreen: React.FC = () => {
       title: 'Cable TV',
       icon: CableTVIcon,
       route: '/user/CableTV'
+    },
+    {
+      id: 'history',
+      title: 'History',
+      icon: ActivityIcon,
+      route: '/user/generalhistory'
     },
   ];
 
@@ -122,6 +129,13 @@ const UtilitiesScreen: React.FC = () => {
             {renderServiceItem(services[3])}
             {renderServiceItem(services[4])}
             {renderServiceItem(services[5])}
+          </View>
+
+          {/* Third Row - History */}
+          <View style={styles.serviceRow}>
+            {renderServiceItem(services[6])}
+            <View style={styles.serviceItem} />
+            <View style={styles.serviceItem} />
           </View>
         </View>
       </View>

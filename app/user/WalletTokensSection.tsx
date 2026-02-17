@@ -14,8 +14,10 @@ import { moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
+import { useDisplayCurrency } from '../../contexts/DisplayCurrencyContext';
 import { useTokens } from '../../hooks/useTokens';
 import { useBalance } from '../../hooks/useWallet';
+import { useDashboard } from '../../hooks/useDashboard';
 
 interface WalletToken {
   id: string;
@@ -26,6 +28,8 @@ interface WalletToken {
   usdValue: number;
   formattedBalance: string;
   formattedUsdValue: string;
+  /** Value in selected display currency (USD or NGN) */
+  formattedValue: string;
   hasBalance: boolean;
 }
 
@@ -41,7 +45,10 @@ export default function WalletTokensSection({
   onAssetPress 
 }: WalletTokensSectionProps) {
   const router = useRouter();
-  
+  const { displayCurrency } = useDisplayCurrency();
+  const { ngnzExchangeRate } = useDashboard();
+  const rate = ngnzExchangeRate ?? 1600;
+
   // Get token metadata from useTokens
   const { 
     tokens: allTokens, 
@@ -131,6 +138,12 @@ export default function WalletTokensSection({
           formattedBalance = balance.toFixed(8);
         }
         
+        const formattedUsd = usdValueMap[token.symbol];
+        const formattedValue =
+          displayCurrency === 'NGN'
+            ? `₦${(usdValue * rate).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            : formattedUsd;
+
         return {
           id: token.id,
           name: token.name,
@@ -140,7 +153,8 @@ export default function WalletTokensSection({
           usdValue,
           hasBalance,
           formattedBalance,
-          formattedUsdValue: usdValueMap[token.symbol],
+          formattedUsdValue: formattedUsd,
+          formattedValue,
         };
       });
 
@@ -153,6 +167,8 @@ export default function WalletTokensSection({
     });
   }, [
     allTokens,
+    displayCurrency,
+    rate,
     solBalance, usdcBalance, usdtBalance, ethBalance,
     trxBalance, bnbBalance, maticBalance, ngnzBalance, btcBalance,
     formattedSolBalanceUSD, formattedUsdcBalanceUSD, formattedUsdtBalanceUSD, formattedEthBalanceUSD,
@@ -227,7 +243,7 @@ export default function WalletTokensSection({
           {item.formattedBalance}
         </Text>
         <Text style={styles.tokenUsdValue} numberOfLines={1} ellipsizeMode="tail">
-          {item.formattedUsdValue}
+          {item.formattedValue}
         </Text>
       </View>
     </TouchableOpacity>

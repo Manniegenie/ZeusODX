@@ -11,11 +11,13 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Loading from '../../components/Loading';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useNGNZ } from '../../hooks/useNGNZ';
+import { getMaxWithdrawable } from '../../services/withdrawalMaxService';
 
 // Asset imports
 const ngnzIcon = require('../../components/icons/NGNZ.png');
@@ -30,6 +32,7 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
   const router = useRouter();
   const [amount, setAmount] = useState('0');
   const [isLoading, setIsLoading] = useState(false);
+  const [maxLoading, setMaxLoading] = useState(false);
 
   // === Hooks for NGNZ balance & USD rate ===
   const { getNGNZBalance, getNGNZRate } = useNGNZ();
@@ -71,12 +74,20 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
   const getMaxBalanceLabel = (): string => 
     `${ngnzBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} NGNZ`;
 
-  // === FIX 1: Max Logic ===
-  const handleMax = () => {
-    // Floor to 2 decimal places to ensure we never round UP past the actual balance
-    // Example: 100.559 -> 100.55 (Safe) vs 100.56 (Unsafe)
-    const flooredBalance = Math.floor((ngnzBalance * 100) + 0.000001) / 100;
-    setAmount(formatWithCommas(flooredBalance.toFixed(2)));
+  // Max: use server-side max withdrawable (source of truth) so we never exceed actual balance
+  const handleMax = async () => {
+    setMaxLoading(true);
+    try {
+      const result = await getMaxWithdrawable('NGNZ');
+      if (result.success && result.maxAmount != null) {
+        const floored = Math.floor((result.maxAmount * 100) + 0.000001) / 100;
+        setAmount(formatWithCommas(Math.max(0, floored).toFixed(2)));
+      } else if (result.error) {
+        Alert.alert('Unable to load max', result.error);
+      }
+    } finally {
+      setMaxLoading(false);
+    }
   };
 
   const handleContinue = () => {
@@ -165,6 +176,10 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
           contentContainerStyle={styles.scrollViewContent}
           keyboardShouldPersistTaps="handled" 
         >
+          <View style={styles.guideBox}>
+            <Ionicons name="bulb-outline" size={18} color={Colors.hintIcon} style={styles.guideIcon} />
+            <Text style={styles.guideText}>Send NGNZ to your Nigerian bank account; a small fee applies.</Text>
+          </View>
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Amount</Text>
             <View style={styles.inputCard}>
@@ -188,8 +203,8 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
                 </View>
                 <View style={styles.balanceInfo}>
                   <Text style={styles.balanceText} numberOfLines={1}>{getMaxBalanceLabel()}</Text>
-                  <TouchableOpacity onPress={handleMax}>
-                    <Text style={styles.maxText}>Max</Text>
+                  <TouchableOpacity onPress={handleMax} disabled={maxLoading}>
+                    <Text style={[styles.maxText, maxLoading && styles.maxTextDisabled]}>Max</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -275,6 +290,24 @@ const styles = StyleSheet.create({
   },
   scrollView: { flex: 1 },
   scrollViewContent: { paddingHorizontal: Layout.spacing.lg, paddingBottom: 120, paddingTop: Layout.spacing.lg },
+  guideBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.hintBg,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.hintIcon,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: Layout.spacing.lg,
+  },
+  guideIcon: { marginRight: 8 },
+  guideText: {
+    flex: 1,
+    fontFamily: Typography.regular,
+    fontSize: 11,
+    color: Colors.hint,
+    lineHeight: 16,
+  },
   inputContainer: { marginBottom: Layout.spacing.lg },
   inputLabel: { fontFamily: Typography.medium, fontSize: 16, color: Colors.text.primary, marginBottom: Layout.spacing.xs },
   inputCard: {
@@ -315,6 +348,7 @@ const styles = StyleSheet.create({
   balanceInfo: { flexDirection: 'row', alignItems: 'center', gap: Layout.spacing.xs },
   balanceText: { fontFamily: Typography.regular, fontSize: 10, color: Colors.text.secondary },
   maxText: { fontFamily: Typography.medium, fontSize: 10, color: Colors.primary, fontWeight: '600' },
+  maxTextDisabled: { opacity: 0.5 },
   minimumText: { fontFamily: Typography.regular, fontSize: 12, color: Colors.text.secondary, marginTop: Layout.spacing.sm },
   feeContainer: {
     backgroundColor: Colors.surface,

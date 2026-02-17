@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ChooseTokenModal from '../../components/ChooseTokenModal';
 import ErrorDisplay from '../../components/ErrorDisplay';
@@ -647,6 +648,10 @@ export default function SwapScreen({
           <View style={styles.tabContainer}>
             <Text style={styles.activeTabText}>Buy/Sell</Text>
           </View>
+          <View style={styles.guideBox}>
+            <Ionicons name="bulb-outline" size={18} color={Colors.hintIcon} style={styles.guideIcon} />
+            <Text style={styles.guideText}>Exchange crypto for NGNZ or other tokens at live rates.</Text>
+          </View>
 
           {/* Sell Token */}
           <View style={styles.inputContainer}>
@@ -814,6 +819,24 @@ const styles = StyleSheet.create({
     fontFamily: Typography.medium, 
     fontSize: 18, 
     color: Colors.text.primary 
+  },
+  guideBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.hintBg,
+    borderLeftWidth: 4,
+    borderLeftColor: Colors.hintIcon,
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: Layout.spacing.lg,
+  },
+  guideIcon: { marginRight: 8 },
+  guideText: {
+    flex: 1,
+    fontFamily: Typography.regular,
+    fontSize: 11,
+    color: Colors.hint,
+    lineHeight: 16,
   },
   inputContainer: { 
     marginBottom: Layout.spacing.sm 

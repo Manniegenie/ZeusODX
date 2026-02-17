@@ -5,10 +5,43 @@ import NotificationService from '../services/notificationService';
 
 const AuthContext = createContext();
 
+/**
+ * Fallback when useAuth is used outside AuthContext.Provider (e.g. login screen
+ * in some Expo Router layouts). Provides login via authService so PIN login still works;
+ * auth state will sync when the app navigates into the main provider tree.
+ */
+function getFallbackAuth() {
+  return {
+    user: null,
+    portfolio: null,
+    loading: false,
+    isAuthenticated: false,
+    login: async (credentials) => {
+      try {
+        const response = await authService.login({
+          phonenumber: credentials.phonenumber,
+          passwordpin: credentials.passwordpin,
+        });
+        return response.success
+          ? { success: true, data: response.data }
+          : { success: false, error: response.error };
+      } catch (error) {
+        return { success: false, error: error.message || 'Login failed' };
+      }
+    },
+    register: async () => ({ success: false, error: 'Not available outside AuthProvider' }),
+    logout: async () => {},
+    refreshAuthToken: async () => ({ success: false }),
+    updateUserProfile: () => {},
+    updatePortfolio: () => {},
+    checkAuth: async () => {},
+  };
+}
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    return getFallbackAuth();
   }
   return context;
 }

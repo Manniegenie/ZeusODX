@@ -22,6 +22,7 @@ import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { useDashboard } from '../../hooks/useDashboard';
 import NotificationService from '../../services/notificationService';
+import { storeReviewService } from '../../services/storeReviewService';
 import DashboardHeader from './DashboardHeader';
 import DashboardModals from './DashboardModals';
 import PortfolioSection from './PortfolioSection';
@@ -106,6 +107,13 @@ export default function DashboardScreen() {
     }
   };
 
+  // Store review prompt: once per device, after a delay (only on native)
+  useEffect(() => {
+    if (!Device.isDevice || (Platform.OS !== 'ios' && Platform.OS !== 'android')) return;
+    const t = setTimeout(() => storeReviewService.requestStoreReviewIfNeeded(), 6000);
+    return () => clearTimeout(t);
+  }, []);
+
   const handleEnableNotifications = async () => {
     try {
       console.log('📱 [DASHBOARD] User opted in for notifications');
@@ -140,6 +148,10 @@ export default function DashboardScreen() {
       // Don't show again
       await AsyncStorage.setItem(NOTIFICATION_PROMPT_KEY, 'true');
       setShowNotificationPrompt(false);
+      // Ask for store review after a short delay
+      if (Device.isDevice && (Platform.OS === 'ios' || Platform.OS === 'android')) {
+        setTimeout(() => storeReviewService.requestStoreReviewIfNeeded(), 1500);
+      }
     } catch (error) {
       console.error('❌ [DASHBOARD] Notification setup error:', error);
       await AsyncStorage.setItem(NOTIFICATION_PROMPT_KEY, 'true');
@@ -150,6 +162,10 @@ export default function DashboardScreen() {
   const handleDismissNotificationPrompt = async () => {
     await AsyncStorage.setItem(NOTIFICATION_PROMPT_KEY, 'true');
     setShowNotificationPrompt(false);
+    // Ask for store review shortly after they've dealt with the notification prompt
+    if (Device.isDevice && (Platform.OS === 'ios' || Platform.OS === 'android')) {
+      setTimeout(() => storeReviewService.requestStoreReviewIfNeeded(), 1500);
+    }
   };
 
   // KYC initiation handler
@@ -240,6 +256,7 @@ export default function DashboardScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <DashboardHeader
+          showActivityIcon={false}
           onNotificationPress={() => router.push('/user/notificationpage')}
           onSetupPress={() => router.push('/kyc/kyc-upgrade')}
         />
