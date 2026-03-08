@@ -3,6 +3,9 @@ import { Typography } from '../constants/Typography';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { storeReviewService } from '../services/storeReviewService';
+import AppsFlyerService from '../services/appsFlyerService';
 
 interface SwapSuccessfulScreenProps {
   fromAmount: string;
@@ -20,6 +23,25 @@ export default function SwapSuccessfulScreen({
   onContinue
 }: SwapSuccessfulScreenProps) {
   const router = useRouter();
+
+  // Full SDK: log swap event + store review after successful swap
+  useEffect(() => {
+    if (visible) {
+      AppsFlyerService.logEvent('Swap_', {
+        from_currency: fromToken,
+        to_currency: toToken,
+        amount: String(fromAmount),
+      }).catch(() => {});
+
+      const timer = setTimeout(() => {
+        storeReviewService.requestStoreReviewIfNeeded().catch((err) => {
+          console.warn('Failed to request store review:', err);
+        });
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [visible, fromToken, toToken, fromAmount]);
 
   const handleContinue = () => {
     if (onContinue) onContinue(); // Close modal in parent

@@ -1,6 +1,6 @@
 // app/components/WalletPortfolioSection.tsx
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
     Image,
     StyleSheet,
@@ -9,13 +9,13 @@ import {
     View,
 } from 'react-native';
 import { moderateScale } from 'react-native-size-matters';
+import HintBulb from '../../components/HintBulb';
 import SelectTokenModal, { WalletOption } from '../../components/SelectToken';
 import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useDashboard } from '../../hooks/useDashboard';
-import { useDisplayCurrency } from '../../contexts/DisplayCurrencyContext';
 import DashboardModals from './DashboardModals';
 
 // Assets
@@ -48,7 +48,7 @@ export default function WalletPortfolioSection({
   const rate = ngnzExchangeRate ?? 1600;
   const balanceNGN = safeBalance * rate;
 
-  const { displayCurrency, setDisplayCurrency } = useDisplayCurrency();
+  const [displayCurrency, setDisplayCurrency] = useState<'USD' | 'NGN'>('USD');
 
   const setCurrency = (currency: 'USD' | 'NGN') => {
     if (currency === displayCurrency) return;
@@ -174,13 +174,16 @@ export default function WalletPortfolioSection({
                 <Image source={eyeIcon} style={styles.eyeIcon} />
               </TouchableOpacity>
             </View>
+            <View style={styles.balanceHintTopRight}>
+              <HintBulb
+                title="Wallet tip"
+                hint="Your total portfolio balance is shown in USD or NGN. Use Deposit to add funds, Transfer to send to another Zeus user or external wallet, and Buy/Sell to swap tokens."
+              />
+            </View>
       </View>
 
       {/* Quick Actions */}
       <View style={styles.quickLinksContainer}>
-        <View style={styles.quickLinksHeader}>
-          <Text style={styles.quickLinksTitle}>Quick Actions</Text>
-        </View>
         <View style={styles.quickLinksList}>
           {quickLinks.map((item) => (
             <TouchableOpacity
@@ -229,11 +232,17 @@ const styles = StyleSheet.create({
   container: { marginBottom: Layout.spacing.lg },
 
   balanceContent: {
+    position: 'relative',
     paddingHorizontal: Layout.spacing.lg,
     paddingVertical: Layout.spacing.lg,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: Layout.spacing.lg,
+  },
+  balanceHintTopRight: {
+    position: 'absolute',
+    top: Layout.spacing.lg,
+    right: Layout.spacing.lg,
   },
   currencySwitch: {
     flexDirection: 'row',
@@ -289,8 +298,6 @@ const styles = StyleSheet.create({
 
   // Quick links
   quickLinksContainer: { paddingHorizontal: Layout.spacing.lg, marginBottom: Layout.spacing.lg },
-  quickLinksHeader: { marginBottom: Layout.spacing.md },
-  quickLinksTitle: { fontFamily: Typography.medium, fontSize: moderateScale(16, 0.1), color: Colors.text.primary },
   quickLinksList: {
     flexDirection: 'row',
     justifyContent: 'space-around',

@@ -1,6 +1,5 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     Dimensions,
@@ -14,13 +13,13 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import AddressScannerModal from '../../components/AddressScannerModal';
 import TwoFactorAuthModal from '../../components/2FA';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import ExternalWithdrawalConfirm from '../../components/ExternalWithdrawalConfirm';
 import Loading from '../../components/Loading';
 import NetworkSelectionModal from '../../components/NetworkSelectionModal';
 import PinEntryModal from '../../components/PinEntry';
+import HintBulb from '../../components/HintBulb';
 import ScreenHeader from '../../components/ScreenHeader';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
@@ -29,7 +28,7 @@ import { useTokens } from '../../hooks/useTokens';
 import { useBalance } from '../../hooks/useWallet';
 import { useWithdrawal } from '../../hooks/useexternalWithdrawal';
 import { withdrawalService } from '../../services/externalwithdrawalService';
-import { getMaxWithdrawable } from '../../services/withdrawalMaxService';
+import AppsFlyerService from '../../services/appsFlyerService';
 
 // Icons - Updated to match BTC-BSC screen
 // @ts-ignore
@@ -140,8 +139,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
   const [showTwoFactorModal, setShowTwoFactorModal] = useState<boolean>(false);
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
-  const [showAddressScanner, setShowAddressScanner] = useState<boolean>(false);
-  const [maxLoading, setMaxLoading] = useState<boolean>(false);
 
   // Error display state
   const [showErrorDisplay, setShowErrorDisplay] = useState<boolean>(false);
@@ -336,23 +333,10 @@ const ExternalWalletTransferScreen: React.FC = () => {
     }
   };
 
-  const handleMaxPress = async (): Promise<void> => {
-    if (!selectedToken?.symbol) return;
-    setMaxLoading(true);
-    try {
-      const result = await getMaxWithdrawable(selectedToken.symbol);
-      if (result.success && result.maxAmount != null) {
-        setAmount(toPreciseString(result.maxAmount));
-      } else if (result.error) {
-        showErrorMessage({
-          type: 'server',
-          title: 'Unable to load max',
-          message: result.error,
-          dismissible: true,
-        });
-      }
-    } finally {
-      setMaxLoading(false);
+  const handleMaxPress = (): void => {
+    if (selectedToken?.balance) {
+      // Set the input to the exact balance string to avoid dust
+      setAmount(toPreciseString(selectedToken.balance));
     }
   };
 
@@ -393,8 +377,13 @@ const ExternalWalletTransferScreen: React.FC = () => {
       const result = await initiateWithdrawal(withdrawalData);
 
       if (result.success) {
-        // Clear idempotency key on success - new one will be generated for next withdrawal
         setIdempotencyKey('');
+
+        AppsFlyerService.logEvent('Withdrawal', {
+          amount: String(amount),
+          currency: selectedToken.symbol,
+          withdrawal_method: 'crypto',
+        }).catch(() => {});
 
         const transactionData: APITransaction = {
           id: result.transactionId || result.id || Date.now().toString(),
@@ -464,11 +453,16 @@ const ExternalWalletTransferScreen: React.FC = () => {
             title="Transfer to external wallet"
             subtitle={selectedToken?.symbol ? `${selectedToken.name} (${selectedToken.symbol})` : ''}
             onBack={() => router.back()}
+            rightComponent={
+              <HintBulb
+                title="External transfer tip"
+                hint="Enter the recipient's wallet address and select the same network they use. Double-check the address and network to avoid loss of funds. Network fees are deducted from the amount."
+              />
+            }
           />
 
-          <View style={styles.guideBox}>
-            <Ionicons name="bulb-outline" size={18} color={Colors.hintIcon} style={styles.guideIcon} />
-            <Text style={styles.guideText}>Enter the recipient's wallet address and select the correct network to avoid loss of funds.</Text>
+          <View style={styles.subtitleSection}>
+            <Text style={styles.subtitleText}>Transfer your funds securely and instantly to any external wallet.</Text>
           </View>
 
           {/* Wallet Address Section */}
@@ -487,26 +481,12 @@ const ExternalWalletTransferScreen: React.FC = () => {
                   multiline
                   numberOfLines={2}
                 />
-                <View style={styles.addressActions}>
-                  <TouchableOpacity onPress={() => setShowAddressScanner(true)} style={styles.scanButton}>
-                    <Ionicons name="scan-outline" size={20} color={Colors.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={handlePaste} style={styles.pasteButton}>
-                    <Text style={styles.pasteButtonText}>Paste</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity onPress={handlePaste} style={styles.pasteButton}>
+                  <Text style={styles.pasteButtonText}>Paste</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
-
-          <AddressScannerModal
-            visible={showAddressScanner}
-            onClose={() => setShowAddressScanner(false)}
-            onScan={(address) => {
-              setWalletAddress(address);
-              setShowAddressScanner(false);
-            }}
-          />
 
           {/* Network Section */}
           <View style={styles.section}>
@@ -540,8 +520,8 @@ const ExternalWalletTransferScreen: React.FC = () => {
                 </View>
                 <View style={styles.balanceInfo}>
                   <Text style={styles.balanceText}>{selectedToken?.formattedBalance} {selectedToken?.symbol}</Text>
-                  <TouchableOpacity onPress={handleMaxPress} disabled={maxLoading}>
-                    <Text style={[styles.maxText, maxLoading && { opacity: 0.5 }]}>Max</Text>
+                  <TouchableOpacity onPress={handleMaxPress}>
+                    <Text style={styles.maxText}>Max</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -643,34 +623,14 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 14, color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', marginBottom: 16 },
   retryButton: { backgroundColor: Colors.primary || '#35297F', borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24 },
   retryButtonText: { color: '#FFFFFF', fontFamily: Typography.medium || 'System', fontSize: 14, fontWeight: '600' },
-  guideBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.hintBg,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.hintIcon,
-    borderRadius: 8,
-    padding: 10,
-    marginHorizontal: horizontalPadding,
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  guideIcon: { marginRight: 8 },
-  guideText: {
-    flex: 1,
-    fontFamily: Typography.regular || 'System',
-    fontSize: 11,
-    color: Colors.hint,
-    lineHeight: 16,
-  },
+  subtitleSection: { paddingHorizontal: horizontalPadding, paddingTop: 8, paddingBottom: 20 },
+  subtitleText: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400' },
   section: { paddingHorizontal: horizontalPadding, marginBottom: 24 },
   sectionTitle: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400', marginBottom: 12 },
   inputCard: { backgroundColor: '#F8F9FA', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 12 },
   addressInputRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  addressInput: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular || 'System', fontSize: 14, flex: 1, paddingVertical: 4, minWidth: 0 },
-  addressActions: { flexDirection: 'row', alignItems: 'stretch', gap: 6, marginLeft: 8 },
-  scanButton: { backgroundColor: '#E5E7EB', paddingHorizontal: 10, borderRadius: 6, alignItems: 'center', justifyContent: 'center', minHeight: 28 },
-  pasteButton: { backgroundColor: '#E5E7EB', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, justifyContent: 'center', minHeight: 28 },
+  addressInput: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular || 'System', fontSize: 14, flex: 1, paddingVertical: 4 },
+  pasteButton: { backgroundColor: '#E5E7EB', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, marginLeft: 8 },
   pasteButtonText: { fontSize: 11, color: Colors.primary || '#35297F', fontWeight: '600', fontFamily: Typography.medium || 'System' },
   networkDropdownCard: { backgroundColor: '#F8F9FA', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   amountInputCard: { backgroundColor: '#F8F9FA', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

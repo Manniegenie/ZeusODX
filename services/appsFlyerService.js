@@ -41,9 +41,15 @@ class AppsFlyerService {
 
     if (Platform.OS === 'ios' && !this.iosAppId) {
       const error = 'AppsFlyer iOS app ID not configured. Set EXPO_PUBLIC_APPSFLYER_IOS_APP_ID in .env';
-      if (__DEV__) console.error('❌ AppsFlyer init error:', error);
+      console.error('❌ AppsFlyer init error:', error);
       return { success: false, error };
     }
+
+    // Log configuration for debugging
+    if (Platform.OS === 'ios') {
+      console.log('📱 [APPSFLYER] iOS App ID:', this.iosAppId);
+    }
+    console.log('📱 [APPSFLYER] Dev Key:', this.devKey ? `${this.devKey.substring(0, 10)}...` : 'NOT SET');
 
     return new Promise((resolve) => {
       const options = {

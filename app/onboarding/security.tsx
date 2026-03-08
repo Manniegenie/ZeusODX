@@ -111,7 +111,6 @@ const styles = StyleSheet.create({
     ...Typography.styles.body,
     color: Colors.text.secondary,
     textAlign: 'center',
-    lineHeight: 24,
     marginBottom: Layout.spacing.lg,
   },
   dotsContainer: {

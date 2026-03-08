@@ -29,6 +29,7 @@ import flagAU from '../components/icons/australia.png';
 import flagAE from '../components/icons/united-arab-emirates.png';
 import flagTR from '../components/icons/turkey.png';
 import flagCH from '../components/icons/switzerland.png';
+import flagEU from '../components/icons/germany.png';
 
 /* ========= Types ========= */
 export type CountryItem = {
@@ -50,10 +51,12 @@ const FLAGS: Record<string, ImageSourcePropType> = {
   AE: flagAE,
   TR: flagTR,
   CH: flagCH,
+  EU: flagEU,
   // alternative keys your backend or fallback might use
   CANADA: flagCA,
   AUSTRALIA: flagAU,
   SWITZERLAND: flagCH,
+  EUROPE: flagEU,
   UNITED_STATES: flagUS,
   UNITEDSTATES: flagUS,
 };
@@ -65,6 +68,8 @@ const normalizeCountryCode = (code = ''): string => {
     CANADA: 'CA',
     AUSTRALIA: 'AU',
     SWITZERLAND: 'CH',
+    EUROPE: 'EU',
+    'EUROPEAN UNION': 'EU',
     'UNITED STATES': 'US',
     'UNITED_STATES': 'US',
     UNITEDSTATES: 'US',
@@ -194,6 +199,7 @@ export function AvailableCountrySheet({
         { id: 'CANADA', name: 'Canada', flag: FLAGS.CA },
         { id: 'AUSTRALIA', name: 'Australia', flag: FLAGS.AU },
         { id: 'SWITZERLAND', name: 'Switzerland', flag: FLAGS.CH },
+        { id: 'EUROPE', name: 'Europe', flag: FLAGS.EU },
       ],
       STEAM: [
         { id: 'US', name: 'United States', flag: FLAGS.US },
@@ -213,6 +219,7 @@ export function AvailableCountrySheet({
       { id: 'CANADA', name: 'Canada', flag: FLAGS.CA },
       { id: 'AUSTRALIA', name: 'Australia', flag: FLAGS.AU },
       { id: 'SWITZERLAND', name: 'Switzerland', flag: FLAGS.CH },
+      { id: 'EUROPE', name: 'Europe', flag: FLAGS.EU },
     ];
   }, [normalizedBrand]);
 
@@ -324,6 +331,7 @@ export function getAvailableCountriesForBrand(brand: string): CountryItem[] {
     { id: 'CANADA', name: 'Canada', flag: FLAGS.CA },
     { id: 'AUSTRALIA', name: 'Australia', flag: FLAGS.AU },
     { id: 'SWITZERLAND', name: 'Switzerland', flag: FLAGS.CH },
+    { id: 'EUROPE', name: 'Europe', flag: FLAGS.EU },
   ];
 }
 

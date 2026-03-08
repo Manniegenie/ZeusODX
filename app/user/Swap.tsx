@@ -1,20 +1,20 @@
 // app/user/Swap.tsx
 import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { 
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+import {
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ChooseTokenModal from '../../components/ChooseTokenModal';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import HintBulb from '../../components/HintBulb';
 import SwapPreviewModal from '../../components/SwapPreview';
 import SwapSuccessfulScreen from '../../components/SwapSuccess';
 import { Colors } from '../../constants/Colors';
@@ -645,12 +645,16 @@ export default function SwapScreen({
           showsVerticalScrollIndicator={false} 
           contentContainerStyle={styles.scrollViewContent}
         >
-          <View style={styles.tabContainer}>
-            <Text style={styles.activeTabText}>Buy/Sell</Text>
-          </View>
-          <View style={styles.guideBox}>
-            <Ionicons name="bulb-outline" size={18} color={Colors.hintIcon} style={styles.guideIcon} />
-            <Text style={styles.guideText}>Exchange crypto for NGNZ or other tokens at live rates.</Text>
+          <View style={styles.tabHeaderWrapper}>
+            <View style={styles.tabContainer}>
+              <Text style={styles.activeTabText}>Buy/Sell</Text>
+            </View>
+            <View style={styles.tabHintBulb}>
+              <HintBulb
+                title="Buy/Sell tip"
+                hint="Select the token you want to sell and the token you want to buy. Enter the amount and tap Create Quote to see the rate. You can only swap between NGNZ and supported crypto (e.g. BTC, ETH, USDT)."
+              />
+            </View>
           </View>
 
           {/* Sell Token */}
@@ -811,32 +815,24 @@ const styles = StyleSheet.create({
     paddingBottom: 120, 
     paddingTop: Layout.spacing.xxl 
   },
+  tabHeaderWrapper: {
+    position: 'relative',
+    marginBottom: Layout.spacing.lg,
+  },
   tabContainer: { 
     alignItems: 'center', 
-    marginBottom: Layout.spacing.lg 
+  },
+  tabHintBulb: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
   },
   activeTabText: { 
     fontFamily: Typography.medium, 
     fontSize: 18, 
     color: Colors.text.primary 
-  },
-  guideBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.hintBg,
-    borderLeftWidth: 4,
-    borderLeftColor: Colors.hintIcon,
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: Layout.spacing.lg,
-  },
-  guideIcon: { marginRight: 8 },
-  guideText: {
-    flex: 1,
-    fontFamily: Typography.regular,
-    fontSize: 11,
-    color: Colors.hint,
-    lineHeight: 16,
   },
   inputContainer: { 
     marginBottom: Layout.spacing.sm 

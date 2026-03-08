@@ -2,46 +2,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { authService } from '../services/authService';
 import NotificationService from '../services/notificationService';
+import AppsFlyerService from '../services/appsFlyerService';
+import { appsFlyerApiService } from '../services/appsFlyerApiService';
 
 const AuthContext = createContext();
-
-/**
- * Fallback when useAuth is used outside AuthContext.Provider (e.g. login screen
- * in some Expo Router layouts). Provides login via authService so PIN login still works;
- * auth state will sync when the app navigates into the main provider tree.
- */
-function getFallbackAuth() {
-  return {
-    user: null,
-    portfolio: null,
-    loading: false,
-    isAuthenticated: false,
-    login: async (credentials) => {
-      try {
-        const response = await authService.login({
-          phonenumber: credentials.phonenumber,
-          passwordpin: credentials.passwordpin,
-        });
-        return response.success
-          ? { success: true, data: response.data }
-          : { success: false, error: response.error };
-      } catch (error) {
-        return { success: false, error: error.message || 'Login failed' };
-      }
-    },
-    register: async () => ({ success: false, error: 'Not available outside AuthProvider' }),
-    logout: async () => {},
-    refreshAuthToken: async () => ({ success: false }),
-    updateUserProfile: () => {},
-    updatePortfolio: () => {},
-    checkAuth: async () => {},
-  };
-}
 
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    return getFallbackAuth();
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }
@@ -74,6 +43,20 @@ export function useAuthProvider() {
         // Don't auto-initialize notifications - let user decide
         // Notifications will be prompted when user opens profile screen
         
+        // Store AppsFlyer UID and log events (full SDK)
+        try {
+          const uidResult = await AppsFlyerService.getAppsFlyerUID();
+          if (uidResult.success && uidResult.uid) {
+            await AppsFlyerService.setUserId(response.data.user._id || response.data.user.id);
+            await appsFlyerApiService.storeAppsFlyerId(uidResult.uid);
+          }
+          await AppsFlyerService.logEvent('af_login', { login_method: 'pin' });
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('⚠️ useAuth: Failed to store AppsFlyer UID or log event:', error);
+          }
+        }
+        
         return { success: true, data: response.data };
       } else {
         console.log('❌ useAuth: Login failed');
@@ -104,6 +87,20 @@ export function useAuthProvider() {
         
         // Don't auto-initialize notifications - let user decide
         // Notifications will be prompted when user opens profile screen
+        
+        // Store AppsFlyer UID and log events (full SDK)
+        try {
+          const uidResult = await AppsFlyerService.getAppsFlyerUID();
+          if (uidResult.success && uidResult.uid) {
+            await AppsFlyerService.setUserId(response.data.user?._id || response.data.user?.id);
+            await appsFlyerApiService.storeAppsFlyerId(uidResult.uid);
+          }
+          await AppsFlyerService.logEvent('af_complete_registration', { registration_method: 'phone' });
+        } catch (error) {
+          if (__DEV__) {
+            console.warn('⚠️ useAuth: Failed to store AppsFlyer UID or log event:', error);
+          }
+        }
         
         return { success: true, data: response.data };
       } else {

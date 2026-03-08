@@ -15,6 +15,8 @@ import { useRouter } from 'expo-router';
 import { Typography } from '../constants/Typography';
 import { Colors } from '../constants/Colors';
 import { Layout } from '../constants/Layout';
+import { storeReviewService } from '../services/storeReviewService';
+import AppsFlyerService from '../services/appsFlyerService';
 
 type CurrencySymbol = 'NGNZ' | 'USDT' | 'USDC' | 'BTC' | 'ETH' | 'SOL' | 'AVAX' | 'BNB' | 'MATIC' | string;
 
@@ -60,6 +62,21 @@ const TransferSuccessModal: React.FC<TransferSuccessModalProps> = ({
           useNativeDriver: true,
         }),
       ]).start();
+
+      // Full SDK: log internal transfer event
+      AppsFlyerService.logEvent('internal_transfer', {
+        amount: String(amount),
+        currency: String(currency),
+        recipient: recipientUsername,
+      }).catch(() => {});
+
+      const timer = setTimeout(() => {
+        storeReviewService.requestStoreReviewIfNeeded().catch((err) => {
+          console.warn('Failed to request store review:', err);
+        });
+      }, 2000);
+
+      return () => clearTimeout(timer);
     } else {
       Animated.parallel([
         Animated.timing(scaleAnim, { toValue: 0, duration: 200, useNativeDriver: true }),

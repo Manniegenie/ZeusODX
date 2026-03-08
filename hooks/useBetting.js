@@ -54,17 +54,15 @@ export const useBetting = () => {
     setLoading(true);
     clearErrors();
     try {
-      const providers = await bettingService.getBettingProviders();
-      return Array.isArray(providers) ? providers : bettingService.getStaticBettingProviders();
+      const providers = await bettingService.getBettingProviders?.() || bettingService.getStaticBettingProviders();
+      return providers;
     } catch (err) {
       setError(err.message);
-      return bettingService.getStaticBettingProviders();
+      return [];
     } finally {
       setLoading(false);
     }
   }, [clearErrors]);
-
-  const getStaticBettingProviders = useCallback(() => bettingService.getStaticBettingProviders(), []);
 
   return {
     loading,
@@ -72,7 +70,6 @@ export const useBetting = () => {
     fundBettingAccount,
     validateBettingCustomer,
     getBettingProviders,
-    getStaticBettingProviders,
     clearErrors
   };
 };

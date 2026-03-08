@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
+    FlatList,
     Image,
     Modal,
     SafeAreaView,
@@ -10,6 +11,7 @@ import {
     StatusBar,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
@@ -29,6 +31,9 @@ import backIcon from '../../components/icons/backy.png';
 import TwoFactorAuthModal from '../../components/2FA';
 import PinEntryModal from '../../components/PinEntry';
 import { useNGNZWithdrawal } from '../../hooks/useNGNZService';
+import AppsFlyerService from '../../services/appsFlyerService';
+import { useNairaBanks } from '../../hooks/usenairaBanks';
+import { useResolveAccount } from '../../hooks/useAccountname';
 
 // No longer using FiatWithdrawalReceiptModal - using full-screen receipt instead
 
@@ -108,10 +113,29 @@ const BankAccountsScreen = () => {
   // NGNZ withdrawal hook + auth modal states
   const { loading: wdLoading, submit } = useNGNZWithdrawal({ autoPoll: true, pollMs: 8000 });
 
+  // Naira banks + account resolver for manual entry
+  const {
+    filteredBanks: nairaBanks,
+    loading: banksLoading,
+    searchTerm: bankSearchTerm,
+    searchBanks,
+    clearSearch: clearBankSearch,
+    formatBankName,
+  } = useNairaBanks();
+  const { account: resolvedAccount, loading: resolving, error: resolveError, load: resolveLoad } = useResolveAccount({ auto: false });
+
   const [showPinModal, setShowPinModal] = useState(false);
   const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
   const [passwordPin, setPasswordPin] = useState('');
   const [twoFactorCode, setTwoFactorCode] = useState('');
+
+  // Manual bank entry state – 'saved' = saved accounts tab, 'manual' = new account tab
+  const [entryMode, setEntryMode] = useState<'saved' | 'manual'>('saved');
+  const [manualBankName, setManualBankName] = useState('');
+  const [manualBankCode, setManualBankCode] = useState('');
+  const [manualAccountNumber, setManualAccountNumber] = useState('');
+  const [manualAccountName, setManualAccountName] = useState('');
+  const [showManualBankModal, setShowManualBankModal] = useState(false);
 
   // No longer using receipt modal state - using full-screen receipt instead
 
@@ -119,6 +143,33 @@ const BankAccountsScreen = () => {
   useEffect(() => {
     getBankAccounts();
   }, [getBankAccounts]);
+
+  // Auto-resolve account name for manual entry when bank + 10-digit number are set
+  useEffect(() => {
+    if (manualBankCode && manualAccountNumber.length === 10) {
+      resolveLoad({ sortCode: manualBankCode, accountNumber: manualAccountNumber });
+    } else {
+      setManualAccountName('');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [manualBankCode, manualAccountNumber]);
+
+  useEffect(() => {
+    if (resolvedAccount?.accountName) {
+      setManualAccountName(resolvedAccount.accountName);
+    }
+  }, [resolvedAccount]);
+
+  useEffect(() => {
+    if (resolveError) {
+      setErrorDisplayConfig({
+        visible: true,
+        type: 'validation',
+        title: 'Account not found',
+        message: resolveError.message || 'Could not verify account details. Please check the account number and try again.',
+      });
+    }
+  }, [resolveError]);
 
   const showError = (
     type:
@@ -299,6 +350,18 @@ const BankAccountsScreen = () => {
     getBankAccounts();
   };
 
+  const handleUseManualAccount = () => {
+    if (!manualBankName || !manualBankCode || !manualAccountNumber || !manualAccountName) return;
+    setSelectedBankForTransfer({
+      id: 'manual',
+      accountNumber: manualAccountNumber,
+      accountName: manualAccountName,
+      bankName: manualBankName,
+      bankCode: manualBankCode,
+    });
+    setShowTransferModal(true);
+  };
+
   const getHeaderTitle = () => {
     return isSelectionMode ? 'Select Bank Account' : 'Bank Accounts';
   };
@@ -366,6 +429,12 @@ const BankAccountsScreen = () => {
       setShowTwoFactorModal(false);
       setPasswordPin('');
       setTwoFactorCode('');
+
+      AppsFlyerService.logEvent('Withdrawal', {
+        amount: String(transferAmount || netAmount || 0),
+        currency: 'NGN',
+        withdrawal_method: 'bank',
+      }).catch(() => {});
 
       // Try to normalize upstream payloads (res.data | res.withdrawal | res.result | res.payload)
       const wd = (res as any).data || (res as any).withdrawal || (res as any).result || (res as any).payload || {};
@@ -515,8 +584,42 @@ const BankAccountsScreen = () => {
             </Text>
           </View>
 
+          {/* Mode Switch - only in selection mode */}
+          {isSelectionMode && (
+            <View style={styles.modeSwitch}>
+              <TouchableOpacity
+                style={[
+                  styles.modeSwitchSegment,
+                  entryMode === 'saved' && styles.modeSwitchSegmentActive,
+                  entryMode === 'saved' && styles.modeSwitchSegmentActiveLeft,
+                ]}
+                onPress={() => setEntryMode('saved')}
+                activeOpacity={0.7}
+                disabled={isAnyOperationInProgress}
+              >
+                <Text style={[styles.modeSwitchText, entryMode === 'saved' && styles.modeSwitchTextActive]}>
+                  Saved Banks
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modeSwitchSegment,
+                  entryMode === 'manual' && styles.modeSwitchSegmentActive,
+                  entryMode === 'manual' && styles.modeSwitchSegmentActiveRight,
+                ]}
+                onPress={() => setEntryMode('manual')}
+                activeOpacity={0.7}
+                disabled={isAnyOperationInProgress}
+              >
+                <Text style={[styles.modeSwitchText, entryMode === 'manual' && styles.modeSwitchTextActive]}>
+                  New Account
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Loading */}
-          {loading && (
+          {loading && (!isSelectionMode || entryMode === 'saved') && (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="small" />
               <Text style={styles.loadingText}>Loading accounts…</Text>
@@ -524,7 +627,7 @@ const BankAccountsScreen = () => {
           )}
 
           {/* Error */}
-          {!loading && error && (
+          {!loading && error && (!isSelectionMode || entryMode === 'saved') && (
             <View style={styles.errorContainer}>
               <Text style={styles.errorText}>Failed to load bank accounts</Text>
               <TouchableOpacity
@@ -542,7 +645,7 @@ const BankAccountsScreen = () => {
           )}
 
           {/* Bank Accounts List */}
-          <View style={styles.accountsSection}>
+          {(!isSelectionMode || entryMode === 'saved') && <View style={styles.accountsSection}>
             {!loading && accounts.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text
@@ -619,7 +722,69 @@ const BankAccountsScreen = () => {
                 </TouchableOpacity>
               ))
             )}
-          </View>
+          </View>}
+
+          {/* Manual Entry Form - shown when 'New Account' tab is active */}
+          {isSelectionMode && entryMode === 'manual' && (
+            <View style={styles.manualEntrySection}>
+              <View style={styles.manualEntryCard}>
+                <Text style={styles.manualEntryTitle}>Account Details</Text>
+
+                <Text style={styles.manualInputLabel}>Bank</Text>
+                <TouchableOpacity
+                  style={styles.manualBankSelector}
+                  onPress={() => setShowManualBankModal(true)}
+                  activeOpacity={0.7}
+                  disabled={isAnyOperationInProgress}
+                >
+                  <Text style={[styles.manualBankSelectorText, !manualBankName && styles.manualPlaceholder]}>
+                    {manualBankName || 'Select bank'}
+                  </Text>
+                  <Text style={styles.manualDropdownArrow}>▾</Text>
+                </TouchableOpacity>
+
+                <Text style={styles.manualInputLabel}>Account Number</Text>
+                <TextInput
+                  style={styles.manualInput}
+                  placeholder="Enter 10-digit account number"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="numeric"
+                  maxLength={10}
+                  value={manualAccountNumber}
+                  onChangeText={setManualAccountNumber}
+                  editable={!isAnyOperationInProgress}
+                />
+
+                <Text style={styles.manualInputLabel}>Account Name</Text>
+                <View style={[styles.manualInput, styles.manualAccountNameRow]}>
+                  {resolving ? (
+                    <ActivityIndicator size="small" color="#35297F" style={{ flex: 1 }} />
+                  ) : (
+                    <TextInput
+                      style={styles.manualAccountNameInput}
+                      placeholder="Auto-filled after verifying account"
+                      placeholderTextColor="#9CA3AF"
+                      value={manualAccountName}
+                      onChangeText={setManualAccountName}
+                      editable={!resolving && !isAnyOperationInProgress}
+                    />
+                  )}
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.useAccountButton,
+                    (!manualBankName || !manualAccountNumber || !manualAccountName || isAnyOperationInProgress) && styles.useAccountButtonDisabled,
+                  ]}
+                  onPress={handleUseManualAccount}
+                  disabled={!manualBankName || !manualAccountNumber || !manualAccountName || isAnyOperationInProgress}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.useAccountButtonText}>Continue with this account</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </ScrollView>
 
         {/* Add New Account Button */}
@@ -713,6 +878,67 @@ const BankAccountsScreen = () => {
                 </TouchableOpacity>
               </View>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Manual Bank Picker Modal */}
+      <Modal
+        visible={showManualBankModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => { setShowManualBankModal(false); clearBankSearch(); }}
+      >
+        <View style={styles.bankModalOverlay}>
+          <TouchableOpacity
+            style={styles.bankModalBackdrop}
+            activeOpacity={1}
+            onPress={() => { setShowManualBankModal(false); clearBankSearch(); }}
+          />
+          <View style={styles.bankModalContainer}>
+            <View style={styles.bankModalHeader}>
+              <Text style={styles.bankModalTitle}>Select Bank</Text>
+              <TouchableOpacity
+                onPress={() => { setShowManualBankModal(false); clearBankSearch(); }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.bankModalClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.bankSearchInput}
+              placeholder="Search bank..."
+              placeholderTextColor="#9CA3AF"
+              value={bankSearchTerm}
+              onChangeText={searchBanks}
+              autoFocus
+            />
+            {banksLoading ? (
+              <ActivityIndicator size="small" color="#35297F" style={{ marginTop: 20, marginBottom: 20 }} />
+            ) : (
+              <FlatList
+                data={nairaBanks}
+                keyExtractor={(item: any) => item.sortCode || item.uuid || item.name}
+                renderItem={({ item }: any) => (
+                  <TouchableOpacity
+                    style={styles.bankListItem}
+                    onPress={() => {
+                      setManualBankName(formatBankName(item));
+                      setManualBankCode(item.sortCode || item.uuid);
+                      setManualAccountName('');
+                      setShowManualBankModal(false);
+                      clearBankSearch();
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.bankListItemText}>{formatBankName(item)}</Text>
+                  </TouchableOpacity>
+                )}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+              />
+            )}
           </View>
         </View>
       </Modal>
@@ -1058,6 +1284,201 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
+  },
+
+  // Mode switch (segmented control)
+  modeSwitch: {
+    flexDirection: 'row',
+    alignSelf: 'center',
+    backgroundColor: Colors.border,
+    borderRadius: 20,
+    padding: 3,
+    marginHorizontal: 16,
+    marginBottom: 20,
+  },
+  modeSwitchSegment: {
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modeSwitchSegmentActive: {
+    backgroundColor: '#35297F',
+  },
+  modeSwitchSegmentActiveLeft: {
+    borderTopLeftRadius: 17,
+    borderBottomLeftRadius: 17,
+  },
+  modeSwitchSegmentActiveRight: {
+    borderTopRightRadius: 17,
+    borderBottomRightRadius: 17,
+  },
+  modeSwitchText: {
+    fontFamily: Typography.medium,
+    fontSize: 13,
+    color: Colors.text.secondary,
+  },
+  modeSwitchTextActive: {
+    color: '#FFFFFF',
+  },
+
+  // Manual entry section
+  manualEntrySection: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  manualEntryToggle: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  manualEntryToggleText: {
+    color: '#35297F',
+    fontFamily: Typography.medium,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  manualEntryCard: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    marginTop: 4,
+  },
+  manualEntryTitle: {
+    color: '#35297F',
+    fontFamily: Typography.medium,
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  manualInputLabel: {
+    color: Colors.text.secondary,
+    fontFamily: Typography.regular,
+    fontSize: 13,
+    marginBottom: 6,
+    marginTop: 10,
+  },
+  manualBankSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+  },
+  manualBankSelectorText: {
+    color: Colors.text.primary,
+    fontFamily: Typography.regular,
+    fontSize: 14,
+    flex: 1,
+  },
+  manualPlaceholder: {
+    color: '#9CA3AF',
+  },
+  manualDropdownArrow: {
+    color: '#9CA3AF',
+    fontSize: 14,
+  },
+  manualInput: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    color: Colors.text.primary,
+    fontFamily: Typography.regular,
+    fontSize: 14,
+  },
+  manualAccountNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  manualAccountNameInput: {
+    flex: 1,
+    color: Colors.text.primary,
+    fontFamily: Typography.regular,
+    fontSize: 14,
+    padding: 0,
+  },
+  useAccountButton: {
+    backgroundColor: '#35297F',
+    borderRadius: 8,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  useAccountButtonDisabled: {
+    backgroundColor: '#C4B9E8',
+  },
+  useAccountButtonText: {
+    color: '#FFFFFF',
+    fontFamily: Typography.medium,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
+  // Bank picker modal
+  bankModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  bankModalBackdrop: {
+    flex: 1,
+  },
+  bankModalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 34,
+    maxHeight: '75%',
+  },
+  bankModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  bankModalTitle: {
+    color: Colors.text.primary,
+    fontFamily: Typography.medium,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  bankModalClose: {
+    color: Colors.text.secondary,
+    fontSize: 18,
+    padding: 4,
+  },
+  bankSearchInput: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    color: Colors.text.primary,
+    fontFamily: Typography.regular,
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  bankListItem: {
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  bankListItemText: {
+    color: Colors.text.primary,
+    fontFamily: Typography.regular,
+    fontSize: 14,
   },
 });
 

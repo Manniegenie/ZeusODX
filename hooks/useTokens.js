@@ -99,9 +99,11 @@ export function useTokens() {
       const priceChange = priceChanges12h?.[symbol];
       const change24h = priceChange?.percentageChange || 0;
 
-      // Special handling for NGNZ
+      // Special handling for NGNZ (1 NGNZ = 1 Naira; USD price = 1/rate)
       const isNGNZ = symbol === 'NGNZ';
-      const currentPrice = isNGNZ ? (ngnzExchangeRate?.rate || price) : price;
+      const rate = ngnzExchangeRate?.rate || 1600;
+      const currentPrice = isNGNZ ? rate : price;
+      const ngnzUsdPrice = isNGNZ ? 1 / rate : null;
 
       const token = {
         id: symbol.toLowerCase(),
@@ -112,8 +114,8 @@ export function useTokens() {
         
         // Price data
         price: {
-          usd: isNGNZ ? null : currentPrice,
-          naira: isNGNZ ? currentPrice : (currentPrice * (ngnzExchangeRate?.rate || 1600))
+          usd: isNGNZ ? ngnzUsdPrice : currentPrice,
+          naira: isNGNZ ? currentPrice : (currentPrice * rate)
         },
         currentPrice,
         
@@ -122,13 +124,13 @@ export function useTokens() {
         priceChange12h: change24h,
         isPositive: change24h >= 0,
         
-        // Formatted display values
+        // Formatted display values (NGNZ shows real USD and NGN like other tokens)
         formattedPrice: {
           naira: isNGNZ 
             ? `₦${currentPrice.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-            : `₦${(currentPrice * (ngnzExchangeRate?.rate || 1600)).toLocaleString('en-NG')}`,
+            : `₦${(currentPrice * rate).toLocaleString('en-NG')}`,
           usd: isNGNZ 
-            ? 'Local Currency'
+            ? `$${ngnzUsdPrice.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 6 })}`
             : `$${currentPrice.toLocaleString('en-US', { 
                 minimumFractionDigits: symbol === 'BTC' ? 2 : (currentPrice < 1 ? 4 : 2),
                 maximumFractionDigits: symbol === 'BTC' ? 2 : (currentPrice < 1 ? 4 : 2)
