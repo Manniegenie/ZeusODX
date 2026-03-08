@@ -57,7 +57,7 @@ const AddBankScreen = () => {
     retryLoading
   } = useNairaBanks();
 
-  // Obiex resolve hook (no auto)
+  // Provider resolve hook (no auto)
   const {
     account: resolvedAccount,
     loading: resolving,

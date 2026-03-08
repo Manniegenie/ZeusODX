@@ -18,11 +18,6 @@ export const Colors = {
   success: '#00C851',
   warning: '#FF8800', 
   error: '#FF4444',
-
-  // Hint / guide (yellow)
-  hint: '#B45309',
-  hintBg: '#FEF9C3',
-  hintIcon: '#CA8A04',
   
   // Crypto-specific colors
   bitcoin: '#F7931A',

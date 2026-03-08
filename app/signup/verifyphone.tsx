@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Animated, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import { Colors } from '../../constants/Colors';
 import { Layout } from '../../constants/Layout';
@@ -18,6 +18,7 @@ export default function VerifyPhoneScreen() {
     getTempSignupData 
   } = useVerify();
 
+  const inputRef = useRef<TextInput>(null);
   const [verificationCode, setVerificationCode] = useState('');
   const [countdown, setCountdown] = useState(120); // 2 minutes
   const [canResend, setCanResend] = useState(false);
@@ -290,6 +291,7 @@ export default function VerifyPhoneScreen() {
         {/* Verification Code Input */}
         <View style={styles.codeSection}>
           <TextInput
+            ref={inputRef}
             style={styles.codeInput}
             placeholder=""
             placeholderTextColor={Colors.text.muted}
@@ -301,8 +303,9 @@ export default function VerifyPhoneScreen() {
             textAlign="center"
             editable={!isVerifying}
           />
-          
-          {/* Visual code display */}
+
+          {/* Visual code display — tapping refocuses the hidden input */}
+          <TouchableWithoutFeedback onPress={() => inputRef.current?.focus()}>
           <View style={styles.codeVisual}>
             {[...Array(6)].map((_, index) => (
               <View
@@ -328,7 +331,8 @@ export default function VerifyPhoneScreen() {
               </View>
             ))}
           </View>
-          
+          </TouchableWithoutFeedback>
+
           {/* Verification status */}
           {isVerifying && (
             <Text style={styles.verifyingText}>Verifying your account...</Text>

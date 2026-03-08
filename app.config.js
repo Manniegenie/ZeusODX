@@ -3,7 +3,7 @@ export default {
   expo: {
     name: "ZeusODX",
     slug: "zeusodx",
-    version: "1.1.0",
+    version: "1.5.0",
     orientation: "default",
     icon: "./assets/images/app-icon.png",
     scheme: "zeusodx",
@@ -14,7 +14,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.manniegenie.zeusodx",
-      buildNumber: "2", // Incremented build number for fresh submission
+      buildNumber: "2",
       icon: "./assets/images/app-icon.png",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
@@ -22,7 +22,7 @@ export default {
         NSMicrophoneUsageDescription: "ZeusODX uses the microphone to record audio during the video identity confirmation process to verify that you are a real person.",
         NSFaceIDUsageDescription: "ZeusODX uses Face ID to allow you to securely log in to your account without typing your password.",
         NSPhotoLibraryUsageDescription: "ZeusODX requires access to your photo library to allow you to upload identity documents or proof of transaction images.",
-        NSUserTrackingUsageDescription: "ZeusODX uses tracking to measure ad performance and improve your experience.",
+        NSUserTrackingUsageDescription: "ZeusODX uses data to measure app performance and improve your experience. No personal financial data is shared with advertisers.",
         UIBackgroundModes: ["remote-notification"]
       }
     },
@@ -45,9 +45,10 @@ export default {
         "WAKE_LOCK",
         "RECORD_AUDIO",
         "com.google.android.c2dm.permission.RECEIVE",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "com.google.android.gms.permission.AD_ID"
       ],
-      versionCode: 131 // Incremented for Android submission
+      versionCode: 147
     },
     web: {
       bundler: "metro",
@@ -59,6 +60,8 @@ export default {
       "expo-font",
       "expo-secure-store",
       "react-native-appsflyer",
+      "expo-tracking-transparency",
+      "./plugins/withAndroidManifestFix.js",
       [
         "expo-build-properties",
         {
@@ -101,16 +104,18 @@ export default {
     extra: {
       router: {},
       eas: {
-        projectId: "7cc7ad65-2b13-42f3-9865-62b4e1d55984"
+        projectId: "a075e816-5194-4302-a228-e6f53ad53f92"
       },
-      appleAppId: process.env.EXPO_PUBLIC_APPLE_APP_ID || "6755314395"
+      // Apple App Store ID - required for iOS store review prompts
+      // Find your App ID in App Store Connect or use: https://apps.apple.com/app/id<YOUR_APP_ID>
+      appleAppId: process.env.EXPO_PUBLIC_APPLE_APP_ID || ""
     },
-    owner: "manuelwurld",
+    owner: "manniegenie",
     runtimeVersion: {
       policy: "appVersion"
     },
     updates: {
-      url: "https://u.expo.dev/7cc7ad65-2b13-42f3-9865-62b4e1d55984"
+      url: "https://u.expo.dev/a075e816-5194-4302-a228-e6f53ad53f92"
     },
     platforms: ["ios", "android", "web"]
   }

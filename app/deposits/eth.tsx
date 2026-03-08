@@ -19,6 +19,7 @@ import {
 import AddressCopied from '../../components/AddressCopied';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import HintBulb from '../../components/HintBulb';
 import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useDeposit } from '../../hooks/useDeposit';
@@ -193,7 +194,12 @@ export default function EthDepositScreen() {
                 <Text style={styles.headerSubtitle}>Ethereum</Text>
               </View>
 
-              <View style={styles.headerRight} />
+              <View style={styles.headerRight}>
+                <HintBulb
+                  title="Deposit tip"
+                  hint="Only send Ethereum (ETH) to this address on the Ethereum network. Sending any other asset or using a different network may result in permanent loss."
+                />
+              </View>
             </View>
           </View>
 

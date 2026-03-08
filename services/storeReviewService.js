@@ -63,7 +63,7 @@ export const storeReviewService = {
 
       Alert.alert(
         'Enjoying ZeusODX?',
-        `If you have a moment, we’d love a review on the ${storeName}. It helps us a lot.`,
+        `If you have a moment, we'd love a review on the ${storeName}. It helps us a lot.`,
         [
           {
             text: 'Not now',

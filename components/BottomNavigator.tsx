@@ -210,12 +210,12 @@ interface Styles {
 
 const styles = StyleSheet.create<Styles>({
   safeAreaContainer: {
-    backgroundColor: '#FAFAFA',
+    backgroundColor: Colors.background,
   },
   container: {
-    backgroundColor: '#FAFAFA',
+    backgroundColor: Colors.background,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: Colors.border,
     paddingTop: moderateScale(8, 0.1),
   },
   tabNavContainer: {

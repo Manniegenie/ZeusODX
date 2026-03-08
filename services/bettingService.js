@@ -65,29 +65,10 @@ export const bettingService = {
     }
   },
 
-  /**
-   * Fetch betting providers from API. Falls back to static list on failure so UI always has a list.
-   * @returns {Promise<Array<{ id, name, displayName, slug, category, logo?, hasLogo }>>}
-   */
-  async getBettingProviders() {
-    try {
-      const response = await apiClient.get('/betting/providers');
-      const payload = response?.data?.data || response?.data;
-      const list = Array.isArray(payload?.providers) ? payload.providers : payload;
-      if (Array.isArray(list) && list.length > 0) {
-        return list;
-      }
-      return this.getStaticBettingProviders();
-    } catch (err) {
-      console.warn('Betting providers API failed, using static list:', err?.message);
-      return this.getStaticBettingProviders();
-    }
-  },
-
   // --- Helpers for UI (no error normalization) ---
 
   getStaticBettingProviders() {
-    const raw = [
+    return [
       { id: '1xbet', name: '1xBet', displayName: '1xBet', category: 'gaming' },
       { id: 'bangbet', name: 'BangBet', displayName: 'BangBet', category: 'gaming' },
       { id: 'bet9ja', name: 'Bet9ja', displayName: 'Bet9ja', category: 'gaming' },
@@ -100,14 +81,13 @@ export const bettingService = {
       { id: 'merrybet', name: 'MerryBet', displayName: 'MerryBet', category: 'gaming' },
       { id: 'naijabet', name: 'NaijaBet', displayName: 'NaijaBet', category: 'gaming' },
       { id: 'nairabet', name: 'NairaBet', displayName: 'NairaBet', category: 'gaming' },
-      { id: 'supabet', name: 'SupaBet', displayName: 'SupaBet', category: 'gaming' }
+      { id: 'supabet', name: 'SupaBet', displayName: 'SupaBet', category: 'gaming' },
+      { id: 'hallabet', name: 'HallaBet', displayName: 'HallaBet', category: 'gaming' },
+      { id: 'mlotto', name: 'MLotto', displayName: 'MLotto', category: 'gaming' },
+      { id: 'westernlotto', name: 'WesternLotto', displayName: 'Western Lotto', category: 'gaming' },
+      { id: 'greenlotto', name: 'GreenLotto', displayName: 'Green Lotto', category: 'gaming' },
+      { id: 'sportybet', name: 'SportyBet', displayName: 'SportyBet', category: 'gaming' }
     ];
-    return raw.map(p => ({
-      ...p,
-      slug: p.slug ?? p.id,
-      hasLogo: false,
-      logo: undefined
-    }));
   },
 
   getProviderDisplayName(providerId) {
