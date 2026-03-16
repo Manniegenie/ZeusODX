@@ -93,14 +93,6 @@ export default function RootLayout() {
     // Foreground notification listener
     const subReceived = Notifications.addNotificationReceivedListener(notification => {
       console.log('📨 Foreground Notification Received:', notification.request.content);
-      const data = notification.request.content.data as any;
-      if (data?.type === 'DEPOSIT' && data?.status === 'CONFIRMED') {
-        AppsFlyerService.logEvent('Deposit', {
-          amount: String(data.amount || ''),
-          currency: String(data.currency || ''),
-          deposit_method: 'crypto',
-        }).catch(() => {});
-      }
     });
 
     // Notification tap listener
@@ -109,14 +101,6 @@ export default function RootLayout() {
       // TODO: Add navigation based on notification data
       // const data = response.notification.request.content.data;
       // if (data?.screen) router.push(data.screen);
-      const data = response.notification.request.content.data as any;
-      if (data?.type === 'DEPOSIT' && data?.status === 'CONFIRMED') {
-        AppsFlyerService.logEvent('Deposit', {
-          amount: String(data.amount || ''),
-          currency: String(data.currency || ''),
-          deposit_method: 'crypto',
-        }).catch(() => {});
-      }
     });
 
     return () => {
