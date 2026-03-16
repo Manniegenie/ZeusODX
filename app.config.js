@@ -3,7 +3,7 @@ export default {
   expo: {
     name: "ZeusODX",
     slug: "zeusodx",
-    version: "1.5.0",
+    version: "1.7.0",
     orientation: "default",
     icon: "./assets/images/app-icon.png",
     scheme: "zeusodx",
@@ -48,7 +48,7 @@ export default {
         "android.permission.POST_NOTIFICATIONS",
         "com.google.android.gms.permission.AD_ID"
       ],
-      versionCode: 147
+      versionCode: 150
     },
     web: {
       bundler: "metro",
@@ -59,7 +59,13 @@ export default {
       "expo-router",
       "expo-font",
       "expo-secure-store",
-      "react-native-appsflyer",
+      [
+        "react-native-appsflyer",
+        {
+          "shouldUseStrictMode": false,
+          "preferAppsFlyerBackupRules": false
+        }
+      ],
       "expo-tracking-transparency",
       "./plugins/withAndroidManifestFix.js",
       [
