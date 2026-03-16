@@ -3,7 +3,6 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { authService } from '../services/authService';
 import NotificationService from '../services/notificationService';
 import AppsFlyerService from '../services/appsFlyerService';
-import { appsFlyerApiService } from '../services/appsFlyerApiService';
 
 const AuthContext = createContext();
 
@@ -48,12 +47,11 @@ export function useAuthProvider() {
           const uidResult = await AppsFlyerService.getAppsFlyerUID();
           if (uidResult.success && uidResult.uid) {
             await AppsFlyerService.setUserId(response.data.user._id || response.data.user.id);
-            await appsFlyerApiService.storeAppsFlyerId(uidResult.uid);
           }
           await AppsFlyerService.logEvent('af_login', { login_method: 'pin' });
         } catch (error) {
           if (__DEV__) {
-            console.warn('⚠️ useAuth: Failed to store AppsFlyer UID or log event:', error);
+            console.warn('⚠️ useAuth: Failed to log AppsFlyer event:', error);
           }
         }
         
@@ -93,12 +91,11 @@ export function useAuthProvider() {
           const uidResult = await AppsFlyerService.getAppsFlyerUID();
           if (uidResult.success && uidResult.uid) {
             await AppsFlyerService.setUserId(response.data.user?._id || response.data.user?.id);
-            await appsFlyerApiService.storeAppsFlyerId(uidResult.uid);
           }
           await AppsFlyerService.logEvent('af_complete_registration', { registration_method: 'phone' });
         } catch (error) {
           if (__DEV__) {
-            console.warn('⚠️ useAuth: Failed to store AppsFlyer UID or log event:', error);
+            console.warn('⚠️ useAuth: Failed to log AppsFlyer event:', error);
           }
         }
         

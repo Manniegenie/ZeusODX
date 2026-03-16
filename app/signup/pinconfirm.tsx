@@ -6,6 +6,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { passwordPinService } from '../../services/passwordpinService';
 import ErrorDisplay from '../../components/ErrorDisplay';
+import AppsFlyerService from '../../services/appsFlyerService';
 
 // Back icon - matching btc-bsc screen
 import backIcon from '../../components/icons/backy.png';
@@ -88,6 +89,7 @@ export default function ConfirmPinScreen() {
 
       if (result.success) {
         console.log('✅ Pin created successfully');
+        AppsFlyerService.logEvent('sign_up', { registration_method: 'phone' }).catch(() => {});
         showSuccess('Your PIN has been created successfully and your account is ready!', 'PIN Created!');
       } else {
         const errorMessage = 'error' in result ? result.error : 'Failed to create account';
