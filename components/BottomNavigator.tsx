@@ -85,18 +85,6 @@ const AnimatedTab: React.FC<AnimatedTabProps> = ({ tab, isActive, onPress }) => 
               ]}
             />
           </View>
-          <Animated.Text
-            style={[
-              styles.specialTabLabel,
-              {
-                color: '#FFFFFF',
-                fontFamily: Typography.medium,
-                fontWeight: '600',
-              }
-            ]}
-          >
-            {tab.label}
-          </Animated.Text>
         </Animated.View>
       </TouchableOpacity>
     );

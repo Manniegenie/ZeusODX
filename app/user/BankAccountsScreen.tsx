@@ -5,7 +5,9 @@ import {
     ActivityIndicator,
     FlatList,
     Image,
+    KeyboardAvoidingView,
     Modal,
+    Platform,
     SafeAreaView,
     ScrollView,
     StatusBar,
@@ -368,7 +370,7 @@ const BankAccountsScreen = () => {
 
   const getDescriptionText = () => {
     return isSelectionMode
-      ? 'Select a bank account to receive your converted money'
+      ? 'Select a bank account to receive your Naira'
       : 'Here are all the bank details you added for crypto to cash payment.';
   };
 
@@ -882,36 +884,38 @@ const BankAccountsScreen = () => {
         </View>
       </Modal>
 
-      {/* Manual Bank Picker Modal */}
+      {/* Manual Bank Picker Modal - Full Screen */}
       <Modal
         visible={showManualBankModal}
-        transparent
         animationType="slide"
         onRequestClose={() => { setShowManualBankModal(false); clearBankSearch(); }}
       >
-        <View style={styles.bankModalOverlay}>
-          <TouchableOpacity
-            style={styles.bankModalBackdrop}
-            activeOpacity={1}
-            onPress={() => { setShowManualBankModal(false); clearBankSearch(); }}
-          />
-          <View style={styles.bankModalContainer}>
-            <View style={styles.bankModalHeader}>
-              <Text style={styles.bankModalTitle}>Select Bank</Text>
-              <TouchableOpacity
-                onPress={() => { setShowManualBankModal(false); clearBankSearch(); }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text style={styles.bankModalClose}>✕</Text>
-              </TouchableOpacity>
-            </View>
+        <SafeAreaView style={styles.bankModalFullScreen}>
+          <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+          {/* Header - matches the rest of the app */}
+          <View style={styles.bankModalHeader}>
+            <TouchableOpacity
+              style={styles.bankModalBackBtn}
+              onPress={() => { setShowManualBankModal(false); clearBankSearch(); }}
+              activeOpacity={0.7}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            >
+              <Image source={backIcon} style={styles.bankModalBackIcon} />
+            </TouchableOpacity>
+            <Text style={styles.bankModalTitle}>Select Bank</Text>
+            <View style={styles.bankModalHeaderRight} />
+          </View>
+
+          <KeyboardAvoidingView
+            style={styles.bankModalBody}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
             <TextInput
               style={styles.bankSearchInput}
               placeholder="Search bank..."
               placeholderTextColor="#9CA3AF"
               value={bankSearchTerm}
               onChangeText={searchBanks}
-              autoFocus
             />
             {banksLoading ? (
               <ActivityIndicator size="small" color="#35297F" style={{ marginTop: 20, marginBottom: 20 }} />
@@ -937,10 +941,11 @@ const BankAccountsScreen = () => {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
+                contentContainerStyle={{ paddingBottom: 34 }}
               />
             )}
-          </View>
-        </View>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </Modal>
 
       {/* PIN Entry Modal */}
@@ -1423,40 +1428,47 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Bank picker modal
-  bankModalOverlay: {
+  // Bank picker modal - full screen
+  bankModalFullScreen: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  bankModalBackdrop: {
-    flex: 1,
-  },
-  bankModalContainer: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 34,
-    maxHeight: '75%',
   },
   bankModalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  bankModalBackBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bankModalBackIcon: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
   },
   bankModalTitle: {
-    color: Colors.text.primary,
+    flex: 1,
+    color: '#35297F',
     fontFamily: Typography.medium,
     fontSize: 18,
     fontWeight: '600',
+    textAlign: 'center',
   },
-  bankModalClose: {
-    color: Colors.text.secondary,
-    fontSize: 18,
-    padding: 4,
+  bankModalHeaderRight: {
+    width: 40,
+  },
+  bankModalBody: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   bankSearchInput: {
     backgroundColor: '#F8F9FA',
