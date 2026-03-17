@@ -103,7 +103,7 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
   const quickActions = [
     { id: 'deposit', title: 'Deposit', iconSrc: depositIcon, disabled: true },
-    { id: 'transfer', title: 'Transfer', iconSrc: transferIcon },
+    { id: 'transfer', title: 'Withdraw', iconSrc: transferIcon },
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 

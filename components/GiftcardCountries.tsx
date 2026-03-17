@@ -29,7 +29,7 @@ import flagAU from '../components/icons/australia.png';
 import flagAE from '../components/icons/united-arab-emirates.png';
 import flagTR from '../components/icons/turkey.png';
 import flagCH from '../components/icons/switzerland.png';
-import flagEU from '../components/icons/germany.png';
+import flagEU from '../assets/images/world.png';
 
 /* ========= Types ========= */
 export type CountryItem = {

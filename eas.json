@@ -32,7 +32,10 @@
       "extends": "base",
       "distribution": "internal",
       "env": {
-        "NODE_ENV": "staging"
+        "NODE_ENV": "staging",
+        "EXPO_PUBLIC_APPSFLYER_DEV_KEY": "Av6nnqAQzF26yExKyQ6g4U",
+        "EXPO_PUBLIC_APPSFLYER_IOS_APP_ID": "6755314395",
+        "EXPO_PUBLIC_APPLE_APP_ID": "6755314395"
       },
       "channel": "preview",
       "android": {
@@ -43,7 +46,10 @@
       "extends": "base",
       "autoIncrement": false,
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "EXPO_PUBLIC_APPSFLYER_DEV_KEY": "Av6nnqAQzF26yExKyQ6g4U",
+        "EXPO_PUBLIC_APPSFLYER_IOS_APP_ID": "6755314395",
+        "EXPO_PUBLIC_APPLE_APP_ID": "6755314395"
       },
       "channel": "production",
       "android": {
