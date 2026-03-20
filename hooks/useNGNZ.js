@@ -80,7 +80,7 @@ export function useNGNZ() {
 
   // Supported cryptocurrencies for NGNZ swaps
   const supportedCryptos = useMemo(() => [
-    'BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'TRX', 'BNB', 'MATIC'
+    'BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'TRX', 'BNB', 'MATIC', 'TON'
   ], []);
 
   // Check authentication on mount

@@ -99,7 +99,7 @@ export default function PortfolioSection({
 
   const quickLinks: QuickLink[] = [
     { id: 'deposit',   title: 'Deposit',   icon: depositIcon,   route: '/user/come-soon' },
-    { id: 'transfer',  title: 'Transfer',  icon: transferIcon,  route: '/user/come-soon' },
+    { id: 'transfer',  title: 'Withdraw',  icon: transferIcon,  route: '/user/come-soon' },
     { id: 'buy-sell',  title: 'Buy/Sell',  icon: swapIcon,      route: '/user/Swap' },
     { id: 'utility',   title: 'Utility',   icon: utilitiesIcon, route: '/user/utility' },
   ];

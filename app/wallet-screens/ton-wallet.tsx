@@ -234,14 +234,12 @@ const TONWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   } = useHistory('TON', { defaultPageSize: 5 });
 
   useEffect(() => {
-    if (openNetworkModal === 'true') {
-      setShowNetworkModal(true);
-    }
+    // Deposit disabled for TON
   }, [openNetworkModal]);
 
   const quickActions = [
     { id: 'deposit', title: 'Deposit', iconSrc: depositIcon },
-    { id: 'transfer', title: 'Transfer', iconSrc: transferIcon },
+    { id: 'transfer', title: 'Withdraw', iconSrc: transferIcon },
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 
@@ -255,7 +253,7 @@ const TONWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
   const handleQuickAction = (actionId: string) => {
     if (actionId === 'deposit') {
-      setShowNetworkModal(true);
+      return;
     } else if (actionId === 'transfer') {
       setShowTransferMethodModal(true);
     } else if (actionId === 'buy-sell') {
@@ -361,7 +359,12 @@ const TONWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
             <Text style={styles.quickActionsTitle}>Quick Actions</Text>
             <View style={styles.quickActionsContainer}>
               {quickActions.map((action) => (
-                <TouchableOpacity key={action.id} style={styles.actionItem} onPress={() => handleQuickAction(action.id)}>
+                <TouchableOpacity
+                  key={action.id}
+                  style={[styles.actionItem, action.id === 'deposit' && { opacity: 0.4 }]}
+                  onPress={() => handleQuickAction(action.id)}
+                  disabled={action.id === 'deposit'}
+                >
                   <Image source={action.iconSrc} style={styles.actionIconImage} />
                   <Text style={styles.actionLabel}>{action.title}</Text>
                 </TouchableOpacity>
