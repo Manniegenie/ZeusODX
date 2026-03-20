@@ -76,6 +76,7 @@ export function useDeposit() {
                   token === 'TRX' ? 'Tron' :
                   token === 'DOGE' ? 'Dogecoin' :
                   token === 'MATIC' ? 'Polygon' :
+                  token === 'TON' ? 'Toncoin' :
                   token === 'AVAX' ? 'Avalanche' :
                   token === 'NGNB' ? 'Nigerian Naira Blockchain' :
                   token,
@@ -208,8 +209,10 @@ export function useDeposit() {
     getDepositAddress('USDC', network), [getDepositAddress]);
   const getBNBAddress = useCallback((network = 'BSC') => 
     getDepositAddress('BNB', network), [getDepositAddress]);
-  const getTRXAddress = useCallback((network = 'TRON') => 
+  const getTRXAddress = useCallback((network = 'TRON') =>
     getDepositAddress('TRX', network), [getDepositAddress]);
+  const getTONAddress = useCallback(() =>
+    getDepositAddress('TON', 'TON'), [getDepositAddress]);
 
   // Validate token/network combination using live API data
   const isTokenNetworkSupported = useCallback((tokenSymbol, network) => {
@@ -303,7 +306,8 @@ export function useDeposit() {
     getUSDCAddress,
     getBNBAddress,
     getTRXAddress,
-    
+    getTONAddress,
+
     // Validation utilities
     isTokenNetworkSupported,
     getSupportedNetworksForToken,

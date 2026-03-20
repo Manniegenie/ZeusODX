@@ -225,7 +225,7 @@ export const usernameTransferService = {
       errors.push('Currency is required');
     } else {
       // NOTE: align with app (uses NGNZ)
-      const valid = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'BNB', 'DOGE', 'MATIC', 'AVAX', 'NGNZ'];
+      const valid = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'BNB', 'DOGE', 'MATIC', 'AVAX', 'NGNZ', 'TON'];
       if (!valid.includes(data.currency.toUpperCase())) errors.push('Please select a valid currency');
     }
 

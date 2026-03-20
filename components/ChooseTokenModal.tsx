@@ -24,6 +24,7 @@ const trxIcon = require('../components/icons/Tron.png');
 const bnbIcon = require('../components/icons/bnb-icon.png');
 const maticIcon = require('../components/icons/matic-icon.png');
 const ngnzIcon = require('../components/icons/NGNZ.png');
+const tonIcon = require('../assets/images/toncoin-ton-logo.png');
 const checkIcon = require('../components/icons/Check-icon.png');
 
 interface TokenOption {
@@ -76,6 +77,8 @@ export default function ChooseTokenModal({
     bnbBalance,
     maticBalance,
     ngnzBalance,
+    tonPrice,
+    tonBalance,
   } = useDashboard();
 
   // Token options based on your existing data
@@ -152,17 +155,18 @@ export default function ChooseTokenModal({
       price: maticPrice,
       balance: maticBalance?.balance || 0,
     },
+    {
+      id: 'ton',
+      name: 'Toncoin',
+      symbol: 'TON',
+      icon: tonIcon,
+      price: tonPrice,
+      balance: tonBalance?.balance || 0,
+    },
   ];
 
-  // Filter tokens based on price availability and valid token list
+  // Filter tokens based on valid token list
   const tokenOptions = allTokenOptions.filter(token => {
-    // Always show NGNZ regardless of price
-    if (token.symbol === 'NGNZ') {
-      return true;
-    }
-    // For other tokens, require valid price
-    return token.price && token.price > 0;
-  }).filter(token => {
     // Filter by validTokens if provided
     if (validTokens && validTokens.length > 0) {
       return validTokens.includes(token.symbol);

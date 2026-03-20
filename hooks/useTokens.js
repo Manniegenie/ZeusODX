@@ -62,6 +62,12 @@ const TOKEN_METADATA = {
     symbol: 'USDC',
     icon: require('../components/icons/usdc-icon.png'),
     order: 10
+  },
+  TON: {
+    name: 'Toncoin',
+    symbol: 'TON',
+    icon: require('../assets/images/toncoin-ton-logo.png'),
+    order: 11
   }
 };
 
