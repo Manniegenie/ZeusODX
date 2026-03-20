@@ -18,6 +18,10 @@ export function useBalance() {
   const trxBalanceUSD         = balances.trxBalanceUSD         || 0;
   const trxPendingBalance     = balances.trxPendingBalance     || 0;
 
+  const tonBalance            = balances.tonBalance            || 0;
+  const tonBalanceUSD         = balances.tonBalanceUSD         || 0;
+  const tonPendingBalance     = balances.tonPendingBalance     || 0;
+
   const bnbBalance            = balances.bnbBalance            || 0;
   const bnbBalanceUSD         = balances.bnbBalanceUSD         || 0;
   const bnbPendingBalance     = balances.bnbPendingBalance     || 0;
@@ -53,6 +57,7 @@ export function useBalance() {
   const totalPortfolioBalance = balances.totalPortfolioBalance   || 0;
 
   // Formatted token balances
+  const formattedTonBalance   = useMemo(() => balanceService.formatTokenBalance(tonBalance,  'TON'),   [tonBalance]);
   const formattedTrxBalance   = useMemo(() => balanceService.formatTokenBalance(trxBalance,  'TRX'),   [trxBalance]);
   const formattedBnbBalance   = useMemo(() => balanceService.formatTokenBalance(bnbBalance,  'BNB'),   [bnbBalance]);
   const formattedBtcBalance   = useMemo(() => balanceService.formatTokenBalance(btcBalance,  'BTC'),   [btcBalance]);
@@ -64,6 +69,7 @@ export function useBalance() {
   const formattedUsdtBalance  = useMemo(() => balanceService.formatTokenBalance(usdtBalance, 'USDT'),  [usdtBalance]);
 
   // Formatted USD amounts (directly from the service)
+  const formattedTonBalanceUSD   = useMemo(() => balanceService.formatCurrency(tonBalanceUSD),   [tonBalanceUSD]);
   const formattedTrxBalanceUSD   = useMemo(() => balanceService.formatCurrency(trxBalanceUSD),   [trxBalanceUSD]);
   const formattedBnbBalanceUSD   = useMemo(() => balanceService.formatCurrency(bnbBalanceUSD),   [bnbBalanceUSD]);
   const formattedBtcBalanceUSD   = useMemo(() => balanceService.formatCurrency(btcBalanceUSD),   [btcBalanceUSD]);
@@ -80,6 +86,7 @@ export function useBalance() {
 
   // Token-by-token summary
   const tokenBalanceSummary = useMemo(() => ({
+    ton:  { balance: tonBalance,  balanceUSD: tonBalanceUSD,  pending: tonPendingBalance },
     trx:  { balance: trxBalance,  balanceUSD: trxBalanceUSD,  pending: trxPendingBalance },
     bnb:  { balance: bnbBalance,  balanceUSD: bnbBalanceUSD,  pending: bnbPendingBalance },
     btc:  { balance: btcBalance,  balanceUSD: btcBalanceUSD,  pending: btcPendingBalance },
@@ -90,6 +97,7 @@ export function useBalance() {
     usdc: { balance: usdcBalance, balanceUSD: usdcBalanceUSD, pending: usdcPendingBalance },
     usdt: { balance: usdtBalance, balanceUSD: usdtBalanceUSD, pending: usdtPendingBalance },
   }), [
+    tonBalance,   tonBalanceUSD,   tonPendingBalance,
     trxBalance,   trxBalanceUSD,   trxPendingBalance,
     bnbBalance,   bnbBalanceUSD,   bnbPendingBalance,
     btcBalance,   btcBalanceUSD,   btcPendingBalance,
@@ -112,22 +120,22 @@ export function useBalance() {
 
   return {
     // raw
-    trxBalance, bnbBalance, btcBalance, ethBalance,
+    tonBalance, trxBalance, bnbBalance, btcBalance, ethBalance,
     maticBalance, ngnzBalance, solBalance,
     usdcBalance, usdtBalance, totalPortfolioBalance,
 
     // pending
-    trxPendingBalance, bnbPendingBalance, btcPendingBalance,
+    tonPendingBalance, trxPendingBalance, bnbPendingBalance, btcPendingBalance,
     ethPendingBalance, maticPendingBalance, ngnzPendingBalance,
     solPendingBalance, usdcPendingBalance, usdtPendingBalance,
 
     // formatted balances
-    formattedTrxBalance,  formattedBnbBalance,   formattedBtcBalance,
+    formattedTonBalance,  formattedTrxBalance,  formattedBnbBalance,   formattedBtcBalance,
     formattedEthBalance,   formattedMaticBalance, formattedNgnzBalance,
     formattedSolBalance,   formattedUsdcBalance,  formattedUsdtBalance,
 
     // formatted USD
-    formattedTrxBalanceUSD, formattedBnbBalanceUSD, formattedBtcBalanceUSD,
+    formattedTonBalanceUSD, formattedTrxBalanceUSD, formattedBnbBalanceUSD, formattedBtcBalanceUSD,
     formattedEthBalanceUSD,  formattedMaticBalanceUSD,formattedNgnzBalanceUSD,
     formattedSolBalanceUSD,  formattedUsdcBalanceUSD, formattedUsdtBalanceUSD,
 

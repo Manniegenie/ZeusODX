@@ -128,6 +128,9 @@ export default function WalletScreen({
       case 'matic_eth':
         router.push('/deposits/matic-eth');
         break;
+      case 'ton':
+        router.push('/deposits/ton');
+        break;
       default:
         console.log(`⚠️ No specific deposit route for ${wallet.symbol}, redirecting to coming soon`);
         router.push('/user/come-soon');

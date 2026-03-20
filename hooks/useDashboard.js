@@ -73,6 +73,7 @@ export function useDashboard() {
   const bnbPrice = prices?.BNB || 0;
   const maticPrice = prices?.MATIC || 0;
   const dogePrice = prices?.DOGE || 0;
+  const tonPrice = prices?.TON || 0;
 
   // Individual price change fields
   const btcPriceChange = priceChanges12h?.BTC || {};
@@ -148,6 +149,7 @@ export function useDashboard() {
   const bnbBalance = balances?.BNB || {};
   const maticBalance = balances?.MATIC || {};
   const ngnzBalance = balances?.NGNZ || {};
+  const tonBalance = balances?.TON || {};
 
   // Raw wallets data
   const wallets = useMemo(() => {
@@ -269,6 +271,7 @@ export function useDashboard() {
     bnbPrice,
     maticPrice,
     dogePrice,
+    tonPrice,
     
     // BTC price change fields
     btcPriceChange,
@@ -338,7 +341,8 @@ export function useDashboard() {
     bnbBalance,
     maticBalance,
     ngnzBalance,
-    
+    tonBalance,
+
     // Wallet objects
     btcWallet,
     ethWallet,

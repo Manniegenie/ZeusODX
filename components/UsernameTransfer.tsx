@@ -88,9 +88,9 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
 
   // Balances
   const {
-    solBalance, usdcBalance, usdtBalance, ethBalance, trxBalance, bnbBalance, maticBalance, ngnzBalance, btcBalance,
+    solBalance, usdcBalance, usdtBalance, ethBalance, trxBalance, bnbBalance, maticBalance, ngnzBalance, btcBalance, tonBalance,
     formattedSolBalanceUSD, formattedUsdcBalanceUSD, formattedUsdtBalanceUSD, formattedEthBalanceUSD,
-    formattedTrxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD, formattedNgnzBalanceUSD, formattedBtcBalanceUSD,
+    formattedTrxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD, formattedNgnzBalanceUSD, formattedBtcBalanceUSD, formattedTonBalanceUSD,
     loading: balanceLoading, error: balanceError
   } = useBalance();
 
@@ -136,11 +136,11 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
 
   // Token map
   const tokenMap = useMemo((): { [key: string]: TokenOption } => {
-    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'TRX', 'BNB', 'MATIC', 'NGNZ', 'BTC'];
+    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'TRX', 'BNB', 'MATIC', 'NGNZ', 'BTC', 'TON'];
 
     const balanceMap: Record<string, number> = {
       SOL: solBalance || 0, USDC: usdcBalance || 0, USDT: usdtBalance || 0, ETH: ethBalance || 0,
-      TRX: trxBalance || 0, BNB: bnbBalance || 0, MATIC: maticBalance || 0, NGNZ: ngnzBalance || 0, BTC: btcBalance || 0,
+      TRX: trxBalance || 0, BNB: bnbBalance || 0, MATIC: maticBalance || 0, NGNZ: ngnzBalance || 0, BTC: btcBalance || 0, TON: tonBalance || 0,
     };
 
     const usdValueMap: Record<string, string> = {
@@ -153,6 +153,7 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
       MATIC: formattedMaticBalanceUSD || '$0.00',
       NGNZ: formattedNgnzBalanceUSD || '$0.00',
       BTC: formattedBtcBalanceUSD || '$0.00',
+      TON: formattedTonBalanceUSD || '$0.00',
     };
 
     const acc: { [key: string]: TokenOption } = {};

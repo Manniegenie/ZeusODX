@@ -23,6 +23,7 @@ const usdcIcon = require('../../components/icons/usdc-icon.png');
 const trxIcon = require('../../components/icons/Tron.png');
 const bnbIcon = require('../../components/icons/bnb-icon.png');
 const maticIcon = require('../../components/icons/matic-icon.png');
+const tonIcon = require('../../assets/images/toncoin-ton-logo.png');
 const internalWalletIcon = require('../../components/icons/internal-wallet.png');
 const externalWalletIcon = require('../../components/icons/external-wallet.png');
 
@@ -81,6 +82,7 @@ export default function DashboardModals({
     { id: 'trx', name: 'Tron', symbol: 'TRX', icon: trxIcon },
     { id: 'bnb', name: 'Binance Coin', symbol: 'BNB', icon: bnbIcon },
     { id: 'matic', name: 'Polygon', symbol: 'MATIC', icon: maticIcon },
+    { id: 'ton', name: 'Toncoin', symbol: 'TON', icon: tonIcon },
   ];
 
   // Navigate to selected token wallet screen

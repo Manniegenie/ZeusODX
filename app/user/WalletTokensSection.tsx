@@ -61,6 +61,7 @@ export default function WalletTokensSection({
     maticBalance,
     ngnzBalance,
     btcBalance,
+    tonBalance,
     // Formatted USD values
     formattedSolBalanceUSD,
     formattedUsdcBalanceUSD,
@@ -71,6 +72,7 @@ export default function WalletTokensSection({
     formattedMaticBalanceUSD,
     formattedNgnzBalanceUSD,
     formattedBtcBalanceUSD,
+    formattedTonBalanceUSD,
     // State
     loading: balanceLoading,
     error: balanceError
@@ -82,7 +84,7 @@ export default function WalletTokensSection({
 
   // Filter tokens to only include wallet tokens and combine with balance data
   const walletTokens: WalletToken[] = useMemo(() => {
-    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'TRX', 'BNB', 'MATIC', 'NGNZ', 'BTC'];
+    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'TRX', 'BNB', 'MATIC', 'NGNZ', 'BTC', 'TON'];
     
     // Map of raw balances
     const balanceMap = {
@@ -95,6 +97,7 @@ export default function WalletTokensSection({
       MATIC: maticBalance || 0,
       NGNZ: ngnzBalance || 0,
       BTC: btcBalance || 0,
+      TON: tonBalance || 0,
     };
 
     // Map of formatted USD values
@@ -108,12 +111,13 @@ export default function WalletTokensSection({
       MATIC: formattedMaticBalanceUSD || '$0.00',
       NGNZ: formattedNgnzBalanceUSD || '$0.00',
       BTC: formattedBtcBalanceUSD || '$0.00',
+      TON: formattedTonBalanceUSD || '$0.00',
     };
 
     const tokens = allTokens
       .filter(token => targetSymbols.includes(token.symbol))
       .map(token => {
-        const balance = balanceMap[token.symbol] || 0;
+        const balance = balanceMap[token.symbol as keyof typeof balanceMap] || 0;
         const usdValue = balance * (token.currentPrice || 0);
         const hasBalance = balance > 0;
         
@@ -140,7 +144,7 @@ export default function WalletTokensSection({
           usdValue,
           hasBalance,
           formattedBalance,
-          formattedUsdValue: usdValueMap[token.symbol],
+          formattedUsdValue: usdValueMap[token.symbol as keyof typeof usdValueMap],
         };
       });
 
@@ -201,6 +205,9 @@ export default function WalletTokensSection({
         break;
       case 'NGNZ':
         router.push('/wallet-screens/ngnz-wallet');
+        break;
+      case 'TON':
+        router.push('/wallet-screens/ton-wallet');
         break;
       default:
         console.log(`⚠️ No specific route for ${token.symbol}, redirecting to coming soon`);

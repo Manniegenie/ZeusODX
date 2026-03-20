@@ -35,6 +35,7 @@ const trxIcon = require('../../components/icons/Tron.png');
 const bnbIcon = require('../../components/icons/bnb-icon.png');
 const swapIcon = require('../../components/icons/swap-icon.png');
 const maticIcon = require('../../components/icons/matic-icon.png');
+const tonIcon = require('../../assets/images/toncoin-ton-logo.png');
 
 interface SwapScreenProps {
   onBack?: () => void;
@@ -57,7 +58,7 @@ type MessageType = 'network' | 'validation' | 'auth' | 'server' | 'notFound' | '
 
 // Token categorization for swap validation
 const STABLECOINS = new Set(['USDT', 'USDC']);
-const CRYPTOCURRENCIES = new Set(['BTC', 'ETH', 'SOL', 'BNB', 'MATIC', 'TRX']);
+const CRYPTOCURRENCIES = new Set(['BTC', 'ETH', 'SOL', 'BNB', 'MATIC', 'TRX', 'TON']);
 
 export default function SwapScreen({ 
   onBack, 
@@ -249,7 +250,8 @@ export default function SwapScreen({
     ngnz: ngnzIcon,
     trx: trxIcon,
     bnb: bnbIcon,
-    matic: maticIcon
+    matic: maticIcon,
+    ton: tonIcon,
   }[id] || btcIcon);
 
   // Set default token based on navigation param
@@ -265,6 +267,7 @@ export default function SwapScreen({
         TRX: { id: 'trx', name: 'Tron', symbol: 'TRX', icon: trxIcon, price: 0, balance: 0 },
         BNB: { id: 'bnb', name: 'Binance Coin', symbol: 'BNB', icon: bnbIcon, price: 0, balance: 0 },
         MATIC: { id: 'matic', name: 'Polygon', symbol: 'MATIC', icon: maticIcon, price: 0, balance: 0 },
+        TON: { id: 'ton', name: 'Toncoin', symbol: 'TON', icon: tonIcon, price: 0, balance: 0 },
       };
       
       const defaultTokenKey = defaultToken as keyof typeof tokenMap;
@@ -321,7 +324,8 @@ export default function SwapScreen({
         'NGNZ': 2,
         'TRX': 6,
         'BNB': 4,
-        'MATIC': 4
+        'MATIC': 4,
+        'TON': 6,
       };
       
       return decimalsMap[symbol] ?? 2;

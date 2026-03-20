@@ -166,9 +166,9 @@ const ExternalWalletTransferScreen: React.FC = () => {
   // Get balances from useBalance hook
   const {
     solBalance, usdcBalance, usdtBalance, ethBalance,
-    trxBalance, bnbBalance, maticBalance, btcBalance,
+    trxBalance, bnbBalance, maticBalance, btcBalance, tonBalance,
     formattedSolBalanceUSD, formattedUsdcBalanceUSD, formattedUsdtBalanceUSD, formattedEthBalanceUSD,
-    formattedTrxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD, formattedBtcBalanceUSD,
+    formattedTrxBalanceUSD, formattedBnbBalanceUSD, formattedMaticBalanceUSD, formattedBtcBalanceUSD, formattedTonBalanceUSD,
     loading: balanceLoading, error: balanceError
   } = useBalance();
 
@@ -191,11 +191,12 @@ const ExternalWalletTransferScreen: React.FC = () => {
   };
 
   const tokenMap = useMemo((): { [key: string]: TokenOption } => {
-    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'TRX', 'BNB', 'MATIC', 'BTC'] as const;
-    
+    const targetSymbols = ['SOL', 'USDC', 'USDT', 'ETH', 'TRX', 'BNB', 'MATIC', 'BTC', 'TON'] as const;
+
     const balanceMap: Record<typeof targetSymbols[number], number> = {
       SOL: solBalance || 0, USDC: usdcBalance || 0, USDT: usdtBalance || 0, ETH: ethBalance || 0,
       TRX: trxBalance || 0, BNB: bnbBalance || 0, MATIC: maticBalance || 0, BTC: btcBalance || 0,
+      TON: tonBalance || 0,
     };
 
     const usdValueMap: Record<typeof targetSymbols[number], string> = {
@@ -203,6 +204,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
       USDT: formattedUsdtBalanceUSD || '$0.00', ETH: formattedEthBalanceUSD || '$0.00',
       TRX: formattedTrxBalanceUSD || '$0.00', BNB: formattedBnbBalanceUSD || '$0.00',
       MATIC: formattedMaticBalanceUSD || '$0.00', BTC: formattedBtcBalanceUSD || '$0.00',
+      TON: formattedTonBalanceUSD || '$0.00',
     };
 
     const tokenMapResult: { [key: string]: TokenOption } = {};

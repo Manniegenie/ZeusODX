@@ -204,7 +204,7 @@ export const networksService = {
    * Validate currency
    */
   validateCurrency(currency) {
-    const supportedCurrencies = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'BNB', 'MATIC', 'TRX', 'AVAX'];
+    const supportedCurrencies = ['BTC', 'ETH', 'SOL', 'USDT', 'USDC', 'BNB', 'MATIC', 'TRX', 'AVAX', 'TON'];
     
     if (!currency || !currency.trim()) {
       return {
