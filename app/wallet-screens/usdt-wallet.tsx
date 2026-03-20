@@ -260,7 +260,7 @@ const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({ onQuickActionPress,
 
   const quickActions = [
     { id: 'deposit', title: 'Deposit', iconSrc: depositIcon },
-    { id: 'transfer', title: 'Transfer', iconSrc: transferIcon },
+    { id: 'transfer', title: 'Withdraw', iconSrc: transferIcon },
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 

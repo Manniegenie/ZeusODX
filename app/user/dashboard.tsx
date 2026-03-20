@@ -344,7 +344,7 @@ export default function DashboardScreen() {
         visible={showSelectTokenModal}
         onClose={() => setShowSelectTokenModal(false)}
         onSelectToken={handleSelectTokenForTransfer}
-        title="Select Token to Transfer"
+        title="Select Token to Withdraw"
       />
 
       {/* Transfer Method Modal */}

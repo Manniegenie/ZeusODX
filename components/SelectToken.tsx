@@ -23,7 +23,6 @@ const trxIcon = require('../components/icons/Tron.png');
 const bnbIcon = require('../components/icons/bnb-icon.png');
 const maticIcon = require('../components/icons/matic-icon.png');
 const ngnzIcon = require('../components/icons/NGNZ.png');
-const tonIcon = require('../assets/images/toncoin-ton-logo.png');
 
 export interface WalletOption {
   id: string;
@@ -57,7 +56,6 @@ export default function DepositTokenModal({
     { id: 'bnb', name: 'Binance Coin', symbol: 'BNB', icon: bnbIcon },
     { id: 'matic', name: 'Polygon', symbol: 'MATIC', icon: maticIcon },
     { id: 'ngnz', name: 'NGNZ', symbol: 'NGNZ', icon: ngnzIcon },
-    { id: 'ton', name: 'Toncoin', symbol: 'TON', icon: tonIcon },
   ];
 
   const handleSelectToken = (token: WalletOption) => {

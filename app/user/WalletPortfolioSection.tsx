@@ -69,7 +69,7 @@ export default function WalletPortfolioSection({
   // Quick actions
   const quickLinks: QuickLink[] = [
     { id: 'deposit',   title: 'Deposit',   icon: depositIcon },
-    { id: 'transfer',  title: 'Transfer',  icon: transferIcon },
+    { id: 'transfer',  title: 'Withdraw',  icon: transferIcon },
     { id: 'buy-sell',  title: 'Buy/Sell',  icon: swapIcon, route: '/user/Swap' },
   ];
 
@@ -216,7 +216,7 @@ export default function WalletPortfolioSection({
         visible={showSelectTokenModal}
         onClose={closeSelectTokenModal}
         onSelectToken={handleSelectTokenForTransfer}
-        title="Select Token to Transfer"
+        title="Select Token to Withdraw"
       />
       <TransferMethodModal
         visible={showTransferMethodModal}
