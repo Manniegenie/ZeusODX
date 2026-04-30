@@ -497,6 +497,8 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
         onClose={handleCloseTransferMethodModal}
         onSelectMethod={handleTransferMethodSelect}
         title="Send NGNZ"
+        externalMethodLabel="Send to Bank Account"
+        externalMethodDescription="Withdraw NGNZ to your bank account"
       />
 
       <NetworkSelectionModal

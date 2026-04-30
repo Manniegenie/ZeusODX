@@ -35,6 +35,8 @@ interface TransferMethodModalProps {
   onClose: () => void;
   onSelectMethod: (method: TransferMethod) => void;
   title?: string;
+  externalMethodLabel?: string;
+  externalMethodDescription?: string;
 }
 
 export default function TransferMethodModal({
@@ -42,6 +44,8 @@ export default function TransferMethodModal({
   onClose,
   onSelectMethod,
   title = 'Choose Transfer Method',
+  externalMethodLabel = 'Transfer to an external wallet',
+  externalMethodDescription = 'Send to an outside wallet address',
 }: TransferMethodModalProps) {
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
@@ -55,8 +59,8 @@ export default function TransferMethodModal({
     },
     {
       id: 'external',
-      title: 'Transfer to an external wallet',
-      description: 'Send to an outside wallet address',
+      title: externalMethodLabel,
+      description: externalMethodDescription,
       icon: externalWalletIcon,
     },
   ];

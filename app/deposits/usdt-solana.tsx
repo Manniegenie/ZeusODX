@@ -1,4 +1,4 @@
-// app/deposits/USDT-solana.tsx
+// app/deposits/usdt-solana.tsx
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -23,6 +23,8 @@ import { Colors } from '../../constants/Colors';
 import { Typography } from '../../constants/Typography';
 import { useDeposit } from '../../hooks/useDeposit';
 import { shareDepositPdf } from '../../utils/shareDepositPdf';
+
+import backIcon from '../../components/icons/backy.png';
 
 interface QRCodeData {
   dataUrl: string;
@@ -53,7 +55,7 @@ const horizontalPadding = getHorizontalPadding();
 export default function UsdtSolanaDepositScreen() {
   const router = useRouter();
   const {
-    getDepositAddress,
+    getUSDTAddress,
     getCachedAddress,
     isAddressLoading,
     getAddressError,
@@ -69,26 +71,26 @@ export default function UsdtSolanaDepositScreen() {
   const [showCopied, setShowCopied] = useState<boolean>(false);
 
   useEffect(() => {
-    const fetchSolanaAddress = async (): Promise<void> => {
-      const cachedAddress = getCachedAddress('USDT', 'SOLANA');
+    const fetchUSDTAddress = async (): Promise<void> => {
+      const cachedAddress = getCachedAddress('USDT', 'SOL');
       if (cachedAddress) {
         const addressData = cachedAddress.data || cachedAddress;
         setDepositData(addressData);
       } else {
-        await handleGetSolanaAddress();
+        await handleGetUSDTAddress();
       }
     };
-    fetchSolanaAddress();
+    fetchUSDTAddress();
   }, [getCachedAddress]);
 
-  const handleGetSolanaAddress = async (): Promise<void> => {
+  const handleGetUSDTAddress = async (): Promise<void> => {
     try {
-      const result = await getDepositAddress('USDT', 'SOLANA');
+      const result = await getUSDTAddress('SOL');
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
       } else {
-        showErrorMessage(result.error || 'Failed to get Solana USDT deposit address');
+        showErrorMessage(result.error || 'Failed to get USDT deposit address');
       }
     } catch (error) {
       showErrorMessage('Network error occurred');
@@ -101,7 +103,7 @@ export default function UsdtSolanaDepositScreen() {
     else if (message.includes('not found') || message.includes('not set up')) type = 'notFound';
     else if (message.includes('Network') || message.includes('connection')) type = 'network';
     else if (message.includes('Server') || message.includes('500')) type = 'server';
-    
+
     setErrorType(type);
     setErrorMessage(message);
     setShowError(true);
@@ -112,7 +114,7 @@ export default function UsdtSolanaDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetSolanaAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetUSDTAddress(), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
@@ -128,7 +130,7 @@ export default function UsdtSolanaDepositScreen() {
 
   const copyToClipboard = async (): Promise<void> => {
     if (!depositData?.address) {
-      showErrorMessage('Solana USDT wallet address is not yet available');
+      showErrorMessage('USDT wallet address is not yet available');
       return;
     }
     try {
@@ -139,8 +141,8 @@ export default function UsdtSolanaDepositScreen() {
     }
   };
 
-  const isLoading = isAddressLoading('USDT', 'SOLANA') || supportedLoading;
-  const addressError = getAddressError('USDT', 'SOLANA');
+  const isLoading = isAddressLoading('USDT', 'SOL') || supportedLoading;
+  const addressError = getAddressError('USDT', 'SOL');
   const isWalletSetupNeeded = addressError && addressError.includes('needs to be set up');
   const displayAddress = depositData?.address || (isWalletSetupNeeded ? 'Wallet not set up' : 'Loading...');
   const qrCodeData = depositData?.qrCode?.dataUrl;
@@ -172,20 +174,28 @@ export default function UsdtSolanaDepositScreen() {
           }
         >
           <View style={styles.headerSection}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <View style={styles.backArrow}>
-                <View style={styles.arrowLine} />
-                <View style={styles.arrowHead} />
+            <View style={styles.headerContainer}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.back()}
+                activeOpacity={0.7}
+                delayPressIn={0}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              >
+                <Image source={backIcon} style={styles.backIcon} />
+              </TouchableOpacity>
+
+              <View style={styles.headerGroup}>
+                <Text style={styles.headerTitle}>Deposit USDT</Text>
+                <Text style={styles.headerSubtitle}>Solana Network</Text>
               </View>
-            </TouchableOpacity>
-            <View style={styles.headerGroup}>
-              <Text style={styles.headerTitle}>Deposit USDT (Solana)</Text>
+
+              <View style={styles.headerRight} />
             </View>
-            <View style={styles.headerSpacer} />
           </View>
 
           <View style={styles.subtitleSection}>
-            <Text style={styles.subtitle}>Scan the QR code to get Solana deposit address</Text>
+            <Text style={styles.subtitle}>Scan the QR code to get your Solana USDT deposit address</Text>
           </View>
 
           <View style={styles.qrSection}>
@@ -193,7 +203,7 @@ export default function UsdtSolanaDepositScreen() {
               {isLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color={Colors.primary} />
-                  <Text style={styles.loadingText}>Loading Solana address...</Text>
+                  <Text style={styles.loadingText}>Loading USDT address...</Text>
                 </View>
               ) : qrCodeData ? (
                 <Image source={{ uri: qrCodeData }} style={styles.qrCodeImage} resizeMode="contain" />
@@ -229,6 +239,10 @@ export default function UsdtSolanaDepositScreen() {
               <Text style={styles.detailLabel}>Network</Text>
               <Text style={styles.detailValue}>{network}</Text>
             </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Token Standard</Text>
+              <Text style={styles.detailValue}>SPL</Text>
+            </View>
             {depositData?.walletReferenceId && (
               <View style={[styles.detailRow, styles.lastDetailRow]}>
                 <Text style={styles.detailLabel}>Wallet ID</Text>
@@ -250,7 +264,6 @@ export default function UsdtSolanaDepositScreen() {
                   showErrorMessage('USDT wallet address is not yet available');
                   return;
                 }
-
                 try {
                   await shareDepositPdf({
                     tokenSymbol: 'USDT',
@@ -277,14 +290,25 @@ export default function UsdtSolanaDepositScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  safeArea: { flex: 1 },
-  scrollView: { flex: 1 },
-  scrollContent: { paddingBottom: 100 },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background
+  },
+  safeArea: {
+    flex: 1
+  },
+  scrollView: {
+    flex: 1
+  },
+  scrollContent: {
+    paddingBottom: 100,
+  },
   headerSection: {
     paddingHorizontal: horizontalPadding,
-    paddingTop: 15,
-    paddingBottom: 8,
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -292,43 +316,35 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    borderRadius: 20,
   },
-  backArrow: {
+  backIcon: {
     width: 24,
     height: 24,
-    justifyContent: 'center',
+    resizeMode: 'contain',
+  },
+  headerGroup: {
+    flex: 1,
     alignItems: 'center',
-    position: 'relative',
   },
-  arrowLine: {
-    width: 16,
-    height: 2,
-    backgroundColor: Colors.text.primary,
-    position: 'absolute',
+  headerRight: {
+    width: 40,
   },
-  arrowHead: {
-    width: 8,
-    height: 8,
-    borderLeftWidth: 2,
-    borderTopWidth: 2,
-    borderLeftColor: Colors.text.primary,
-    borderTopColor: Colors.text.primary,
-    backgroundColor: 'transparent',
-    transform: [{ rotate: '-45deg' }],
-    position: 'absolute',
-    left: 0,
-  },
-  headerGroup: { flex: 1, alignItems: 'center' },
-  headerSpacer: { width: 40, height: 40 },
   headerTitle: {
     color: Colors.text.primary,
     fontFamily: Typography.medium,
     fontSize: 18,
     textAlign: 'center',
+    fontWeight: '600',
+  },
+  headerSubtitle: {
+    color: Colors.text.secondary,
+    fontFamily: Typography.regular,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 2,
   },
   subtitleSection: {
     paddingHorizontal: horizontalPadding,
@@ -438,9 +454,18 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     overflow: 'hidden',
   },
-  copyButtonDisabled: { opacity: 0.5 },
-  copyIcon: { width: 32, height: 32, resizeMode: 'cover' },
-  detailsSection: { paddingHorizontal: horizontalPadding, paddingVertical: 8 },
+  copyButtonDisabled: {
+    opacity: 0.5,
+  },
+  copyIcon: {
+    width: 32,
+    height: 32,
+    resizeMode: 'cover',
+  },
+  detailsSection: {
+    paddingHorizontal: horizontalPadding,
+    paddingVertical: 8,
+  },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -449,7 +474,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  lastDetailRow: { borderBottomWidth: 0 },
+  lastDetailRow: {
+    borderBottomWidth: 0,
+  },
   detailLabel: {
     color: Colors.text.secondary,
     fontFamily: Typography.regular,
@@ -463,9 +490,11 @@ const styles = StyleSheet.create({
   warningSection: {
     paddingHorizontal: horizontalPadding,
     paddingVertical: 15,
-    marginHorizontal: horizontalPadding,
-    backgroundColor: '#FEF3C7',
+  },
+  warningContainer: {
+    backgroundColor: '#FEF3CD',
     borderRadius: 12,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#F59E0B',
   },
@@ -482,7 +511,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
-  shareSection: { paddingHorizontal: horizontalPadding, paddingVertical: 15, paddingBottom: 20 },
+  shareSection: {
+    paddingHorizontal: horizontalPadding,
+    paddingVertical: 15,
+    paddingBottom: 20,
+  },
   shareButton: {
     backgroundColor: Colors.primary,
     borderRadius: 12,

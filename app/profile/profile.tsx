@@ -40,6 +40,7 @@ import notificationIcon from '../../components/icons/notification.png';
 import personalDetailsIcon from '../../components/icons/personal-details.png';
 import pinIcon from '../../components/icons/pin.png';
 import profileAvatarIcon from '../../components/icons/profile-avatar.png';
+import referEarnIcon from '../../components/icons/refer-earn.png';
 
 const ProfileScreen = () => {
   const router = useRouter();
@@ -216,6 +217,11 @@ const ProfileScreen = () => {
   const handleUpdateKYC = useCallback(() => {
     if (isAnyOperationInProgress) return;
     router.push('/kyc/kyc-upgrade');
+  }, [isAnyOperationInProgress, router]);
+
+  const handleReferral = useCallback(() => {
+    if (isAnyOperationInProgress) return;
+    router.push('/profile/referral');
   }, [isAnyOperationInProgress, router]);
 
   // 2FA handlers
@@ -434,6 +440,7 @@ const ProfileScreen = () => {
     { id: 'reset-pin', title: 'Reset PIN', icon: pinIcon, onPress: handleResetPin, hasChevron: true },
     { id: 'biometrics', title: 'Biometrics', icon: fingerprintIcon, hasToggle: true, toggleValue: fingerprintEnabled && isEnrolled, onToggle: handleBiometricToggle },
     { id: 'update-kyc', title: 'Update KYC', icon: kycIcon, onPress: handleUpdateKYC, hasChevron: true },
+    { id: 'referral', title: 'Referral Program', icon: referEarnIcon, onPress: handleReferral, hasChevron: true },
     { id: 'logout', title: loggingOut ? 'Logging out…' : 'Log Out', icon: logoutIcon, onPress: handleLogout, isDestructive: true },
     { id: 'delete-account', title: 'Delete account', icon: deleteIcon, onPress: handleDeleteAccount, isDestructive: true },
   ], [
@@ -448,6 +455,7 @@ const ProfileScreen = () => {
     isEnrolled,
     handleBiometricToggle,
     handleUpdateKYC,
+    handleReferral,
     loggingOut,
     handleLogout,
     handleDeleteAccount

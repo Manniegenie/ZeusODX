@@ -277,7 +277,9 @@ class ApiClient {
       }
 
       // Handle 401 Unauthorized - attempt token refresh
-      if (response.status === 401 && retryCount === 0 && !endpoint.includes('/auth/refresh')) {
+      // Skip refresh logic for auth endpoints (signin, signup) — 401 means bad credentials there
+      const isAuthEndpoint = endpoint.includes('/signin/') || endpoint.includes('/auth/register');
+      if (response.status === 401 && retryCount === 0 && !endpoint.includes('/auth/refresh') && !isAuthEndpoint) {
         if (__DEV__) {
           console.log('🔄 Received 401, attempting token refresh...');
         }
@@ -287,10 +289,10 @@ class ApiClient {
           // Retry the original request with new token
           return this.request(endpoint, options, retryCount + 1);
         } else {
-          // Refresh failed, return the 401 error
+          // Refresh failed - use server's message if available, fallback to generic
           return {
             success: false,
-            error: 'Session expired. Please log in again.',
+            error: data.message || data.error || 'Session expired. Please log in again.',
             status: 401,
             sessionExpired: true,
             data,

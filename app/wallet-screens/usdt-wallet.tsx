@@ -264,12 +264,13 @@ const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({ onQuickActionPress,
     { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
   ];
 
-  // -------------------- Available networks (removed polygon, avax, solana, base) --------------------
+  // -------------------- Available networks --------------------
 const usdtNetworks = [
   { id: 'ethereum', name: 'Ethereum (ERC20)' },
   { id: 'arbitrum', name: 'Arbitrum One' },
   { id: 'tron', name: 'Tron (TRC20)' },
   { id: 'bsc', name: 'BSC (Binance Smart Chain)' },
+  { id: 'solana', name: 'Solana (SPL)' },
 ];
 
   const onRefresh = useCallback(async () => {
@@ -339,6 +340,9 @@ const handleNetworkSelect = (network: { id: string }) => {
       break;
     case 'bsc':
       router.push('../deposits/usdt-bsc');
+      break;
+    case 'solana':
+      router.push('../deposits/usdt-solana');
       break;
     default:
       router.push('../deposits/usdt-eth');
