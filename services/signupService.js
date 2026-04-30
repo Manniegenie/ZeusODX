@@ -4,14 +4,22 @@ import { apiClient } from './apiClient';
 export const signupService = {
   async addUser(userData) {
     console.log('📝 Creating user account for:', userData.phonenumber);
-    const response = await apiClient.post('/signup/add-user', {
+
+    const body = {
       email: userData.email,
       firstname: userData.firstname,
       middlename: userData.middlename,
       lastname: userData.lastname,
-      phonenumber: userData.phonenumber
-    });
-    
+      phonenumber: userData.phonenumber,
+    };
+
+    // Only include referralCode if the user actually entered one
+    if (userData.referralCode && userData.referralCode.trim().length > 0) {
+      body.referralCode = userData.referralCode.trim().toUpperCase();
+    }
+
+    const response = await apiClient.post('/signup/add-user', body);
+
     if (response.success) {
       console.log('✅ User account created, OTP sent');
       // Store temporary signup data for OTP verification
@@ -20,12 +28,13 @@ export const signupService = {
         phonenumber: userData.phonenumber,
         firstname: userData.firstname,
         middlename: userData.middlename,
-        lastname: userData.lastname
+        lastname: userData.lastname,
+        referralCode: body.referralCode || null,
       }));
     } else {
       console.log('❌ User creation failed:', response.error);
     }
-    
+
     return response;
   },
 

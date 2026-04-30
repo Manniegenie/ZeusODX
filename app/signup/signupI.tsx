@@ -16,6 +16,8 @@ export default function SignupScreen() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [referralCodeError, setReferralCodeError] = useState('');
   const [error, setError] = useState<{
     show: boolean;
     type: 'network' | 'validation' | 'auth' | 'server' | 'notFound' | 'general';
@@ -39,11 +41,30 @@ export default function SignupScreen() {
     email.trim().length > 0 &&
     phoneNumber.trim().length >= 10;
 
+  const handleReferralCodeChange = (value: string) => {
+    // Force uppercase, strip non-alphanumeric, max 8 chars
+    const cleaned = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+    setReferralCode(cleaned);
+
+    // Clear inline error as soon as user edits
+    if (referralCodeError) setReferralCodeError('');
+
+    // Clear global error too
+    if (error.show) setError({ show: false, type: 'general', message: '', title: '' });
+  };
+
   const handleContinue = async () => {
     if (!isFormValid) return;
 
+    // Validate referral code length if one was entered (it must be exactly 8 chars)
+    if (referralCode.length > 0 && referralCode.length < 8) {
+      setReferralCodeError('Referral code must be 8 characters.');
+      return;
+    }
+
     // Clear any existing errors
     setError({ show: false, type: 'general', message: '', title: '' });
+    setReferralCodeError('');
 
     // Prepare phone number with country code
     const fullPhoneNumber = `${countryCode}${phoneNumber}`;
@@ -54,7 +75,8 @@ export default function SignupScreen() {
         middlename: middleName.trim(),
         lastname: lastName.trim(),
         email: email.trim().toLowerCase(),
-        phonenumber: fullPhoneNumber
+        phonenumber: fullPhoneNumber,
+        referralCode: referralCode || undefined,
       });
 
       if (result.success) {
@@ -73,7 +95,11 @@ export default function SignupScreen() {
         let errorMessage = result.error || 'Unable to create account. Please try again.';
 
         // Handle specific error types
-        if (result.error?.includes('already exists') || result.error?.includes('already Exists')) {
+        if (result.error?.includes('Referral code')) {
+          // Show inline under the referral field instead of a toast
+          setReferralCodeError(result.error);
+          return;
+        } else if (result.error?.includes('already exists') || result.error?.includes('already Exists')) {
           errorType = 'validation';
           errorTitle = 'Account Exists';
           errorMessage = result.error;
@@ -239,6 +265,30 @@ export default function SignupScreen() {
                     editable={!isLoading}
                   />
                 </View>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Referral code <Text style={styles.optionalLabel}>(Optional)</Text></Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    referralCodeError ? styles.inputError : null,
+                    referralCode.length === 8 ? styles.inputValid : null,
+                  ]}
+                  placeholder="e.g. ZEUS3K7M"
+                  placeholderTextColor={Colors.text.muted}
+                  value={referralCode}
+                  onChangeText={handleReferralCodeChange}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  maxLength={8}
+                  editable={!isLoading}
+                />
+                {referralCodeError ? (
+                  <Text style={styles.fieldErrorText}>{referralCodeError}</Text>
+                ) : referralCode.length === 8 ? (
+                  <Text style={styles.fieldSuccessText}>✓ Code entered</Text>
+                ) : null}
               </View>
             </View>
 
@@ -412,5 +462,28 @@ const styles = StyleSheet.create({
   },
   loginTextDisabled: {
     opacity: 0.5,
+  },
+  optionalLabel: {
+    fontFamily: Typography.regular,
+    fontSize: 13,
+    color: Colors.text.secondary,
+  },
+  inputError: {
+    borderColor: '#EF4444',
+  },
+  inputValid: {
+    borderColor: '#10B981',
+  },
+  fieldErrorText: {
+    fontFamily: Typography.regular,
+    fontSize: 12,
+    color: '#EF4444',
+    marginTop: 4,
+  },
+  fieldSuccessText: {
+    fontFamily: Typography.regular,
+    fontSize: 12,
+    color: '#10B981',
+    marginTop: 4,
   },
 });

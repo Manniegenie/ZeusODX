@@ -152,7 +152,7 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
             </TouchableOpacity>
 
             <View style={styles.headerGroup}>
-              <Text style={styles.headerTitle}>Transfer to bank account</Text>
+              <Text style={styles.headerTitle}>Withdraw to bank account</Text>
             </View>
 
             <View style={styles.headerRight} />
