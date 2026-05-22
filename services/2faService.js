@@ -216,7 +216,7 @@ export const twoFAService = {
     try {
       console.log('🔐 Fetching 2FA status...');
 
-      const response = await apiClient.get('/2fa-status');
+      const response = await apiClient.get('/2FA/2fa-status');
 
       if (response.success && response.data) {
         console.log('✅ 2FA status fetched successfully:', {
