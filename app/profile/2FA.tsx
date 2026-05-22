@@ -11,9 +11,9 @@ import {
   ScrollView,
   RefreshControl,
   ActivityIndicator,
-  Clipboard,
   Dimensions
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
@@ -167,10 +167,10 @@ export default function TwoFASetupScreen() {
     }
   }, []);
 
-  const truncateSecret = (secret: string): string => {
+  const formatSecret = (secret: string): string => {
     if (!secret || secret === 'Loading...') return secret;
-    if (secret.length <= 20) return secret;
-    return `${secret.slice(0, 10)}...${secret.slice(-10)}`;
+    // Break into groups of 4 for readability: ABCD EFGH IJKL ...
+    return secret.replace(/(.{4})/g, '$1 ').trim();
   };
 
   const copySecretToClipboard = async (): Promise<void> => {
@@ -186,7 +186,7 @@ export default function TwoFASetupScreen() {
     }
     
     try {
-      await Clipboard.setString(twoFAData.secretKey);
+      await Clipboard.setStringAsync(twoFAData.secretKey);
       showSuccess('2FA secret key copied to clipboard', 'Copied!');
     } catch (error) {
       showErrorMessage({
@@ -373,7 +373,7 @@ export default function TwoFASetupScreen() {
           <View style={styles.secretSection}>
             <Text style={styles.sectionLabel}>Secret Key</Text>
             <View style={styles.secretContainer}>
-              <Text style={styles.secretText}>{truncateSecret(displaySecret)}</Text>
+              <Text style={styles.secretText}>{formatSecret(displaySecret)}</Text>
               <TouchableOpacity
                 style={[styles.copyButton, !twoFAData?.secretKey && styles.copyButtonDisabled]}
                 onPress={copySecretToClipboard}

@@ -214,7 +214,7 @@ export default function VerifyPhoneScreen() {
           show: true,
           type: 'general',
           title: 'Code Sent',
-          message: 'A new verification code has been sent to your phone.'
+          message: 'A new verification code has been sent to your phone and email.'
         });
 
         // Auto-dismiss success message after 3 seconds
@@ -282,9 +282,9 @@ export default function VerifyPhoneScreen() {
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Confirm your phone number</Text>
+          <Text style={styles.title}>Verify your account</Text>
           <Text style={styles.subtitle}>
-            A verification code was sent to {formatPhoneNumber(phoneNumber)}. Enter the code to continue
+            A verification code was sent to {formatPhoneNumber(phoneNumber)} and your email address. Enter the code to continue
           </Text>
         </View>
 
