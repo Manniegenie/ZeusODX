@@ -27,7 +27,7 @@ import DashboardModals from './DashboardModals';
 import PortfolioSection from './PortfolioSection';
 import TokensSection from './TokensSection';
 
-import TawkChatSheet from '../../components/TawkSupport';
+import { useTawk } from '../../components/TawkSupport';
 import headphonesIcon from '../../components/icons/chat.png';
 
 const NOTIFICATION_PROMPT_KEY = 'notification_prompt_shown';
@@ -46,8 +46,7 @@ export default function DashboardScreen() {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
 
-  // Support modal
-  const [supportOpen, setSupportOpen] = useState(false);
+  const { open: openSupport } = useTawk();
 
   // Dashboard data
   const { refreshDashboard, loading, kyc } = useDashboard();
@@ -315,7 +314,7 @@ export default function DashboardScreen() {
 
       {/* Floating Support Icon */}
       <TouchableOpacity
-        onPress={() => setSupportOpen(true)}
+        onPress={openSupport}
         accessibilityLabel="Contact Support"
         activeOpacity={0.8}
         hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
@@ -353,13 +352,6 @@ export default function DashboardScreen() {
         onClose={handleCloseTransferMethodModal}
         onSelectMethod={handleTransferMethodSelect}
         title={`Send ${selectedToken?.name || 'Token'}`}
-      />
-
-      {/* Support (Tawk.to) Sheet */}
-      <TawkChatSheet
-        visible={supportOpen}
-        onClose={() => setSupportOpen(false)}
-        title="Support"
       />
 
       {/* Bottom Navigation */}

@@ -44,9 +44,9 @@ export default function SwapSuccessfulScreen({
   }, [visible, fromToken, toToken, fromAmount]);
 
   const handleContinue = () => {
-    if (onContinue) onContinue(); // Close modal in parent
+    if (onContinue) onContinue();
     setTimeout(() => {
-      router.push('/user/wallet'); // Navigate after modal closes
+      router.replace('/user/wallet' as any);
     }, 150);
   };
 

@@ -418,7 +418,7 @@ export default function FiatTransferReceiptScreen() {
   };
 
   const handleDone = () => {
-    router.push('/user/wallet');
+    router.replace('/user/wallet' as any);
   };
 
   if (!transferData) {

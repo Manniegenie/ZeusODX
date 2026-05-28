@@ -500,7 +500,7 @@ export default function WithdrawalReceiptScreen() {
   };
 
   const handleDone = () => {
-    router.push('/user/wallet');
+    router.replace('/user/wallet' as any);
   };
 
   if (!transaction) {

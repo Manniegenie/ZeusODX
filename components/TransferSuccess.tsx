@@ -108,7 +108,7 @@ const TransferSuccessModal: React.FC<TransferSuccessModalProps> = ({
   const handleContinue = () => {
     onContinue?.();
     setTimeout(() => {
-      try { router.push('/user/wallet'); } catch {}
+      try { router.replace('/user/wallet' as any); } catch {}
     }, 120);
   };
 

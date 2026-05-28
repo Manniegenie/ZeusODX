@@ -347,12 +347,25 @@ const GiftcardTradeScreen: React.FC = () => {
   // Check if this is a VANILLA card
   const isVanillaCard = brand.toLowerCase().includes('vanilla');
 
+  // Map brand to backend card type (needed by rate hook)
+  const CARD_TYPE_MAP: Record<string, string> = {
+    'Amazon': 'AMAZON', 'Apple/iTunes': 'APPLE', 'Steam Card': 'STEAM',
+    'Nordstrom': 'NORDSTROM', 'Macy': 'MACY', 'Nike Gift Card': 'NIKE',
+    'Google Play': 'GOOGLE_PLAY', 'Visa': 'VISA',
+    'Razor Gold Gift Card': 'RAZOR_GOLD', 'American Express': 'AMERICAN_EXPRESS',
+    'Sephora': 'SEPHORA', 'Footlocker': 'FOOTLOCKER', 'Xbox Card': 'XBOX',
+    'eBay': 'EBAY',
+  };
+  const mappedCardType = CARD_TYPE_MAP[brand] || brand.toUpperCase().replace(/\s+/g, '_');
+
   // Gift card hook
   const { loading: submitLoading, error: submitError, submitGiftCard, clearError } = useGiftCard();
 
   // form state
-  const [country, setCountry] = useState('');          // country name for display
-  const [countryId, setCountryId] = useState<string | null>(null); // ISO-ish code (e.g., 'US')
+  const [country, setCountry] = useState('');
+  const [countryId, setCountryId] = useState<string | null>(null);
+  const [countryRate, setCountryRate] = useState<number | null>(null);
+  const [countryRateDisplay, setCountryRateDisplay] = useState<string>('');
   const [receipt, setReceipt] = useState('');          // 'PHYSICAL' | 'ECODE'
   const [ecode, setEcode] = useState('');
   const [vanillaVariant, setVanillaVariant] = useState(''); // '4097' | '4118' for VANILLA cards
@@ -610,6 +623,8 @@ const GiftcardTradeScreen: React.FC = () => {
       // Reset form
       setCountry('');
       setCountryId(null);
+      setCountryRate(null);
+      setCountryRateDisplay('');
       setReceipt('');
       setEcode('');
       setVanillaVariant('');
@@ -780,6 +795,27 @@ const GiftcardTradeScreen: React.FC = () => {
             keyboardType="numeric"
           />
 
+          {/* Rate Display */}
+          <View style={{ marginBottom: 18, marginHorizontal: 16 }}>
+            <Text style={styles.label}>Rate</Text>
+            <View style={[styles.select, { backgroundColor: '#F9FAFB' }]}>
+              <Text style={{ color: '#35297F', fontFamily: Typography.medium || 'System', fontWeight: '700', fontSize: 15, marginRight: 6 }}>₦</Text>
+              <Text
+                style={[
+                  styles.selectText,
+                  !countryRateDisplay && { color: Colors.text?.secondary || '#9CA3AF' },
+                ]}
+              >
+                {countryRateDisplay || 'Select country to see rate'}
+              </Text>
+              {countryRate != null && Number(valueUSD) > 0 ? (
+                <Text style={{ color: '#35297F', fontFamily: Typography.medium || 'System', fontWeight: '600', fontSize: 13 }}>
+                  {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(countryRate * Number(valueUSD))}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+
           {/* Upload Section */}
           <View style={{ marginBottom: 10, marginHorizontal: 16 }}>
             <Text style={styles.label}>Upload card</Text>
@@ -885,6 +921,8 @@ const GiftcardTradeScreen: React.FC = () => {
         onSelect={(c) => {
           setCountry(c.name);
           setCountryId(c.id);
+          setCountryRate(c.rate ?? null);
+          setCountryRateDisplay(c.rateDisplay ?? (c.rate != null ? `${c.rate}/USD` : ''));
           setShowCountrySheet(false);
         }}
         onClose={() => setShowCountrySheet(false)}

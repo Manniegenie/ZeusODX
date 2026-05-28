@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     Image,
@@ -32,7 +32,10 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
   const [isLoading, setIsLoading] = useState(false);
 
   // === Hooks for NGNZ balance & USD rate ===
-  const { getNGNZBalance, getNGNZRate } = useNGNZ();
+  const { getNGNZBalance, getNGNZRate, refetchBalance } = useNGNZ();
+
+  // Fetch fresh balance on mount so Max reflects the server's real-time NGNZ balance
+  useEffect(() => { refetchBalance?.(); }, []);
   const ngnzBalance = Number(getNGNZBalance?.() ?? 0);
   const ngnzExchangeRate = Number(getNGNZRate?.() ?? 0);
 
