@@ -17,7 +17,7 @@ import { disableFontScaling } from '../constants/Typography';
 // Components & Hooks
 import ProfessionalSplashScreen from '../components/ProfessionalSplashScreen';
 import SimpleLock from '../components/Security-lock';
-import { TawkPrefetcher } from '../components/TawkSupport';
+import { TawkProvider } from '../components/TawkSupport';
 import { AuthContext, useAuthProvider } from '../hooks/useAuth';
 import { useSecurityLock } from '../hooks/userestart';
 import NotificationService from '../services/notificationService';
@@ -176,15 +176,16 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: Colors.background || '#F4F2FF' }}>
           <AuthContext.Provider value={auth}>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: 'transparent' },
-                animation: 'slide_from_right',
-                gestureEnabled: false,
-              }}
-            />
-            {auth.isAuthenticated && <TawkPrefetcher directLink={TAWK_DIRECT_LINK} />}
+            <TawkProvider directLink={TAWK_DIRECT_LINK}>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: 'transparent' },
+                  animation: 'slide_from_right',
+                  gestureEnabled: false,
+                }}
+              />
+            </TawkProvider>
             {isLocked && (
               <Modal
                 visible={isLocked}

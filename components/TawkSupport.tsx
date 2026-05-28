@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Animated,
     Keyboard,
     Linking,
-    Modal,
     Platform,
     StyleSheet,
     Text,
@@ -20,26 +19,83 @@ import { Colors } from '../constants/Colors';
 import { Typography } from '../constants/Typography';
 import { useUserProfile } from '../hooks/useProfile';
 
-/* ================= Bottom Sheet Base (75% height) ================= */
-
 const EXTRA_BOTTOM_PADDING = 12;
 
-const Sheet = ({
-  visible,
-  onClose,
+/* ================= Tawk Context ================= */
+
+type TawkContextType = { open: () => void; close: () => void };
+const TawkContext = createContext<TawkContextType>({ open: () => {}, close: () => {} });
+
+export function useTawk() {
+  return useContext(TawkContext);
+}
+
+/* ================= Provider (place once in _layout.tsx, inside AuthContext) ================= */
+
+type TawkProviderProps = {
+  children: React.ReactNode;
+  directLink?: string;
+  title?: string;
+};
+
+export function TawkProvider({
   children,
-}: {
+  directLink = 'https://tawk.to/chat/68b186eb517e5918ffb583a8/1j3qne2kl',
+  title = 'Support • ZeusODX',
+}: TawkProviderProps) {
+  const [visible, setVisible] = useState(false);
+  const [hasEverOpened, setHasEverOpened] = useState(false);
+
+  const open = useCallback(() => {
+    setHasEverOpened(true);
+    setVisible(true);
+  }, []);
+  const close = useCallback(() => setVisible(false), []);
+
+  return (
+    <TawkContext.Provider value={{ open, close }}>
+      {children}
+      {/* Overlay is only mounted after first open, then stays alive forever */}
+      {hasEverOpened && (
+        <TawkOverlay visible={visible} onClose={close} directLink={directLink} title={title} />
+      )}
+    </TawkContext.Provider>
+  );
+}
+
+/* ================= Persistent overlay — no Modal, WebView never unmounts ================= */
+
+type TawkOverlayProps = {
   visible: boolean;
   onClose: () => void;
-  children: React.ReactNode;
-}) => {
+  directLink: string;
+  title: string;
+};
+
+function TawkOverlay({ visible, onClose, directLink, title }: TawkOverlayProps) {
   const { height: screenH } = useWindowDimensions();
-  const SHEET_HEIGHT = Math.round(screenH * 0.75); // 75% screen height
+  const SHEET_HEIGHT = Math.round(screenH * 0.75);
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  // Only interactive once open animation starts; stops after close animation finishes
+  const [isInteractable, setIsInteractable] = useState(false);
 
-  // Track keyboard visibility for iOS
+  const { profile, displayName } = useUserProfile();
+  const p = profile as any;
+  const userName = useMemo(
+    () => displayName || p?.fullName || p?.username || '',
+    [displayName, p]
+  );
+  const userEmail = useMemo(
+    () => p?.email || p?.contactEmail || '',
+    [p]
+  );
+
+  const [loading, setLoading] = useState(true);
+  const webRef = useRef<any>(null);
+
   useEffect(() => {
     const showSub = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -49,97 +105,49 @@ const Sheet = ({
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       () => setKeyboardHeight(0)
     );
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
+    return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
   useEffect(() => {
     if (visible) {
-      Animated.spring(translateY, {
-        toValue: 0,
-        useNativeDriver: true,
-        friction: 8,
-        tension: 100,
-      }).start();
+      setIsInteractable(true);
+      Animated.parallel([
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8, tension: 100 }),
+        Animated.timing(overlayOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      ]).start();
     } else {
-      Animated.timing(translateY, {
-        toValue: SHEET_HEIGHT,
-        duration: 220,
-        useNativeDriver: true,
-      }).start();
+      Animated.parallel([
+        Animated.timing(translateY, { toValue: SHEET_HEIGHT, duration: 220, useNativeDriver: true }),
+        Animated.timing(overlayOpacity, { toValue: 0, duration: 220, useNativeDriver: true }),
+      ]).start(() => setIsInteractable(false));
     }
-  }, [visible, translateY, SHEET_HEIGHT]);
+  }, [visible, SHEET_HEIGHT]);
 
-  const bottomPadding = insets.bottom + EXTRA_BOTTOM_PADDING;
+  // Push visitor identity each time the sheet opens (Tawk is already loaded; session persists)
+  useEffect(() => {
+    if (!visible || !webRef.current) return;
+    const js = `
+      try {
+        window.Tawk_API = window.Tawk_API || {};
+        if (typeof window.Tawk_API.setAttributes === 'function') {
+          window.Tawk_API.setAttributes(
+            { name: ${JSON.stringify(userName || '')}, email: ${JSON.stringify(userEmail || '')} },
+            function(){}
+          );
+        }
+      } catch(e) {}
+      true;
+    `;
+    const t = setTimeout(() => webRef.current?.injectJavaScript(js), 400);
+    return () => clearTimeout(t);
+  }, [visible, userName, userEmail]);
 
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onClose}
-      supportedOrientations={['portrait', 'landscape']}
-      presentationStyle="overFullScreen"
-    >
-      <View style={styles.overlay} pointerEvents="box-none">
-        <TouchableWithoutFeedback onPress={onClose}>
-          <View style={styles.overlayTouchable} />
-        </TouchableWithoutFeedback>
-
-        <Animated.View
-          style={[
-            styles.sheetContainer,
-            {
-              transform: [{ translateY }],
-              height: SHEET_HEIGHT,
-              marginBottom: Platform.OS === 'ios' ? keyboardHeight : 0,
-            },
-          ]}
-        >
-          <View style={styles.handleBar} />
-          <SafeAreaView style={{ flex: 1, paddingBottom: bottomPadding }} edges={['bottom']}>
-            {children}
-          </SafeAreaView>
-        </Animated.View>
-      </View>
-    </Modal>
-  );
-};
-
-/* ================= Tawk Chat Bottom Sheet ================= */
-
-type TawkChatSheetProps = {
-  visible: boolean;
-  onClose: () => void;
-  directLink?: string;
-  title?: string;
-};
-
-export function TawkChatSheet({
-  visible,
-  onClose,
-  title = 'Support • ZeusODX',
-  directLink = 'https://tawk.to/chat/68b186eb517e5918ffb583a8/1j3qne2kl',
-}: TawkChatSheetProps) {
-  const { profile, displayName } = useUserProfile();
-  const userName = useMemo(() => displayName || profile?.fullName || profile?.username || '', [displayName, profile]);
-  const userEmail = useMemo(() => profile?.email || profile?.contactEmail || '', [profile]);
-
-  const [loading, setLoading] = useState(true);
-  const webRef = useRef<any>(null);
-
-  // Allow-list navigation targets
   const allowInApp = (url: string) => {
     if (url.startsWith('about:blank') || url.startsWith('data:') || url.startsWith('blob:')) return true;
     try {
       const parsed = new URL(url);
       const host = parsed.host?.toLowerCase();
       const scheme = parsed.protocol.replace(':', '');
-
       if (scheme === 'http' || scheme === 'https') {
         return (
           host.endsWith('tawk.to') ||
@@ -158,7 +166,6 @@ export function TawkChatSheet({
     return true;
   };
 
-  // Inject CSS to limit input height and set visitor info
   const injectedBefore = useMemo(
     () => `
     (function() {
@@ -168,56 +175,25 @@ export function TawkChatSheet({
           name: ${JSON.stringify(userName || '')},
           email: ${JSON.stringify(userEmail || '')}
         };
-        
-        // Add CSS to limit message input height
         const style = document.createElement('style');
         style.textContent = \`
-          /* Limit message input container height */
-          .tawk-textarea-wrapper,
-          .tawk-input-container,
-          textarea[placeholder*="Type your message"],
-          textarea[placeholder*="type"] {
-            max-height: 120px !important;
-            min-height: 44px !important;
+          .tawk-textarea-wrapper, .tawk-input-container,
+          textarea[placeholder*="Type your message"], textarea[placeholder*="type"] {
+            max-height: 120px !important; min-height: 44px !important;
           }
-          
-          /* Ensure textarea doesn't stretch indefinitely */
-          .tawk-textarea,
-          .tawk-min-container textarea,
-          .tawk-composer textarea {
-            max-height: 100px !important;
-            overflow-y: auto !important;
+          .tawk-textarea, .tawk-min-container textarea, .tawk-composer textarea {
+            max-height: 100px !important; overflow-y: auto !important;
           }
-          
-          /* Fix chat container layout */
-          .tawk-min-container,
-          .tawk-chat-panel {
-            max-height: 100% !important;
-            display: flex !important;
-            flex-direction: column !important;
+          .tawk-min-container, .tawk-chat-panel {
+            max-height: 100% !important; display: flex !important; flex-direction: column !important;
           }
-          
-          /* Message list takes remaining space */
-          .tawk-message-list,
-          .tawk-messages-container {
-            flex: 1 !important;
-            overflow-y: auto !important;
-            min-height: 0 !important;
+          .tawk-message-list, .tawk-messages-container {
+            flex: 1 !important; overflow-y: auto !important; min-height: 0 !important;
           }
-          
-          /* Input area fixed height */
-          .tawk-composer-area,
-          .tawk-form-container,
-          .tawk-input-area {
-            flex: 0 0 auto !important;
-            max-height: 140px !important;
+          .tawk-composer-area, .tawk-form-container, .tawk-input-area {
+            flex: 0 0 auto !important; max-height: 140px !important;
           }
-          
-          /* Prevent body/html stretching */
-          html, body {
-            height: 100% !important;
-            overflow: hidden !important;
-          }
+          html, body { height: 100% !important; overflow: hidden !important; }
         \`;
         document.head.appendChild(style);
       } catch (e) {}
@@ -227,123 +203,94 @@ export function TawkChatSheet({
     [userName, userEmail]
   );
 
-  // Update visitor attributes after mount
-  useEffect(() => {
-    if (!webRef.current) return;
-    const js = `
-      try {
-        window.Tawk_API = window.Tawk_API || {};
-        window.Tawk_API.setAttributes && window.Tawk_API.setAttributes({
-          name: ${JSON.stringify(userName || '')},
-          email: ${JSON.stringify(userEmail || '')}
-        }, function(){});
-      } catch (e) {}
-      true;
-    `;
-    const t = setTimeout(() => webRef.current?.injectJavaScript(js), 600);
-    return () => clearTimeout(t);
-  }, [userName, userEmail, visible]);
-
-  return (
-    <Sheet visible={visible} onClose={onClose}>
-      {/* Header */}
-      <View style={styles.titleRow}>
-        <Text style={styles.sheetTitle}>{title}</Text>
-        <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <Text style={styles.closeTxt}>✕</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Web content */}
-      <View style={styles.webContainer}>
-        {loading && (
-          <View style={styles.loader}>
-            <ActivityIndicator size="large" color={Colors.primary || '#007AFF'} />
-          </View>
-        )}
-
-        <WebView
-          ref={webRef}
-          source={{ uri: directLink }}
-          startInLoadingState
-          onLoadEnd={() => setLoading(false)}
-          javaScriptEnabled
-          domStorageEnabled
-          allowsInlineMediaPlayback
-          setSupportMultipleWindows={false}
-          allowsBackForwardNavigationGestures
-          originWhitelist={['*']}
-          injectedJavaScriptBeforeContentLoaded={injectedBefore}
-          onShouldStartLoadWithRequest={(req) => {
-            if (allowInApp(req.url)) return true;
-            Linking.openURL(req.url).catch(() => {});
-            return false;
-          }}
-          androidHardwareAccelerationDisabled={false}
-          nestedScrollEnabled={true}
-          androidLayerType="hardware"
-          mixedContentMode="compatibility"
-          thirdPartyCookiesEnabled={true}
-          sharedCookiesEnabled={true}
-          allowFileAccessFromFileURLs={true}
-          allowUniversalAccessFromFileURLs={true}
-          overScrollMode="never"
-          showsVerticalScrollIndicator={false}
-          keyboardDisplayRequiresUserAction={false}
-          onTouchStart={() => {}}
-          bounces={false}
-          hideKeyboardAccessoryView={false}
-          automaticallyAdjustContentInsets={false}
-          contentInsetAdjustmentBehavior="never"
-          scrollEnabled={true}
-          userAgent={
-            Platform.select({
-              android: 'Mozilla/5.0 (Linux; Android 12; rv:109.0) Gecko/109.0 Firefox/109.0',
-              ios: undefined,
-              default: undefined,
-            }) as string | undefined
-          }
-        />
-      </View>
-    </Sheet>
-  );
-}
-
-/* ============== Prefetcher (warm Tawk on app startup) ============== */
-export function TawkPrefetcher({
-  directLink = 'https://tawk.to/chat/68b186eb517e5918ffb583a8/1j3qne2kl',
-}: {
-  directLink?: string;
-}) {
-  const { profile, displayName } = useUserProfile();
-  const userName = useMemo(() => displayName || profile?.fullName || profile?.username || '', [displayName, profile]);
-  const userEmail = useMemo(() => profile?.email || profile?.contactEmail || '', [profile]);
-
-  const injectedBefore = useMemo(
-    () =>
-      `(function(){try{window.Tawk_API=window.Tawk_API||{};window.Tawk_API.visitor={name:${JSON.stringify(
-        userName || ''
-      )},email:${JSON.stringify(userEmail || '')}};}catch(e){}})();true;`,
-    [userName, userEmail]
-  );
+  const bottomPadding = insets.bottom + EXTRA_BOTTOM_PADDING;
 
   return (
     <View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        width: 1,
-        height: 1,
-        opacity: 0,
-        overflow: 'hidden',
-      }}
+      pointerEvents={isInteractable ? 'box-none' : 'none'}
+      style={[StyleSheet.absoluteFill, { zIndex: 999 }]}
     >
-      <WebView
-        source={{ uri: directLink }}
-        injectedJavaScriptBeforeContentLoaded={injectedBefore}
-        setSupportMultipleWindows={false}
-        originWhitelist={['*']}
-      />
+      {/* Animated backdrop */}
+      <Animated.View
+        pointerEvents={isInteractable ? 'auto' : 'none'}
+        style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', opacity: overlayOpacity }]}
+      >
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={StyleSheet.absoluteFill} />
+        </TouchableWithoutFeedback>
+      </Animated.View>
+
+      {/* Sheet — always in the tree; translateY moves it off-screen when closed */}
+      <Animated.View
+        style={[
+          styles.sheetContainer,
+          {
+            transform: [{ translateY }],
+            height: SHEET_HEIGHT,
+            marginBottom: Platform.OS === 'ios' ? keyboardHeight : 0,
+          },
+        ]}
+      >
+        <View style={styles.handleBar} />
+        <SafeAreaView style={{ flex: 1, paddingBottom: bottomPadding }} edges={['bottom']}>
+          <View style={styles.titleRow}>
+            <Text style={styles.sheetTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={styles.closeTxt}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.webContainer}>
+            {loading && (
+              <View style={styles.loader}>
+                <ActivityIndicator size="large" color={Colors.primary || '#007AFF'} />
+              </View>
+            )}
+            <WebView
+              ref={webRef}
+              source={{ uri: directLink }}
+              startInLoadingState
+              onLoadEnd={() => setLoading(false)}
+              javaScriptEnabled
+              domStorageEnabled
+              allowsInlineMediaPlayback
+              setSupportMultipleWindows={false}
+              allowsBackForwardNavigationGestures
+              originWhitelist={['*']}
+              injectedJavaScriptBeforeContentLoaded={injectedBefore}
+              onShouldStartLoadWithRequest={(req) => {
+                if (allowInApp(req.url)) return true;
+                Linking.openURL(req.url).catch(() => {});
+                return false;
+              }}
+              androidHardwareAccelerationDisabled={false}
+              nestedScrollEnabled
+              androidLayerType="hardware"
+              mixedContentMode="compatibility"
+              thirdPartyCookiesEnabled
+              sharedCookiesEnabled
+              allowFileAccessFromFileURLs
+              allowUniversalAccessFromFileURLs
+              overScrollMode="never"
+              showsVerticalScrollIndicator={false}
+              keyboardDisplayRequiresUserAction={false}
+              onTouchStart={() => {}}
+              bounces={false}
+              hideKeyboardAccessoryView={false}
+              automaticallyAdjustContentInsets={false}
+              contentInsetAdjustmentBehavior="never"
+              scrollEnabled
+              userAgent={
+                Platform.select({
+                  android: 'Mozilla/5.0 (Linux; Android 12; rv:109.0) Gecko/109.0 Firefox/109.0',
+                  ios: undefined,
+                  default: undefined,
+                }) as string | undefined
+              }
+            />
+          </View>
+        </SafeAreaView>
+      </Animated.View>
     </View>
   );
 }
@@ -351,30 +298,16 @@ export function TawkPrefetcher({
 /* ================= Styles ================= */
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-    zIndex: 1000,
-  },
-
-  overlayTouchable: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: -1,
-  },
-
   sheetContainer: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 6,
     overflow: 'hidden',
-    width: '100%',
-    alignSelf: 'stretch',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     elevation: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
@@ -427,9 +360,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,s0.95)',
+    backgroundColor: 'rgba(255,255,255,0.95)',
     zIndex: 2,
   },
 });
-
-export default TawkChatSheet;

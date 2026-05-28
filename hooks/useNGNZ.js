@@ -24,6 +24,7 @@ export function useNGNZ() {
     // NGNZ specific
     ngnzExchangeRate,
     ngnzBalance,
+    refetch: refetchDashboard,
     // Crypto prices for calculations
     btcPrice,
     ethPrice,
@@ -446,5 +447,6 @@ export function useNGNZ() {
     getMinimumSwapAmount,
     validateSwapAmount,
     validateNGNZSwap,
+    refetchBalance: refetchDashboard,
   };
 }

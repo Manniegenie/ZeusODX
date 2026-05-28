@@ -266,9 +266,8 @@ export default function FiatWithdrawalReceiptModal({
     console.log('✅ Done button pressed');
     try {
       onClose?.();
-      // Navigate after closing the modal
       setTimeout(() => {
-        router.push('/(tabs)/wallet' as any);
+        router.replace('/user/wallet' as any);
       }, 100);
     } catch (err) {
       console.error('❌ Navigation error:', err);
