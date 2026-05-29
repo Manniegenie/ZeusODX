@@ -27,7 +27,7 @@ import { useNetworks } from '../../hooks/useNetwork';
 import { useTokens } from '../../hooks/useTokens';
 import { useBalance } from '../../hooks/useWallet';
 import { useWithdrawal } from '../../hooks/useexternalWithdrawal';
-import { withdrawalService } from '../../services/externalwithdrawalService';
+
 import AppsFlyerService from '../../services/appsFlyerService';
 
 // Icons - Updated to match BTC-BSC screen
@@ -311,13 +311,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
       showErrorMessage({ type: 'validation', title: 'Amount Required', message: 'Please enter a valid amount', autoHide: true, duration: 3000 });
       return false;
     }
-    if (selectedToken?.symbol) {
-      const min = withdrawalService.getMinimumWithdrawalAmount(selectedToken.symbol);
-      if (amountValue < min) {
-        showErrorMessage({ type: 'validation', title: 'Amount Too Low', message: `Minimum withdrawal is ${min} ${selectedToken.symbol}`, autoHide: true, duration: 4000 });
-        return false;
-      }
-    }
     if (!feeCalculation || feeError) return false;
     return true;
   };
@@ -535,7 +528,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Network fee:</Text>
                 <Text style={styles.summaryValue}>
-                  {isCalculatingFee ? 'Calculating...' : feeCalculation ? 
+                  {isCalculatingFee ? 'Calculating...' : feeCalculation ?
                   `${(feeCalculation as any).feeFormatted} ${selectedToken?.symbol} (~$${(feeCalculation as any).feeUsd.toFixed(2)})` : '---'}
                 </Text>
               </View>
