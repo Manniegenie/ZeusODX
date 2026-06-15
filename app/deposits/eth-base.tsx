@@ -88,7 +88,7 @@ export default function EthBaseDepositScreen() {
   const handleGetBaseAddress = async (forceRefresh = false): Promise<void> => {
     try {
       // Call getDepositAddress directly with ETH token and BASE network
-      const result = , forceRefresh);
+      const result = await getDepositAddress('ETH', 'BASE', forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);

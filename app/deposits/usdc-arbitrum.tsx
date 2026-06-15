@@ -87,7 +87,7 @@ export default function UsdcArbitrumDepositScreen() {
   const handleGetArbitrumAddress = async (forceRefresh = false): Promise<void> => {
     try {
       // Call getDepositAddress with USDC token and ARBITRUM network
-      const result = , forceRefresh);
+      const result = await getDepositAddress('USDC', 'ARBITRUM', forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);

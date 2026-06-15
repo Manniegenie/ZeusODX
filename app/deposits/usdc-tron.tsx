@@ -83,7 +83,7 @@ export default function UsdcTrxDepositScreen() {
 
   const handleGetTrxAddress = async (forceRefresh = false): Promise<void> => {
     try {
-      const result = , forceRefresh);
+      const result = await getDepositAddress('USDC', 'TRX', forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);

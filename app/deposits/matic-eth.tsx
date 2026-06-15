@@ -87,7 +87,7 @@ export default function MaticEthDepositScreen() {
 
   const handleGetMATICAddress = async (forceRefresh = false): Promise<void> => {
     try {
-      const result = , forceRefresh);
+      const result = await getDepositAddress('POL', 'ETH', forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);

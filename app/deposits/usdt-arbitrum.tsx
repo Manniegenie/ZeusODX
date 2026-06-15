@@ -86,7 +86,7 @@ export default function UsdtArbitrumDepositScreen() {
 
   const handleGetArbitrumAddress = async (forceRefresh = false): Promise<void> => {
     try {
-      const result = , forceRefresh);
+      const result = await getDepositAddress('USDT', 'ARBITRUM', forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);

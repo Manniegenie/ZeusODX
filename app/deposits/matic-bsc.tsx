@@ -88,7 +88,7 @@ export default function MaticEthDepositScreen() {
   const handleGetMATICAddress = async (forceRefresh = false): Promise<void> => {
     try {
       // Call getDepositAddress with MATIC token and BSC network
-      const result = , forceRefresh);
+      const result = await getDepositAddress('MATIC', 'BSC', forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);

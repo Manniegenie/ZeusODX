@@ -88,7 +88,7 @@ export default function EthArbitrumDepositScreen() {
   const handleGetArbitrumAddress = async (forceRefresh = false): Promise<void> => {
     try {
       // Call getDepositAddress directly with ETH token and ARBITRUM network
-      const result = , forceRefresh);
+      const result = await getDepositAddress('ETH', 'ARBITRUM', forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);

@@ -87,7 +87,7 @@ export default function AvaxBscDepositScreen() {
 
   const handleGetAVAXAddress = async (forceRefresh = false): Promise<void> => {
     try {
-      const result = , forceRefresh);
+      const result = await getDepositAddress('AVAX', 'BSC', forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
