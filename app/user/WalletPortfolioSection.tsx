@@ -70,7 +70,7 @@ export default function WalletPortfolioSection({
   const quickLinks: QuickLink[] = [
     { id: 'deposit',   title: 'Deposit',   icon: depositIcon },
     { id: 'transfer',  title: 'Withdraw',  icon: transferIcon },
-    { id: 'buy-sell',  title: 'Buy/Sell',  icon: swapIcon, route: '/user/Swap' },
+    { id: 'buy-sell',  title: 'Swap',  icon: swapIcon, route: '/user/Swap' },
   ];
 
   // Quick link handler - exactly matching main dashboard pattern
@@ -177,7 +177,7 @@ export default function WalletPortfolioSection({
             <View style={styles.balanceHintTopRight}>
               <HintBulb
                 title="Wallet tip"
-                hint="Your total portfolio balance is shown in USD or NGN. Use Deposit to add funds, Transfer to send to another Zeus user or external wallet, and Buy/Sell to swap tokens."
+                hint="Your total portfolio balance is shown in USD or NGN. Use Deposit to add funds, Transfer to send to another Zeus user or external wallet, and Swap to exchange tokens."
               />
             </View>
       </View>
