@@ -85,7 +85,7 @@ export default function UsdcEthDepositScreen() {
     fetchUSDCAddress();
   }, [getCachedAddress]);
 
-  const handleGetUSDCAddress = async (): Promise<void> => {
+  const handleGetUSDCAddress = async (forceRefresh = false): Promise<void> => {
     try {
       const result = await getUSDCAddress('ETH');
       if (result.success) {
@@ -116,7 +116,7 @@ export default function UsdcEthDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetUSDCAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetUSDCAddress(true), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

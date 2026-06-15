@@ -84,9 +84,9 @@ export default function UsdtTrxDepositScreen() {
     fetchTrxAddress();
   }, [getCachedAddress]);
 
-  const handleGetTrxAddress = async (): Promise<void> => {
+  const handleGetTrxAddress = async (forceRefresh = false): Promise<void> => {
     try {
-      const result = await getDepositAddress('USDT', 'TRX');
+      const result = , forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
@@ -115,7 +115,7 @@ export default function UsdtTrxDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetTrxAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetTrxAddress(true), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

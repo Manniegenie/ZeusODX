@@ -86,9 +86,9 @@ export default function SolDepositScreen() {
     fetchSOLAddress();
   }, [getCachedAddress]);
 
-  const handleGetSolanaAddress = async (): Promise<void> => {
+  const handleGetSolanaAddress = async (forceRefresh = false): Promise<void> => {
     try {
-      const result = await getSolanaAddress();
+      const result = await getSolanaAddress(forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
@@ -117,7 +117,7 @@ export default function SolDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetSolanaAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetSolanaAddress(true), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

@@ -84,9 +84,9 @@ export default function UsdtBaseDepositScreen() {
     fetchBaseAddress();
   }, [getCachedAddress]);
 
-  const handleGetBaseAddress = async (): Promise<void> => {
+  const handleGetBaseAddress = async (forceRefresh = false): Promise<void> => {
     try {
-      const result = await getDepositAddress('USDT', 'BASE');
+      const result = , forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
@@ -115,7 +115,7 @@ export default function UsdtBaseDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetBaseAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetBaseAddress(true), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

@@ -85,7 +85,7 @@ export default function TrxTronDepositScreen() {
     fetchTRXAddress();
   }, [getCachedAddress]);
 
-  const handleGetTRXAddress = async (): Promise<void> => {
+  const handleGetTRXAddress = async (forceRefresh = false): Promise<void> => {
     try {
       const result = await getTRXAddress('TRON');
       if (result.success) {
@@ -116,7 +116,7 @@ export default function TrxTronDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetTRXAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetTRXAddress(true), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

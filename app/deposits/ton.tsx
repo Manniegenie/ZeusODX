@@ -84,9 +84,9 @@ export default function TonDepositScreen() {
     fetchTONAddress();
   }, [getCachedAddress]);
 
-  const handleGetTONAddress = async (): Promise<void> => {
+  const handleGetTONAddress = async (forceRefresh = false): Promise<void> => {
     try {
-      const result = await getTONAddress();
+      const result = await getTONAddress(forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
@@ -115,7 +115,7 @@ export default function TonDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetTONAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetTONAddress(true), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

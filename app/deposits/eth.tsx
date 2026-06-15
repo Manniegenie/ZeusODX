@@ -86,9 +86,9 @@ export default function EthDepositScreen() {
     fetchETHAddress();
   }, [getCachedAddress]);
 
-  const handleGetEthereumAddress = async (): Promise<void> => {
+  const handleGetEthereumAddress = async (forceRefresh = false): Promise<void> => {
     try {
-      const result = await getEthereumAddress();
+      const result = await getEthereumAddress(forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
@@ -117,7 +117,7 @@ export default function EthDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetEthereumAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetEthereumAddress(true), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

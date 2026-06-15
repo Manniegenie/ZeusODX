@@ -85,10 +85,10 @@ export default function EthArbitrumDepositScreen() {
     fetchArbitrumAddress();
   }, [getCachedAddress]);
 
-  const handleGetArbitrumAddress = async (): Promise<void> => {
+  const handleGetArbitrumAddress = async (forceRefresh = false): Promise<void> => {
     try {
       // Call getDepositAddress directly with ETH token and ARBITRUM network
-      const result = await getDepositAddress('ETH', 'ARBITRUM');
+      const result = , forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
@@ -117,7 +117,7 @@ export default function EthArbitrumDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetArbitrumAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetArbitrumAddress(true), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

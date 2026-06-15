@@ -85,7 +85,7 @@ export default function BnbBscDepositScreen() {
     fetchBNBAddress();
   }, [getCachedAddress]);
 
-  const handleGetBNBAddress = async (): Promise<void> => {
+  const handleGetBNBAddress = async (forceRefresh = false): Promise<void> => {
     try {
       const result = await getBNBAddress('BSC');
       if (result.success) {
@@ -116,7 +116,7 @@ export default function BnbBscDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetBNBAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetBNBAddress(true), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

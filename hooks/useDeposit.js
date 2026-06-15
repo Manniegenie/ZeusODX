@@ -87,17 +87,17 @@ export function useDeposit() {
   }, [supportedTokens]);
 
   // Get deposit address for token/network combination
-  const getDepositAddress = useCallback(async (tokenSymbol, network) => {
+  const getDepositAddress = useCallback(async (tokenSymbol, network, forceRefresh = false) => {
     const addressKey = `${tokenSymbol}_${network}`;
-    
-    // Return cached address if available
-    if (depositAddresses[addressKey]) {
+
+    // Return cached address if available (skip cache when force-refreshing)
+    if (!forceRefresh && depositAddresses[addressKey]) {
       console.log(`useDeposit: Using cached address for ${addressKey}`);
       return { success: true, data: depositAddresses[addressKey] };
     }
 
     // Check if already loading
-    if (loadingAddresses[addressKey]) {
+    if (!forceRefresh && loadingAddresses[addressKey]) {
       console.log(`useDeposit: Already loading address for ${addressKey}`);
       return { success: false, error: 'Already loading' };
     }
@@ -198,21 +198,21 @@ export function useDeposit() {
   }, []);
 
   // Convenience methods for popular tokens
-  const getBitcoinAddress = useCallback(() => getDepositAddress('BTC', 'BTC'), [getDepositAddress]);
-  const getEthereumAddress = useCallback(() => getDepositAddress('ETH', 'ETH'), [getDepositAddress]);
-  const getSolanaAddress = useCallback(() => getDepositAddress('SOL', 'SOL'), [getDepositAddress]);
-  const getNGNBAddress = useCallback(() => getDepositAddress('NGNB', 'NGNB'), [getDepositAddress]);
-  
-  const getUSDTAddress = useCallback((network = 'ETH') => 
-    getDepositAddress('USDT', network), [getDepositAddress]);
-  const getUSDCAddress = useCallback((network = 'ETH') => 
-    getDepositAddress('USDC', network), [getDepositAddress]);
-  const getBNBAddress = useCallback((network = 'BSC') => 
-    getDepositAddress('BNB', network), [getDepositAddress]);
-  const getTRXAddress = useCallback((network = 'TRON') =>
-    getDepositAddress('TRX', network), [getDepositAddress]);
-  const getTONAddress = useCallback(() =>
-    getDepositAddress('TON', 'TON'), [getDepositAddress]);
+  const getBitcoinAddress = useCallback((forceRefresh = false) => getDepositAddress('BTC', 'BTC', forceRefresh), [getDepositAddress]);
+  const getEthereumAddress = useCallback((forceRefresh = false) => getDepositAddress('ETH', 'ETH', forceRefresh), [getDepositAddress]);
+  const getSolanaAddress = useCallback((forceRefresh = false) => getDepositAddress('SOL', 'SOL', forceRefresh), [getDepositAddress]);
+  const getNGNBAddress = useCallback((forceRefresh = false) => getDepositAddress('NGNB', 'NGNB', forceRefresh), [getDepositAddress]);
+
+  const getUSDTAddress = useCallback((network = 'ETH', forceRefresh = false) =>
+    getDepositAddress('USDT', network, forceRefresh), [getDepositAddress]);
+  const getUSDCAddress = useCallback((network = 'ETH', forceRefresh = false) =>
+    getDepositAddress('USDC', network, forceRefresh), [getDepositAddress]);
+  const getBNBAddress = useCallback((network = 'BSC', forceRefresh = false) =>
+    getDepositAddress('BNB', network, forceRefresh), [getDepositAddress]);
+  const getTRXAddress = useCallback((network = 'TRON', forceRefresh = false) =>
+    getDepositAddress('TRX', network, forceRefresh), [getDepositAddress]);
+  const getTONAddress = useCallback((forceRefresh = false) =>
+    getDepositAddress('TON', 'TON', forceRefresh), [getDepositAddress]);
 
   // Validate token/network combination using live API data
   const isTokenNetworkSupported = useCallback((tokenSymbol, network) => {

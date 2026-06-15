@@ -85,10 +85,10 @@ export default function BtcBscDepositScreen() {
     fetchBscAddress();
   }, [getCachedAddress]);
 
-  const handleGetBscAddress = async (): Promise<void> => {
+  const handleGetBscAddress = async (forceRefresh = false): Promise<void> => {
     try {
       // Call getDepositAddress directly with BTC token and BSC network
-      const result = await getDepositAddress('BTC', 'BSC');
+      const result = , forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
@@ -117,7 +117,7 @@ export default function BtcBscDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetBscAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetBscAddress(true), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

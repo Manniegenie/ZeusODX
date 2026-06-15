@@ -83,7 +83,7 @@ export default function UsdtSolanaDepositScreen() {
     fetchUSDTAddress();
   }, [getCachedAddress]);
 
-  const handleGetUSDTAddress = async (): Promise<void> => {
+  const handleGetUSDTAddress = async (forceRefresh = false): Promise<void> => {
     try {
       const result = await getUSDTAddress('SOL');
       if (result.success) {
@@ -114,7 +114,7 @@ export default function UsdtSolanaDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetUSDTAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetUSDTAddress(true), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {

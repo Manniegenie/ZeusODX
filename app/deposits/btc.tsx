@@ -93,7 +93,7 @@ export default function BtcDepositScreen() {
 
   const handleGetBitcoinAddress = async () => {
     try {
-      const result = await getBitcoinAddress();
+      const result = await getBitcoinAddress(forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
@@ -122,7 +122,7 @@ export default function BtcDepositScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetBitcoinAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetBitcoinAddress(true), refreshSupportedTokens()]);
     } finally {
       setRefreshing(false);
     }

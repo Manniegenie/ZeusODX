@@ -84,9 +84,9 @@ export default function UsdtPolygonDepositScreen() {
     fetchPolygonAddress();
   }, [getCachedAddress]);
 
-  const handleGetPolygonAddress = async (): Promise<void> => {
+  const handleGetPolygonAddress = async (forceRefresh = false): Promise<void> => {
     try {
-      const result = await getDepositAddress('USDT', 'POLYGON');
+      const result = , forceRefresh);
       if (result.success) {
         setDepositData(result.data);
         setShowError(false);
@@ -115,7 +115,7 @@ export default function UsdtPolygonDepositScreen() {
   const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      await Promise.all([handleGetPolygonAddress(), refreshSupportedTokens()]);
+      await Promise.all([handleGetPolygonAddress(true), refreshSupportedTokens()]);
     } catch (error) {
       console.error('Refresh error:', error);
     } finally {
