@@ -301,7 +301,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     height: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#E0E0E0',
+    borderColor: colors.border,
     backgroundColor: 'transparent',
   },
   filledDot: {
@@ -331,7 +331,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: colors.border,
   },
   emptyButton: {
     borderColor: 'transparent',
@@ -361,7 +361,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   inactiveButton: {
     backgroundColor: 'transparent',
-    borderColor: '#E0E0E0',
+    borderColor: colors.border,
   },
   continueButtonText: {
     ...Typography.styles.bodyMedium,

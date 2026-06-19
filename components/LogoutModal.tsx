@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
     ActivityIndicator,
     Animated,
@@ -10,6 +10,8 @@ import {
     View,
 } from 'react-native';
 import { Typography } from '../constants/Typography';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 
 type Props = {
   visible: boolean;
@@ -19,6 +21,8 @@ type Props = {
 };
 
 const LogoutModal: React.FC<Props> = ({ visible, onClose, onConfirm, loading = false }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -112,22 +116,16 @@ const LogoutModal: React.FC<Props> = ({ visible, onClose, onConfirm, loading = f
   );
 };
 
-const PRIMARY = '#35297F';
-const TEXT_DARK = '#111827';
-const TEXT_MUTED = '#6B7280';
-const SURFACE = '#FFFFFF';
-const OVERLAY = 'rgba(0,0,0,0.5)';
-
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: OVERLAY,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
   },
   modalContainer: {
-    backgroundColor: SURFACE,
+    backgroundColor: colors.card,
     borderRadius: 16,
     paddingHorizontal: 24,
     paddingVertical: 24,
@@ -148,11 +146,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 15,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.inputBg,
     zIndex: 1,
   },
   closeButtonText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '500',
   },
@@ -162,7 +160,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   title: {
-    color: TEXT_DARK,
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
@@ -170,7 +168,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    color: TEXT_MUTED,
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
     textAlign: 'center',
@@ -186,22 +184,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   secondaryBtn: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.inputBg,
     borderWidth: 1,
-    borderColor: PRIMARY,
+    borderColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   secondaryBtnText: {
-    color: PRIMARY,
+    color: colors.primary,
     fontFamily: Typography.medium || 'System',
     fontSize: 15,
     fontWeight: '600',
   },
   primaryBtn: {
-    backgroundColor: PRIMARY,
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     justifyContent: 'center',

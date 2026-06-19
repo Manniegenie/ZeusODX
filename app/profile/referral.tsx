@@ -8,6 +8,7 @@ import {
   Platform,
   SafeAreaView,
   ScrollView,
+  Share,
   StatusBar,
   StyleSheet,
   Text,
@@ -44,6 +45,17 @@ export default function ReferralScreen() {
     }
   }, [referralData?.referralCode]);
 
+  const handleShare = useCallback(async () => {
+    if (!referralData?.referralCode) return;
+    try {
+      await Share.share({
+        message: `Join me on ZeusODX — Africa's crypto exchange. Sign up with my referral code ${referralData.referralCode} and start trading today! 🚀`,
+      });
+    } catch {
+      // user dismissed share sheet or share unavailable
+    }
+  }, [referralData?.referralCode]);
+
   const fmt = (n: number) =>
     n.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -76,7 +88,7 @@ export default function ReferralScreen() {
 
           {loading ? (
             <View style={styles.centeredState}>
-              <ActivityIndicator size="large" color="#35297F" />
+              <ActivityIndicator size="large" color={colors.primary} />
               <Text style={styles.stateText}>Loading...</Text>
             </View>
           ) : error ? (
@@ -93,13 +105,22 @@ export default function ReferralScreen() {
                 <Text style={styles.label}>Your Referral Code</Text>
                 <View style={styles.codeCard}>
                   <Text style={styles.codeText}>{referralData.referralCode}</Text>
-                  <TouchableOpacity
-                    onPress={handleCopyCode}
-                    activeOpacity={0.7}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Image source={copyIcon} style={styles.copyIcon} />
-                  </TouchableOpacity>
+                  <View style={styles.codeActions}>
+                    <TouchableOpacity
+                      onPress={handleCopyCode}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Image source={copyIcon} style={styles.copyIcon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.shareBtn}
+                      onPress={handleShare}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.shareBtnText}>Share</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 <Text style={styles.codeHint}>
                   Share your code. When referrals swap Crypto → NGNZ, you earn NGNZ equal to the USD value of their swap.
@@ -280,10 +301,27 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     letterSpacing: 4,
     fontFamily: Typography.bold || 'System',
   },
+  codeActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   copyIcon: {
     width: 32,
     height: 32,
     resizeMode: 'cover',
+  },
+  shareBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  shareBtnText: {
+    color: '#FFFFFF',
+    fontFamily: Typography.medium || 'System',
+    fontSize: 13,
+    fontWeight: '600',
   },
   codeHint: {
     color: colors.textSecondary,
@@ -357,13 +395,13 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   stepRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.separator,
   },
   stepNumber: {
     fontSize: 36,
     fontWeight: '800',
     fontFamily: Typography.bold || 'System',
-    color: '#EDE9FF',
+    color: colors.iconBg,
     width: 44,
     textAlign: 'center',
     includeFontPadding: false,

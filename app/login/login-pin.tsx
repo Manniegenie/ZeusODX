@@ -558,7 +558,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: Layout.borderRadius.md,
     borderWidth: 2,
-    borderColor: '#E5E5E5',
+    borderColor: colors.border,
     fontSize: 20,
     fontFamily: Typography.bold,
     color: colors.text,

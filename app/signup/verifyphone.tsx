@@ -415,7 +415,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     height: 60,
     borderRadius: Layout.borderRadius.md,
     borderWidth: 2,
-    borderColor: '#E5E5E5',
+    borderColor: colors.border,
     backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',

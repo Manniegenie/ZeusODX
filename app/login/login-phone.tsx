@@ -152,7 +152,7 @@ export default function LoginScreen() {
 
 const getStartedBorder = {
   borderWidth: 1,
-  borderColor: '#E0E0E0',
+  borderColor: colors.border,
   borderRadius: Layout.borderRadius.lg,
 };
 
@@ -248,7 +248,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: Layout.borderRadius.md,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
+    borderColor: colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -299,7 +299,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   inactiveButton: {
     backgroundColor: 'transparent',
-    borderColor: '#E0E0E0',
+    borderColor: colors.border,
   },
   continueButtonText: {
     ...Typography.styles.bodyMedium,

@@ -375,7 +375,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   pinContainer: { flexDirection: 'row', gap: Layout.spacing.sm, marginBottom: Layout.spacing.xl, justifyContent: 'center' },
   pinInput: {
     width: 50, height: 50, backgroundColor: colors.card, borderRadius: Layout.borderRadius.md,
-    borderWidth: 2, borderColor: '#E5E5E5', fontSize: 20, fontFamily: Typography.bold, color: colors.text, textAlign: 'center',
+    borderWidth: 2, borderColor: colors.border, fontSize: 20, fontFamily: Typography.bold, color: colors.text, textAlign: 'center',
   },
   pinInputFilled: { backgroundColor: colors.card },
   loadingContainer: { marginBottom: Layout.spacing.lg },

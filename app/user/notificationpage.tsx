@@ -35,6 +35,7 @@ interface Notification {
 const NotificationScreen = () => {
   const router = useRouter();
   const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { clearBadge, setupListeners, removeListeners, isEnabled } = useNotifications();
   
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -286,7 +287,7 @@ const NotificationScreen = () => {
     
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color="#35297F" />
+        <ActivityIndicator size="small" color={colors.primary} />
         <Text style={styles.footerLoaderText}>Loading more...</Text>
       </View>
     );
@@ -299,7 +300,7 @@ const NotificationScreen = () => {
     if (loading) {
       return (
         <View style={styles.emptyState}>
-          <ActivityIndicator size="large" color="#35297F" />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.emptyStateMessage}>Loading notifications...</Text>
         </View>
       );
@@ -333,7 +334,7 @@ const NotificationScreen = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor="#F3F2FF" barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
         
         {/* Header */}
         <View style={styles.header}>
@@ -344,7 +345,7 @@ const NotificationScreen = () => {
             delayPressIn={0}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
-            <Image source={backIcon} style={[styles.backIcon, { tintColor: colors.text }]} />
+            <Image source={backIcon} style={styles.backIcon} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
           <View style={styles.headerSpacer} />
@@ -369,8 +370,8 @@ const NotificationScreen = () => {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                tintColor="#35297F"
-                colors={['#35297F']}
+                tintColor={colors.primary}
+                colors={[colors.primary]}
               />
             }
           />
@@ -380,10 +381,10 @@ const NotificationScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F2FF',
+    backgroundColor: colors.background,
   },
   safeArea: {
     flex: 1,
@@ -396,10 +397,10 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 24,
   },
-  backButton: { 
+  backButton: {
     width: 40,
     height: 40,
-    justifyContent: 'center', 
+    justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
   },
@@ -407,6 +408,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     resizeMode: 'contain',
+    tintColor: colors.text,
   },
   headerTitle: {
     position: 'absolute',
@@ -414,7 +416,7 @@ const styles = StyleSheet.create({
     right: 0,
     fontSize: 18,
     fontWeight: '600',
-    color: '#35297F',
+    color: colors.text,
     textAlign: 'center',
     pointerEvents: 'none',
   },
@@ -433,10 +435,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   notificationCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#35297F',
+    shadowColor: colors.primary,
     shadowOffset: {
       width: 0,
       height: 1,
@@ -457,7 +459,7 @@ const styles = StyleSheet.create({
   notificationTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.text,
     flex: 1,
     lineHeight: 18,
   },
@@ -465,26 +467,26 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     marginLeft: 8,
     marginTop: 6,
   },
   notificationMessage: {
     fontSize: 12,
-    color: '#4B5563',
+    color: colors.textSecondary,
     lineHeight: 16,
     marginBottom: 4,
   },
   notificationSubtitle: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textSecondary,
     lineHeight: 16,
     marginBottom: 8,
     fontStyle: 'italic',
   },
   notificationDate: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   emptyState: {
@@ -497,12 +499,12 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.text,
     marginBottom: 8,
   },
   emptyStateMessage: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
     marginTop: 8,
@@ -511,7 +513,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 8,
   },
   retryButtonText: {
@@ -527,7 +529,7 @@ const styles = StyleSheet.create({
   footerLoaderText: {
     marginTop: 8,
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
 });
 

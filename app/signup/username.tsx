@@ -320,7 +320,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingHorizontal: Layout.spacing.md,
     paddingVertical: Layout.spacing.md,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
+    borderColor: colors.border,
     fontFamily: Typography.regular,
     fontSize: 16,
     color: colors.text,
@@ -403,7 +403,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   inactiveButton: {
     backgroundColor: 'transparent',
-    borderColor: '#E0E0E0',
+    borderColor: colors.border,
   },
   continueButtonText: {
     ...Typography.styles.bodyMedium,

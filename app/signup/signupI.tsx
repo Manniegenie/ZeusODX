@@ -338,7 +338,7 @@ export default function SignupScreen() {
 
 const getStartedBorder = {
   borderWidth: 1,
-  borderColor: '#E0E0E0',
+  borderColor: colors.border,
   borderRadius: Layout.borderRadius.lg,
 };
 
@@ -442,7 +442,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   inactiveButton: {
     backgroundColor: 'transparent',
-    borderColor: '#E0E0E0',
+    borderColor: colors.border,
   },
   continueButtonText: {
     ...Typography.styles.bodyMedium,
