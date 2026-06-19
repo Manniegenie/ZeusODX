@@ -18,7 +18,8 @@ import {
     View,
 } from 'react-native';
 import AddressCopied from '../../components/AddressCopied';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { getPdfLayoutScale } from '../../utils/pdfLayout';
@@ -573,6 +574,8 @@ const generateTransactionReceiptHTML = (
 
 // ---------- screen ----------
 export default function TransactionReceiptScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const params = useLocalSearchParams();
   const parsedTx = safeParseParam(params.tx) as APITransaction | undefined;
@@ -1198,8 +1201,8 @@ function Row({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background || '#FFFFFF' },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: Layout?.spacing?.xl || 24, paddingBottom: 32 },
 
@@ -1229,7 +1232,7 @@ const styles = StyleSheet.create({
   centerContent: { alignItems: 'center', justifyContent: 'center', flex: 1 },
   emptyTitle: {
     fontSize: 16,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     marginBottom: 12,
   },
 
@@ -1243,7 +1246,7 @@ const styles = StyleSheet.create({
   amountText: {
     fontFamily: Typography.bold || 'System',
     fontSize: 28,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
   },
 
   centeredStatus: {
@@ -1296,7 +1299,7 @@ const styles = StyleSheet.create({
   ctaRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 8 },
   primaryButton: {
     flex: 1,
-    backgroundColor: Colors.primary || '#35297F',
+    backgroundColor: colors.primary,
     paddingVertical: Layout?.spacing?.md || 14,
     borderRadius: Layout?.borderRadius?.lg || 10,
     alignItems: 'center',
@@ -1304,12 +1307,12 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.surface || '#FFFFFF',
+    color: colors.card,
     fontFamily: Typography.medium || 'System',
   },
   secondaryButton: {
     flex: 1,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     paddingVertical: Layout?.spacing?.md || 14,
     borderRadius: Layout?.borderRadius?.lg || 10,
     alignItems: 'center',

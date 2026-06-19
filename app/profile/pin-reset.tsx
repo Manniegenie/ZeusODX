@@ -1,9 +1,10 @@
 // app/profile/pin-reset-send.tsx
-import React, { useState } from 'react';
+import React, { useState , useMemo} from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import useResetPin from '../../hooks/useResetPin';
 import ErrorDisplay from '../../components/ErrorDisplay';
@@ -32,6 +33,8 @@ interface ErrorDisplayData {
 import backIcon from '../../components/icons/backy.png';
 
 export default function PinResetSendScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { initiate, initiating } = useResetPin();
   
@@ -173,8 +176,8 @@ export default function PinResetSendScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1, paddingHorizontal: Layout.spacing.lg },
   headerSection: { paddingTop: 12, paddingBottom: 6 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -197,10 +200,10 @@ const styles = StyleSheet.create({
   },
   emptySpace: { width: 40 },
   header: { paddingTop: Layout.spacing.xl, marginBottom: Layout.spacing.lg, alignItems: 'center' },
-  title: { fontFamily: Typography.bold, fontSize: 24, lineHeight: 28, color: Colors.primaryText, marginBottom: Layout.spacing.xs, textAlign: 'center' },
-  subtitle: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center', paddingHorizontal: Layout.spacing.md, lineHeight: 20 },
+  title: { fontFamily: Typography.bold, fontSize: 24, lineHeight: 28, color: colors.text, marginBottom: Layout.spacing.xs, textAlign: 'center' },
+  subtitle: { ...Typography.styles.body, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: Layout.spacing.md, lineHeight: 20 },
   spacer: { flex: 1 },
   buttonContainer: { paddingBottom: Layout.spacing.xl, paddingTop: Layout.spacing.lg },
-  sendButton: { backgroundColor: Colors.primary, paddingVertical: Layout.spacing.md, borderRadius: Layout.borderRadius.lg, alignItems: 'center', borderWidth: 1, borderColor: Colors.primary },
-  sendButtonText: { ...Typography.styles.bodyMedium, color: Colors.surface, fontWeight: '600' },
+  sendButton: { backgroundColor: colors.primary, paddingVertical: Layout.spacing.md, borderRadius: Layout.borderRadius.lg, alignItems: 'center', borderWidth: 1, borderColor: colors.primary },
+  sendButtonText: { ...Typography.styles.bodyMedium, color: colors.card, fontWeight: '600' },
 });

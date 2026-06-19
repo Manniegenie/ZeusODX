@@ -1,14 +1,17 @@
 // app/profile/confirm-new-pin.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect , useMemo} from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Vibration } from 'react-native';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import { useForgotPin } from '../../hooks/useforgotpin';
 
 export default function ResetPinConfirmScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { resetPin, loading: changing, error, setPhoneNumber } = useForgotPin();
 
@@ -241,13 +244,13 @@ export default function ResetPinConfirmScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1, paddingHorizontal: Layout.spacing.lg },
   headerSection: { paddingTop: 12, paddingBottom: 6 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backButtonText: { fontSize: 20, color: Colors.text?.primary || '#111827', fontWeight: '500' },
+  backButtonText: { fontSize: 20, color: colors.text, fontWeight: '500' },
   headerTitle: {
     color: '#35297F',
     fontFamily: Typography.medium || 'System',
@@ -259,8 +262,8 @@ const styles = StyleSheet.create({
   },
   emptySpace: { width: 40 },
   header: { paddingTop: Layout.spacing.xl, marginBottom: Layout.spacing.xxl, alignItems: 'center' },
-  title: { fontFamily: Typography.bold, fontSize: 24, lineHeight: 28, color: Colors.primaryText, marginBottom: Layout.spacing.xs, textAlign: 'center' },
-  subtitle: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center', paddingHorizontal: Layout.spacing.md, lineHeight: 20 },
+  title: { fontFamily: Typography.bold, fontSize: 24, lineHeight: 28, color: colors.text, marginBottom: Layout.spacing.xs, textAlign: 'center' },
+  subtitle: { ...Typography.styles.body, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: Layout.spacing.md, lineHeight: 20 },
   errorBanner: {
     marginTop: 12,
     backgroundColor: '#FEE2E2',
@@ -278,7 +281,7 @@ const styles = StyleSheet.create({
     width: 16, height: 16, borderRadius: 8,
     borderWidth: 2, borderColor: '#E0E0E0', backgroundColor: 'transparent',
   },
-  filledDot: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  filledDot: { backgroundColor: colors.primary, borderColor: colors.primary },
   numberPad: { flex: 1, justifyContent: 'center', paddingVertical: Layout.spacing.lg },
   numberRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Layout.spacing.lg, paddingHorizontal: Layout.spacing.xl },
   numberButton: {
@@ -286,13 +289,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E0E0E0',
   },
   emptyButton: { borderColor: 'transparent' },
-  numberText: { fontSize: 24, fontFamily: Typography.medium, color: Colors.text.primary },
-  backspaceText: { fontSize: 20, color: Colors.text.secondary },
+  numberText: { fontSize: 24, fontFamily: Typography.medium, color: colors.text },
+  backspaceText: { fontSize: 20, color: colors.textSecondary },
   buttonContainer: { paddingBottom: Layout.spacing.xl, paddingTop: Layout.spacing.lg },
   confirmButton: { paddingVertical: Layout.spacing.md, borderRadius: Layout.borderRadius.lg, alignItems: 'center', borderWidth: 1 },
-  activeButton: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  activeButton: { backgroundColor: colors.primary, borderColor: colors.primary },
   inactiveButton: { backgroundColor: 'transparent', borderColor: '#E0E0E0' },
   confirmButtonText: { ...Typography.styles.bodyMedium, fontWeight: '600' },
-  activeButtonText: { color: Colors.surface },
-  inactiveButtonText: { color: Colors.text.secondary },
+  activeButtonText: { color: colors.card },
+  inactiveButtonText: { color: colors.textSecondary },
 });

@@ -8,13 +8,16 @@ import {
   Alert
 } from 'react-native';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState , useMemo} from 'react';
 import BottomTabNavigator from '../../components/BottomNavigator';
 
 export default function ComingSoonScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -95,7 +98,7 @@ export default function ComingSoonScreen() {
                 <TextInput
                   style={styles.emailInput}
                   placeholder="Enter your email address"
-                  placeholderTextColor={Colors.text.secondary}
+                  placeholderTextColor={colors.textSecondary}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -155,10 +158,10 @@ export default function ComingSoonScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   safeArea: {
     flex: 1,
@@ -176,7 +179,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -187,13 +190,13 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 18,
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
   },
   headerTitle: {
     fontFamily: Typography.bold,
     fontSize: 18,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   headerSpacer: {
     width: 40,
@@ -224,7 +227,7 @@ const styles = StyleSheet.create({
   },
   mainIcon: {
     fontSize: 48,
-    color: Colors.surface,
+    color: colors.card,
   },
   floatingElements: {
     position: 'absolute',
@@ -275,7 +278,7 @@ const styles = StyleSheet.create({
   mainTitle: {
     fontFamily: Typography.bold,
     fontSize: 28,
-    color: Colors.text.primary,
+    color: colors.text,
     textAlign: 'center',
     marginBottom: Layout.spacing.md,
     lineHeight: 34,
@@ -283,13 +286,13 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: Typography.regular,
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
     paddingHorizontal: Layout.spacing.md,
   },
   notificationSection: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderRadius: Layout.borderRadius.lg,
     padding: Layout.spacing.lg,
     marginBottom: Layout.spacing.xl,
@@ -302,14 +305,14 @@ const styles = StyleSheet.create({
   notificationTitle: {
     fontFamily: Typography.bold,
     fontSize: 18,
-    color: Colors.text.primary,
+    color: colors.text,
     textAlign: 'center',
     marginBottom: Layout.spacing.xs,
   },
   notificationSubtitle: {
     fontFamily: Typography.regular,
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: Layout.spacing.lg,
   },
@@ -323,7 +326,7 @@ const styles = StyleSheet.create({
     paddingVertical: Layout.spacing.md,
     fontSize: 16,
     fontFamily: Typography.regular,
-    color: Colors.text.primary,
+    color: colors.text,
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
@@ -342,7 +345,7 @@ const styles = StyleSheet.create({
   notifyButtonText: {
     fontFamily: Typography.bold,
     fontSize: 16,
-    color: Colors.surface,
+    color: colors.card,
   },
   subscribedContainer: {
     alignItems: 'center',
@@ -358,7 +361,7 @@ const styles = StyleSheet.create({
   },
   checkIcon: {
     fontSize: 24,
-    color: Colors.surface,
+    color: colors.card,
     fontFamily: Typography.bold,
   },
   subscribedText: {
@@ -373,7 +376,7 @@ const styles = StyleSheet.create({
   featuresTitle: {
     fontFamily: Typography.bold,
     fontSize: 18,
-    color: Colors.text.primary,
+    color: colors.text,
     marginBottom: Layout.spacing.lg,
     textAlign: 'center',
   },
@@ -383,7 +386,7 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     padding: Layout.spacing.md,
     borderRadius: Layout.borderRadius.md,
     gap: Layout.spacing.md,
@@ -407,7 +410,7 @@ const styles = StyleSheet.create({
   featureText: {
     fontFamily: Typography.medium,
     fontSize: 14,
-    color: Colors.text.primary,
+    color: colors.text,
     flex: 1,
   },
 });

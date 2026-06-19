@@ -1,10 +1,11 @@
 // app/profile/confirm-new-pin.tsx
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Vibration, Alert, Image } from 'react-native';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useState , useMemo} from 'react';
 import TwoFactorAuthModal from '../../components/2FA';
 import useResetPin from '../../hooks/useResetPin';
 
@@ -12,6 +13,8 @@ import useResetPin from '../../hooks/useResetPin';
 import backIcon from '../../components/icons/backy.png';
 
 export default function ResetPinConfirmScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { changePin, changing } = useResetPin();
 
@@ -220,8 +223,8 @@ export default function ResetPinConfirmScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1, paddingHorizontal: Layout.spacing.lg },
 
   // Header with back button
@@ -253,8 +256,8 @@ const styles = StyleSheet.create({
 
   // Main header content
   header: { paddingTop: Layout.spacing.xl, marginBottom: Layout.spacing.xxl, alignItems: 'center' },
-  title: { fontFamily: Typography.bold, fontSize: 24, lineHeight: 28, color: Colors.primaryText, marginBottom: Layout.spacing.xs, textAlign: 'center' },
-  subtitle: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center', paddingHorizontal: Layout.spacing.md, lineHeight: 20 },
+  title: { fontFamily: Typography.bold, fontSize: 24, lineHeight: 28, color: colors.text, marginBottom: Layout.spacing.xs, textAlign: 'center' },
+  subtitle: { ...Typography.styles.body, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: Layout.spacing.md, lineHeight: 20 },
 
   // Error banner
   errorBanner: {
@@ -276,7 +279,7 @@ const styles = StyleSheet.create({
     width: 16, height: 16, borderRadius: 8,
     borderWidth: 2, borderColor: '#E0E0E0', backgroundColor: 'transparent',
   },
-  filledDot: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  filledDot: { backgroundColor: colors.primary, borderColor: colors.primary },
 
   // Number pad
   numberPad: { flex: 1, justifyContent: 'center', paddingVertical: Layout.spacing.lg },
@@ -286,15 +289,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E0E0E0',
   },
   emptyButton: { borderColor: 'transparent' },
-  numberText: { fontSize: 24, fontFamily: Typography.medium, color: Colors.text.primary },
-  backspaceText: { fontSize: 20, color: Colors.text.secondary },
+  numberText: { fontSize: 24, fontFamily: Typography.medium, color: colors.text },
+  backspaceText: { fontSize: 20, color: colors.textSecondary },
 
   // Button
   buttonContainer: { paddingBottom: Layout.spacing.xl, paddingTop: Layout.spacing.lg },
   confirmButton: { paddingVertical: Layout.spacing.md, borderRadius: Layout.borderRadius.lg, alignItems: 'center', borderWidth: 1 },
-  activeButton: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  activeButton: { backgroundColor: colors.primary, borderColor: colors.primary },
   inactiveButton: { backgroundColor: 'transparent', borderColor: '#E0E0E0' },
   confirmButtonText: { ...Typography.styles.bodyMedium, fontWeight: '600' },
-  activeButtonText: { color: Colors.surface },
-  inactiveButtonText: { color: Colors.text.secondary },
+  activeButtonText: { color: colors.card },
+  inactiveButtonText: { color: colors.textSecondary },
 });

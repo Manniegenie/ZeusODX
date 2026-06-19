@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -10,7 +10,8 @@ import {
   Image
 } from 'react-native';
 import { Typography } from '../constants/Typography';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { useDashboard } from '../hooks/useDashboard';
 
@@ -55,6 +56,8 @@ export default function ChooseTokenModal({
   showBalances = false,
   validTokens
 }: ChooseTokenModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   // Get data from useDashboard hook
   const {
@@ -272,14 +275,14 @@ export default function ChooseTokenModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: Layout.spacing.sm,
@@ -316,7 +319,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: Typography.bold,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   closeButton: {
     width: 28,
@@ -328,7 +331,7 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontWeight: 'bold',
   },
   tokenList: {
@@ -380,7 +383,7 @@ const styles = StyleSheet.create({
   tokenName: {
     fontFamily: Typography.semibold,
     fontSize: 14,
-    color: Colors.text.primary,
+    color: colors.text,
     marginBottom: 2,
   },
   selectedTokenName: {
@@ -389,7 +392,7 @@ const styles = StyleSheet.create({
   tokenSymbol: {
     fontFamily: Typography.regular,
     fontSize: 12,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     marginBottom: 2,
   },
   selectedTokenSymbol: {
@@ -398,7 +401,7 @@ const styles = StyleSheet.create({
   tokenBalance: {
     fontFamily: Typography.regular,
     fontSize: 12,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   checkIconContainer: {
     marginLeft: Layout.spacing.sm,

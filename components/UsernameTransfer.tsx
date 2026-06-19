@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography } from '../constants/Typography';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { useTokens } from '../hooks/useTokens';
 import { useBalance } from '../hooks/useWallet';
@@ -81,6 +82,8 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
   selectedUser,
   defaultToken,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   // Tokens
@@ -659,7 +662,7 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
                         onChangeText={(t) => { const clean = t.replace(/[^0-9.]/g, ''); setAmount(clean); setRawAmount(0); }}
                         placeholder="0"
                         keyboardType="decimal-pad"
-                        placeholderTextColor={Colors.text.secondary}
+                        placeholderTextColor={colors.textSecondary}
                         editable={!isTransferring}
                       />
                       <Text style={styles.usdValue}>{formatUsdValue(amount, selectedToken)}</Text>
@@ -729,7 +732,7 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: { 
     flex: 1, 
     backgroundColor: 'rgba(0, 0, 0, 0.5)', 
@@ -747,7 +750,7 @@ const styles = StyleSheet.create({
     elevation: 1001,
   },
   bottomSheet: { 
-    backgroundColor: Colors.background, 
+    backgroundColor: colors.background, 
     borderTopLeftRadius: 20, 
     borderTopRightRadius: 20, 
     minHeight: BOTTOM_SHEET_MIN_HEIGHT, 
@@ -760,24 +763,24 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   headerSection: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Layout.spacing.md, paddingTop: Layout.spacing.sm, paddingBottom: Layout.spacing.lg },
   closeButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: Layout.borderRadius.lg },
-  closeButtonText: { fontSize: 16, color: Colors.text.primary, fontWeight: '500' },
+  closeButtonText: { fontSize: 16, color: colors.text, fontWeight: '500' },
   headerTitle: { color: '#35297F', fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center' },
   headerSpacer: { width: 40 },
   inputSection: { paddingHorizontal: Layout.spacing.xl, marginTop: Layout.spacing.md },
   inputCard: { backgroundColor: '#F8F9FA', borderRadius: Layout.borderRadius.lg, padding: Layout.spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB', minHeight: 80 },
   inputLeft: { flex: 1, justifyContent: 'center', minWidth: 0 },
-  amountInput: { fontFamily: Typography.medium, fontSize: 24, color: Colors.text.primary, fontWeight: '600', padding: 0, margin: 0, flexShrink: 1 },
-  usdValue: { fontFamily: Typography.regular, fontSize: 13, color: Colors.text.secondary, marginTop: 3 },
+  amountInput: { fontFamily: Typography.medium, fontSize: 24, color: colors.text, fontWeight: '600', padding: 0, margin: 0, flexShrink: 1 },
+  usdValue: { fontFamily: Typography.regular, fontSize: 13, color: colors.textSecondary, marginTop: 3 },
   tokenSelector: { alignItems: 'flex-end', justifyContent: 'center', maxWidth: '50%' },
   tokenContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E5E7EB', borderRadius: Layout.borderRadius.md, paddingHorizontal: Layout.spacing.sm, paddingVertical: Layout.spacing.xs },
   tokenIcon: { width: 18, height: 18, resizeMode: 'cover', marginRight: Layout.spacing.sm },
-  tokenText: { fontFamily: Typography.medium, fontSize: 12, color: Colors.text.primary, fontWeight: '600' },
+  tokenText: { fontFamily: Typography.medium, fontSize: 12, color: colors.text, fontWeight: '600' },
   balanceInfo: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 },
-  balanceText: { fontFamily: Typography.regular, fontSize: 10, color: Colors.text.secondary },
-  maxText: { fontFamily: Typography.medium, fontSize: 10, color: Colors.primary, fontWeight: '600' },
+  balanceText: { fontFamily: Typography.regular, fontSize: 10, color: colors.textSecondary },
+  maxText: { fontFamily: Typography.medium, fontSize: 10, color: colors.primary, fontWeight: '600' },
   percentageSection: { flexDirection: 'row', paddingHorizontal: Layout.spacing.xl, marginTop: Layout.spacing.xl, gap: Layout.spacing.sm },
-  percentageButton: { flex: 1, backgroundColor: Colors.surface, borderRadius: Layout.borderRadius.md, paddingVertical: Layout.spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
-  percentageText: { fontFamily: Typography.medium, fontSize: 13, color: Colors.text.secondary, fontWeight: '500' },
+  percentageButton: { flex: 1, backgroundColor: colors.card, borderRadius: Layout.borderRadius.md, paddingVertical: Layout.spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
+  percentageText: { fontFamily: Typography.medium, fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
   userSection: { paddingHorizontal: Layout.spacing.xl, marginTop: Layout.spacing.xxl, alignItems: 'center', justifyContent: 'center', width: '100%' },
   userItem: { flexDirection: 'row', alignItems: 'center', padding: Layout.spacing.sm, justifyContent: 'center', alignSelf: 'center', gap: Layout.spacing.sm },
   avatarContainer: { alignItems: 'center', justifyContent: 'center' },
@@ -785,18 +788,18 @@ const styles = StyleSheet.create({
   userInitials: { color: '#FFFFFF', fontFamily: 'Bricolage Grotesque', fontSize: 8, fontWeight: '600' },
   textContainer: { alignItems: 'center', justifyContent: 'center' },
   userInfo: { width: 152, height: 34, alignItems: 'center', justifyContent: 'center' },
-  userName: { color: Colors.text.primary, fontFamily: 'Bricolage Grotesque', fontSize: 14, fontWeight: '700', lineHeight: 16, textAlign: 'center', marginBottom: 2 },
-  userUsername: { color: Colors.text.secondary, fontFamily: 'Bricolage Grotesque', fontSize: 10, fontWeight: '500', lineHeight: 16, textAlign: 'center' },
+  userName: { color: colors.text, fontFamily: 'Bricolage Grotesque', fontSize: 14, fontWeight: '700', lineHeight: 16, textAlign: 'center', marginBottom: 2 },
+  userUsername: { color: colors.textSecondary, fontFamily: 'Bricolage Grotesque', fontSize: 10, fontWeight: '500', lineHeight: 16, textAlign: 'center' },
   reviewSection: { paddingHorizontal: Layout.spacing.xl, paddingTop: Layout.spacing.xxl, paddingBottom: Layout.spacing.xl },
-  reviewButton: { backgroundColor: Colors.primary, borderRadius: Layout.borderRadius.lg, paddingVertical: Layout.spacing.md, alignItems: 'center' },
-  reviewButtonDisabled: { backgroundColor: Colors.text.secondary, opacity: 0.6 },
-  reviewButtonText: { fontFamily: Typography.medium, fontSize: 16, color: Colors.surface, fontWeight: '600' },
+  reviewButton: { backgroundColor: colors.primary, borderRadius: Layout.borderRadius.lg, paddingVertical: Layout.spacing.md, alignItems: 'center' },
+  reviewButtonDisabled: { backgroundColor: colors.textSecondary, opacity: 0.6 },
+  reviewButtonText: { fontFamily: Typography.medium, fontSize: 16, color: colors.card, fontWeight: '600' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: Layout.spacing.xl },
-  loadingText: { fontFamily: Typography.regular, fontSize: 14, color: Colors.text.secondary },
+  loadingText: { fontFamily: Typography.regular, fontSize: 14, color: colors.textSecondary },
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: Layout.spacing.xl },
-  errorText: { fontFamily: Typography.regular, fontSize: 14, color: Colors.text.secondary, marginBottom: Layout.spacing.md },
-  retryButton: { backgroundColor: Colors.primary, borderRadius: Layout.borderRadius.md, paddingVertical: Layout.spacing.sm, paddingHorizontal: Layout.spacing.lg },
-  retryButtonText: { fontFamily: Typography.medium, fontSize: 14, color: Colors.surface, fontWeight: '600' },
+  errorText: { fontFamily: Typography.regular, fontSize: 14, color: colors.textSecondary, marginBottom: Layout.spacing.md },
+  retryButton: { backgroundColor: colors.primary, borderRadius: Layout.borderRadius.md, paddingVertical: Layout.spacing.sm, paddingHorizontal: Layout.spacing.lg },
+  retryButtonText: { fontFamily: Typography.medium, fontSize: 14, color: colors.card, fontWeight: '600' },
 });
 
 

@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 
 type TokenDetails = {
@@ -149,6 +150,8 @@ const safeParseParam = (val?: string | string[]) => {
 
 // ---------- screen ----------
 function TransactionReceiptScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const params = useLocalSearchParams();
   const parsedTx = safeParseParam(params.tx) as APITransaction | undefined;
@@ -501,8 +504,8 @@ function Row({
 }
 
 // ---------- styles ----------
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background || '#FFFFFF' },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: Layout?.spacing?.xl || 24, paddingBottom: 32 },
 
@@ -540,7 +543,7 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold || 'System',
     fontSize: 20,
     lineHeight: 24,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: Layout?.spacing?.xs || 8,
     fontWeight: '700',
@@ -552,7 +555,7 @@ const styles = StyleSheet.create({
     marginBottom: Layout?.spacing?.xs || 8,
     justifyContent: 'center',
   },
-  amountText: { fontFamily: Typography.bold || 'System', fontSize: 17, color: Colors.text?.primary || '#111827' },
+  amountText: { fontFamily: Typography.bold || 'System', fontSize: 17, color: colors.text },
   statusPill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1 },
   statusPillText: { fontFamily: Typography.medium || 'System', fontSize: 12, top: 1 },
 
@@ -589,7 +592,7 @@ const styles = StyleSheet.create({
   ctaRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 8 },
   primaryButton: {
     flex: 1,
-    backgroundColor: Colors.primary || '#35297F',
+    backgroundColor: colors.primary,
     paddingVertical: Layout?.spacing?.md || 14,
     borderRadius: Layout?.borderRadius?.lg || 10,
     alignItems: 'center',
@@ -597,12 +600,12 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.surface || '#FFFFFF',
+    color: colors.card,
     fontFamily: Typography.medium || 'System',
   },
   secondaryButton: {
     flex: 1,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     paddingVertical: Layout?.spacing?.md || 14,
     borderRadius: Layout?.borderRadius?.lg || 10,
     alignItems: 'center',
@@ -615,7 +618,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

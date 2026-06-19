@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     FlatList,
     Image,
@@ -9,7 +9,8 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
 
@@ -59,6 +60,8 @@ export default function ElectricityProviderSelectionModal({
   onSelectProvider,
   title = "Select Electricity Provider"
 }: ElectricityProviderSelectionModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   
   // Electricity providers
   const electricityProviders: ElectricityProvider[] = [
@@ -133,14 +136,14 @@ export default function ElectricityProviderSelectionModal({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   modalOverlay: { 
     flex: 1, 
     backgroundColor: 'rgba(0,0,0,0.5)', 
     justifyContent: 'flex-end' 
   },
   modalContent: { 
-    backgroundColor: Colors.surface, 
+    backgroundColor: colors.card, 
     borderTopLeftRadius: Layout.borderRadius.xl, 
     borderTopRightRadius: Layout.borderRadius.xl, 
     padding: Layout.spacing.lg, 
@@ -155,11 +158,11 @@ const styles = StyleSheet.create({
   modalTitle: { 
     fontFamily: Typography.bold, 
     fontSize: 18, 
-    color: Colors.text.primary 
+    color: colors.text 
   },
   closeButton: { 
     fontSize: 16, 
-    color: Colors.text.secondary, 
+    color: colors.textSecondary, 
     padding: Layout.spacing.sm 
   },
   providerList: { 
@@ -204,11 +207,11 @@ const styles = StyleSheet.create({
   providerName: { 
     fontFamily: Typography.medium, 
     fontSize: 14, 
-    color: Colors.text.primary 
+    color: colors.text 
   },
   providerRegion: { 
     fontFamily: Typography.regular, 
     fontSize: 12, 
-    color: Colors.text.secondary 
+    color: colors.textSecondary 
   },
 });

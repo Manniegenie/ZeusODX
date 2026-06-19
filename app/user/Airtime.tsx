@@ -1,6 +1,6 @@
 // app/user/BuyAirtimeScreen.tsx
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState , useMemo} from 'react';
 import {
     Dimensions,
     Image,
@@ -24,7 +24,8 @@ import ErrorDisplay from '../../components/ErrorDisplay';
 import Loading from '../../components/Loading';
 import PinEntryModal from '../../components/PinEntry';
 import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useAirtime } from '../../hooks/useAirtime';
 
@@ -125,6 +126,8 @@ interface TransactionData {
 }
 
 const BuyAirtimeScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const {
     loading,
@@ -457,7 +460,7 @@ const BuyAirtimeScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
 
         {/* Error Display */}
         {showErrorDisplay && errorDisplayData && (
@@ -525,7 +528,7 @@ const BuyAirtimeScreen: React.FC = () => {
                 <TextInput
                   style={styles.mobileInput}
                   placeholder="Enter mobile number"
-                  placeholderTextColor={Colors.text?.secondary}
+                  placeholderTextColor={colors.textSecondary}
                   value={mobileNumber}
                   onChangeText={setMobileNumber}
                   keyboardType="phone-pad"
@@ -573,7 +576,7 @@ const BuyAirtimeScreen: React.FC = () => {
             <TextInput
               style={styles.amountInput}
               placeholder="Enter amount"
-              placeholderTextColor={Colors.text?.secondary}
+              placeholderTextColor={colors.textSecondary}
               value={customAmount}
               onChangeText={handleAmountChange}
               keyboardType="numeric"
@@ -656,44 +659,10 @@ const BuyAirtimeScreen: React.FC = () => {
 };
 
 // Responsive styles
-const styles = StyleSheet.create<{
-  container: ViewStyle;
-  safeArea: ViewStyle;
-  scrollView: ViewStyle;
-  scrollContent: ViewStyle;
-  historyLink: TextStyle;
-  section: ViewStyle;
-  sectionTitle: TextStyle;
-  networkScrollView: ViewStyle;
-  networkScrollContainer: ViewStyle;
-  networkGrid: ViewStyle;
-  networkCard: ViewStyle;
-  networkCardSelected: ViewStyle;
-  networkIcon: ImageStyle;
-  checkmarkContainer: ViewStyle;
-  checkmarkIcon: ImageStyle;
-  mobileNumberSection: ViewStyle;
-  mobileInputContainer: ViewStyle;
-  mobileInput: TextStyle;
-  profileIconContainer: ViewStyle;
-  profileIcon: ImageStyle;
-  helperText: TextStyle;
-  quickPickGrid: ViewStyle;
-  quickPickCard: ViewStyle;
-  quickPickCardSelected: ViewStyle;
-  quickPickText: TextStyle;
-  quickPickTextSelected: TextStyle;
-  amountInput: TextStyle;
-  maxAmountText: TextStyle;
-  buttonContainer: ViewStyle;
-  continueButton: ViewStyle;
-  continueButtonDisabled: ViewStyle;
-  continueButtonText: TextStyle;
-  bottomSpacer: ViewStyle;
-}>({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: Colors.background || '#F8F9FA' 
+    backgroundColor: colors.background 
   },
   safeArea: { 
     flex: 1 
@@ -718,7 +687,7 @@ const styles = StyleSheet.create<{
     marginBottom: 24,
   },
   sectionTitle: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     fontWeight: '400',
@@ -782,7 +751,7 @@ const styles = StyleSheet.create<{
   },
   mobileInputContainer: {
     flex: 1,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -791,7 +760,7 @@ const styles = StyleSheet.create<{
     minHeight: 48,
   },
   mobileInput: {
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
     fontSize: 16,
     fontWeight: '400',
@@ -812,7 +781,7 @@ const styles = StyleSheet.create<{
 
   // Helper text styles
   helperText: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 11,
     fontWeight: '400',
@@ -832,7 +801,7 @@ const styles = StyleSheet.create<{
     width: responsiveDims.quickPickCardWidth,
     paddingVertical: responsiveDims.quickPickPadding,
     borderRadius: 8,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     justifyContent: 'center',
@@ -845,7 +814,7 @@ const styles = StyleSheet.create<{
     backgroundColor: '#F8F7FF',
   },
   quickPickText: {
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
     fontSize: screenWidth < 350 ? 12 : 14,
     fontWeight: '400',
@@ -858,13 +827,13 @@ const styles = StyleSheet.create<{
 
   // Amount input styles
   amountInput: {
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
     fontSize: 16,
     fontWeight: '400',
@@ -872,7 +841,7 @@ const styles = StyleSheet.create<{
     minHeight: 56,
   },
   maxAmountText: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 12,
     fontWeight: '400',
@@ -883,7 +852,7 @@ const styles = StyleSheet.create<{
   buttonContainer: {
     paddingHorizontal: responsiveDims.horizontalPadding,
     paddingVertical: 24,
-    backgroundColor: Colors.background || '#F8F9FA',
+    backgroundColor: colors.background,
   },
   continueButton: {
     backgroundColor: '#35297F',

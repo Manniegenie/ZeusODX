@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useCallback } from 'react';
+import React, { useCallback , useMemo} from 'react';
 import { Polyline, Svg } from 'react-native-svg';
 import {
   ActivityIndicator,
@@ -14,7 +14,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useReferral } from '../../hooks/useReferral';
 
@@ -23,6 +24,8 @@ import backIcon from '../../components/icons/backy.png';
 import copyIcon from '../../components/icons/copy-icon.png';
 
 export default function ReferralScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { referralData, loading, error, refetch } = useReferral();
   const [showCopied, setShowCopied] = React.useState(false);
@@ -47,7 +50,7 @@ export default function ReferralScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safe}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
         {showCopied && <AddressCopied onDismiss={() => setShowCopied(false)} />}
 
         <ScrollView
@@ -166,8 +169,8 @@ export default function ReferralScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background || '#F7F6FF' },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safe: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 16 },
@@ -214,7 +217,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   stateText: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
   },
@@ -243,13 +246,13 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   label: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
     marginBottom: 8,
   },
   card: {
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 12,
@@ -258,7 +261,7 @@ const styles = StyleSheet.create({
 
   // Referral code card
   codeCard: {
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 12,
@@ -282,7 +285,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   codeHint: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 12,
     lineHeight: 17,
@@ -296,7 +299,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 12,
@@ -312,7 +315,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
   },
 
@@ -326,13 +329,13 @@ const styles = StyleSheet.create({
   },
   earningsLabel: {
     fontSize: 15,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
   },
   earningsValue: {
     fontSize: 15,
     fontWeight: '600',
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
   },
   earningsValueGreen: {
@@ -369,7 +372,7 @@ const styles = StyleSheet.create({
   },
   stepText: {
     fontSize: 14,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
     lineHeight: 21,
   },

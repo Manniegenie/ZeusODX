@@ -1,6 +1,6 @@
 // app/user/Swap.tsx
 import { useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState , useMemo} from 'react';
 import {
     Image,
     SafeAreaView,
@@ -17,7 +17,8 @@ import ErrorDisplay from '../../components/ErrorDisplay';
 import HintBulb from '../../components/HintBulb';
 import SwapPreviewModal from '../../components/SwapPreview';
 import SwapSuccessfulScreen from '../../components/SwapSuccess';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useDashboard } from '../../hooks/useDashboard';
@@ -65,6 +66,8 @@ export default function SwapScreen({
   onSelectToken, 
   onSwap 
 }: SwapScreenProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { defaultToken } = useLocalSearchParams(); // Capture passed token (e.g., BTC, ETH, BNB, TRX...)
 
   const [activeTab, setActiveTab] = useState<SwapTab>('buy-sell');
@@ -680,7 +683,7 @@ export default function SwapScreen({
                   onChangeText={handleFromAmountChange}
                   placeholder="0" 
                   keyboardType="decimal-pad" 
-                  placeholderTextColor={Colors.text.secondary} 
+                  placeholderTextColor={colors.textSecondary} 
                 />
                 {/* Show received USD value when quote exists, otherwise show sell value */}
                 <Text style={styles.usdValue}>
@@ -724,7 +727,7 @@ export default function SwapScreen({
                   editable={false}
                   placeholder="0"
                   keyboardType="decimal-pad"
-                  placeholderTextColor={Colors.text.secondary}
+                  placeholderTextColor={colors.textSecondary}
                 />
                 <Text style={styles.usdValue}>{formatUsdValue(toAmount, selectedToToken)}</Text>
               </View>
@@ -803,10 +806,10 @@ export default function SwapScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: Colors.background 
+    backgroundColor: colors.background 
   },
   safeArea: { 
     flex: 1 
@@ -836,7 +839,7 @@ const styles = StyleSheet.create({
   activeTabText: { 
     fontFamily: Typography.medium, 
     fontSize: 18, 
-    color: Colors.text.primary 
+    color: colors.text 
   },
   inputContainer: { 
     marginBottom: Layout.spacing.sm 
@@ -844,20 +847,20 @@ const styles = StyleSheet.create({
   inputLabel: { 
     fontFamily: Typography.medium, 
     fontSize: 16, 
-    color: Colors.text.primary, 
+    color: colors.text, 
     marginBottom: Layout.spacing.xs 
   },
-  inputCard: { 
-    backgroundColor: '#F8F9FA', 
-    borderRadius: Layout.borderRadius.lg, 
-    padding: Layout.spacing.md, 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    borderWidth: 1, 
-    borderColor: '#E5E7EB', 
-    minHeight: 80, 
-    width: '100%' 
+  inputCard: {
+    backgroundColor: colors.inputBg,
+    borderRadius: Layout.borderRadius.lg,
+    padding: Layout.spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    minHeight: 80,
+    width: '100%'
   },
   inputLeft: { 
     flex: 1, 
@@ -872,7 +875,7 @@ const styles = StyleSheet.create({
   amountInput: { 
     fontFamily: Typography.medium, 
     fontSize: 24, 
-    color: Colors.text.primary, 
+    color: colors.text, 
     fontWeight: '600', 
     padding: 0, 
     margin: 0, 
@@ -881,17 +884,17 @@ const styles = StyleSheet.create({
   usdValue: { 
     fontFamily: Typography.regular, 
     fontSize: 13, 
-    color: Colors.text.secondary, 
+    color: colors.textSecondary, 
     marginTop: 3 
   },
-  tokenSelector: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#E5E7EB', 
-    borderRadius: Layout.borderRadius.md, 
-    paddingHorizontal: Layout.spacing.sm, 
-    paddingVertical: Layout.spacing.xs, 
-    marginBottom: Layout.spacing.sm 
+  tokenSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.border,
+    borderRadius: Layout.borderRadius.md,
+    paddingHorizontal: Layout.spacing.sm,
+    paddingVertical: Layout.spacing.xs,
+    marginBottom: Layout.spacing.sm
   },
   tokenIcon: { 
     width: 18, 
@@ -902,7 +905,7 @@ const styles = StyleSheet.create({
   tokenText: { 
     fontFamily: Typography.medium, 
     fontSize: 12, 
-    color: Colors.text.primary, 
+    color: colors.text, 
     fontWeight: '600' 
   },
   balanceInfo: { 
@@ -913,12 +916,12 @@ const styles = StyleSheet.create({
   balanceText: { 
     fontFamily: Typography.regular, 
     fontSize: 10, 
-    color: Colors.text.secondary 
+    color: colors.textSecondary 
   },
   maxText: { 
     fontFamily: Typography.medium, 
     fontSize: 10, 
-    color: Colors.primary, 
+    color: colors.primary, 
     fontWeight: '600' 
   },
   swapIconContainer: { 
@@ -934,7 +937,7 @@ const styles = StyleSheet.create({
     marginTop: Layout.spacing.lg 
   },
   swapActionButton: { 
-    backgroundColor: Colors.primary, 
+    backgroundColor: colors.primary, 
     borderRadius: Layout.borderRadius.lg, 
     paddingVertical: Layout.spacing.md, 
     alignItems: 'center' 
@@ -945,10 +948,10 @@ const styles = StyleSheet.create({
   swapActionButtonText: { 
     fontFamily: Typography.medium, 
     fontSize: 16, 
-    color: Colors.surface, 
+    color: colors.card, 
     fontWeight: '600' 
   },
   swapActionButtonTextDisabled: { 
-    color: Colors.text.secondary 
+    color: colors.textSecondary 
   },
 });

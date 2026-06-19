@@ -13,7 +13,8 @@ import {
   View
 } from 'react-native';
 import ErrorDisplay from '../../components/ErrorDisplay';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useEmailVerification } from '../../hooks/useEmailVerification';
@@ -43,6 +44,8 @@ interface ErrorDisplayData {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function VerifyEmailSendScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   // Profile → current email
@@ -245,8 +248,8 @@ export default function VerifyEmailSendScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   content: { flex: 1, paddingHorizontal: Layout.spacing.lg },
 
   headerSection: { paddingTop: 12, paddingBottom: 6 },
@@ -279,13 +282,13 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold,
     fontSize: 24,
     lineHeight: 28,
-    color: Colors.primaryText,
+    color: colors.text,
     marginBottom: Layout.spacing.xs,
     textAlign: 'center',
   },
   subtitle: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: Layout.spacing.md,
     lineHeight: 20,
@@ -299,24 +302,24 @@ const styles = StyleSheet.create({
   emailText: {
     fontFamily: Typography.medium,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  loadingText: { color: Colors.text.secondary },
+  loadingText: { color: colors.textSecondary },
 
   linkBtn: { marginTop: Layout.spacing.sm },
-  linkBtnText: { color: Colors.primary, fontWeight: '600' },
+  linkBtnText: { color: colors.primary, fontWeight: '600' },
 
   buttonContainer: { paddingBottom: Layout.spacing.xl, paddingTop: Layout.spacing.xl, alignItems: 'center', width: '100%' },
   sendButton: {
     width: '100%',
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     paddingVertical: Layout.spacing.md,
     borderRadius: Layout.borderRadius.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: colors.primary,
   },
-  sendButtonText: { ...Typography.styles.bodyMedium, color: Colors.surface, fontWeight: '600' },
-  helperText: { marginTop: 8, color: Colors.text.secondary, ...Typography.styles.caption, textAlign: 'center' },
+  sendButtonText: { ...Typography.styles.bodyMedium, color: colors.card, fontWeight: '600' },
+  helperText: { marginTop: 8, color: colors.textSecondary, ...Typography.styles.caption, textAlign: 'center' },
 });

@@ -11,7 +11,8 @@ import {
     View
 } from 'react-native';
 import { moderateScale } from 'react-native-size-matters';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useTokens } from '../../hooks/useTokens';
@@ -40,6 +41,8 @@ export default function WalletTokensSection({
   onTabChange, 
   onAssetPress 
 }: WalletTokensSectionProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   
   // Get token metadata from useTokens
@@ -312,7 +315,7 @@ export default function WalletTokensSection({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   tokensContainer: {
     paddingHorizontal: Layout.spacing.lg,
     flex: 1,
@@ -327,15 +330,15 @@ const styles = StyleSheet.create({
   },
   activeTokenTab: {
     borderBottomWidth: 2,
-    borderBottomColor: Colors.primary,
+    borderBottomColor: colors.primary,
   },
   tokenTabText: {
     fontFamily: Typography.regular,
     fontSize: moderateScale(14, 0.1),
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   activeTokenTabText: {
-    color: Colors.primary,
+    color: colors.primary,
     fontFamily: Typography.medium,
   },
   tokenListContent: {
@@ -347,7 +350,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Layout.spacing.lg,
     paddingHorizontal: Layout.spacing.lg,
-    backgroundColor: '#F0EFFF',
+    backgroundColor: colors.card,
     marginBottom: Layout.spacing.sm,
     borderRadius: Layout.borderRadius.md,
     minHeight: moderateScale(72, 0.1),
@@ -383,14 +386,14 @@ const styles = StyleSheet.create({
   tokenName: {
     fontFamily: Typography.medium,
     fontSize: moderateScale(14, 0.1),
-    color: Colors.text.primary,
+    color: colors.text,
     fontWeight: '600',
     marginBottom: moderateScale(3, 0.1),
   },
   tokenSymbol: {
     fontFamily: Typography.regular,
     fontSize: moderateScale(12, 0.1),
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   tokenRight: {
     alignItems: 'flex-end',
@@ -401,7 +404,7 @@ const styles = StyleSheet.create({
   tokenBalance: {
     fontFamily: Typography.medium,
     fontSize: moderateScale(13, 0.1),
-    color: Colors.text.primary,
+    color: colors.text,
     marginBottom: moderateScale(4, 0.1),
     fontWeight: '600',
     textAlign: 'right',
@@ -409,7 +412,7 @@ const styles = StyleSheet.create({
   tokenUsdValue: {
     fontFamily: Typography.regular,
     fontSize: moderateScale(12, 0.1),
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'right',
   },
   loadingContainer: {
@@ -421,7 +424,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontFamily: Typography.regular,
     fontSize: moderateScale(14, 0.1),
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   errorContainer: {
     flex: 1,
@@ -432,7 +435,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: Typography.regular,
     fontSize: moderateScale(14, 0.1),
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   emptyContainer: {
     flex: 1,
@@ -443,6 +446,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: Typography.regular,
     fontSize: moderateScale(14, 0.1),
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
 });

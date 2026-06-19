@@ -1,3 +1,4 @@
+import React, { useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -7,7 +8,8 @@ import {
   Image
 } from 'react-native';
 import { Typography } from '../constants/Typography';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { useRouter } from 'expo-router';
 
@@ -32,6 +34,8 @@ export default function CryptoAssetList({
   maxItems,
   onAssetPress 
 }: CryptoAssetListProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   const cryptoAssets: CryptoAsset[] = [
@@ -244,7 +248,7 @@ export default function CryptoAssetList({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -263,12 +267,12 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold,
     fontSize: 24,
     lineHeight: 28,
-    color: Colors.primaryText,
+    color: colors.text,
     marginBottom: Layout.spacing.xs,
   },
   subtitle: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     lineHeight: 20,
   },
   avatarContainer: {
@@ -279,12 +283,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: {
-    color: Colors.surface,
+    color: colors.card,
     fontFamily: Typography.medium,
     fontSize: 14,
   },
@@ -304,7 +308,7 @@ const styles = StyleSheet.create({
     paddingVertical: Layout.spacing.md,
     paddingHorizontal: Layout.spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
+    borderBottomColor: colors.border,
   },
   assetLeft: {
     flexDirection: 'row',
@@ -318,12 +322,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   iconText: {
-    color: Colors.surface,
+    color: colors.card,
     fontFamily: Typography.bold,
     fontSize: 16,
   },
@@ -333,13 +337,13 @@ const styles = StyleSheet.create({
   assetName: {
     fontFamily: Typography.medium,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: colors.text,
     marginBottom: 2,
   },
   assetSymbol: {
     fontFamily: Typography.regular,
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   assetRight: {
     alignItems: 'flex-end',
@@ -347,7 +351,7 @@ const styles = StyleSheet.create({
   assetPrice: {
     fontFamily: Typography.medium,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: colors.text,
     marginBottom: 2,
   },
   assetChange: {

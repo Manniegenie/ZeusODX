@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState , useMemo} from 'react';
 import {
     Image,
     Modal,
@@ -7,7 +7,8 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
 import { useTokens } from '../hooks/useTokens';
@@ -35,6 +36,8 @@ export default function SwapPreviewModal({
   toToken,
   rate,
 }: SwapPreviewModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [countdown, setCountdown] = useState(10);
   const { tokens } = useTokens();
 
@@ -108,20 +111,20 @@ export default function SwapPreviewModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  modalContainer: { backgroundColor: Colors.surface, borderRadius: Layout.borderRadius.lg, padding: Layout.spacing.lg, width: '90%' },
+  modalContainer: { backgroundColor: colors.card, borderRadius: Layout.borderRadius.lg, padding: Layout.spacing.lg, width: '90%' },
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Layout.spacing.lg },
-  title: { fontFamily: Typography.medium, fontSize: 18, color: Colors.text.primary },
-  closeText: { fontSize: 20, color: Colors.text.secondary },
+  title: { fontFamily: Typography.medium, fontSize: 18, color: colors.text },
+  closeText: { fontSize: 20, color: colors.textSecondary },
   assetBox: { backgroundColor: '#F5F5F5', borderRadius: Layout.borderRadius.md, padding: Layout.spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: Layout.spacing.sm },
-  assetAmount: { fontFamily: Typography.medium, fontSize: 18, color: Colors.text.primary },
+  assetAmount: { fontFamily: Typography.medium, fontSize: 18, color: colors.text },
   assetIcon: { width: 28, height: 28, resizeMode: 'contain' },
-  arrow: { textAlign: 'center', fontSize: 22, color: Colors.text.secondary, marginVertical: Layout.spacing.sm },
+  arrow: { textAlign: 'center', fontSize: 22, color: colors.textSecondary, marginVertical: Layout.spacing.sm },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: Layout.spacing.xs },
-  detailLabel: { fontFamily: Typography.regular, fontSize: 14, color: Colors.text.secondary },
-  detailValue: { fontFamily: Typography.medium, fontSize: 14, color: Colors.text.primary },
-  confirmButton: { backgroundColor: Colors.primary, borderRadius: Layout.borderRadius.lg, paddingVertical: Layout.spacing.md, marginTop: Layout.spacing.lg, alignItems: 'center' },
+  detailLabel: { fontFamily: Typography.regular, fontSize: 14, color: colors.textSecondary },
+  detailValue: { fontFamily: Typography.medium, fontSize: 14, color: colors.text },
+  confirmButton: { backgroundColor: colors.primary, borderRadius: Layout.borderRadius.lg, paddingVertical: Layout.spacing.md, marginTop: Layout.spacing.lg, alignItems: 'center' },
   disabledButton: { backgroundColor: '#ccc' },
-  confirmButtonText: { color: Colors.surface, fontFamily: Typography.medium, fontSize: 16 },
+  confirmButtonText: { color: colors.card, fontFamily: Typography.medium, fontSize: 16 },
 });

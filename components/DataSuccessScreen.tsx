@@ -1,6 +1,8 @@
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, SafeAreaView } from 'react-native';
 import { Typography } from '../constants/Typography';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 
 interface DataPurchaseSuccessScreenProps {
@@ -32,6 +34,8 @@ export default function DataPurchaseSuccessScreen({
   onCopyTransactionId,
   visible = true
 }: DataPurchaseSuccessScreenProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   
   return (
     <Modal
@@ -127,10 +131,10 @@ export default function DataPurchaseSuccessScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -144,7 +148,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: Typography.medium,
     fontSize: 18,
-    color: Colors.primaryText,
+    color: colors.text,
   },
   mainContent: {
     flex: 1,
@@ -158,7 +162,7 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold,
     fontSize: 32,
     lineHeight: 38,
-    color: Colors.primaryText,
+    color: colors.text,
     marginBottom: Layout.spacing.sm,
   },
   successIndicator: {
@@ -178,7 +182,7 @@ const styles = StyleSheet.create({
     color: '#10B981', // Green color
   },
   detailsCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderRadius: Layout.borderRadius.lg,
     padding: Layout.spacing.lg,
     marginBottom: Layout.spacing.xxl,
@@ -197,18 +201,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Layout.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: colors.border,
   },
   detailLabel: {
     fontFamily: Typography.regular,
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     flex: 1,
   },
   detailValue: {
     fontFamily: Typography.medium,
     fontSize: 14,
-    color: Colors.primaryText,
+    color: colors.text,
     textAlign: 'right',
     flex: 1,
   },
@@ -221,7 +225,7 @@ const styles = StyleSheet.create({
   transactionIdText: {
     fontFamily: Typography.medium,
     fontSize: 14,
-    color: Colors.primaryText,
+    color: colors.text,
     marginRight: Layout.spacing.xs,
   },
   copyButton: {
@@ -230,7 +234,7 @@ const styles = StyleSheet.create({
   copyIcon: {
     width: 16,
     height: 16,
-    tintColor: Colors.text.secondary,
+    tintColor: colors.textSecondary,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -241,7 +245,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: colors.primary,
     paddingVertical: Layout.spacing.md,
     borderRadius: Layout.borderRadius.lg,
     alignItems: 'center',
@@ -249,12 +253,12 @@ const styles = StyleSheet.create({
   shareButtonText: {
     fontFamily: Typography.medium,
     fontSize: 16,
-    color: Colors.primary,
+    color: colors.primary,
     fontWeight: '600',
   },
   downloadButton: {
     flex: 1,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     paddingVertical: Layout.spacing.md,
     borderRadius: Layout.borderRadius.lg,
     alignItems: 'center',
@@ -262,7 +266,7 @@ const styles = StyleSheet.create({
   downloadButtonText: {
     fontFamily: Typography.medium,
     fontSize: 16,
-    color: Colors.surface,
+    color: colors.card,
     fontWeight: '600',
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState , useMemo} from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 
 // Asset imports
@@ -41,6 +42,8 @@ interface SelectedUser {
 }
 
 export default function TransferScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { userId, username, fullName } = useLocalSearchParams();
   
@@ -111,7 +114,7 @@ export default function TransferScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
 
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Header */}
@@ -135,7 +138,7 @@ export default function TransferScreen() {
                   onChangeText={handleAmountChange}
                   placeholder="0" 
                   keyboardType="decimal-pad" 
-                  placeholderTextColor={Colors.text.secondary}
+                  placeholderTextColor={colors.textSecondary}
                 />
                 <Text style={styles.usdValue} allowFontScaling={false}>{formatUsdValue(amount)}</Text>
               </View>
@@ -198,10 +201,10 @@ export default function TransferScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   safeArea: {
     flex: 1,
@@ -227,7 +230,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 20,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontWeight: '500',
   },
   headerTitle: {
@@ -266,7 +269,7 @@ const styles = StyleSheet.create({
   amountInput: {
     fontFamily: Typography.medium,
     fontSize: 24,
-    color: Colors.text.primary,
+    color: colors.text,
     fontWeight: '600',
     padding: 0,
     margin: 0,
@@ -275,7 +278,7 @@ const styles = StyleSheet.create({
   usdValue: {
     fontFamily: Typography.regular,
     fontSize: 13,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     marginTop: 3,
   },
   tokenSelector: {
@@ -300,7 +303,7 @@ const styles = StyleSheet.create({
   tokenText: {
     fontFamily: Typography.medium,
     fontSize: 12,
-    color: Colors.text.primary,
+    color: colors.text,
     fontWeight: '600',
   },
 
@@ -313,7 +316,7 @@ const styles = StyleSheet.create({
   },
   percentageButton: {
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderRadius: Layout.borderRadius.md, // Consistent with swap screen
     paddingVertical: Layout.spacing.sm,
     alignItems: 'center',
@@ -323,7 +326,7 @@ const styles = StyleSheet.create({
   percentageText: {
     fontFamily: Typography.medium,
     fontSize: 13,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
 
@@ -372,7 +375,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   userName: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: 'Bricolage Grotesque',
     fontSize: 14,
     fontWeight: '700',
@@ -382,7 +385,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   userUsername: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: 'Bricolage Grotesque',
     fontSize: 10,
     fontWeight: '500',
@@ -398,7 +401,7 @@ const styles = StyleSheet.create({
     paddingBottom: Layout.spacing.xl,
   },
   reviewButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: Layout.borderRadius.lg, // Same as swap screen action button
     paddingVertical: Layout.spacing.md,
     alignItems: 'center',
@@ -406,7 +409,7 @@ const styles = StyleSheet.create({
   reviewButtonText: {
     fontFamily: Typography.medium,
     fontSize: 16,
-    color: Colors.surface,
+    color: colors.card,
     fontWeight: '600',
   },
 });

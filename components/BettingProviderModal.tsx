@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState , useMemo} from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -10,7 +10,8 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
 import { useBetting } from '../hooks/useBetting';
@@ -66,6 +67,8 @@ const BettingProviderSelectionModal: React.FC<BettingProviderSelectionModalProps
   onSelectProvider,
   selectedProvider
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { getBettingProviders, getStaticBettingProviders } = useBetting();
   const [providers, setProviders] = useState<BettingProvider[]>([]);
   const [loading, setLoading] = useState(false);
@@ -180,7 +183,7 @@ const BettingProviderSelectionModal: React.FC<BettingProviderSelectionModalProps
 
               {loading ? (
                 <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color={Colors.primary} />
+                  <ActivityIndicator size="large" color={colors.primary} />
                   <Text style={styles.loadingText}>Loading providers...</Text>
                 </View>
               ) : (
@@ -201,14 +204,14 @@ const BettingProviderSelectionModal: React.FC<BettingProviderSelectionModalProps
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   modalOverlay: { 
     flex: 1, 
     backgroundColor: 'rgba(0,0,0,0.5)', 
     justifyContent: 'flex-end' 
   },
   modalContent: { 
-    backgroundColor: Colors.surface, 
+    backgroundColor: colors.card, 
     borderTopLeftRadius: Layout.borderRadius.xl, 
     borderTopRightRadius: Layout.borderRadius.xl, 
     padding: Layout.spacing.lg, 
@@ -223,11 +226,11 @@ const styles = StyleSheet.create({
   modalTitle: { 
     fontFamily: Typography.bold, 
     fontSize: 18, 
-    color: Colors.text.primary 
+    color: colors.text 
   },
   closeButton: { 
     fontSize: 16, 
-    color: Colors.text.secondary, 
+    color: colors.textSecondary, 
     padding: Layout.spacing.sm 
   },
   providerList: { 
@@ -273,12 +276,12 @@ const styles = StyleSheet.create({
   providerName: { 
     fontFamily: Typography.medium, 
     fontSize: 14, 
-    color: Colors.text.primary 
+    color: colors.text 
   },
   providerCategory: { 
     fontFamily: Typography.regular, 
     fontSize: 12, 
-    color: Colors.text.secondary 
+    color: colors.textSecondary 
   },
   selectedIndicator: {
     width: 24,
@@ -298,7 +301,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     marginTop: 12,
   },
 });

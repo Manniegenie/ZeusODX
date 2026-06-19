@@ -1,11 +1,12 @@
 // app/user/TransactionHistoryScreen.tsx (General History)
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect , useMemo} from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image, SafeAreaView, StatusBar,
   ScrollView, Modal, TouchableWithoutFeedback, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useGeneralHistory';
 import emptyStateIcon from '../../components/icons/empty-black.png';
@@ -16,6 +17,8 @@ import backIcon from '../../components/icons/backy.png';
 const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const TransactionHistoryScreen = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   // NOTE: General history doesn't need a specific currency - it shows everything
   
@@ -564,7 +567,7 @@ const TransactionHistoryScreen = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor="#F3F0FF" barStyle="dark-content" />
+        <StatusBar backgroundColor="#F3F0FF" barStyle={colors.statusBar} />
         
         {/* Header */}
         <View style={styles.header}>
@@ -624,7 +627,7 @@ const TransactionHistoryScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F0FF' },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },

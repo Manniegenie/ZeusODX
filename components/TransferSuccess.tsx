@@ -1,5 +1,5 @@
 // components/TransferSuccessModal.tsx
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef , useMemo} from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography } from '../constants/Typography';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { storeReviewService } from '../services/storeReviewService';
 import AppsFlyerService from '../services/appsFlyerService';
@@ -41,6 +42,8 @@ const TransferSuccessModal: React.FC<TransferSuccessModalProps> = ({
   transferDate,
   transferType = 'Transfer',
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   // ——— Use the same Animated structure as 2FA modal to avoid overflow
@@ -172,7 +175,7 @@ const TransferSuccessModal: React.FC<TransferSuccessModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   // ——— Overlay identical to 2FA modal for consistent sizing/behavior
   overlay: {
     flex: 1,

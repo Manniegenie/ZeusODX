@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef , useMemo} from 'react';
 import {
     Animated,
     Dimensions,
@@ -9,7 +9,8 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -31,6 +32,8 @@ const BaseModal: React.FC<BaseModalProps> = ({
   avoidKeyboard = true,
   disableBackdropPress = false,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -143,7 +146,7 @@ const BaseModal: React.FC<BaseModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -160,7 +163,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   modalContainer: {
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     width: '90%',
     maxWidth: 400,
     borderRadius: Layout.borderRadius?.xl || 16,

@@ -1,5 +1,5 @@
 // components/UtilityPurchaseSuccessModal.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,8 @@ import {
   Clipboard,
 } from 'react-native';
 import { Typography } from '../constants/Typography';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { useRouter } from 'expo-router';
 
@@ -50,6 +51,8 @@ export default function UtilityPurchaseSuccessModal({
   additionalInfo,
   receipt
 }: UtilityPurchaseSuccessModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   const handleContinue = () => {
@@ -170,7 +173,7 @@ function Row({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: { flex: 1 },
   overlayBackground: {
     flex: 1,
@@ -185,7 +188,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: Colors.background || '#FFFFFF',
+    backgroundColor: colors.background,
     borderRadius: Layout?.borderRadius?.xl || 16,
     paddingHorizontal: Layout?.spacing?.xl || 24,
     paddingVertical: Layout?.spacing?.xl || 24,
@@ -205,7 +208,7 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold || 'System',
     fontSize: 20,
     lineHeight: 24,
-    color: Colors.primaryText || Colors.text?.primary || '#111827',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: Layout?.spacing?.md || 16,
     fontWeight: '700',
@@ -230,7 +233,7 @@ const styles = StyleSheet.create({
   rowLabel: {
     flexShrink: 0,
     width: 120,
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
   },
@@ -242,7 +245,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   rowValue: {
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 13,
     textAlign: 'right',
@@ -253,7 +256,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -262,13 +265,13 @@ const styles = StyleSheet.create({
   copyIcon: { width: 16, height: 16 },
 
   metaLine: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 12,
     marginBottom: Layout?.spacing?.sm || 10,
   },
   continueButton: {
-    backgroundColor: Colors.primary || '#35297F',
+    backgroundColor: colors.primary,
     paddingVertical: Layout?.spacing?.md || 14,
     paddingHorizontal: Layout?.spacing?.xl || 24,
     borderRadius: Layout?.borderRadius?.lg || 10,
@@ -278,7 +281,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.surface || '#FFFFFF',
+    color: colors.card,
     fontFamily: Typography.medium || 'System',
   },
 });

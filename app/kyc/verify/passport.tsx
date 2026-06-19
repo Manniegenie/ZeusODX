@@ -22,7 +22,8 @@ import {
 import Svg, { Circle, Defs, Mask, Rect } from 'react-native-svg';
 import ErrorDisplay from '../../../components/ErrorDisplay';
 import backIcon from '../../../components/icons/backy.png';
-import { Colors } from '../../../constants/Colors';
+import { useTheme } from '../../../hooks/useTheme';
+import type { AppColors } from '../../../hooks/useTheme';
 import { Typography } from '../../../constants/Typography';
 import { useBiometricVerification } from '../../../hooks/useKYC';
 import AppsFlyerService from '../../../services/appsFlyerService';
@@ -125,6 +126,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 };
 
 export default function PassportVerify() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [passportNumber, setPassportNumber] = useState('');
   const [step, setStep] = useState<Step>('input');
@@ -295,7 +298,7 @@ export default function PassportVerify() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar backgroundColor={step === 'camera' ? '#000' : Colors.background} barStyle={step === 'camera' ? 'light-content' : 'dark-content'} />
+      <StatusBar backgroundColor={step === 'camera' ? '#000' : colors.background} barStyle={step === 'camera' ? 'light-content' : 'dark-content'} />
       {showError && <ErrorDisplay type={errorType} message={errorMessage} onDismiss={closeError} />}
       {step === 'input' && renderInputStep()}
       {step === 'camera' && renderCameraStep()}
@@ -311,8 +314,8 @@ export default function PassportVerify() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
   headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },

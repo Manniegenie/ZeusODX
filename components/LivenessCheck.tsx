@@ -1,6 +1,6 @@
 // components/LivenessCheck.tsx
 import { CameraView } from 'expo-camera';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState , useMemo} from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -11,7 +11,8 @@ import {
   View,
 } from 'react-native';
 import Svg, { Circle, Defs, Mask, Rect } from 'react-native-svg';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -104,6 +105,8 @@ const ProgressRing = ({ progress, size = 300 }: { progress: number; size?: numbe
 };
 
 export default function LivenessCheck({ onComplete, onCancel, backIcon }: LivenessCheckProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const cameraRef = useRef<CameraView | null>(null);
   const [step, setStep] = useState<'intro' | 'challenge' | 'capturing' | 'complete'>('intro');
   const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
@@ -367,7 +370,7 @@ export default function LivenessCheck({ onComplete, onCancel, backIcon }: Livene
   return null;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
@@ -485,7 +488,7 @@ const styles = StyleSheet.create({
   },
   previewContainer: {
     flex: 1,
-    backgroundColor: Colors.background || '#F8F9FA',
+    backgroundColor: colors.background,
   },
   previewContent: {
     flex: 1,

@@ -1,10 +1,14 @@
+import React, { useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 
 export default function VerificationSuccessScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   const handleContinue = () => {
@@ -44,10 +48,10 @@ export default function VerificationSuccessScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -73,14 +77,14 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold,
     fontSize: 24,
     lineHeight: 28,
-    color: Colors.primaryText,
+    color: colors.text,
     textAlign: 'center',
     marginBottom: Layout.spacing.sm,
     marginTop: Layout.spacing.md,
   },
   subtitle: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
   },
@@ -88,13 +92,13 @@ const styles = StyleSheet.create({
     paddingBottom: Layout.spacing.xl,
   },
   continueButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     paddingVertical: Layout.spacing.md,
     borderRadius: Layout.borderRadius.lg,
     alignItems: 'center',
   },
   continueButtonText: {
     ...Typography.styles.bodyMedium,
-    color: Colors.surface,
+    color: colors.card,
   },
 });

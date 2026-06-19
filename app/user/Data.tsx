@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState , useMemo} from 'react';
 import {
     Dimensions,
     Image,
@@ -21,7 +21,8 @@ import ErrorDisplay from '../../components/ErrorDisplay';
 import Loading from '../../components/Loading';
 import PinEntryModal from '../../components/PinEntry';
 import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useData } from '../../hooks/useData';
 
@@ -72,6 +73,8 @@ interface PurchaseData { phone: string; service_id: string; variation_id: string
 interface TransactionData { network: NetworkProvider | null; amount: string; phoneNumber: string; selectedPlan: DataPlan | null; rate: string; }
 
 const BuyDataScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const {
     loading, error, selectedPlan, purchaseData, selectDataPlan, clearSelectedPlan, clearErrors,
@@ -494,7 +497,7 @@ const BuyDataScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
         
         {showErrorDisplay && errorDisplayData && (
           <ErrorDisplay {...errorDisplayData} onDismiss={hideErrorDisplay} />
@@ -553,7 +556,7 @@ const BuyDataScreen: React.FC = () => {
                 <TextInput 
                   style={styles.mobileInput} 
                   placeholder="Enter mobile number" 
-                  placeholderTextColor={Colors.text?.secondary} 
+                  placeholderTextColor={colors.textSecondary} 
                   value={mobileNumber} 
                   onChangeText={setMobileNumber} 
                   keyboardType="phone-pad" 
@@ -688,10 +691,10 @@ const BuyDataScreen: React.FC = () => {
 };
 
 // Responsive styles
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: Colors.background || '#F8F9FA' 
+    backgroundColor: colors.background 
   },
   safeArea: { 
     flex: 1 
@@ -716,7 +719,7 @@ const styles = StyleSheet.create({
     marginBottom: 24 
   },
   sectionTitle: { 
-    color: Colors.text?.secondary || '#6B7280', 
+    color: colors.textSecondary, 
     fontFamily: Typography.regular, 
     fontSize: 14, 
     fontWeight: '400', 
@@ -781,7 +784,7 @@ const styles = StyleSheet.create({
   },
   mobileInputContainer: { 
     flex: 1, 
-    backgroundColor: Colors.surface, 
+    backgroundColor: colors.card, 
     borderRadius: 8, 
     borderWidth: 1, 
     borderColor: '#E5E7EB', 
@@ -790,7 +793,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   mobileInput: { 
-    color: Colors.text?.primary || '#111827', 
+    color: colors.text, 
     fontFamily: Typography.regular, 
     fontSize: 16, 
     fontWeight: '400', 
@@ -809,7 +812,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain' 
   },
   helperText: { 
-    color: Colors.text?.secondary || '#6B7280', 
+    color: colors.textSecondary, 
     fontFamily: Typography.regular, 
     fontSize: 11, 
     fontWeight: '400', 
@@ -820,7 +823,7 @@ const styles = StyleSheet.create({
   
   // Data plan selector
   dataPlanSelector: { 
-    backgroundColor: Colors.surface, 
+    backgroundColor: colors.card, 
     borderRadius: 8, 
     borderWidth: 1, 
     borderColor: '#E5E7EB', 
@@ -836,7 +839,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB' 
   },
   dataPlanSelectorText: { 
-    color: Colors.text?.primary || '#111827', 
+    color: colors.text, 
     fontFamily: Typography.regular, 
     fontSize: 16, 
     fontWeight: '400', 
@@ -844,10 +847,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   dataPlanSelectorPlaceholder: { 
-    color: Colors.text?.secondary || '#6B7280' 
+    color: colors.textSecondary 
   },
   dropdownArrow: { 
-    color: Colors.text?.secondary || '#6B7280', 
+    color: colors.textSecondary, 
     fontSize: 16, 
     fontWeight: '500',
     marginLeft: 8,
@@ -862,7 +865,7 @@ const styles = StyleSheet.create({
     marginBottom: 24 
   },
   summaryTitle: { 
-    color: Colors.text?.primary || '#111827', 
+    color: colors.text, 
     fontFamily: Typography.medium, 
     fontSize: 14, 
     fontWeight: '600', 
@@ -876,7 +879,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   summaryData: { 
-    color: Colors.text?.primary || '#111827', 
+    color: colors.text, 
     fontFamily: Typography.medium, 
     fontSize: 16, 
     fontWeight: '600',
@@ -890,7 +893,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   summaryValidity: { 
-    color: Colors.text?.secondary || '#6B7280', 
+    color: colors.textSecondary, 
     fontFamily: Typography.regular, 
     fontSize: 12, 
     fontWeight: '400' 
@@ -900,7 +903,7 @@ const styles = StyleSheet.create({
   buttonContainer: { 
     paddingHorizontal: responsiveDims.horizontalPadding, 
     paddingVertical: 24, 
-    backgroundColor: Colors.background 
+    backgroundColor: colors.background 
   },
   continueButton: { 
     backgroundColor: '#35297F', 

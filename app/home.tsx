@@ -1,10 +1,14 @@
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
 import { Typography } from '../constants/Typography';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   return (
@@ -95,7 +99,7 @@ export default function HomeScreen() {
                 <Text style={styles.transactionDate}>Yesterday, 11:45 AM</Text>
               </View>
               <View style={styles.transactionAmount}>
-                <Text style={[styles.transactionValue, { color: Colors.error }]}>-0.25 ETH</Text>
+                <Text style={[styles.transactionValue, { color: colors.destructive }]}>-0.25 ETH</Text>
                 <Text style={styles.transactionUsd}>$456.75</Text>
               </View>
             </View>
@@ -106,10 +110,10 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -124,16 +128,16 @@ const styles = StyleSheet.create({
   },
   greeting: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   userName: {
     ...Typography.styles.h2,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   profileButton: {
     width: 40,
     height: 40,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
@@ -147,7 +151,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   balanceCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     padding: Layout.spacing.xl,
     borderRadius: Layout.borderRadius.xl,
     marginBottom: Layout.spacing.xl,
@@ -159,24 +163,24 @@ const styles = StyleSheet.create({
   },
   balanceLabel: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     marginBottom: Layout.spacing.sm,
   },
   balanceAmount: {
     ...Typography.styles.display,
-    color: Colors.text.primary,
+    color: colors.text,
     marginBottom: Layout.spacing.xs,
   },
   balanceChange: {
     ...Typography.styles.caption,
-    color: Colors.success,
+    color: colors.success,
   },
   quickActions: {
     marginBottom: Layout.spacing.xl,
   },
   sectionTitle: {
     ...Typography.styles.h3,
-    color: Colors.text.primary,
+    color: colors.text,
     marginBottom: Layout.spacing.lg,
   },
   actionsRow: {
@@ -190,7 +194,7 @@ const styles = StyleSheet.create({
   actionIcon: {
     width: 60,
     height: 60,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
@@ -206,7 +210,7 @@ const styles = StyleSheet.create({
   },
   actionText: {
     ...Typography.styles.caption,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   transactions: {
     marginBottom: Layout.spacing.xl,
@@ -219,13 +223,13 @@ const styles = StyleSheet.create({
   },
   seeAllText: {
     ...Typography.styles.body,
-    color: Colors.primary,
+    color: colors.primary,
   },
   transactionsList: {
     gap: Layout.spacing.md,
   },
   transactionItem: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     padding: Layout.spacing.lg,
     borderRadius: Layout.borderRadius.lg,
     flexDirection: 'row',
@@ -247,30 +251,30 @@ const styles = StyleSheet.create({
   },
   transactionEmoji: {
     fontSize: 16,
-    color: Colors.surface,
+    color: colors.card,
   },
   transactionDetails: {
     flex: 1,
   },
   transactionTitle: {
     ...Typography.styles.bodyMedium,
-    color: Colors.text.primary,
+    color: colors.text,
     marginBottom: Layout.spacing.xs,
   },
   transactionDate: {
     ...Typography.styles.caption,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   transactionAmount: {
     alignItems: 'flex-end',
   },
   transactionValue: {
     ...Typography.styles.bodyMedium,
-    color: Colors.success,
+    color: colors.success,
     marginBottom: Layout.spacing.xs,
   },
   transactionUsd: {
     ...Typography.styles.caption,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
 });

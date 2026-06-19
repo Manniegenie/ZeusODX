@@ -8,7 +8,8 @@ import {
     View,
 } from 'react-native';
 import { moderateScale } from 'react-native-size-matters';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useTokens } from '../../hooks/useTokens';
@@ -34,6 +35,8 @@ export default function TokensSection({
   onTabChange,
   onAssetPress,
 }: TokensSectionProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const {
     tokens: allTokens,
     favoriteTokens,
@@ -106,12 +109,7 @@ export default function TokensSection({
       </View>
       <View style={styles.tokenRight}>
         <Text style={styles.tokenPrice} numberOfLines={1} ellipsizeMode="tail">{item.price}</Text>
-        <View
-          style={[
-            styles.changeContainer,
-            { backgroundColor: item.isPositive ? '#E8F5E8' : '#FFE8E8' },
-          ]}
-        >
+        <View style={styles.changeContainer}>
           <Text
             style={[
               styles.changeText,
@@ -213,15 +211,11 @@ export default function TokensSection({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   tokensContainer: {
     paddingHorizontal: Layout.spacing.lg,
     flex: 1,
-    position: 'relative',
-    marginTop: -12, // Ensure no margin is adding space
-    // OR
-    // marginTop: -10, // Use negative to pull it closer if necessary
-},
+  },
   tokenTabs: {
     flexDirection: 'row',
     gap: Layout.spacing.lg,
@@ -232,15 +226,15 @@ const styles = StyleSheet.create({
   },
   activeTokenTab: {
     borderBottomWidth: 2,
-    borderBottomColor: Colors.primary,
+    borderBottomColor: colors.primary,
   },
   tokenTabText: {
     fontFamily: Typography.regular,
     fontSize: moderateScale(14, 0.1),
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   activeTokenTabText: {
-    color: Colors.primary,
+    color: colors.primary,
     fontFamily: Typography.medium,
   },
   tokenListContent: {
@@ -252,7 +246,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Layout.spacing.lg,
     paddingHorizontal: Layout.spacing.lg,
-    backgroundColor: '#F0EFFF',
+    backgroundColor: colors.card,
     marginBottom: Layout.spacing.sm,
     borderRadius: Layout.borderRadius.md,
     minHeight: moderateScale(72, 0.1),
@@ -288,13 +282,13 @@ const styles = StyleSheet.create({
   tokenName: {
     fontFamily: Typography.medium,
     fontSize: moderateScale(14, 0.1),
-    color: Colors.text.primary,
+    color: colors.text,
     fontWeight: '600',
   },
   tokenSymbol: {
     fontFamily: Typography.regular,
     fontSize: moderateScale(12, 0.1),
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   tokenRight: {
     alignItems: 'flex-end',
@@ -305,17 +299,12 @@ const styles = StyleSheet.create({
   tokenPrice: {
     fontFamily: Typography.medium,
     fontSize: moderateScale(13, 0.1),
-    color: Colors.text.primary,
+    color: colors.text,
     fontWeight: '600',
     textAlign: 'right',
   },
   changeContainer: {
-    paddingHorizontal: moderateScale(6, 0.1),
-    paddingVertical: moderateScale(2, 0.1),
-    borderRadius: moderateScale(6, 0.1),
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: moderateScale(50, 0.1),
+    alignItems: 'flex-end',
     marginTop: moderateScale(4, 0.1),
   },
   changeText: {
@@ -332,7 +321,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontFamily: Typography.regular,
     fontSize: moderateScale(14, 0.1),
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   errorContainer: {
     flex: 1,
@@ -343,7 +332,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: Typography.regular,
     fontSize: moderateScale(14, 0.1),
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   emptyContainer: {
     flex: 1,
@@ -354,6 +343,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: Typography.regular,
     fontSize: moderateScale(14, 0.1),
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
 });

@@ -1,6 +1,6 @@
 // app/deposits/bnb-eth.tsx
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState , useMemo} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -19,7 +19,8 @@ import {
 import AddressCopied from '../../components/AddressCopied';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useDeposit } from '../../hooks/useDeposit';
 import { shareDepositPdf } from '../../utils/shareDepositPdf';
@@ -55,6 +56,8 @@ const getHorizontalPadding = (): number => {
 const horizontalPadding = getHorizontalPadding();
 
 export default function BnbEthDepositScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const {
     getBNBAddress,
@@ -154,7 +157,7 @@ export default function BnbEthDepositScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
 
         {showError && (
           <ErrorDisplay type={errorType} message={errorMessage} onDismiss={hideError} autoHide={false} />
@@ -170,8 +173,8 @@ export default function BnbEthDepositScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[Colors.primary]}
-              tintColor={Colors.primary}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
             />
           }
         >
@@ -205,7 +208,7 @@ export default function BnbEthDepositScreen() {
             <View style={styles.qrContainer}>
               {isLoading ? (
                 <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color={Colors.primary} />
+                  <ActivityIndicator size="large" color={colors.primary} />
                   <Text style={styles.loadingText}>Loading BNB address...</Text>
                 </View>
               ) : qrCodeData ? (
@@ -293,10 +296,10 @@ export default function BnbEthDepositScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: Colors.background 
+    backgroundColor: colors.background 
   },
   safeArea: { 
     flex: 1 
@@ -339,14 +342,14 @@ const styles = StyleSheet.create({
     width: 40,
   },
   headerTitle: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 18,
     textAlign: 'center',
     fontWeight: '600',
   },
   headerSubtitle: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 12,
     textAlign: 'center',
@@ -359,7 +362,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   subtitle: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 14,
     textAlign: 'center',
@@ -382,7 +385,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 12,
     marginTop: 10,
@@ -405,14 +408,14 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   noQrText: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 8,
   },
   placeholderText: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 14,
     textAlign: 'center',
@@ -422,7 +425,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   sectionLabel: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 14,
     marginBottom: 12,
@@ -439,7 +442,7 @@ const styles = StyleSheet.create({
   },
   addressText: {
     flex: 1,
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: 'monospace',
     fontSize: 14,
     lineHeight: 20,
@@ -449,7 +452,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -485,12 +488,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   detailLabel: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 14,
   },
   detailValue: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 14,
   },
@@ -523,7 +526,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   shareButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -532,7 +535,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#A5A6F6',
   },
   shareButtonText: {
-    color: Colors.surface,
+    color: colors.card,
     fontFamily: Typography.medium,
     fontSize: 16,
   },

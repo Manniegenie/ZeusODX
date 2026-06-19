@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -9,7 +9,8 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
 
@@ -42,6 +43,8 @@ const NetworkSelectionModal: React.FC<NetworkSelectionModalProps> = ({
   error,
   tokenSymbol,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const handleNetworkPress = (network: NetworkOption) => {
     onSelectNetwork(network);
     onClose();
@@ -84,7 +87,7 @@ const NetworkSelectionModal: React.FC<NetworkSelectionModalProps> = ({
 
   const renderLoadingState = () => (
     <View style={styles.networkLoadingContainer}>
-      <ActivityIndicator size="large" color={Colors.primary} />
+      <ActivityIndicator size="large" color={colors.primary} />
       <Text style={styles.networkLoadingText}>Loading networks...</Text>
     </View>
   );
@@ -138,14 +141,14 @@ const NetworkSelectionModal: React.FC<NetworkSelectionModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderTopLeftRadius: Layout.borderRadius.xl,
     borderTopRightRadius: Layout.borderRadius.xl,
     padding: Layout.spacing.lg,
@@ -165,7 +168,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: Typography.bold,
     fontSize: 14,
-    color: Colors.text.primary,
+    color: colors.text,
     fontWeight: '600',
   },
   closeButtonContainer: {
@@ -173,7 +176,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   networkList: {
@@ -185,7 +188,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Layout.spacing.lg,
     paddingHorizontal: Layout.spacing.lg,
-    backgroundColor: '#F0EFFF',
+    backgroundColor: colors.card,
     marginBottom: Layout.spacing.sm,
     borderRadius: Layout.borderRadius.md,
   },
@@ -195,14 +198,14 @@ const styles = StyleSheet.create({
   networkName: {
     fontFamily: Typography.medium,
     fontSize: 13,
-    color: Colors.text.primary,
+    color: colors.text,
     fontWeight: '500',
     marginBottom: 2,
   },
   networkFee: {
     fontFamily: Typography.regular,
     fontSize: 12,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontWeight: '400',
   },
   networkLoadingContainer: {
@@ -214,7 +217,7 @@ const styles = StyleSheet.create({
   networkLoadingText: {
     fontFamily: Typography.regular,
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     marginTop: Layout.spacing.md,
   },
   emptyContainer: {
@@ -226,18 +229,18 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: Typography.regular,
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: Layout.spacing.md,
   },
   retryButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: Layout.borderRadius.md,
     paddingVertical: Layout.spacing.sm,
     paddingHorizontal: Layout.spacing.lg,
   },
   retryButtonText: {
-    color: Colors.surface,
+    color: colors.card,
     fontFamily: Typography.medium,
     fontSize: 14,
     fontWeight: '600',

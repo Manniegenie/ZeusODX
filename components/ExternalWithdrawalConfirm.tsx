@@ -64,7 +64,9 @@ const ExternalWithdrawalConfirm: React.FC<ExternalWithdrawalConfirmProps> = ({
     return `${address.substring(0, 10)}...${address.substring(address.length - 10)}`;
   };
 
-  const receiverWillGet = receiverAmount || (amount - fee);
+  const receiverWillGet = (receiverAmount !== undefined && receiverAmount !== null)
+    ? receiverAmount
+    : parseFloat((amount - fee).toFixed(8));
 
   // Slide animation
   useEffect(() => {

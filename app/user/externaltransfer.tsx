@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Dimensions,
     Image,
@@ -21,7 +21,8 @@ import NetworkSelectionModal from '../../components/NetworkSelectionModal';
 import PinEntryModal from '../../components/PinEntry';
 import HintBulb from '../../components/HintBulb';
 import ScreenHeader from '../../components/ScreenHeader';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useNetworks } from '../../hooks/useNetwork';
 import { useTokens } from '../../hooks/useTokens';
@@ -125,6 +126,8 @@ interface ErrorDisplayData {
 }
 
 const ExternalWalletTransferScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   // Network modal state
@@ -245,12 +248,30 @@ const ExternalWalletTransferScreen: React.FC = () => {
     }
   }, [selectedToken?.symbol]);
 
+  const feeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feeRequestIdRef = useRef<number>(0);
+
   useEffect(() => {
+    if (feeDebounceRef.current) clearTimeout(feeDebounceRef.current);
+
     if (selectedNetwork && amount && parseFloat(amount) > 0 && selectedToken?.symbol) {
-      calculateFee(parseFloat(amount), selectedToken.symbol, selectedNetwork.code);
+      // Reset immediately so stale amount/fee values never linger while typing
+      resetFeeCalculation();
+
+      feeDebounceRef.current = setTimeout(async () => {
+        const requestId = ++feeRequestIdRef.current;
+        const result = await calculateFee(parseFloat(amount), selectedToken.symbol, selectedNetwork.code);
+        // Discard if a newer request has already started
+        if (requestId !== feeRequestIdRef.current) return;
+        if (!result?.success) resetFeeCalculation();
+      }, 500); // wait 500ms after user stops typing
     } else {
       resetFeeCalculation();
     }
+
+    return () => {
+      if (feeDebounceRef.current) clearTimeout(feeDebounceRef.current);
+    };
   }, [selectedNetwork, amount, selectedToken?.symbol]);
 
   const showErrorMessage = (errorData: ErrorDisplayData): void => {
@@ -427,7 +448,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
 
         {showErrorDisplay && errorDisplayData && (
           <ErrorDisplay
@@ -468,7 +489,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
                 <TextInput
                   style={styles.addressInput}
                   placeholder="Enter wallet address"
-                  placeholderTextColor={Colors.text?.secondary}
+                  placeholderTextColor={colors.textSecondary}
                   value={walletAddress}
                   onChangeText={setWalletAddress}
                   autoCapitalize="none"
@@ -505,7 +526,7 @@ const ExternalWalletTransferScreen: React.FC = () => {
                   value={amount}
                   onChangeText={setAmount}
                   keyboardType="decimal-pad"
-                  placeholderTextColor={Colors.text?.secondary}
+                  placeholderTextColor={colors.textSecondary}
                 />
               </View>
               <View style={styles.tokenSelector}>
@@ -528,14 +549,21 @@ const ExternalWalletTransferScreen: React.FC = () => {
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Network fee:</Text>
                 <Text style={styles.summaryValue}>
-                  {isCalculatingFee ? 'Calculating...' : feeCalculation ?
-                  `${(feeCalculation as any).feeFormatted} ${selectedToken?.symbol} (~$${(feeCalculation as any).feeUsd.toFixed(2)})` : '---'}
+                  {isCalculatingFee
+                    ? 'Calculating...'
+                    : feeCalculation
+                      ? `${(feeCalculation as any).feeFormatted} ${selectedToken?.symbol} (~$${Number((feeCalculation as any).feeUsd ?? 0).toFixed(2)})`
+                      : '---'}
                 </Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>The receiver will get:</Text>
                 <Text style={styles.summaryValue}>
-                  {feeCalculation ? `${(feeCalculation as any).receiverAmountFormatted} ${selectedToken?.symbol}` : `--- ${selectedToken?.symbol}`}
+                  {isCalculatingFee
+                    ? 'Calculating...'
+                    : feeCalculation
+                      ? `${(feeCalculation as any).receiverAmountFormatted ?? '---'} ${selectedToken?.symbol}`
+                      : `--- ${selectedToken?.symbol}`}
                 </Text>
               </View>
             </View>
@@ -608,47 +636,47 @@ const ExternalWalletTransferScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
-  loadingText: { fontSize: 14, color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System' },
+  loadingText: { fontSize: 14, color: colors.textSecondary, fontFamily: Typography.regular || 'System' },
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
-  errorText: { fontSize: 14, color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', marginBottom: 16 },
-  retryButton: { backgroundColor: Colors.primary || '#35297F', borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24 },
+  errorText: { fontSize: 14, color: colors.textSecondary, fontFamily: Typography.regular || 'System', marginBottom: 16 },
+  retryButton: { backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24 },
   retryButtonText: { color: '#FFFFFF', fontFamily: Typography.medium || 'System', fontSize: 14, fontWeight: '600' },
   subtitleSection: { paddingHorizontal: horizontalPadding, paddingTop: 8, paddingBottom: 20 },
-  subtitleText: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400' },
+  subtitleText: { color: colors.textSecondary, fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400' },
   section: { paddingHorizontal: horizontalPadding, marginBottom: 24 },
-  sectionTitle: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400', marginBottom: 12 },
+  sectionTitle: { color: colors.textSecondary, fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400', marginBottom: 12 },
   inputCard: { backgroundColor: '#F8F9FA', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 12 },
   addressInputRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  addressInput: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular || 'System', fontSize: 14, flex: 1, paddingVertical: 4 },
+  addressInput: { color: colors.text, fontFamily: Typography.regular || 'System', fontSize: 14, flex: 1, paddingVertical: 4 },
   pasteButton: { backgroundColor: '#E5E7EB', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, marginLeft: 8 },
-  pasteButtonText: { fontSize: 11, color: Colors.primary || '#35297F', fontWeight: '600', fontFamily: Typography.medium || 'System' },
+  pasteButtonText: { fontSize: 11, color: colors.primary, fontWeight: '600', fontFamily: Typography.medium || 'System' },
   networkDropdownCard: { backgroundColor: '#F8F9FA', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   amountInputCard: { backgroundColor: '#F8F9FA', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  networkInput: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular || 'System', fontSize: 14, flex: 1 },
-  networkPlaceholder: { color: Colors.text?.secondary || '#6B7280' },
+  networkInput: { color: colors.text, fontFamily: Typography.regular || 'System', fontSize: 14, flex: 1 },
+  networkPlaceholder: { color: colors.textSecondary },
   inputArrow: { width: 16, height: 16, resizeMode: 'contain' },
   inputLeft: { flex: 1, justifyContent: 'center' },
-  amountInput: { fontFamily: Typography.medium || 'System', fontSize: 14, color: Colors.text?.primary || '#111827', fontWeight: '600', paddingVertical: 4 },
+  amountInput: { fontFamily: Typography.medium || 'System', fontSize: 14, color: colors.text, fontWeight: '600', paddingVertical: 4 },
   tokenSelector: { alignItems: 'flex-end', justifyContent: 'center', maxWidth: '50%' },
   tokenContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E5E7EB', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   tokenIcon: { width: 16, height: 16, marginRight: 6 },
-  tokenText: { fontFamily: Typography.medium || 'System', fontSize: 11, color: Colors.text?.primary || '#111827', fontWeight: '600' },
+  tokenText: { fontFamily: Typography.medium || 'System', fontSize: 11, color: colors.text, fontWeight: '600' },
   balanceInfo: { flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 6 },
-  balanceText: { fontFamily: Typography.regular || 'System', fontSize: 9, color: Colors.text?.secondary || '#6B7280' },
-  maxText: { fontFamily: Typography.medium || 'System', fontSize: 9, color: Colors.primary || '#35297F', fontWeight: '600' },
+  balanceText: { fontFamily: Typography.regular || 'System', fontSize: 9, color: colors.textSecondary },
+  maxText: { fontFamily: Typography.medium || 'System', fontSize: 9, color: colors.primary, fontWeight: '600' },
   summarySection: { paddingHorizontal: horizontalPadding, marginBottom: 24 },
   summaryCard: { borderRadius: 8, borderWidth: 0.5, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 16 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  summaryLabel: { color: Colors.text?.secondary || '#6B7280', fontSize: 11 },
-  summaryValue: { color: Colors.text?.primary || '#111827', fontFamily: Typography.medium || 'System', fontSize: 11, fontWeight: '600', flex: 1, textAlign: 'right' },
-  buttonSafeArea: { backgroundColor: Colors.background || '#F8F9FA' },
+  summaryLabel: { color: colors.textSecondary, fontSize: 11 },
+  summaryValue: { color: colors.text, fontFamily: Typography.medium || 'System', fontSize: 11, fontWeight: '600', flex: 1, textAlign: 'right' },
+  buttonSafeArea: { backgroundColor: colors.background },
   buttonContainer: { paddingHorizontal: horizontalPadding, paddingTop: 16, paddingBottom: 50 },
-  continueButton: { backgroundColor: Colors.primary || '#35297F', borderRadius: 8, paddingVertical: 16, justifyContent: 'center', alignItems: 'center' },
+  continueButton: { backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, justifyContent: 'center', alignItems: 'center' },
   continueButtonDisabled: { backgroundColor: '#9CA3AF' },
   continueButtonText: { color: '#FFFFFF', fontFamily: Typography.medium || 'System', fontSize: 16, fontWeight: '600' },
 });

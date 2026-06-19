@@ -32,7 +32,9 @@
       "extends": "base",
       "distribution": "internal",
       "env": {
+        "APP_VARIANT": "staging",
         "NODE_ENV": "staging",
+        "EXPO_PUBLIC_API_BASE_URL": "https://staging.zeusadminxyz.online",
         "EXPO_PUBLIC_APPSFLYER_DEV_KEY": "Av6nnqAQzF26yExKyQ6g4U",
         "EXPO_PUBLIC_APPSFLYER_IOS_APP_ID": "6755314395",
         "EXPO_PUBLIC_APPLE_APP_ID": "6755314395"

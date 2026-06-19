@@ -24,7 +24,8 @@ import Loading from '../../components/Loading';
 import PinEntryModal from '../../components/PinEntry';
 import ScreenHeader from '../../components/ScreenHeader';
 import UtilityPurchaseSuccessModal from '../../components/Utilitysuccess';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { useCableTV } from '../../hooks/useCabletv';
 import { useCustomer } from '../../hooks/useCustomer';
 
@@ -102,6 +103,8 @@ interface CableTvPackage {
 }
 
 const CableTvScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
   
@@ -591,7 +594,7 @@ const CableTvScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
         
         {showErrorDisplay && errorDisplayData && (
           <ErrorDisplay {...errorDisplayData} onDismiss={hideErrorDisplay} />
@@ -638,7 +641,7 @@ const CableTvScreen: React.FC = () => {
                 <TextInput
                   style={styles.input}
                   placeholder="Enter smartcard/IUC number"
-                  placeholderTextColor={Colors.text?.secondary}
+                  placeholderTextColor={colors.textSecondary}
                   value={smartcardNumber}
                   onChangeText={handleSmartcardNumberChange}
                   keyboardType="numeric"
@@ -676,7 +679,7 @@ const CableTvScreen: React.FC = () => {
               <TextInput
                 style={[styles.input, styles.uneditableInput]}
                 placeholder="Customer name will appear here"
-                placeholderTextColor={Colors.text?.secondary}
+                placeholderTextColor={colors.textSecondary}
                 value={customerData ? (customerData.customer_name || '').trim() : ''}
                 editable={false}
               />
@@ -852,10 +855,10 @@ const CableTvScreen: React.FC = () => {
 };
 
 // Static styles (keep as is)
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: Colors.background || '#F8F9FA' 
+    backgroundColor: colors.background 
   },
   safeArea: { 
     flex: 1 
@@ -874,7 +877,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...baseTextStyle,
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     marginBottom: 16,
   },
   smartcardInputContainer: { 
@@ -884,7 +887,7 @@ const styles = StyleSheet.create({
   },
   inputContainer: { 
     flex: 1,
-    backgroundColor: Colors.surface || '#FFFFFF', 
+    backgroundColor: colors.card, 
     borderRadius: 8, 
     borderWidth: 1, 
     borderColor: '#E5E7EB', 
@@ -893,13 +896,13 @@ const styles = StyleSheet.create({
   },
   input: { 
     ...baseTextStyle,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontSize: 16,
     paddingVertical: 4 
   },
   uneditableInput: {
     backgroundColor: '#F9FAFB',
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
   },
   profileIconContainer: { 
     justifyContent: 'center', 
@@ -930,13 +933,13 @@ const styles = StyleSheet.create({
   },
   helperText: { 
     ...baseTextStyle,
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontSize: 11,
     marginTop: 6, 
     fontStyle: 'italic' 
   },
   planTab: {
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -952,15 +955,15 @@ const styles = StyleSheet.create({
   },
   planTabText: { 
     ...baseTextStyle,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontSize: 16,
     flex: 1 
   },
   planTabPlaceholder: { 
-    color: Colors.text?.secondary || '#6B7280' 
+    color: colors.textSecondary 
   },
   amountTab: {
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -970,12 +973,12 @@ const styles = StyleSheet.create({
   },
   amountTabText: {
     ...baseTextStyle,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontSize: 16,
   },
   dropdownArrow: { 
     ...baseTextStyle,
-    color: Colors.text?.secondary || '#6B7280', 
+    color: colors.textSecondary, 
     fontSize: 16, 
     fontWeight: '500' 
   },
@@ -988,7 +991,7 @@ const styles = StyleSheet.create({
   },
   summaryTitle: { 
     ...baseTextStyle,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontWeight: '600', 
     marginBottom: 8 
   },
@@ -1000,7 +1003,7 @@ const styles = StyleSheet.create({
   },
   summaryData: { 
     ...baseTextStyle,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontSize: 16, 
     fontWeight: '600' 
   },
@@ -1012,19 +1015,19 @@ const styles = StyleSheet.create({
   },
   summaryValidity: { 
     ...baseTextStyle,
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontSize: 12,
   },
   summaryProvider: { 
     ...baseTextStyle,
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontSize: 12,
     marginTop: 2
   },
   buttonContainer: { 
     paddingHorizontal: 16, 
     paddingVertical: 24, 
-    backgroundColor: Colors.background || '#F8F9FA' 
+    backgroundColor: colors.background 
   },
   continueButton: {
     backgroundColor: '#35297F',

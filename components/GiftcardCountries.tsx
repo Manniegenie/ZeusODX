@@ -14,7 +14,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Typography } from '../constants/Typography';
 import { useGiftcardCountries } from '../hooks/usegiftcardCountry';
 
@@ -94,6 +95,8 @@ const Sheet = ({
   children: React.ReactNode;
   maxHeight?: number;
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const translateY = useRef(new Animated.Value(SHEET_MAX_HEIGHT)).current;
   const insets = useSafeAreaInsets();
 
@@ -204,10 +207,15 @@ export function AvailableCountrySheet({
       STEAM: [
         { id: 'US', name: 'United States', flag: FLAGS.US },
         { id: 'CANADA', name: 'Canada', flag: FLAGS.CA },
+        { id: 'GB', name: 'United Kingdom', flag: FLAGS.GB },
+        { id: 'EUROPE', name: 'Europe', flag: FLAGS.EU },
       ],
       APPLE: [
         { id: 'US', name: 'United States', flag: FLAGS.US },
+        { id: 'CANADA', name: 'Canada', flag: FLAGS.CA },
+        { id: 'GB', name: 'United Kingdom', flag: FLAGS.GB },
         { id: 'AUSTRALIA', name: 'Australia', flag: FLAGS.AU },
+        { id: 'EUROPE', name: 'Europe', flag: FLAGS.EU },
       ],
       VANILLA: [
         { id: 'US', name: 'United States', flag: FLAGS.US },
@@ -217,6 +225,7 @@ export function AvailableCountrySheet({
     return brandCountries[normalizedBrand] || [
       { id: 'US', name: 'United States', flag: FLAGS.US },
       { id: 'CANADA', name: 'Canada', flag: FLAGS.CA },
+      { id: 'GB', name: 'United Kingdom', flag: FLAGS.GB },
       { id: 'AUSTRALIA', name: 'Australia', flag: FLAGS.AU },
       { id: 'SWITZERLAND', name: 'Switzerland', flag: FLAGS.CH },
       { id: 'EUROPE', name: 'Europe', flag: FLAGS.EU },
@@ -329,6 +338,7 @@ export function getAvailableCountriesForBrand(brand: string): CountryItem[] {
   return [
     { id: 'US', name: 'United States', flag: FLAGS.US },
     { id: 'CANADA', name: 'Canada', flag: FLAGS.CA },
+    { id: 'GB', name: 'United Kingdom', flag: FLAGS.GB },
     { id: 'AUSTRALIA', name: 'Australia', flag: FLAGS.AU },
     { id: 'SWITZERLAND', name: 'Switzerland', flag: FLAGS.CH },
     { id: 'EUROPE', name: 'Europe', flag: FLAGS.EU },
@@ -336,7 +346,7 @@ export function getAvailableCountriesForBrand(brand: string): CountryItem[] {
 }
 
 /* ========= Styles ========= */
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheetContainer: { backgroundColor: '#fff', borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingTop: 4 },
   handleBar: { width: 42, height: 3, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 6 },

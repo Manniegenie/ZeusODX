@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect , useMemo} from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { useRouter } from 'expo-router';
 import { usernameService } from '../../services/UsernameService';
 import ErrorDisplay from '../../components/ErrorDisplay';
 
 const UsernameScreen = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
@@ -167,7 +170,7 @@ const UsernameScreen = () => {
                     username.trim() && (!formatValidation.isValid || availabilityResult === false || availabilityResult === null) && styles.inputError
                   ]}
                   placeholder="Enter your username"
-                  placeholderTextColor={Colors.text.muted}
+                  placeholderTextColor={colors.textMuted}
                   value={username}
                   onChangeText={setUsername}
                   autoCapitalize="none"
@@ -270,10 +273,10 @@ const UsernameScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   keyboardAvoid: {
     flex: 1,
@@ -294,12 +297,12 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold,
     fontSize: 24,
     lineHeight: 28,
-    color: Colors.primaryText,
+    color: colors.text,
     marginBottom: Layout.spacing.xs,
   },
   subtitle: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   form: {
     flex: 1,
@@ -309,10 +312,10 @@ const styles = StyleSheet.create({
   },
   label: {
     ...Typography.styles.bodyMedium,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   input: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderRadius: Layout.borderRadius.md,
     paddingHorizontal: Layout.spacing.md,
     paddingVertical: Layout.spacing.md,
@@ -320,7 +323,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E5E5',
     fontFamily: Typography.regular,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   inputSuccess: {
     borderColor: '#22C55E',
@@ -332,7 +335,7 @@ const styles = StyleSheet.create({
   },
   characterCount: {
     ...Typography.styles.caption,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'right',
   },
   availabilityContainer: {
@@ -340,7 +343,7 @@ const styles = StyleSheet.create({
   },
   checkingText: {
     ...Typography.styles.caption,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontStyle: 'italic',
   },
   availableText: {
@@ -368,7 +371,7 @@ const styles = StyleSheet.create({
   requirementsTitle: {
     ...Typography.styles.bodyMedium,
     fontWeight: '600',
-    color: Colors.text.primary,
+    color: colors.text,
     marginBottom: Layout.spacing.xs,
   },
   requirement: {
@@ -379,7 +382,7 @@ const styles = StyleSheet.create({
     color: '#22C55E',
   },
   requirementUnmet: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   requirementError: {
     color: '#EF4444',
@@ -395,8 +398,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   activeButton: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   inactiveButton: {
     backgroundColor: 'transparent',
@@ -406,10 +409,10 @@ const styles = StyleSheet.create({
     ...Typography.styles.bodyMedium,
   },
   activeButtonText: {
-    color: Colors.surface,
+    color: colors.card,
   },
   inactiveButtonText: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   overlay: {
     position: 'absolute',
@@ -423,7 +426,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   loadingContainer: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     paddingHorizontal: Layout.spacing.xl,
     paddingVertical: Layout.spacing.lg,
     borderRadius: Layout.borderRadius.lg,
@@ -435,7 +438,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     ...Typography.styles.bodyMedium,
-    color: Colors.text.primary,
+    color: colors.text,
     textAlign: 'center',
   },
 });

@@ -1,12 +1,15 @@
 // app/profile/setup-pin.tsx
-import React, { useState } from 'react';
+import React, { useState , useMemo} from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Vibration } from 'react-native';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 
 export default function SetupPinScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const params = useLocalSearchParams<{ phoneNumber?: string }>();
   
@@ -138,10 +141,10 @@ export default function SetupPinScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -156,13 +159,13 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold,
     fontSize: 24,
     lineHeight: 28,
-    color: Colors.primaryText,
+    color: colors.text,
     marginBottom: Layout.spacing.xs,
     textAlign: 'center',
   },
   subtitle: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: Layout.spacing.md,
   },
@@ -183,8 +186,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   filledDot: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   numberPad: {
     flex: 1,
@@ -213,11 +216,11 @@ const styles = StyleSheet.create({
   numberText: {
     fontSize: 24,
     fontFamily: Typography.medium,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   backspaceText: {
     fontSize: 20,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   buttonContainer: {
     paddingBottom: Layout.spacing.xl,
@@ -230,8 +233,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   activeButton: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   inactiveButton: {
     backgroundColor: 'transparent',
@@ -241,9 +244,9 @@ const styles = StyleSheet.create({
     ...Typography.styles.bodyMedium,
   },
   activeButtonText: {
-    color: Colors.surface,
+    color: colors.card,
   },
   inactiveButtonText: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
 });

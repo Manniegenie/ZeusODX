@@ -16,7 +16,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { getPdfLayoutScale } from '../../utils/pdfLayout';
 
@@ -45,6 +46,8 @@ type TransferDetails = {
 };
 
 export default function FiatTransferReceiptScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const params = useLocalSearchParams();
 
@@ -225,7 +228,7 @@ export default function FiatTransferReceiptScreen() {
             margin-bottom: calc(20px * var(--spacing-scale));
             background-color: ${statusColors.bg};
             color: ${statusColors.text};
-            border: 1px solid ${statusColors.border};
+            border: 1px solid ${statuscolors.border};
           }
           .amount-section {
             text-align: center;
@@ -474,7 +477,7 @@ export default function FiatTransferReceiptScreen() {
 
         {/* Status Badge */}
         <View style={styles.statusContainer}>
-          <View style={[styles.statusBadge, { backgroundColor: statusColors.bg, borderColor: statusColors.border }]}>
+          <View style={[styles.statusBadge, { backgroundColor: statusColors.bg, borderColor: statuscolors.border }]}>
             <Text style={[styles.statusText, { color: statusColors.text }]}>
               {transferData.status || 'Successful'}
             </Text>
@@ -570,10 +573,10 @@ export default function FiatTransferReceiptScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',

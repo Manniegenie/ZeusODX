@@ -1,16 +1,19 @@
 // app/login/simple-pin.tsx
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState , useMemo} from 'react';
 import { KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import ErrorDisplay from '../../components/ErrorDisplay';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/authService';
 
 export default function SimpleLoginPinScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const params = useLocalSearchParams();
   const { login } = useAuth();
@@ -360,30 +363,30 @@ export default function SimpleLoginPinScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   keyboardAvoid: { flex: 1 },
   content: { flex: 1, paddingHorizontal: Layout.spacing.lg, justifyContent: 'space-between' },
   header: { paddingTop: Layout.spacing.xxl, marginBottom: Layout.spacing.xl, alignItems: 'center' },
-  title: { fontFamily: Typography.bold, fontSize: 24, lineHeight: 28, color: Colors.primaryText, marginBottom: Layout.spacing.xs, textAlign: 'center' },
-  subtitle: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center' },
-  phoneNumber: { color: Colors.primary, fontFamily: Typography.medium },
+  title: { fontFamily: Typography.bold, fontSize: 24, lineHeight: 28, color: colors.text, marginBottom: Layout.spacing.xs, textAlign: 'center' },
+  subtitle: { ...Typography.styles.body, color: colors.textSecondary, textAlign: 'center' },
+  phoneNumber: { color: colors.primary, fontFamily: Typography.medium },
   pinSection: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   pinContainer: { flexDirection: 'row', gap: Layout.spacing.sm, marginBottom: Layout.spacing.xl, justifyContent: 'center' },
   pinInput: {
-    width: 50, height: 50, backgroundColor: Colors.surface, borderRadius: Layout.borderRadius.md,
-    borderWidth: 2, borderColor: '#E5E5E5', fontSize: 20, fontFamily: Typography.bold, color: Colors.text.primary, textAlign: 'center',
+    width: 50, height: 50, backgroundColor: colors.card, borderRadius: Layout.borderRadius.md,
+    borderWidth: 2, borderColor: '#E5E5E5', fontSize: 20, fontFamily: Typography.bold, color: colors.text, textAlign: 'center',
   },
-  pinInputFilled: { borderColor: Colors.primary, backgroundColor: Colors.surface },
+  pinInputFilled: { backgroundColor: colors.card },
   loadingContainer: { marginBottom: Layout.spacing.lg },
-  loadingText: { ...Typography.styles.body, color: Colors.primary, textAlign: 'center' },
+  loadingText: { ...Typography.styles.body, color: colors.primary, textAlign: 'center' },
   forgotPinContainer: { marginTop: Layout.spacing.lg },
-  forgotPinText: { ...Typography.styles.body, color: Colors.primary, textAlign: 'center' },
+  forgotPinText: { ...Typography.styles.body, color: colors.primary, textAlign: 'center' },
   bottomActions: { paddingBottom: Layout.spacing.xl, gap: Layout.spacing.lg, alignItems: 'center' },
   clearButton: { paddingVertical: Layout.spacing.sm, paddingHorizontal: Layout.spacing.lg },
-  clearButtonText: { ...Typography.styles.bodyMedium, color: Colors.text.secondary, textAlign: 'center' },
-  clearButtonTextDisabled: { color: Colors.text.muted },
-  backToPhoneText: { ...Typography.styles.body, color: Colors.text.secondary, textAlign: 'center' },
+  clearButtonText: { ...Typography.styles.bodyMedium, color: colors.textSecondary, textAlign: 'center' },
+  clearButtonTextDisabled: { color: colors.textMuted },
+  backToPhoneText: { ...Typography.styles.body, color: colors.textSecondary, textAlign: 'center' },
   backToPhoneTextDisabled: { opacity: 0.5 },
-  backToPhoneLink: { color: Colors.primary, fontFamily: Typography.medium },
+  backToPhoneLink: { color: colors.primary, fontFamily: Typography.medium },
 });

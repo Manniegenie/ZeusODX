@@ -1,5 +1,7 @@
+import React, { useMemo } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { Layout } from '../../constants/layout';
 
@@ -12,6 +14,8 @@ interface ButtonProps {
 }
 
 export function Button({ title, onPress, variant = 'primary', disabled = false, style }: ButtonProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <TouchableOpacity 
       style={[styles.button, styles[variant], disabled && styles.disabled, style]} 
@@ -25,7 +29,7 @@ export function Button({ title, onPress, variant = 'primary', disabled = false, 
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   button: {
     paddingHorizontal: Layout.spacing.lg,
     paddingVertical: Layout.spacing.md,
@@ -34,15 +38,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primary: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
   },
   secondary: {
-    backgroundColor: Colors.secondary,
+    backgroundColor: '#7C6BFF',
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: colors.primary,
   },
   disabled: {
     opacity: 0.5,
@@ -51,15 +55,15 @@ const styles = StyleSheet.create({
     ...Typography.styles.bodyMedium,
   },
   primaryText: {
-    color: Colors.surface,
+    color: colors.card,
   },
   secondaryText: {
-    color: Colors.surface,
+    color: colors.card,
   },
   outlineText: {
-    color: Colors.primary,
+    color: colors.primary,
   },
   disabledText: {
-    color: Colors.text.muted,
+    color: colors.textMuted,
   },
 });

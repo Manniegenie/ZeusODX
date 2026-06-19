@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState , useMemo} from 'react';
 import {
     ActivityIndicator,
     Image,
@@ -18,7 +18,8 @@ import BettingProviderSelectionModal from '../../components/BettingProviderModal
 import ErrorDisplay from '../../components/ErrorDisplay';
 import Loading from '../../components/Loading';
 import PinEntryModal from '../../components/PinEntry';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useBetting } from '../../hooks/useBetting';
 import { useCustomer } from '../../hooks/useCustomer';
@@ -36,6 +37,8 @@ interface BettingProvider {
 }
 
 const BettingScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const {
     loading,
@@ -338,7 +341,7 @@ const BettingScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
         {showErrorDisplay && errorDisplayData && (
           <ErrorDisplay {...errorDisplayData} onDismiss={hideErrorDisplay} />
         )}
@@ -380,7 +383,7 @@ const BettingScreen: React.FC = () => {
                 <TextInput
                   style={styles.input}
                   placeholder="Enter your User ID"
-                  placeholderTextColor={Colors.text?.secondary}
+                  placeholderTextColor={colors.textSecondary}
                   value={userId}
                   onChangeText={handleUserIdChange}
                   autoCapitalize="none"
@@ -409,7 +412,7 @@ const BettingScreen: React.FC = () => {
               <TextInput
                 style={[styles.input, styles.uneditableInput]}
                 placeholder="Account name will appear here"
-                placeholderTextColor={Colors.text?.secondary}
+                placeholderTextColor={colors.textSecondary}
                 value={customerData ? formatCustomerName((customerData as any).customer_name) : ''}
                 editable={false}
               />
@@ -440,7 +443,7 @@ const BettingScreen: React.FC = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Enter custom amount"
-                placeholderTextColor={Colors.text?.secondary}
+                placeholderTextColor={colors.textSecondary}
                 value={customAmount}
                 onChangeText={handleCustomAmountChange}
                 keyboardType="numeric"
@@ -505,30 +508,30 @@ const BettingScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   section: { paddingHorizontal: 16, marginBottom: 24 },
-  sectionTitle: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400', marginBottom: 16 },
-  providerSelector: { backgroundColor: Colors.surface || '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center' },
+  sectionTitle: { color: colors.textSecondary, fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400', marginBottom: 16 },
+  providerSelector: { backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 16, flexDirection: 'row', alignItems: 'center' },
   providerLogo: { width: 28, height: 28, marginRight: 12, borderRadius: 14, backgroundColor: '#F3F4F6' },
-  providerSelectorText: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular || 'System', fontSize: 16, fontWeight: '400', flex: 1 },
-  providerSelectorPlaceholder: { color: Colors.text?.secondary || '#6B7280' },
-  dropdownArrow: { color: Colors.text?.secondary || '#6B7280', fontSize: 16, fontWeight: '500' },
+  providerSelectorText: { color: colors.text, fontFamily: Typography.regular || 'System', fontSize: 16, fontWeight: '400', flex: 1 },
+  providerSelectorPlaceholder: { color: colors.textSecondary },
+  dropdownArrow: { color: colors.textSecondary, fontSize: 16, fontWeight: '500' },
   userIdInputContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  inputContainer: { flex: 1, backgroundColor: Colors.surface || '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 12 },
-  input: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular || 'System', fontSize: 16, fontWeight: '400', paddingVertical: 4 },
-  uneditableInput: { backgroundColor: '#F9FAFB', color: Colors.text?.secondary || '#6B7280' },
+  inputContainer: { flex: 1, backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 16, paddingVertical: 12 },
+  input: { color: colors.text, fontFamily: Typography.regular || 'System', fontSize: 16, fontWeight: '400', paddingVertical: 4 },
+  uneditableInput: { backgroundColor: '#F9FAFB', color: colors.textSecondary },
   proceedButton: { backgroundColor: '#35297F', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 12, justifyContent: 'center', alignItems: 'center', minWidth: 70 },
   proceedButtonText: { color: '#FFFFFF', fontFamily: Typography.medium || 'System', fontSize: 12, fontWeight: '600' },
   amountGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  amountButton: { width: '31%', backgroundColor: Colors.surface || '#FFFFFF', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingVertical: 16, justifyContent: 'center', alignItems: 'center' },
+  amountButton: { width: '31%', backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingVertical: 16, justifyContent: 'center', alignItems: 'center' },
   amountButtonSelected: { borderColor: '#35297F', backgroundColor: '#F8F7FF' },
-  amountButtonText: { color: Colors.text?.primary || '#111827', fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400' },
+  amountButtonText: { color: colors.text, fontFamily: Typography.regular || 'System', fontSize: 14, fontWeight: '400' },
   amountButtonTextSelected: { color: '#35297F', fontWeight: '500' },
-  helperText: { color: Colors.text?.secondary || '#6B7280', fontFamily: Typography.regular || 'System', fontSize: 11, fontWeight: '400', marginTop: 6, fontStyle: 'italic' },
-  buttonContainer: { paddingHorizontal: 16, paddingVertical: 24, backgroundColor: Colors.background || '#F8F9FA' },
+  helperText: { color: colors.textSecondary, fontFamily: Typography.regular || 'System', fontSize: 11, fontWeight: '400', marginTop: 6, fontStyle: 'italic' },
+  buttonContainer: { paddingHorizontal: 16, paddingVertical: 24, backgroundColor: colors.background },
   continueButton: { backgroundColor: '#35297F', borderRadius: 8, paddingVertical: 16, justifyContent: 'center', alignItems: 'center', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
   continueButtonDisabled: { backgroundColor: '#9CA3AF', elevation: 0, shadowOpacity: 0 },
   continueButtonText: { color: '#FFFFFF', fontFamily: Typography.medium || 'System', fontSize: 16, fontWeight: '600' }

@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import backIcon from '../../components/icons/backy.png';
 import Loading from '../../components/Loading';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useNGNZ } from '../../hooks/useNGNZ';
@@ -27,6 +28,8 @@ interface TransferScreenProps {
 }
 
 export default function TransferScreen({ onBack, onTransfer }: TransferScreenProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [amount, setAmount] = useState('0');
   const [isLoading, setIsLoading] = useState(false);
@@ -180,7 +183,7 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
                   onChangeText={(text) => setAmount(formatWithCommas(text))}
                   placeholder="0"
                   keyboardType="decimal-pad"
-                  placeholderTextColor={Colors.text.secondary}
+                  placeholderTextColor={colors.textSecondary}
                 />
                 <Text style={styles.usdValue}>{formatUsdValue(amount)}</Text>
               </View>
@@ -235,8 +238,8 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   header: {
     paddingHorizontal: Layout.spacing.lg,
@@ -279,7 +282,7 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollViewContent: { paddingHorizontal: Layout.spacing.lg, paddingBottom: 120, paddingTop: Layout.spacing.lg },
   inputContainer: { marginBottom: Layout.spacing.lg },
-  inputLabel: { fontFamily: Typography.medium, fontSize: 16, color: Colors.text.primary, marginBottom: Layout.spacing.xs },
+  inputLabel: { fontFamily: Typography.medium, fontSize: 16, color: colors.text, marginBottom: Layout.spacing.xs },
   inputCard: {
     backgroundColor: '#F8F9FA',
     borderRadius: Layout.borderRadius.lg,
@@ -297,13 +300,13 @@ const styles = StyleSheet.create({
   amountInput: {
     fontFamily: Typography.medium,
     fontSize: 24,
-    color: Colors.text.primary,
+    color: colors.text,
     fontWeight: '600',
     padding: 0,
     margin: 0,
     flexShrink: 1,
   },
-  usdValue: { fontFamily: Typography.regular, fontSize: 13, color: Colors.text.secondary, marginTop: 3 },
+  usdValue: { fontFamily: Typography.regular, fontSize: 13, color: colors.textSecondary, marginTop: 3 },
   tokenSelector: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -314,13 +317,13 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.sm,
   },
   tokenIcon: { width: 18, height: 18, resizeMode: 'cover', marginRight: Layout.spacing.sm },
-  tokenText: { fontFamily: Typography.medium, fontSize: 12, color: Colors.text.primary, fontWeight: '600' },
+  tokenText: { fontFamily: Typography.medium, fontSize: 12, color: colors.text, fontWeight: '600' },
   balanceInfo: { flexDirection: 'row', alignItems: 'center', gap: Layout.spacing.xs },
-  balanceText: { fontFamily: Typography.regular, fontSize: 10, color: Colors.text.secondary },
-  maxText: { fontFamily: Typography.medium, fontSize: 10, color: Colors.primary, fontWeight: '600' },
-  minimumText: { fontFamily: Typography.regular, fontSize: 12, color: Colors.text.secondary, marginTop: Layout.spacing.sm },
+  balanceText: { fontFamily: Typography.regular, fontSize: 10, color: colors.textSecondary },
+  maxText: { fontFamily: Typography.medium, fontSize: 10, color: colors.primary, fontWeight: '600' },
+  minimumText: { fontFamily: Typography.regular, fontSize: 12, color: colors.textSecondary, marginTop: Layout.spacing.sm },
   feeContainer: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderRadius: Layout.borderRadius.lg,
     padding: Layout.spacing.lg,
     borderWidth: 1,
@@ -328,11 +331,11 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.lg,
   },
   feeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: Layout.spacing.xs },
-  feeLabel: { fontFamily: Typography.regular, fontSize: 14, color: Colors.text.secondary },
-  feeValue: { fontFamily: Typography.medium, fontSize: 14, color: Colors.text.primary, fontWeight: '600' },
+  feeLabel: { fontFamily: Typography.regular, fontSize: 14, color: colors.textSecondary },
+  feeValue: { fontFamily: Typography.medium, fontSize: 14, color: colors.text, fontWeight: '600' },
   transferContainer: { marginTop: Layout.spacing.lg },
-  transferButton: { backgroundColor: Colors.primary, borderRadius: Layout.borderRadius.lg, paddingVertical: Layout.spacing.md, alignItems: 'center' },
+  transferButton: { backgroundColor: colors.primary, borderRadius: Layout.borderRadius.lg, paddingVertical: Layout.spacing.md, alignItems: 'center' },
   transferButtonDisabled: { backgroundColor: '#E5E7EB' },
-  transferButtonText: { fontFamily: Typography.medium, fontSize: 16, color: Colors.surface, fontWeight: '600' },
-  transferButtonTextDisabled: { color: Colors.text.secondary },
+  transferButtonText: { fontFamily: Typography.medium, fontSize: 16, color: colors.card, fontWeight: '600' },
+  transferButtonTextDisabled: { color: colors.textSecondary },
 });

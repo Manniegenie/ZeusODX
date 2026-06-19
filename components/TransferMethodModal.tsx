@@ -1,5 +1,5 @@
 // components/TransferMethodModal.tsx
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef , useMemo} from 'react';
 import {
     Animated,
     Dimensions,
@@ -13,7 +13,8 @@ import {
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Typography } from '../constants/Typography';
 
 const internalWalletIcon = require('../components/icons/internal-wallet.png');
@@ -47,6 +48,8 @@ export default function TransferMethodModal({
   externalMethodLabel = 'Transfer to an external wallet',
   externalMethodDescription = 'Send to an outside wallet address',
 }: TransferMethodModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
 
@@ -160,7 +163,7 @@ export default function TransferMethodModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -174,7 +177,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '100%',
     height: MODAL_HEIGHT,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 24,
@@ -182,7 +185,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     overflow: 'hidden',
   },
-  safeAreaExtension: { backgroundColor: Colors.surface || '#FFFFFF', alignSelf: 'center', width: '100%' },
+  safeAreaExtension: { backgroundColor: colors.card, alignSelf: 'center', width: '100%' },
 
   handleBar: {
     width: 40,
@@ -202,11 +205,11 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: Typography.bold || 'System',
     fontSize: 16,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
   },
   closeButton: {
     fontSize: 16,
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     padding: 6,
   },
 
@@ -219,7 +222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 16,
-    backgroundColor: '#F0EFFF',
+    backgroundColor: colors.card,
     marginBottom: 10,
     borderRadius: 16,
   },
@@ -227,7 +230,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.primary || '#35297F',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -236,12 +239,12 @@ const styles = StyleSheet.create({
   transferMethodTitle: {
     fontFamily: Typography.medium || 'System',
     fontSize: 14,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     marginBottom: 4,
   },
   transferMethodDescription: {
     fontFamily: Typography.regular || 'System',
     fontSize: 12,
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
   },
 });

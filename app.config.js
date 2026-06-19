@@ -1,19 +1,21 @@
 // app.config.js
+const IS_STAGING = process.env.APP_VARIANT === 'staging';
+
 export default {
   expo: {
-    name: "ZeusODX",
+    name: IS_STAGING ? "ZeusODX Staging" : "ZeusODX",
     slug: "zeusodx",
     version: "1.9.0",
     orientation: "default",
     icon: "./assets/images/app-icon.png",
-    scheme: "zeusodx",
+    scheme: IS_STAGING ? "zeusodx-staging" : "zeusodx",
     userInterfaceStyle: "automatic",
     splash: {
       backgroundColor: "#35297F"
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.manniegenie.zeusodx",
+      bundleIdentifier: IS_STAGING ? "com.manniegenie.zeusodx.staging" : "com.manniegenie.zeusodx",
       buildNumber: "2",
       icon: "./assets/images/app-icon.png",
       infoPlist: {
@@ -27,7 +29,7 @@ export default {
       }
     },
     android: {
-      package: "com.manniegenie.zeusodx",
+      package: IS_STAGING ? "com.manniegenie.zeusodx.staging" : "com.manniegenie.zeusodx",
       googleServicesFile: process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
       adaptiveIcon: {
         foregroundImage: "./assets/images/app-icon.png",

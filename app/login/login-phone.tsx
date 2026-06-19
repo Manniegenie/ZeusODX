@@ -1,11 +1,14 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState , useMemo} from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 
 export default function LoginScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [countryCode, setCountryCode] = useState('+234');
   const [selectedFlag, setSelectedFlag] = useState('🇳🇬');
@@ -105,7 +108,7 @@ export default function LoginScreen() {
                   <TextInput
                     style={styles.phoneInput}
                     placeholder="Enter phone number"
-                    placeholderTextColor={Colors.text.muted}
+                    placeholderTextColor={colors.textMuted}
                     value={phoneNumber}
                     onChangeText={setPhoneNumber}
                     keyboardType="phone-pad"
@@ -153,10 +156,10 @@ const getStartedBorder = {
   borderRadius: Layout.borderRadius.lg,
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   keyboardAvoid: {
     flex: 1,
@@ -177,12 +180,12 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold,
     fontSize: 24,
     lineHeight: 28,
-    color: Colors.primaryText,
+    color: colors.text,
     marginBottom: Layout.spacing.xs,
   },
   subtitle: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   form: {
     flex: 1,
@@ -194,7 +197,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...Typography.styles.bodyMedium,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   phoneContainer: {
     flexDirection: 'row',
@@ -207,7 +210,7 @@ const styles = StyleSheet.create({
   },
   countryCodeButton: {
     ...getStartedBorder,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     paddingHorizontal: Layout.spacing.sm,
     paddingVertical: Layout.spacing.md,
     flexDirection: 'row',
@@ -221,28 +224,28 @@ const styles = StyleSheet.create({
   countryCodeText: {
     fontFamily: Typography.regular,
     fontSize: 14,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   countryCodeArrow: {
     fontSize: 10,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   phoneInput: {
     ...getStartedBorder,
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     paddingHorizontal: Layout.spacing.md,
     paddingVertical: Layout.spacing.md,
     fontFamily: Typography.regular,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   countryCodeDropdown: {
     position: 'absolute',
     top: '100%',
     left: 0,
     right: 0,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderRadius: Layout.borderRadius.md,
     borderWidth: 1,
     borderColor: '#E5E5E5',
@@ -273,7 +276,7 @@ const styles = StyleSheet.create({
   dropdownOptionText: {
     fontFamily: Typography.regular,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: colors.text,
     flex: 1,
   },
   flagEmoji: {
@@ -291,8 +294,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   activeButton: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   inactiveButton: {
     backgroundColor: 'transparent',
@@ -302,18 +305,18 @@ const styles = StyleSheet.create({
     ...Typography.styles.bodyMedium,
   },
   activeButtonText: {
-    color: Colors.surface,
+    color: colors.card,
   },
   inactiveButtonText: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   createAccountText: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   createAccountLink: {
-    color: Colors.primary,
+    color: colors.primary,
     fontFamily: Typography.medium,
   },
 });

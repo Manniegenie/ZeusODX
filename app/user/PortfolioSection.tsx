@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState , useMemo} from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Image,
   ImageBackground,
@@ -56,7 +57,7 @@ export default function PortfolioSection({
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { totalPortfolioBalance, completionPercentage } = useDashboard();
-  const { banners } = useBanners(); // Fetch dynamic banners
+  const { banners, loading: bannersLoading } = useBanners(); // Fetch dynamic banners
   
   const flatListRef = useRef<FlatList>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -212,7 +213,11 @@ export default function PortfolioSection({
       </View>
 
       {/* Sliding Banner Section */}
-      {slides.length > 0 && (
+      {bannersLoading ? (
+        <View style={styles.bannerLoader}>
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+      ) : slides.length > 0 ? (
         <View style={styles.sliderWrapper}>
           <FlatList
             ref={flatListRef}
@@ -227,13 +232,13 @@ export default function PortfolioSection({
             keyExtractor={(item) => item._id || item.id}
           />
         </View>
-      )}
+      ) : null}
     </View>
   );
 }
 
 const makeStyles = (colors: AppColors) => StyleSheet.create({
-  container: { marginBottom: Layout.spacing.lg },
+  container: { marginBottom: 0 },
   balanceCard: { marginHorizontal: Layout.spacing.lg, marginBottom: Layout.spacing.lg, borderRadius: Layout.borderRadius.lg, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: '#DDDDDD' },
   balanceBackground: { height: moderateScale(151, 0.1), justifyContent: 'center', backgroundColor: '#4A3FAD' },
   balanceBackgroundImage: { borderRadius: Layout.borderRadius.lg },
@@ -259,7 +264,8 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   quickLinkText: { fontFamily: Typography.regular, fontSize: moderateScale(12, 0.1), color: colors.textSecondary, textAlign: 'center' },
   
   // Slider Styles
-  sliderWrapper: { height: moderateScale(70, 0.1), marginBottom: Layout.spacing.lg },
+  sliderWrapper: { height: moderateScale(70, 0.1), marginBottom: Layout.spacing.sm },
+  bannerLoader: { height: moderateScale(70, 0.1), justifyContent: 'center', alignItems: 'center', marginBottom: Layout.spacing.sm },
   setupBanner: { marginHorizontal: Layout.spacing.lg, height: '100%', backgroundColor: '#F8F9FA', borderRadius: Layout.borderRadius.md, borderWidth: 0.5, borderColor: '#F0A202', padding: Layout.spacing.md, justifyContent: 'center' },
   promoBanner: { marginHorizontal: Layout.spacing.lg, height: '100%', borderRadius: Layout.borderRadius.md, overflow: 'hidden' },
   promoImage: { width: '100%', height: '100%', resizeMode: 'cover' },

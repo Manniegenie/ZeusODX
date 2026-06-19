@@ -1,10 +1,13 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState , useMemo} from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { simpleAppState } from '../services/appstate';
 
 export default function HomeScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,17 +63,17 @@ export default function HomeScreen() {
     <View style={styles.container}>
       {isLoading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary || '#000'} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background || '#FFF',
+    backgroundColor: colors.background,
   },
   loadingContainer: {
     flex: 1,

@@ -1,6 +1,8 @@
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, SafeAreaView } from 'react-native';
 import { Typography } from '../constants/Typography';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { useRouter } from 'expo-router';
 
@@ -23,6 +25,8 @@ export default function UtilityPurchaseSuccessModal({
   onContinue,
   additionalInfo
 }: UtilityPurchaseSuccessModalProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   const handleContinue = () => {
@@ -91,7 +95,7 @@ export default function UtilityPurchaseSuccessModal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
   },
@@ -109,7 +113,7 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   modalContent: {
-    backgroundColor: Colors.background || '#FFFFFF',
+    backgroundColor: colors.background,
     borderRadius: Layout.borderRadius.xl || 16,
     paddingHorizontal: Layout.spacing.xl || 24,
     paddingVertical: Layout.spacing.xxl || 32,
@@ -137,7 +141,7 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold || 'System',
     fontSize: 22,
     lineHeight: 26,
-    color: Colors.primaryText || Colors.text?.primary || '#111827',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: Layout.spacing.sm || 12,
     fontWeight: '700',
@@ -145,14 +149,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     lineHeight: 20,
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: Layout.spacing.xl || 24,
     fontFamily: Typography.regular || 'System',
     fontWeight: '400',
   },
   continueButton: {
-    backgroundColor: Colors.primary || '#35297F',
+    backgroundColor: colors.primary,
     paddingVertical: Layout.spacing.md || 16,
     paddingHorizontal: Layout.spacing.xl || 24,
     borderRadius: Layout.borderRadius.lg || 8,
@@ -167,7 +171,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.surface || '#FFFFFF',
+    color: colors.card,
     fontFamily: Typography.medium || 'System',
   },
 });

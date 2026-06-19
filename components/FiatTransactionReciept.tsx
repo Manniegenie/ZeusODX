@@ -16,7 +16,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Typography } from '../constants/Typography';
 // @ts-ignore - Layout typing may be loose in your project
 import { Layout } from '../constants/Layout';
@@ -84,6 +85,8 @@ function Row({
   copyableValue?: string;
   onCopy?: (val: string) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel} numberOfLines={1}>
@@ -382,14 +385,14 @@ export default function FiatWithdrawalReceiptModal({
 }
 
 // ======== Styles (mirrored from TransactionReceiptScreen) ========
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(10, 12, 20, 0.55)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderTopLeftRadius: Layout?.borderRadius?.xl || 16,
     borderTopRightRadius: Layout?.borderRadius?.xl || 16,
     paddingTop: 0,
@@ -426,7 +429,7 @@ const styles = StyleSheet.create({
   amountText: {
     fontFamily: Typography.bold || 'System',
     fontSize: 20,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
   },
 
   centeredStatus: {
@@ -470,7 +473,7 @@ const styles = StyleSheet.create({
   ctaRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 8 },
   primaryButton: {
     flex: 1,
-    backgroundColor: Colors.primary || '#35297F',
+    backgroundColor: colors.primary,
     paddingVertical: Layout?.spacing?.md || 14,
     borderRadius: Layout?.borderRadius?.lg || 10,
     alignItems: 'center',
@@ -478,12 +481,12 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.surface || '#FFFFFF',
+    color: colors.card,
     fontFamily: Typography.medium || 'System',
   },
   secondaryButton: {
     flex: 1,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     paddingVertical: Layout?.spacing?.md || 14,
     borderRadius: Layout?.borderRadius?.lg || 10,
     alignItems: 'center',
@@ -496,7 +499,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

@@ -17,7 +17,8 @@ import {
     View
 } from 'react-native';
 import AddressCopied from '../../components/AddressCopied';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { getPdfLayoutScale } from '../../utils/pdfLayout';
 
 // Icons
@@ -371,6 +372,8 @@ const generateBillReceiptHTML = (
 };
 
 const BillReceiptScreen = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const params = useLocalSearchParams();
   const [showCopied, setShowCopied] = useState(false);
@@ -502,7 +505,7 @@ const BillReceiptScreen = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
         
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Header */}
@@ -639,8 +642,8 @@ const Row = ({
   </View>
 );
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   
@@ -668,7 +671,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.text.primary,
+    color: colors.text,
     flex: 1,
     textAlign: 'center',
   },
@@ -680,7 +683,7 @@ const styles = StyleSheet.create({
   shareText: {
     fontSize: 14,
     fontWeight: '500',
-    color: Colors.primary,
+    color: colors.primary,
   },
   
   amountSection: {
@@ -691,7 +694,7 @@ const styles = StyleSheet.create({
   amountText: {
     fontSize: 32,
     fontWeight: '700',
-    color: Colors.text.primary,
+    color: colors.text,
     marginBottom: 12,
   },
   statusPill: {
@@ -707,7 +710,7 @@ const styles = StyleSheet.create({
   },
   
   detailsCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     marginHorizontal: 16,
     borderRadius: 12,
     padding: 20,
@@ -716,7 +719,7 @@ const styles = StyleSheet.create({
   detailsTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.text.primary,
+    color: colors.text,
     marginBottom: 16,
   },
   
@@ -731,7 +734,7 @@ const styles = StyleSheet.create({
   rowLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     flex: 1,
   },
   rowValueContainer: {
@@ -742,7 +745,7 @@ const styles = StyleSheet.create({
   },
   rowValue: {
     fontSize: 14,
-    color: Colors.text.primary,
+    color: colors.text,
     textAlign: 'right',
     flex: 1,
   },
@@ -753,7 +756,7 @@ const styles = StyleSheet.create({
   },
   copyText: {
     fontSize: 12,
-    color: Colors.surface,
+    color: colors.card,
     fontWeight: '500',
   },
   
@@ -763,7 +766,7 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -777,7 +780,7 @@ const styles = StyleSheet.create({
   },
   exportButton: {
     flex: 1,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     paddingVertical: 16,
     borderRadius: 8,
     alignItems: 'center',
@@ -785,7 +788,7 @@ const styles = StyleSheet.create({
   exportButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.surface,
+    color: colors.card,
   },
   
   errorContainer: {
@@ -796,7 +799,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
 });

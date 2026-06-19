@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState , useMemo} from 'react';
 import {
   Image,
   Modal,
@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 
 const hintIcon = require('../assets/images/hint.png');
 import { Layout } from '../constants/Layout';
@@ -19,6 +20,8 @@ interface HintBulbProps {
 }
 
 export default function HintBulb({ hint, title = 'Tip' }: HintBulbProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [visible, setVisible] = useState(false);
   const [showBulb] = useState(() => Math.random() < 0.5);
 
@@ -65,7 +68,7 @@ export default function HintBulb({ hint, title = 'Tip' }: HintBulbProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   bulbButton: {
     width: 18,
     height: 18,
@@ -83,11 +86,11 @@ const styles = StyleSheet.create({
     padding: Layout.spacing.lg,
   },
   modalContent: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: Layout.spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: colors.border,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -98,19 +101,19 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: Typography.medium,
     fontSize: 16,
-    color: Colors.primary,
+    color: colors.primary,
   },
   closeButton: {
     padding: 4,
   },
   closeText: {
     fontSize: 18,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   hintText: {
     fontFamily: Typography.regular,
     fontSize: 14,
-    color: Colors.text.primary,
+    color: colors.text,
     lineHeight: 22,
   },
 });

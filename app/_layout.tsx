@@ -11,7 +11,8 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 // Fonts & Styles
 import { BricolageGrotesque_200ExtraLight, BricolageGrotesque_300Light, BricolageGrotesque_400Regular, BricolageGrotesque_500Medium, BricolageGrotesque_600SemiBold, BricolageGrotesque_700Bold, BricolageGrotesque_800ExtraBold, useFonts } from '@expo-google-fonts/bricolage-grotesque';
-import { Colors } from '../constants/Colors';
+import { ThemeProvider } from '../contexts/ThemeContext';
+import { useTheme } from '../hooks/useTheme';
 import { disableFontScaling } from '../constants/Typography';
 
 // Components & Hooks
@@ -26,6 +27,15 @@ import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { configureModernEdgeToEdge } from '../utils/edgeToEdgeConfig';
 
 const TAWK_DIRECT_LINK = process.env.EXPO_PUBLIC_TAWK_DIRECT_LINK || 'https://tawk.to/chat/68b186eb517e5918ffb583a8/1j3qne2kl';
+
+function ThemedShell({ children }: { children: React.ReactNode }) {
+  const { colors } = useTheme();
+  return (
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}>
+      {children}
+    </SafeAreaView>
+  );
+}
 
 /**
  * CRITICAL FOR ANDROID:
@@ -172,9 +182,10 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.background || '#F4F2FF' }} {...panHandlers}>
+    <ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }} {...panHandlers}>
       <SafeAreaProvider>
-        <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: Colors.background || '#F4F2FF' }}>
+        <ThemedShell>
           <AuthContext.Provider value={auth}>
             <TawkProvider directLink={TAWK_DIRECT_LINK}>
               <Stack
@@ -198,8 +209,9 @@ export default function RootLayout() {
               </Modal>
             )}
           </AuthContext.Provider>
-        </SafeAreaView>
+        </ThemedShell>
       </SafeAreaProvider>
     </GestureHandlerRootView>
+    </ThemeProvider>
   );
 }

@@ -1,6 +1,6 @@
 // app/wallet-screens/ton-wallet.tsx
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState , useMemo} from 'react';
 import {
     ActivityIndicator,
     Image,
@@ -15,10 +15,12 @@ import {
     View
 } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import NetworkSelectionModal from '../../components/Network';
 import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
@@ -26,11 +28,7 @@ import { useBalance } from '../../hooks/useWallet';
 
 import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
 import backIcon from '../../components/icons/backy.png';
-import depositIcon from '../../components/icons/deposit-icon.png';
-import emptyStateIcon from '../../components/icons/empty-state.png';
 import tonIcon from '../../assets/images/toncoin-ton-logo.png';
-import swapIcon from '../../components/icons/swap-icon.png';
-import transferIcon from '../../components/icons/transfer-icon.png';
 
 type TokenDetails = {
   transactionId?: string;
@@ -210,6 +208,8 @@ const toAPITransaction = (tx: any): APITransaction => {
 };
 
 const TONWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { openNetworkModal } = useLocalSearchParams();
 
@@ -238,9 +238,9 @@ const TONWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   }, [openNetworkModal]);
 
   const quickActions = [
-    { id: 'deposit', title: 'Deposit', iconSrc: depositIcon },
-    { id: 'transfer', title: 'Withdraw', iconSrc: transferIcon },
-    { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
+    { id: 'deposit', title: 'Deposit', iconName: 'download-outline' },
+    { id: 'transfer', title: 'Withdraw', iconName: 'send-outline' },
+    { id: 'buy-sell', title: 'Swap', iconName: 'swap-horizontal-outline' },
   ];
 
   const tonNetworks = [{ id: 'ton', name: 'TON Network' }];
@@ -300,7 +300,7 @@ const TONWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -308,7 +308,7 @@ const TONWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
             <RefreshControl
               refreshing={loading || transactionsLoading}
               onRefresh={onRefresh}
-              colors={[Colors.primary]}
+              colors={[colors.primary]}
             />
           }
         >
@@ -365,7 +365,9 @@ const TONWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
                   onPress={() => handleQuickAction(action.id)}
                   disabled={action.id === 'deposit'}
                 >
-                  <Image source={action.iconSrc} style={styles.actionIconImage} />
+                  <View style={styles.actionIconContainer}>
+                    <Ionicons name={action.iconName as any} size={24} color="#FFFFFF" />
+                  </View>
                   <Text style={styles.actionLabel}>{action.title}</Text>
                 </TouchableOpacity>
               ))}
@@ -381,7 +383,7 @@ const TONWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
             </View>
             {!hasTransactions && !transactionsLoading ? (
               <View style={styles.emptyState}>
-                <Image source={emptyStateIcon} style={styles.emptyStateImage} />
+                <Ionicons name="receipt-outline" size={64} color={colors.textSecondary} />
                 <Text style={styles.emptyText}>No transaction yet</Text>
               </View>
             ) : (
@@ -453,8 +455,8 @@ const TONWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
@@ -463,7 +465,7 @@ const styles = StyleSheet.create({
   backIcon: { width: 24, height: 24, resizeMode: 'contain' },
   headerGroup: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' },
   iconImage: { width: 28, height: 28, resizeMode: 'cover' },
-  headerTitle: { fontSize: 16, fontWeight: '600', color: Colors.text.primary },
+  headerTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
   headerRight: { width: 40 },
 
   balanceSection: { paddingHorizontal: 16, paddingBottom: 16 },
@@ -471,39 +473,38 @@ const styles = StyleSheet.create({
   balanceBackground: { height: 120, justifyContent: 'center', backgroundColor: '#4A3FAD' },
   balanceBackgroundImage: { borderRadius: 12 },
   balanceContent: { padding: 16, justifyContent: 'center', alignItems: 'center', height: '100%' },
-  balanceLabel: { fontFamily: Typography.regular, fontSize: 14, color: Colors.surface, marginBottom: 8, textAlign: 'center' },
-  balanceAmount: { fontFamily: Typography.medium, fontSize: 24, color: Colors.surface, fontWeight: '500', textAlign: 'center', marginBottom: 4 },
-  balanceUsd: { fontFamily: Typography.regular, fontSize: 14, color: Colors.surface, textAlign: 'center' },
-  errorText: { color: Colors.surface, fontSize: 14, textAlign: 'center' },
+  balanceLabel: { fontFamily: Typography.regular, fontSize: 14, color: '#FFFFFF', marginBottom: 8, textAlign: 'center' },
+  balanceAmount: { fontFamily: Typography.medium, fontSize: 24, color: '#FFFFFF', fontWeight: '500', textAlign: 'center', marginBottom: 4 },
+  balanceUsd: { fontFamily: Typography.regular, fontSize: 14, color: '#FFFFFF', textAlign: 'center' },
+  errorText: { color: '#FFFFFF', fontSize: 14, textAlign: 'center' },
 
   quickActionsSection: { paddingHorizontal: 16, paddingVertical: 16 },
-  quickActionsTitle: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  quickActionsTitle: { fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 8 },
   quickActionsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   actionItem: { alignItems: 'center' },
-  actionIconImage: { width: 44, height: 44 },
-  actionLabel: { fontSize: 12, color: '#292d32', marginTop: 4 },
+  actionIconContainer: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#35297F', justifyContent: 'center', alignItems: 'center' },
+  actionLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
 
   recentHistorySection: { paddingHorizontal: Layout.spacing.lg, paddingBottom: Layout.spacing.xl },
   recentHistoryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Layout.spacing.lg },
-  recentHistoryTitle: { fontFamily: Typography.medium, fontSize: 14, fontWeight: '600', color: Colors.text.primary },
+  recentHistoryTitle: { fontFamily: Typography.medium, fontSize: 14, fontWeight: '600', color: colors.text },
   viewAllText: { fontFamily: Typography.medium, fontSize: 14, fontWeight: 'bold', color: '#35297F' },
 
-  emptyState: { alignItems: 'center', marginTop: 16 },
-  emptyStateImage: { width: 160, height: 156 },
-  emptyText: { fontSize: 12, color: Colors.text.secondary },
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 32, gap: 8 },
+    emptyText: { fontSize: 13, color: colors.textSecondary, fontFamily: Typography.regular },
 
   transactionsList: { flex: 1 },
   transactionItem: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingVertical: Layout.spacing.lg, paddingHorizontal: Layout.spacing.lg,
-    backgroundColor: '#F0EFFF', marginBottom: Layout.spacing.sm,
+    backgroundColor: colors.card, marginBottom: Layout.spacing.sm,
     borderRadius: Layout.borderRadius.md, minHeight: 64,
   },
   transactionLeft: { flex: 1, justifyContent: 'center' },
-  transactionType: { fontFamily: Typography.medium, fontSize: 14, color: Colors.text.primary, fontWeight: '600', marginBottom: 3 },
-  transactionDate: { fontFamily: Typography.regular, fontSize: 12, color: Colors.text.secondary },
+  transactionType: { fontFamily: Typography.medium, fontSize: 14, color: colors.text, fontWeight: '600', marginBottom: 3 },
+  transactionDate: { fontFamily: Typography.regular, fontSize: 12, color: colors.textSecondary },
   transactionRight: { alignItems: 'flex-end', justifyContent: 'center' },
-  transactionAmount: { fontFamily: Typography.medium, fontSize: 13, color: Colors.text.primary, fontWeight: '600', marginBottom: 4 },
+  transactionAmount: { fontFamily: Typography.medium, fontSize: 13, color: colors.text, fontWeight: '600', marginBottom: 4 },
   statusContainer: { paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6, alignItems: 'center', justifyContent: 'center', minWidth: 50 },
   transactionStatus: { fontFamily: Typography.medium, fontSize: 12, fontWeight: '600' },
 });

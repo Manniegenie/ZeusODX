@@ -15,13 +15,16 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import naijaFlag from '../../components/icons/naija-flag.png';
 import backIcon from '../../components/icons/backy.png';
 import { useBankAccounts } from '../../hooks/usebankAccount';
 import ErrorDisplay from '../../components/ErrorDisplay';
 
 const BankAccountsScreen = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   const {
@@ -136,7 +139,7 @@ const BankAccountsScreen = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
         <ScrollView 
           style={styles.scrollView} 
           showsVerticalScrollIndicator={false}
@@ -356,8 +359,8 @@ const BankAccountsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   
@@ -393,7 +396,7 @@ const styles = StyleSheet.create({
 
   descriptionSection: { paddingHorizontal: 16, paddingBottom: 24 },
   descriptionText: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 14,
     fontWeight: '400',
@@ -409,7 +412,7 @@ const styles = StyleSheet.create({
     gap: 8 
   },
   loadingText: { 
-    color: Colors.text.secondary, 
+    color: colors.textSecondary, 
     fontFamily: Typography.regular, 
     fontSize: 14 
   },
@@ -417,14 +420,14 @@ const styles = StyleSheet.create({
   accountsSection: { paddingHorizontal: 16, paddingBottom: 24 },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyStateText: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
   },
   emptyStateSubtext: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 14,
     fontWeight: '400',
@@ -447,21 +450,21 @@ const styles = StyleSheet.create({
   flagIconDisabled: { opacity: 0.5 },
   accountDetails: { flex: 1 },
   accountNumber: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
   },
   bankName: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 2,
   },
   accountHolderName: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 12,
     fontWeight: '600',
@@ -470,7 +473,7 @@ const styles = StyleSheet.create({
 
   optionsButton: { width: 24, height: 24, justifyContent: 'center', alignItems: 'center' },
   optionsButtonDisabled: { opacity: 0.5 },
-  optionsIcon: { color: Colors.text.secondary, fontSize: 18, fontWeight: 'bold' },
+  optionsIcon: { color: colors.textSecondary, fontSize: 18, fontWeight: 'bold' },
   optionsIconDisabled: { opacity: 0.5 },
 
   bottomSection: { paddingHorizontal: 16, paddingBottom: 34, paddingTop: 16 },
@@ -545,7 +548,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonDisabled: { opacity: 0.6 },
   cancelButtonText: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 14,
     fontWeight: '600',

@@ -1,13 +1,14 @@
 // app/user/UsernameSearchScreen.tsx
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState , useMemo} from 'react';
 import { Alert, Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import Loading from '../../components/Loading';
 import TransferBottomSheet from '../../components/UsernameTransfer';
 import backIcon from '../../components/icons/backy.png'; // <- shared back icon
 import lensIcon from '../../components/icons/lens-icon.png';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useUsernameSearch } from '../../hooks/useUsernameQuery';
 
@@ -20,6 +21,8 @@ interface User {
 }
 
 const UsernameSearchScreen = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { tokenId, tokenName, tokenSymbol } = useLocalSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,7 +81,7 @@ const UsernameSearchScreen = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
 
           {/* Header Section */}
@@ -108,7 +111,7 @@ const UsernameSearchScreen = () => {
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search by Username"
-                placeholderTextColor={Colors.text.secondary}
+                placeholderTextColor={colors.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 autoCapitalize="none"
@@ -204,8 +207,8 @@ const UsernameSearchScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
 
@@ -217,11 +220,11 @@ const styles = StyleSheet.create({
   headerTitle: { color: '#35297F', fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', textAlign: 'center' },
 
   subtitleSection: { paddingHorizontal: 16, paddingVertical: 8 },
-  subtitleText: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14 },
+  subtitleText: { color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 14 },
 
   searchSection: { paddingHorizontal: 16, paddingVertical: 8 },
   searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F9FA', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 14, paddingVertical: 8 },
-  searchInput: { flex: 1, color: Colors.text.primary, fontFamily: Typography.regular, fontSize: 16, marginRight: 12, paddingVertical: 4, minHeight: 36 },
+  searchInput: { flex: 1, color: colors.text, fontFamily: Typography.regular, fontSize: 16, marginRight: 12, paddingVertical: 4, minHeight: 36 },
   searchButton: { padding: 8, borderRadius: 6, backgroundColor: '#35297F', justifyContent: 'center', alignItems: 'center' },
   searchButtonIcon: { width: 16, height: 16, resizeMode: 'contain', tintColor: '#FFFFFF' },
 
@@ -232,14 +235,14 @@ const styles = StyleSheet.create({
 
   resultsSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24, flex: 1 },
   loadingContainer: { alignItems: 'center', paddingVertical: 40 },
-  loadingText: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14 },
+  loadingText: { color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 14 },
   emptyContainer: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { color: Colors.text.primary, fontFamily: Typography.medium, fontSize: 16, marginBottom: 8 },
-  emptySubtext: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14, textAlign: 'center' },
+  emptyText: { color: colors.text, fontFamily: Typography.medium, fontSize: 16, marginBottom: 8 },
+  emptySubtext: { color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 14, textAlign: 'center' },
   instructionContainer: { alignItems: 'center', paddingVertical: 40 },
-  instructionText: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14 },
+  instructionText: { color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 14 },
 
-  resultsHeader: { color: Colors.text.secondary, fontFamily: Typography.medium, fontSize: 12, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 },
+  resultsHeader: { color: colors.textSecondary, fontFamily: Typography.medium, fontSize: 12, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 0.5 },
   usersList: { gap: 20 },
 
   userItem: { flexDirection: 'row', alignItems: 'center', padding: 10, justifyContent: 'flex-start', alignSelf: 'flex-start', gap: 10 },
@@ -250,8 +253,8 @@ const styles = StyleSheet.create({
 
   textContainer: { alignItems: 'flex-start', justifyContent: 'center' },
   userInfo: { alignItems: 'flex-start', justifyContent: 'center' },
-  userName: { color: Colors.text.primary, fontFamily: 'Bricolage Grotesque', fontSize: 14, fontWeight: '700', lineHeight: 16, letterSpacing: 0, marginBottom: 2 },
-  userUsername: { color: Colors.text.secondary, fontFamily: 'Bricolage Grotesque', fontSize: 10, fontWeight: '500', lineHeight: 16 },
+  userName: { color: colors.text, fontFamily: 'Bricolage Grotesque', fontSize: 14, fontWeight: '700', lineHeight: 16, letterSpacing: 0, marginBottom: 2 },
+  userUsername: { color: colors.textSecondary, fontFamily: 'Bricolage Grotesque', fontSize: 10, fontWeight: '500', lineHeight: 16 },
 });
 
 export default UsernameSearchScreen;

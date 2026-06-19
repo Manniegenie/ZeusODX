@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
     Animated,
     Dimensions,
@@ -13,8 +13,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ms, s } from 'react-native-size-matters';
 import { Typography } from '../constants/Typography';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 
-// Network icons
 import nineMobileIcon from '../components/icons/9mobile.png';
 import airtelIcon from '../components/icons/airtel.png';
 import gloIcon from '../components/icons/glo.png';
@@ -30,154 +31,83 @@ const AirtimeConfirmationModal = ({
   transactionData = {},
   loading = false
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
   const insets = useSafeAreaInsets();
 
-  const {
-    network = {},
-    amount = '0',
-    phoneNumber = '',
-    rate = '1 NGNZ = 1 NGN'
-  } = transactionData;
+  const { network = {}, amount = '0', phoneNumber = '', rate = '1 NGNZ = 1 NGN' } = transactionData;
 
-  // Get network icon
   const getNetworkIcon = (networkId) => {
-    if (!networkId) return mtnIcon; // Default icon if no network selected
-    
-    const icons = {
-      'mtn': mtnIcon,
-      'glo': gloIcon,
-      'airtel': airtelIcon,
-      '9mobile': nineMobileIcon
-    };
+    const icons = { mtn: mtnIcon, glo: gloIcon, airtel: airtelIcon, '9mobile': nineMobileIcon };
     return icons[networkId?.toLowerCase()] || mtnIcon;
   };
 
-  // Format amount for display
   const formatAmount = (amount) => {
     const numAmount = parseFloat(amount) || 0;
-    return `₦${numAmount.toLocaleString('en-NG', { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
-    })}`;
+    return `₦${numAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  // Format phone number for display
   const formatPhoneNumber = (phone) => {
     if (!phone) return '';
-    // Remove any non-digits and format
-    const cleaned = phone.replace(/\D/g, '');
-    return cleaned;
+    return phone.replace(/\D/g, '');
   };
 
-  // Slide animation
   useEffect(() => {
     if (visible) {
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
-      }).start();
+      Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 100, friction: 8 }).start();
     } else {
-      Animated.timing(slideAnim, {
-        toValue: MODAL_HEIGHT,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      Animated.timing(slideAnim, { toValue: MODAL_HEIGHT, duration: 300, useNativeDriver: true }).start();
     }
   }, [visible, slideAnim]);
 
-  const handleBackdropPress = () => {
-    onClose();
-  };
-
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
-      <TouchableWithoutFeedback onPress={handleBackdropPress}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+      <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
             <View style={styles.modalWrapper}>
-              <Animated.View
-                style={[
-                  styles.modalContainer,
-                  {
-                    transform: [{ translateY: slideAnim }],
-                  },
-                ]}
-              >
-                {/* Handle Bar */}
+              <Animated.View style={[styles.modalContainer, { transform: [{ translateY: slideAnim }] }]}>
                 <View style={styles.handleBar} />
 
-                {/* Amount Title */}
                 <View style={styles.amountSection}>
-                  <Text style={styles.amountTitle}>
-                    {formatAmount(amount)}
-                  </Text>
+                  <Text style={styles.amountTitle}>{formatAmount(amount)}</Text>
                 </View>
 
-                {/* Transaction Details */}
                 <View style={styles.detailsSection}>
-                  {/* Transaction Type */}
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Transaction</Text>
                     <Text style={styles.detailValue}>Airtime</Text>
                   </View>
-
-                  {/* Rate */}
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Rate</Text>
                     <Text style={styles.detailValue}>{rate}</Text>
                   </View>
-
-                  {/* Phone Number */}
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Phone number</Text>
                     <View style={styles.phoneContainer}>
-                      <Image 
-                        source={getNetworkIcon(network?.id)} 
-                        style={styles.networkIconSmall} 
-                      />
-                      <Text style={styles.detailValue}>
-                        {formatPhoneNumber(phoneNumber)}
-                      </Text>
+                      <Image source={getNetworkIcon(network?.id)} style={styles.networkIconSmall} />
+                      <Text style={styles.detailValue}>{formatPhoneNumber(phoneNumber)}</Text>
                     </View>
                   </View>
-
-                  {/* Amount */}
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Amount</Text>
-                    <Text style={styles.detailValue}>
-                      ₦{parseFloat(amount) || 0}
-                    </Text>
+                    <Text style={styles.detailValue}>₦{parseFloat(amount) || 0}</Text>
                   </View>
                 </View>
 
-                {/* Pay Button */}
                 <View style={styles.buttonSection}>
                   <TouchableOpacity
-                    style={[
-                      styles.payButton,
-                      loading && styles.payButtonDisabled
-                    ]}
+                    style={[styles.payButton, loading && styles.payButtonDisabled]}
                     onPress={onConfirm}
                     disabled={loading}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.payButtonText}>
-                      {loading ? 'Processing...' : 'Pay'}
-                    </Text>
+                    <Text style={styles.payButtonText}>{loading ? 'Processing...' : 'Pay'}</Text>
                   </TouchableOpacity>
                 </View>
               </Animated.View>
-              
-              {/* Safe Area Extension - White background that extends into bottom safe area */}
+
               <View style={[styles.safeAreaExtension, { height: insets.bottom }]} />
             </View>
           </TouchableWithoutFeedback>
@@ -187,10 +117,10 @@ const AirtimeConfirmationModal = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalWrapper: {
@@ -199,9 +129,8 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: '100%',
-    alignSelf: 'center',
     height: MODAL_HEIGHT,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderTopLeftRadius: s(24),
     borderTopRightRadius: s(24),
     paddingHorizontal: ms(24),
@@ -209,13 +138,12 @@ const styles = StyleSheet.create({
   },
   safeAreaExtension: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
-    alignSelf: 'center',
+    backgroundColor: colors.card,
   },
   handleBar: {
     width: s(40),
     height: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     borderRadius: s(2),
     alignSelf: 'center',
     marginBottom: 24,
@@ -225,7 +153,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   amountTitle: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 24,
     fontWeight: '600',
@@ -240,16 +168,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.border,
   },
   detailLabel: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     fontWeight: '400',
   },
   detailValue: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 14,
     fontWeight: '500',
@@ -271,14 +199,14 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   payButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: s(12),
     paddingVertical: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   payButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: colors.textSecondary,
   },
   payButtonText: {
     color: '#FFFFFF',

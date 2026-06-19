@@ -470,20 +470,24 @@ export const withdrawalService = {
    * Format withdrawal amount with proper decimals for all supported tokens
    */
   formatWithdrawalAmount(amount, currency) {
+    const num = Number(amount);
+    if (amount === null || amount === undefined || isNaN(num)) return '0';
+
     const formatters = {
-      BTC: (amt) => amt.toFixed(8),
-      ETH: (amt) => amt.toFixed(6),
-      SOL: (amt) => amt.toFixed(6),
+      BTC:  (amt) => amt.toFixed(8),
+      ETH:  (amt) => amt.toFixed(6),
+      SOL:  (amt) => amt.toFixed(6),
       USDT: (amt) => amt.toFixed(2),
       USDC: (amt) => amt.toFixed(2),
-      BNB: (amt) => amt.toFixed(4),
-      MATIC: (amt) => amt.toFixed(4),
-      TRX: (amt) => amt.toFixed(6),
-      NGNB: (amt) => amt.toFixed(2)
+      BNB:  (amt) => amt.toFixed(4),
+      MATIC:(amt) => amt.toFixed(4),
+      TRX:  (amt) => amt.toFixed(6),
+      TON:  (amt) => amt.toFixed(6),
+      NGNB: (amt) => amt.toFixed(2),
     };
 
     const formatter = formatters[currency?.toUpperCase()];
-    return formatter ? formatter(amount) : amount.toFixed(4);
+    return formatter ? formatter(num) : num.toFixed(4);
   },
 
   /**

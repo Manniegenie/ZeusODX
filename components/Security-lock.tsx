@@ -1,7 +1,7 @@
 // components/SimpleLock.tsx
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState , useMemo} from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -15,7 +15,8 @@ import {
   StatusBar,
 } from 'react-native';
 import ErrorDisplay from './ErrorDisplay';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
 import { useAuth } from '../hooks/useAuth';
@@ -30,6 +31,8 @@ interface SimpleLockProps {
 }
 
 export default function SimpleLock({ onSuccess }: SimpleLockProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { login } = useAuth();
 
@@ -389,7 +392,7 @@ export default function SimpleLock({ onSuccess }: SimpleLockProps) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} translucent={true} />
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.background} translucent={true} />
       {error.show && (
         <ErrorDisplay
           type={error.type}
@@ -473,10 +476,10 @@ export default function SimpleLock({ onSuccess }: SimpleLockProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   keyboardAvoid: {
     flex: 1,
@@ -495,7 +498,7 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold,
     fontSize: 24,
     lineHeight: 28,
-    color: Colors.primaryText,
+    color: colors.text,
     marginBottom: Layout.spacing.lg,
     textAlign: 'center',
   },
@@ -509,7 +512,7 @@ const styles = StyleSheet.create({
   subtitle: {
     ...Typography.styles.body,
     fontSize: 14,
-    color: Colors.primaryText,
+    color: colors.text,
     textAlign: 'center',
   },
   pinSection: {
@@ -526,25 +529,24 @@ const styles = StyleSheet.create({
   pinInput: {
     width: 50,
     height: 50,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderRadius: Layout.borderRadius.md,
     borderWidth: 2,
     borderColor: '#E5E5E5',
     fontSize: 20,
     fontFamily: Typography.bold,
-    color: Colors.text.primary,
+    color: colors.text,
     textAlign: 'center',
   },
   pinInputFilled: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
   },
   loadingContainer: {
     marginBottom: Layout.spacing.lg,
   },
   loadingText: {
     ...Typography.styles.body,
-    color: Colors.primary,
+    color: colors.primary,
     textAlign: 'center',
   },
   bottomActions: {
@@ -558,10 +560,10 @@ const styles = StyleSheet.create({
   },
   clearButtonText: {
     ...Typography.styles.bodyMedium,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   clearButtonTextDisabled: {
-    color: Colors.text.muted,
+    color: colors.textMuted,
   },
 });

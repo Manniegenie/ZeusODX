@@ -1,6 +1,6 @@
 // app/deposits/btc.tsx (BTC Deposit Screen)
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState , useMemo} from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -20,7 +20,8 @@ import AddressCopied from '../../components/AddressCopied';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import HintBulb from '../../components/HintBulb';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useDeposit } from '../../hooks/useDeposit';
 import { shareDepositPdf } from '../../utils/shareDepositPdf';
@@ -59,6 +60,8 @@ const getHorizontalPadding = () => {
 const horizontalPadding = getHorizontalPadding();
 
 export default function BtcDepositScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const {
     getBitcoinAddress,
@@ -162,7 +165,7 @@ export default function BtcDepositScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
 
         {/* Error Display */}
         {showError && (
@@ -185,11 +188,11 @@ export default function BtcDepositScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={[Colors.primary]}
-              tintColor={Colors.primary}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
               title="Pull to refresh"
-              titleColor={Colors.text.secondary}
-              progressBackgroundColor={Colors.surface}
+              titleColor={colors.textSecondary}
+              progressBackgroundColor={colors.card}
             />
           }
         >
@@ -229,7 +232,7 @@ export default function BtcDepositScreen() {
             <View style={styles.qrContainer}>
               {isLoading ? (
                 <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="large" color={Colors.primary} />
+                  <ActivityIndicator size="large" color={colors.primary} />
                   <Text style={styles.loadingText}>Loading BTC address...</Text>
                 </View>
               ) : isWalletSetupNeeded ? (
@@ -351,8 +354,8 @@ export default function BtcDepositScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 100 },
@@ -388,7 +391,7 @@ const styles = StyleSheet.create({
     width: 40 
   },
   headerTitle: { 
-    color: Colors.text.primary, 
+    color: colors.text, 
     fontFamily: Typography.medium, 
     fontSize: 18, 
     textAlign: 'center',
@@ -397,7 +400,7 @@ const styles = StyleSheet.create({
 
   // Subtitle
   subtitleSection: { paddingHorizontal: horizontalPadding, paddingVertical: 8, alignItems: 'center' },
-  subtitle: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14, textAlign: 'center' },
+  subtitle: { color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 14, textAlign: 'center' },
 
   // QR Code section
   qrSection: { paddingHorizontal: horizontalPadding, paddingVertical: 20, alignItems: 'center' },
@@ -408,7 +411,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingContainer: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 12, marginTop: 10, textAlign: 'center' },
+  loadingText: { color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 12, marginTop: 10, textAlign: 'center' },
   setupNeededContainer: {
     width: '100%',
     height: '100%',
@@ -422,17 +425,17 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   setupNeededIcon: { fontSize: 28, marginBottom: 8 },
-  setupNeededTitle: { fontFamily: Typography.medium, fontSize: 16, color: Colors.text.primary, textAlign: 'center', marginBottom: 8 },
+  setupNeededTitle: { fontFamily: Typography.medium, fontSize: 16, color: colors.text, textAlign: 'center', marginBottom: 8 },
   setupNeededText: {
     fontFamily: Typography.regular,
     fontSize: 14,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 12,
   },
-  contactSupportButton: { backgroundColor: Colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  contactSupportText: { color: Colors.surface, fontFamily: Typography.medium, fontSize: 14 },
+  contactSupportButton: { backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
+  contactSupportText: { color: colors.card, fontFamily: Typography.medium, fontSize: 14 },
   qrCodeImage: { width: '100%', height: '100%', borderRadius: 12 },
   qrCode: { width: '100%', height: '100%' },
   qrPlaceholder: { width: '100%', height: '100%', backgroundColor: '#000', justifyContent: 'center', alignItems: 'center', borderRadius: 12 },
@@ -445,7 +448,7 @@ const styles = StyleSheet.create({
 
   // Address section
   addressSection: { paddingHorizontal: horizontalPadding, paddingVertical: 15 },
-  sectionLabel: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14, marginBottom: 12 },
+  sectionLabel: { color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 14, marginBottom: 12 },
   addressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -456,12 +459,12 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     minHeight: 50,
   },
-  addressText: { flex: 1, color: Colors.text.primary, fontFamily: 'monospace', fontSize: 14, lineHeight: 20, marginRight: 12 },
+  addressText: { flex: 1, color: colors.text, fontFamily: 'monospace', fontSize: 14, lineHeight: 20, marginRight: 12 },
   copyButton: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -480,12 +483,12 @@ const styles = StyleSheet.create({
   detailsSection: { paddingHorizontal: horizontalPadding, paddingVertical: 8 },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
   lastDetailRow: { borderBottomWidth: 0 },
-  detailLabel: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14 },
-  detailValue: { color: Colors.text.primary, fontFamily: Typography.medium, fontSize: 14 },
+  detailLabel: { color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 14 },
+  detailValue: { color: colors.text, fontFamily: Typography.medium, fontSize: 14 },
 
   // Share section
   shareSection: { paddingHorizontal: horizontalPadding, paddingVertical: 15, paddingBottom: 20 },
-  shareButton: { backgroundColor: Colors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  shareButton: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   shareButtonDisabled: { backgroundColor: '#9CA3AF' },
-  shareButtonText: { color: Colors.surface, fontFamily: Typography.medium, fontSize: 16 },
+  shareButtonText: { color: colors.card, fontFamily: Typography.medium, fontSize: 16 },
 });

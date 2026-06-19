@@ -17,7 +17,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 // @ts-ignore
 import ErrorDisplay from '../../components/ErrorDisplay';
@@ -55,6 +56,8 @@ interface AccountSummary {
 }
 
 const BankAccountsScreen = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const params = useLocalSearchParams();
 
@@ -520,7 +523,7 @@ const BankAccountsScreen = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -891,7 +894,7 @@ const BankAccountsScreen = () => {
         onRequestClose={() => { setShowManualBankModal(false); clearBankSearch(); }}
       >
         <SafeAreaView style={styles.bankModalFullScreen}>
-          <StatusBar backgroundColor="#FFFFFF" barStyle="dark-content" />
+          <StatusBar backgroundColor="#FFFFFF" barStyle={colors.statusBar} />
           {/* Header - matches the rest of the app */}
           <View style={styles.bankModalHeader}>
             <TouchableOpacity
@@ -973,8 +976,8 @@ const BankAccountsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
 
@@ -1043,12 +1046,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   summaryLabel: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 14,
   },
   summaryValue: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 14,
     fontWeight: '600',
@@ -1059,7 +1062,7 @@ const styles = StyleSheet.create({
 
   descriptionSection: { paddingHorizontal: 16, paddingBottom: 24 },
   descriptionText: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 14,
     fontWeight: '400',
@@ -1075,7 +1078,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   loadingText: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 14,
   },
@@ -1112,14 +1115,14 @@ const styles = StyleSheet.create({
   accountsSection: { paddingHorizontal: 16, paddingBottom: 24 },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyStateText: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
   },
   emptyStateSubtext: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 14,
     fontWeight: '400',
@@ -1151,21 +1154,21 @@ const styles = StyleSheet.create({
   flagIconDisabled: { opacity: 0.5 },
   accountDetails: { flex: 1 },
   accountNumber: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
   },
   bankName: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 2,
   },
   accountHolderName: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 12,
     fontWeight: '600',
@@ -1174,7 +1177,7 @@ const styles = StyleSheet.create({
 
   optionsButton: { width: 24, height: 24, justifyContent: 'center', alignItems: 'center' },
   optionsButtonDisabled: { opacity: 0.5 },
-  optionsIcon: { color: Colors.text.secondary, fontSize: 18, fontWeight: 'bold' },
+  optionsIcon: { color: colors.textSecondary, fontSize: 18, fontWeight: 'bold' },
   optionsIconDisabled: { opacity: 0.5 },
 
   selectIndicator: { alignItems: 'flex-end' },
@@ -1268,7 +1271,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonDisabled: { opacity: 0.6 },
   cancelButtonText: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 14,
     fontWeight: '600',
@@ -1295,7 +1298,7 @@ const styles = StyleSheet.create({
   modeSwitch: {
     flexDirection: 'row',
     alignSelf: 'center',
-    backgroundColor: Colors.border,
+    backgroundColor: colors.border,
     borderRadius: 20,
     padding: 3,
     marginHorizontal: 16,
@@ -1321,7 +1324,7 @@ const styles = StyleSheet.create({
   modeSwitchText: {
     fontFamily: Typography.medium,
     fontSize: 13,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   modeSwitchTextActive: {
     color: '#FFFFFF',
@@ -1358,7 +1361,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   manualInputLabel: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 13,
     marginBottom: 6,
@@ -1376,7 +1379,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   manualBankSelectorText: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.regular,
     fontSize: 14,
     flex: 1,
@@ -1395,7 +1398,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     paddingHorizontal: 12,
     paddingVertical: 14,
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.regular,
     fontSize: 14,
   },
@@ -1406,7 +1409,7 @@ const styles = StyleSheet.create({
   },
   manualAccountNameInput: {
     flex: 1,
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.regular,
     fontSize: 14,
     padding: 0,
@@ -1477,7 +1480,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     paddingHorizontal: 12,
     paddingVertical: 12,
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.regular,
     fontSize: 14,
     marginBottom: 12,
@@ -1488,7 +1491,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F3F4F6',
   },
   bankListItemText: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.regular,
     fontSize: 14,
   },

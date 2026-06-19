@@ -1,5 +1,5 @@
 // app/kyc/level2.tsx (KYCLevel2Screen)
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -15,13 +15,16 @@ import { useRouter } from 'expo-router';
 import backIcon from '../../components/icons/backy.png';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { useVerificationStatus } from '../../hooks/useVerification';
 
 // Icons
 import checkmarkIcon from '../../components/icons/green-checkmark.png';
 
 const KYCLevel2Screen: React.FC = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   // Fetch once on mount: disable polling + refetch-on-focus/reconnect
@@ -60,7 +63,7 @@ const KYCLevel2Screen: React.FC = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
 
         <ScrollView
           style={styles.scrollView}
@@ -230,8 +233,8 @@ const KYCLevel2Screen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
 
@@ -282,13 +285,13 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.text?.primary || '#111827',
+    backgroundColor: colors.text,
     marginTop: 8,
     marginRight: 12,
   },
   benefitText: {
     flex: 1,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
     fontWeight: '400',
@@ -338,7 +341,7 @@ const styles = StyleSheet.create({
   },
 
   verificationCard: {
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -369,14 +372,14 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   verificationTitle: {
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
   },
   verificationSubtitle: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 11,
     fontWeight: '400',

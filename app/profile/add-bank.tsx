@@ -17,7 +17,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import naijaFlag from '../../components/icons/naija-flag.png';
 import { useBankAccounts } from '../../hooks/usebankAccount';
 import { useNairaBanks } from '../../hooks/usenairaBanks';
@@ -38,6 +39,8 @@ interface BankDetails {
 const currencyOptions = [{ code: 'NGN', name: 'Nigerian Naira', flag: naijaFlag }];
 
 const AddBankScreen = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   // Hook: list/summary used to enforce max limit; addAccount for submit
@@ -292,7 +295,7 @@ const AddBankScreen = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Header - now matches BankAccountsScreen style & back icon */}
           <View style={styles.headerSection}>
@@ -363,7 +366,7 @@ const AddBankScreen = () => {
                     handleInputChange('accountNumber', value.replace(/[^\d\s]/g, ''))
                   }
                   placeholder="Enter account number"
-                  placeholderTextColor={Colors.text.secondary}
+                  placeholderTextColor={colors.textSecondary}
                   keyboardType="number-pad"
                   maxLength={20}
                 />
@@ -384,7 +387,7 @@ const AddBankScreen = () => {
                 value={bankDetails.accountName}
                 onChangeText={(value) => handleInputChange('accountName', value)}
                 placeholder="Account name"
-                placeholderTextColor={Colors.text.secondary}
+                placeholderTextColor={colors.textSecondary}
                 autoCapitalize="words"
               />
             </View>
@@ -441,7 +444,7 @@ const AddBankScreen = () => {
                 value={searchTerm}
                 onChangeText={searchBanks}
                 placeholder="Search banks..."
-                placeholderTextColor={Colors.text.secondary}
+                placeholderTextColor={colors.textSecondary}
                 autoCapitalize="none"
               />
             </View>
@@ -517,8 +520,8 @@ const AddBankScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
 
@@ -553,10 +556,10 @@ const styles = StyleSheet.create({
   headerTitleInline: { color: '#35297F', fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', textAlign: 'left' },
 
   descriptionSection: { paddingHorizontal: 16, paddingBottom: 32 },
-  descriptionText: { color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14, fontWeight: '400', lineHeight: 20 },
+  descriptionText: { color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 14, fontWeight: '400', lineHeight: 20 },
   formSection: { paddingHorizontal: 16, paddingBottom: 32 },
   fieldContainer: { marginBottom: 24 },
-  fieldLabel: { color: Colors.text.primary, fontFamily: Typography.regular, fontSize: 14, fontWeight: '500', marginBottom: 8, textAlign: 'left' },
+  fieldLabel: { color: colors.text, fontFamily: Typography.regular, fontSize: 14, fontWeight: '500', marginBottom: 8, textAlign: 'left' },
   textInput: {
     backgroundColor: '#F8F9FA',
     borderRadius: 8,
@@ -564,7 +567,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.regular,
     fontSize: 16,
     fontWeight: '400',
@@ -582,15 +585,15 @@ const styles = StyleSheet.create({
   },
   currencyContainer: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   flagIcon: { width: 20, height: 15, marginRight: 8, resizeMode: 'contain' },
-  selectInputText: { color: Colors.text.primary, fontFamily: Typography.regular, fontSize: 16, fontWeight: '400', flex: 1 },
-  placeholderText: { color: Colors.text.secondary },
-  selectArrow: { color: Colors.text.secondary, fontSize: 12, marginLeft: 8 },
+  selectInputText: { color: colors.text, fontFamily: Typography.regular, fontSize: 16, fontWeight: '400', flex: 1 },
+  placeholderText: { color: colors.textSecondary },
+  selectArrow: { color: colors.textSecondary, fontSize: 12, marginLeft: 8 },
   bottomSection: { paddingHorizontal: 16, paddingBottom: 34, paddingTop: 16 },
   saveButton: { backgroundColor: '#35297F', borderRadius: 8, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center' },
   saveButtonText: { color: '#FFFFFF', fontFamily: Typography.medium, fontSize: 16, fontWeight: '600' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },
   modalContainer: { 
-    backgroundColor: Colors.background, 
+    backgroundColor: colors.background, 
     borderTopLeftRadius: 20, 
     borderTopRightRadius: 20, 
     height: '50%', // Fixed height at 50% instead of maxHeight 80%
@@ -607,7 +610,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: { color: '#35297F', fontFamily: Typography.medium, fontSize: 18, fontWeight: '600' },
   modalCloseButton: { width: 30, height: 30, justifyContent: 'center', alignItems: 'center' },
-  modalCloseText: { color: Colors.text.secondary, fontSize: 24, fontWeight: 'bold' },
+  modalCloseText: { color: colors.textSecondary, fontSize: 24, fontWeight: 'bold' },
   searchContainer: { 
     paddingHorizontal: 20, 
     paddingVertical: 10, 
@@ -621,7 +624,7 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.regular,
     fontSize: 16,
   },
@@ -636,7 +639,7 @@ const styles = StyleSheet.create({
   },
   loadingText: { 
     marginTop: 12, 
-    color: Colors.text.secondary, 
+    color: colors.textSecondary, 
     fontFamily: Typography.regular,
     fontSize: 14 
   },
@@ -668,12 +671,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center' 
   },
   emptyText: { 
-    color: Colors.text.secondary, 
+    color: colors.textSecondary, 
     fontFamily: Typography.regular, 
     fontSize: 14 
   },
   modalOption: { paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F3F4' },
-  modalOptionText: { color: Colors.text.primary, fontFamily: Typography.regular, fontSize: 16, fontWeight: '400' },
+  modalOptionText: { color: colors.text, fontFamily: Typography.regular, fontSize: 16, fontWeight: '400' },
 });
 
 export default AddBankScreen;

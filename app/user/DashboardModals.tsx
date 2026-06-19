@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     FlatList,
     Image,
@@ -10,7 +10,8 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 
@@ -53,6 +54,8 @@ export default function DashboardModals({
   onCloseTransferModal,
   onCloseWalletModal,
 }: DashboardModalsProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   // Transfer options
@@ -202,19 +205,19 @@ export default function DashboardModals({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: Colors.surface, borderTopLeftRadius: Layout.borderRadius.xl, borderTopRightRadius: Layout.borderRadius.xl, padding: Layout.spacing.lg, height: '50%' },
-  transferModalContent: { backgroundColor: Colors.surface, borderTopLeftRadius: Layout.borderRadius.xl, borderTopRightRadius: Layout.borderRadius.xl, padding: Layout.spacing.lg, height: '40%' },
+  modalContent: { backgroundColor: colors.card, borderTopLeftRadius: Layout.borderRadius.xl, borderTopRightRadius: Layout.borderRadius.xl, padding: Layout.spacing.lg, height: '50%' },
+  transferModalContent: { backgroundColor: colors.card, borderTopLeftRadius: Layout.borderRadius.xl, borderTopRightRadius: Layout.borderRadius.xl, padding: Layout.spacing.lg, height: '40%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Layout.spacing.lg },
-  modalTitle: { fontFamily: Typography.bold, fontSize: 18, color: Colors.text.primary },
-  closeButton: { fontSize: 16, color: Colors.text.secondary, padding: Layout.spacing.sm },
+  modalTitle: { fontFamily: Typography.bold, fontSize: 18, color: colors.text },
+  closeButton: { fontSize: 16, color: colors.textSecondary, padding: Layout.spacing.sm },
   transferMethodItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: Layout.spacing.md, paddingHorizontal: Layout.spacing.sm, backgroundColor: '#F8F9FA', marginBottom: Layout.spacing.sm, borderRadius: Layout.borderRadius.md },
-  transferMethodIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
+  transferMethodIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   transferMethodIconImage: { width: 40, height: 40, resizeMode: 'cover' },
   transferMethodContent: { flex: 1, marginLeft: Layout.spacing.md },
-  transferMethodTitle: { fontFamily: Typography.medium, fontSize: 14, color: Colors.text.primary, marginBottom: 2 },
-  transferMethodDescription: { fontFamily: Typography.regular, fontSize: 12, color: Colors.text.secondary },
+  transferMethodTitle: { fontFamily: Typography.medium, fontSize: 14, color: colors.text, marginBottom: 2 },
+  transferMethodDescription: { fontFamily: Typography.regular, fontSize: 12, color: colors.textSecondary },
   walletList: { paddingBottom: Layout.spacing.lg },
   scrollableList: { flex: 1 },
   walletOptionItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: Layout.spacing.md, paddingHorizontal: Layout.spacing.sm, backgroundColor: '#F8F9FA', marginBottom: Layout.spacing.sm, borderRadius: Layout.borderRadius.md },
@@ -236,6 +239,6 @@ const styles = StyleSheet.create({
     resizeMode: 'cover'
   },
   walletInfo: { flex: 1 },
-  walletName: { fontFamily: Typography.medium, fontSize: 14, color: Colors.text.primary },
-  walletSymbol: { fontFamily: Typography.regular, fontSize: 12, color: Colors.text.secondary },
+  walletName: { fontFamily: Typography.medium, fontSize: 14, color: colors.text },
+  walletSymbol: { fontFamily: Typography.regular, fontSize: 12, color: colors.textSecondary },
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,8 @@ import { useRouter } from 'expo-router';
 import backIcon from '../../components/icons/backy.png';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 
 // KYC status badge icons - replace with actual paths
 import verifiedIcon from '../../components/icons/verified.png';
@@ -34,6 +35,8 @@ interface KYCLevel {
 }
 
 const KYCUpgradeScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   // KYC levels configuration - removed Level 3
@@ -124,7 +127,7 @@ const KYCUpgradeScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
 
         <ScrollView
           style={styles.scrollView}
@@ -211,10 +214,10 @@ const KYCUpgradeScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: Colors.background || '#F8F9FA' 
+    backgroundColor: colors.background 
   },
   safeArea: { 
     flex: 1 
@@ -263,7 +266,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   subtitle: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 13, // Reduced by 20% from 16
     fontWeight: '400',
@@ -279,7 +282,7 @@ const styles = StyleSheet.create({
 
   // Level card styles (reduced by 20%)
   levelCard: {
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 8, // Reduced from 12
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -302,13 +305,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   levelTitle: {
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 14, // Reduced by 20% from 18 (14.4 rounded down)
     fontWeight: '600',
   },
   levelDescription: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 11, // Reduced by 20% from 14 (11.2 rounded down)
     fontWeight: '400',
@@ -366,7 +369,7 @@ const styles = StyleSheet.create({
   },
   arrowIcon: {
     fontSize: 20, // Reduced from 24
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontWeight: '300',
   },
 });

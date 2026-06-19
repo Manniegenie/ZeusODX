@@ -1,13 +1,16 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState , useMemo} from 'react';
 import { Animated, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import ErrorDisplay from '../../components/ErrorDisplay';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useVerify } from '../../hooks/useVerify';
 
 export default function VerifyPhoneScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const params = useLocalSearchParams();
   const { 
@@ -20,7 +23,7 @@ export default function VerifyPhoneScreen() {
 
   const inputRef = useRef<TextInput>(null);
   const [verificationCode, setVerificationCode] = useState('');
-  const [countdown, setCountdown] = useState(120); // 2 minutes
+  const [countdown, setCountdown] = useState(300); // 5 minutes
   const [canResend, setCanResend] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
@@ -294,7 +297,7 @@ export default function VerifyPhoneScreen() {
             ref={inputRef}
             style={styles.codeInput}
             placeholder=""
-            placeholderTextColor={Colors.text.muted}
+            placeholderTextColor={colors.textMuted}
             value={verificationCode}
             onChangeText={handleCodeChange}
             keyboardType="number-pad"
@@ -363,10 +366,10 @@ export default function VerifyPhoneScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -381,13 +384,13 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold,
     fontSize: 24,
     lineHeight: 28,
-    color: Colors.primaryText,
+    color: colors.text,
     marginBottom: Layout.spacing.xs,
     textAlign: 'center',
   },
   subtitle: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: Layout.spacing.sm,
   },
@@ -413,13 +416,13 @@ const styles = StyleSheet.create({
     borderRadius: Layout.borderRadius.md,
     borderWidth: 2,
     borderColor: '#E5E5E5',
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
   },
   filledCodeBox: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.surface,
+    borderColor: colors.primary,
+    backgroundColor: colors.card,
   },
   verifyingCodeBox: {
     borderColor: '#FFA500',
@@ -428,13 +431,13 @@ const styles = StyleSheet.create({
   codeText: {
     fontSize: 24,
     fontFamily: Typography.bold,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   cursor: {
     position: 'absolute',
     width: 2,
     height: 30,
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     top: '50%',
     left: '50%',
     marginLeft: -1,
@@ -453,15 +456,15 @@ const styles = StyleSheet.create({
   },
   resendQuestion: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   resendText: {
     ...Typography.styles.bodyMedium,
   },
   resendActive: {
-    color: Colors.primary,
+    color: colors.primary,
   },
   resendInactive: {
-    color: Colors.text.muted,
+    color: colors.textMuted,
   },
 });

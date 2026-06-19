@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     Image,
     Platform,
@@ -13,7 +13,8 @@ import {
     View
 } from 'react-native';
 
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 
 // Icons
@@ -29,6 +30,8 @@ interface DepositParams {
 }
 
 export default function NGNZDepositReceipt() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const params = useLocalSearchParams<DepositParams>();
 
@@ -63,7 +66,7 @@ Reference: ${params.reference || 'N/A'}`;
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.background} />
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
@@ -145,10 +148,10 @@ Reference: ${params.reference || 'N/A'}`;
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   safeArea: {
     flex: 1,
@@ -196,20 +199,20 @@ const styles = StyleSheet.create({
   amountSection: {
     alignItems: 'center',
     marginBottom: 24,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     paddingVertical: 20,
     borderRadius: 12,
   },
   amountLabel: {
     fontSize: 14,
     fontFamily: Typography.regular,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   amountValue: {
     fontSize: 28,
     fontFamily: Typography.medium,
-    color: Colors.primary,
+    color: colors.primary,
     fontWeight: '600',
   },
   detailsSection: {
@@ -229,13 +232,13 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 14,
     fontFamily: Typography.regular,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     flex: 1,
   },
   detailValue: {
     fontSize: 14,
     fontFamily: Typography.medium,
-    color: Colors.text.primary,
+    color: colors.text,
     flex: 2,
     textAlign: 'right',
   },
@@ -258,7 +261,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   shareButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: 12,
     height: 48,
     alignItems: 'center',
@@ -266,7 +269,7 @@ const styles = StyleSheet.create({
     marginBottom: Platform.OS === 'ios' ? 24 : 16,
   },
   shareButtonText: {
-    color: Colors.surface,
+    color: colors.card,
     fontSize: 16,
     fontFamily: Typography.medium,
     fontWeight: '600',

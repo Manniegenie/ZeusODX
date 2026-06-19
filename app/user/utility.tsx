@@ -1,6 +1,6 @@
 // app/user/UtilityScreen.tsx
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     Image,
     ImageSourcePropType,
@@ -13,7 +13,8 @@ import {
     View,
 } from 'react-native';
 import BottomTabNavigator from '../../components/BottomNavigator';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 
@@ -38,6 +39,8 @@ interface UtilityService {
 }
 
 const UtilityScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   // Utility services configuration
@@ -98,7 +101,7 @@ const UtilityScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
 
         {/* Header Section */}
         <View style={styles.headerSection}>
@@ -158,10 +161,10 @@ const UtilityScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: Colors.background || '#F3F4F6' 
+    backgroundColor: colors.background 
   },
   safeArea: { 
     flex: 1 
@@ -172,7 +175,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.spacing.md,
     paddingTop: Layout.verticalSpacing.xs,
     paddingBottom: Layout.verticalSpacing.sm,
-    backgroundColor: Colors.background || '#F3F4F6',
+    backgroundColor: colors.background,
     zIndex: 1,
   },
   headerContainer: {

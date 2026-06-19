@@ -1,5 +1,5 @@
 import * as Clipboard from 'expo-clipboard';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Alert,
     Image,
@@ -11,9 +11,10 @@ import {
     View,
 } from 'react-native';
 import { Typography } from '../constants/Typography';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import BaseModal from './ui/BaseModal';
 
-// Import icons
 // @ts-ignore
 import copyIcon from './icons/copy-icon.png';
 
@@ -34,6 +35,9 @@ const TwoFactorAuthModal: React.FC<TwoFactorAuthModalProps> = ({
   title = 'Two-Factor Authentication',
   subtitle = 'Please enter the 6-digit code from your authenticator app'
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const codeInputRef = useRef<TextInput>(null);
@@ -42,7 +46,6 @@ const TwoFactorAuthModal: React.FC<TwoFactorAuthModalProps> = ({
     if (visible) {
       setCode('');
       setError('');
-      // Focus input after modal animation
       setTimeout(() => codeInputRef.current?.focus(), 300);
     }
   }, [visible]);
@@ -51,17 +54,11 @@ const TwoFactorAuthModal: React.FC<TwoFactorAuthModalProps> = ({
     const numericValue = value.replace(/[^0-9]/g, '').slice(0, 6);
     setCode(numericValue);
     setError('');
-    // Dismiss keyboard when 6 digits are entered
-    if (numericValue.length === 6) {
-      Keyboard.dismiss();
-    }
+    if (numericValue.length === 6) Keyboard.dismiss();
   };
 
-  // Auto-submit when all 6 digits are entered
   useEffect(() => {
-    if (code.length === 6 && !loading) {
-      handleSubmit();
-    }
+    if (code.length === 6 && !loading) handleSubmit();
   }, [code]);
 
   const handlePasteFromClipboard = async () => {
@@ -74,7 +71,7 @@ const TwoFactorAuthModal: React.FC<TwoFactorAuthModalProps> = ({
       } else {
         Alert.alert('Invalid Code', 'Clipboard does not contain a valid 6-digit code.');
       }
-    } catch (err) {
+    } catch {
       Alert.alert('Error', 'Unable to access clipboard.');
     }
   };
@@ -89,28 +86,18 @@ const TwoFactorAuthModal: React.FC<TwoFactorAuthModalProps> = ({
 
   const isValid = code.length === 6;
 
-  const renderCodeBoxes = () => {
-    return Array.from({ length: 6 }).map((_, i) => (
-      <View
-        key={i}
-        style={[styles.codeBox, i < code.length && styles.codeBoxFilled]}
-      >
+  const renderCodeBoxes = () =>
+    Array.from({ length: 6 }).map((_, i) => (
+      <View key={i} style={[styles.codeBox, i < code.length && styles.codeBoxFilled]}>
         <Text style={[styles.codeText, i < code.length && styles.codeTextFilled]}>
           {code[i] || ''}
         </Text>
       </View>
     ));
-  };
 
   return (
-    <BaseModal
-      visible={visible}
-      onClose={onClose}
-      type="center"
-      disableBackdropPress={loading}
-    >
+    <BaseModal visible={visible} onClose={onClose} type="center" disableBackdropPress={loading}>
       <View style={styles.content}>
-        {/* Close Button */}
         <TouchableOpacity
           style={styles.closeButton}
           onPress={onClose}
@@ -120,13 +107,11 @@ const TwoFactorAuthModal: React.FC<TwoFactorAuthModalProps> = ({
           <Text style={styles.closeButtonText}>✕</Text>
         </TouchableOpacity>
 
-        {/* Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
 
-        {/* Input Section */}
         <View style={styles.inputSection}>
           <TextInput
             ref={codeInputRef}
@@ -137,10 +122,8 @@ const TwoFactorAuthModal: React.FC<TwoFactorAuthModalProps> = ({
             maxLength={6}
             caretHidden
           />
-
           <View style={styles.codeContainer}>{renderCodeBoxes()}</View>
 
-          {/* Paste Button */}
           <TouchableOpacity
             style={styles.pasteButton}
             onPress={handlePasteFromClipboard}
@@ -152,29 +135,23 @@ const TwoFactorAuthModal: React.FC<TwoFactorAuthModalProps> = ({
           </TouchableOpacity>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-          <Text style={styles.helperText}>
-            Open your authenticator app to get the code
-          </Text>
+          <Text style={styles.helperText}>Open your authenticator app to get the code</Text>
         </View>
 
-        {/* Submit Button */}
         <TouchableOpacity
           style={[styles.submitButton, (!isValid || loading) && styles.submitButtonDisabled]}
           onPress={handleSubmit}
           disabled={!isValid || loading}
           activeOpacity={0.8}
         >
-          <Text style={styles.submitButtonText}>
-            {loading ? 'Verifying...' : 'Verify'}
-          </Text>
+          <Text style={styles.submitButtonText}>{loading ? 'Verifying...' : 'Verify'}</Text>
         </TouchableOpacity>
       </View>
     </BaseModal>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   content: {
     paddingHorizontal: 24,
     paddingVertical: 24,
@@ -188,11 +165,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 15,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.border,
     zIndex: 1,
   },
   closeButtonText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '500',
   },
@@ -202,7 +179,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   title: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
@@ -210,7 +187,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
     textAlign: 'center',
@@ -238,31 +215,31 @@ const styles = StyleSheet.create({
     width: 38,
     height: 45,
     borderRadius: 8,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   codeBoxFilled: {
-    borderColor: '#35297F',
-    backgroundColor: '#F8F7FF',
+    borderColor: colors.primary,
+    backgroundColor: colors.card,
   },
   codeText: {
     fontSize: 16,
     fontFamily: Typography.medium || 'System',
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: colors.textSecondary,
   },
   codeTextFilled: {
-    color: '#35297F',
+    color: colors.primary,
   },
   pasteButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0F9FF',
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: '#35297F',
+    borderColor: colors.primary,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -272,9 +249,10 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     marginRight: 6,
+    tintColor: colors.primary,
   },
   pasteButtonText: {
-    color: '#35297F',
+    color: colors.primary,
     fontFamily: Typography.medium || 'System',
     fontSize: 12,
     fontWeight: '500',
@@ -288,7 +266,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   helperText: {
-    color: '#9CA3AF',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 11,
     textAlign: 'center',
@@ -297,7 +275,7 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   submitButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     justifyContent: 'center',
@@ -305,7 +283,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   submitButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: colors.textSecondary,
   },
   submitButtonText: {
     color: '#FFFFFF',

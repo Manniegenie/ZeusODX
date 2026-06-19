@@ -1,6 +1,6 @@
 // app/user/NGNZWalletScreen.tsx
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState , useMemo} from 'react';
 import {
     ActivityIndicator,
     Image,
@@ -15,10 +15,12 @@ import {
     View
 } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import NetworkSelectionModal from '../../components/Network';
 import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
@@ -26,11 +28,7 @@ import { useBalance } from '../../hooks/useWallet';
 
 import portfolioBg from '../../assets/images/portfolio-bgg.jpg';
 import backIcon from '../../components/icons/backy.png';
-import depositIcon from '../../components/icons/deposit-icon.png';
-import emptyStateIcon from '../../components/icons/empty-state.png';
 import ngnzIcon from '../../components/icons/NGNZ.png';
-import swapIcon from '../../components/icons/swap-icon.png';
-import transferIcon from '../../components/icons/transfer-icon.png';
 
 type TokenDetails = {
   transactionId?: string;
@@ -72,6 +70,8 @@ type APITransaction = {
 };
 
 const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { openNetworkModal } = useLocalSearchParams();
 
@@ -102,9 +102,9 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   }, [openNetworkModal]);
 
   const quickActions = [
-    { id: 'deposit', title: 'Deposit', iconSrc: depositIcon, disabled: true },
-    { id: 'transfer', title: 'Withdraw', iconSrc: transferIcon },
-    { id: 'buy-sell', title: 'Buy/Sell', iconSrc: swapIcon },
+    { id: 'deposit', title: 'Deposit', iconName: 'download-outline', disabled: true },
+    { id: 'transfer', title: 'Withdraw', iconName: 'send-outline' },
+    { id: 'buy-sell', title: 'Swap', iconName: 'swap-horizontal-outline' },
   ];
 
   const ngnzNetworks = [{ id: 'ngnz', name: 'NGNZ Network' }];
@@ -344,7 +344,7 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
         <ScrollView
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -352,7 +352,7 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
             <RefreshControl
               refreshing={loading || transactionsLoading}
               onRefresh={onRefresh}
-              colors={[Colors.primary]}
+              colors={[colors.primary]}
             />
           }
         >
@@ -413,10 +413,9 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
                     disabled={isDisabled}
                     activeOpacity={isDisabled ? 1 : 0.7}
                   >
-                    <Image
-                      source={action.iconSrc}
-                      style={[styles.actionIconImage, isDisabled && styles.actionIconImageDisabled]}
-                    />
+                    <View style={[styles.actionIconContainer, isDisabled && styles.actionIconContainerDisabled]}>
+                      <Ionicons name={action.iconName as any} size={24} color="#FFFFFF" />
+                    </View>
                     <Text style={[styles.actionLabel, isDisabled && styles.actionLabelDisabled]}>
                       {action.title}
                     </Text>
@@ -435,7 +434,7 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
             </View>
             {!hasTransactions && !transactionsLoading ? (
               <View style={styles.emptyState}>
-                <Image source={emptyStateIcon} style={styles.emptyStateImage} />
+                <Ionicons name="receipt-outline" size={64} color={colors.textSecondary} />
                 <Text style={styles.emptyText}>No transaction yet</Text>
               </View>
             ) : (
@@ -511,8 +510,8 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
@@ -531,7 +530,7 @@ const styles = StyleSheet.create({
   },
   headerGroup: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' },
   iconImage: { width: 28, height: 28, resizeMode: 'cover' },
-  headerTitle: { fontSize: 16, fontWeight: '600', color: Colors.text.primary },
+  headerTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
   headerRight: { width: 40 },
   
   // Updated Balance Section Styles (Portfolio Style)
@@ -562,14 +561,14 @@ const styles = StyleSheet.create({
   balanceLabel: { 
     fontFamily: Typography.regular, 
     fontSize: 14, 
-    color: Colors.surface, 
+    color: '#FFFFFF', 
     marginBottom: 8, 
     textAlign: 'center' 
   },
   balanceAmount: { 
     fontFamily: Typography.medium, 
     fontSize: 24, 
-    color: Colors.surface, 
+    color: '#FFFFFF', 
     fontWeight: '500', 
     textAlign: 'center',
     marginBottom: 4
@@ -577,11 +576,11 @@ const styles = StyleSheet.create({
   balanceUsd: { 
     fontFamily: Typography.regular,
     fontSize: 14, 
-    color: Colors.surface,
+    color: '#FFFFFF',
     textAlign: 'center'
   },
   errorText: { 
-    color: Colors.surface,
+    color: '#FFFFFF',
     fontSize: 14,
     textAlign: 'center'
   },
@@ -590,13 +589,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, 
     paddingVertical: 16 
   },
-  quickActionsTitle: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  quickActionsTitle: { fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 8 },
   quickActionsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   actionItem: { alignItems: 'center' },
   actionItemDisabled: { opacity: 0.5 },
-  actionIconImage: { width: 44, height: 44 },
-  actionIconImageDisabled: { tintColor: '#A0A0A0' },
-  actionLabel: { fontSize: 12, color: '#292d32', marginTop: 4 },
+  actionIconContainer: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#35297F', justifyContent: 'center', alignItems: 'center' },
+  actionIconContainerDisabled: { backgroundColor: '#9CA3AF' },
+  actionLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
   actionLabelDisabled: { color: '#A0A0A0' },
   recentHistorySection: { 
     paddingHorizontal: Layout.spacing.lg, 
@@ -607,17 +606,15 @@ const styles = StyleSheet.create({
     fontFamily: Typography.medium,
     fontSize: 14, 
     fontWeight: '600',
-    color: Colors.text.primary
+    color: colors.text
   },
   viewAllText: { 
     fontFamily: Typography.medium,
     fontSize: 14, 
     fontWeight: 'bold', 
-    color: '#35297F' 
-  },
-  emptyState: { alignItems: 'center', marginTop: 16 },
-  emptyStateImage: { width: 160, height: 156 },
-  emptyText: { fontSize: 12, color: Colors.text.secondary },
+    color: colors.primary  },
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 32, gap: 8 },
+    emptyText: { fontSize: 13, color: colors.textSecondary, fontFamily: Typography.regular },
   transactionsList: { 
     flex: 1
   },
@@ -629,7 +626,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Layout.spacing.lg,
     paddingHorizontal: Layout.spacing.lg,
-    backgroundColor: '#F0EFFF',
+    backgroundColor: colors.card,
     marginBottom: Layout.spacing.sm,
     borderRadius: Layout.borderRadius.md,
     minHeight: 64,
@@ -641,14 +638,14 @@ const styles = StyleSheet.create({
   transactionType: { 
     fontFamily: Typography.medium,
     fontSize: 14, 
-    color: Colors.text.primary, 
+    color: colors.text, 
     fontWeight: '600',
     marginBottom: 3 
   },
   transactionDate: { 
     fontFamily: Typography.regular,
     fontSize: 12, 
-    color: Colors.text.secondary 
+    color: colors.textSecondary 
   },
   transactionRight: { 
     alignItems: 'flex-end',
@@ -657,7 +654,7 @@ const styles = StyleSheet.create({
   transactionAmount: { 
     fontFamily: Typography.medium,
     fontSize: 13, 
-    color: Colors.text.primary,
+    color: colors.text,
     fontWeight: '600',
     marginBottom: 4
   },

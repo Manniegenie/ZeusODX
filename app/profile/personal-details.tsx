@@ -12,7 +12,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useUserProfile } from '../../hooks/useProfile';
 
@@ -50,6 +51,8 @@ function deriveNames(profile: any): { firstName: string; lastName: string } {
 }
 
 const PersonalDetailsScreen = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   // Load profile on mount; expose refetch for retry
@@ -82,7 +85,7 @@ const PersonalDetailsScreen = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
 
         {/* Header */}
         <View style={styles.headerSection}>
@@ -156,8 +159,8 @@ const PersonalDetailsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
 
@@ -195,7 +198,7 @@ const styles = StyleSheet.create({
   headerSpacer: { width: 40, height: 40 },
 
   loadingWrap: { paddingHorizontal: 16, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  loadingText: { marginLeft: 8, color: Colors.text.secondary, fontFamily: Typography.regular, fontSize: 14 },
+  loadingText: { marginLeft: 8, color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 14 },
 
   errorBanner: {
     marginHorizontal: 16,
@@ -224,7 +227,7 @@ const styles = StyleSheet.create({
   formSection: { paddingHorizontal: 16, paddingBottom: 32 },
   fieldContainer: { marginBottom: 24 },
   fieldLabel: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontFamily: Typography.regular,
     fontSize: 14,
     fontWeight: '500',
@@ -240,7 +243,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   disabledInputText: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 16,
     fontWeight: '400',

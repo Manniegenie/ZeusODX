@@ -11,11 +11,14 @@ import {
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useDigitalAddressVerification } from '../../hooks/useaddressVerification';
 
 export default function AddressVerify() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { loading, error, statusText, submit, validate, reset } = useDigitalAddressVerification();
 
@@ -55,7 +58,7 @@ export default function AddressVerify() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar backgroundColor={Colors.background || '#F8F9FA'} barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
 
       <ScrollView
         style={styles.scroll}
@@ -106,7 +109,7 @@ export default function AddressVerify() {
             value={addressLine1}
             onChangeText={setAddressLine1}
             placeholder="House/Street, Area"
-            placeholderTextColor={Colors.text?.secondary || '#6B7280'}
+            placeholderTextColor={colors.textSecondary}
             style={[styles.input, { minHeight: 46 }]}
           />
 
@@ -115,7 +118,7 @@ export default function AddressVerify() {
             value={addressLine2}
             onChangeText={setAddressLine2}
             placeholder="Apartment, landmark (optional)"
-            placeholderTextColor={Colors.text?.secondary || '#6B7280'}
+            placeholderTextColor={colors.textSecondary}
             style={styles.input}
           />
 
@@ -127,7 +130,7 @@ export default function AddressVerify() {
                 value={city}
                 onChangeText={setCity}
                 placeholder="Ikeja"
-                placeholderTextColor={Colors.text?.secondary || '#6B7280'}
+                placeholderTextColor={colors.textSecondary}
                 style={styles.input}
               />
             </View>
@@ -137,7 +140,7 @@ export default function AddressVerify() {
                 value={state}
                 onChangeText={setState}
                 placeholder="Lagos"
-                placeholderTextColor={Colors.text?.secondary || '#6B7280'}
+                placeholderTextColor={colors.textSecondary}
                 style={styles.input}
               />
             </View>
@@ -151,7 +154,7 @@ export default function AddressVerify() {
                 value={postalCode}
                 onChangeText={setPostalCode}
                 placeholder="100001"
-                placeholderTextColor={Colors.text?.secondary || '#6B7280'}
+                placeholderTextColor={colors.textSecondary}
                 keyboardType="number-pad"
                 style={styles.input}
               />
@@ -180,10 +183,10 @@ export default function AddressVerify() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: Colors.background || '#F8F9FA',
+    backgroundColor: colors.background,
   },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
@@ -210,7 +213,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 20,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
     fontWeight: '500',
   },
@@ -231,7 +234,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sub: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
     fontWeight: '400',
@@ -241,7 +244,7 @@ const styles = StyleSheet.create({
 
   // Labels / Inputs — NOT bold
   label: {
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     fontWeight: '400',
@@ -255,7 +258,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
     fontSize: 16,
     fontWeight: '400',
@@ -322,7 +325,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   bannerText: {
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
     fontWeight: '400',

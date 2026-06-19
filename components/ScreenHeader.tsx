@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Typography } from '../constants/Typography';
 import BackButton from './BackButton';
 
@@ -19,6 +20,8 @@ export default function ScreenHeader({
   backDisabled = false,
   rightComponent
 }: ScreenHeaderProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.headerSection}>
       <View style={styles.headerContainer}>
@@ -37,7 +40,7 @@ export default function ScreenHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   headerSection: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -62,7 +65,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   headerSubtitle: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 13,
     textAlign: 'center',

@@ -197,6 +197,7 @@ export const useWithdrawal = () => {
       try {
         setIsCalculatingFee(true);
         setFeeError(null);
+        setFeeCalculation(null); // clear stale data before new request
 
         console.log('🔄 Hook: Calculating withdrawal fee...');
 

@@ -25,9 +25,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import Loading from '../../components/Loading';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useGiftCard } from '../../hooks/usegiftcard';
+import { useGiftcardCountries } from '../../hooks/usegiftcardCountry';
 
 // Icons - Updated to match main screen
 import chevronRightIcon from '../../components/icons/arrow.png';
@@ -91,6 +93,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   message,
   buttonText = 'Done'
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -341,8 +345,10 @@ const ChoicePill = ({
 /* ===================== Screen ===================== */
 const GiftcardTradeScreen: React.FC = () => {
   const router = useRouter();
-  const params = useLocalSearchParams<{ brand?: string }>();
+  const params = useLocalSearchParams<{ brand?: string; id?: string; countryCode?: string; countryName?: string }>();
   const brand = (params.brand as string) || 'Amazon';
+  const preselectedCountryCode = (params.countryCode as string) || '';
+  const preselectedCountryName = (params.countryName as string) || '';
 
   // Check if this is a VANILLA card
   const isVanillaCard = brand.toLowerCase().includes('vanilla');
@@ -361,9 +367,15 @@ const GiftcardTradeScreen: React.FC = () => {
   // Gift card hook
   const { loading: submitLoading, error: submitError, submitGiftCard, clearError } = useGiftCard();
 
+  // Countries hook — used to auto-fetch the rate when country is pre-selected from params
+  const { countries: brandCountries, loading: rateLoading, fetchCountries: fetchBrandCountries } = useGiftcardCountries({
+    cardType: mappedCardType,
+    autoFetch: false,
+  });
+
   // form state
-  const [country, setCountry] = useState('');
-  const [countryId, setCountryId] = useState<string | null>(null);
+  const [country, setCountry] = useState(preselectedCountryName);
+  const [countryId, setCountryId] = useState<string | null>(preselectedCountryCode || null);
   const [countryRate, setCountryRate] = useState<number | null>(null);
   const [countryRateDisplay, setCountryRateDisplay] = useState<string>('');
   const [receipt, setReceipt] = useState('');          // 'PHYSICAL' | 'ECODE'
@@ -384,6 +396,26 @@ const GiftcardTradeScreen: React.FC = () => {
 
   const selectedRange = useMemo(() => RANGES.find(r => r.id === rangeId) || null, [rangeId]);
   const selectedVanillaVariant = useMemo(() => VANILLA_VARIANTS.find(v => v.id === vanillaVariant) || null, [vanillaVariant]);
+
+  // Auto-fetch countries to get rate when country is pre-selected from params
+  useEffect(() => {
+    if (preselectedCountryCode && mappedCardType) {
+      fetchBrandCountries();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Once countries load, extract rate for the pre-selected country
+  useEffect(() => {
+    if (!preselectedCountryCode || !brandCountries.length) return;
+    const match = brandCountries.find(
+      c => String(c.code).toUpperCase() === preselectedCountryCode.toUpperCase()
+    );
+    if (match) {
+      setCountryRate(match.rate ?? null);
+      setCountryRateDisplay(match.rateDisplay ?? (match.rate != null ? `${match.rate}/USD` : ''));
+    }
+  }, [brandCountries, preselectedCountryCode]);
 
   // Clear e-code when leaving ECODE
   useEffect(() => {
@@ -697,7 +729,7 @@ const GiftcardTradeScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safe}>
-        <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
 
         {/* Error banner */}
         {showErrorDisplay && errorDisplayData && (
@@ -731,7 +763,12 @@ const GiftcardTradeScreen: React.FC = () => {
                 <Image source={backIcon} style={styles.backIcon} />
               </TouchableOpacity>
 
-              <Text style={styles.headerTitle}>{brand}</Text>
+              <View style={{ flex: 1, alignItems: 'center', marginHorizontal: 8 }}>
+                <Text style={styles.headerTitle}>{brand}</Text>
+                {preselectedCountryName ? (
+                  <Text style={styles.headerSubtitle}>{preselectedCountryName}</Text>
+                ) : null}
+              </View>
               <View style={styles.headerRight} />
             </View>
           </View>
@@ -761,7 +798,7 @@ const GiftcardTradeScreen: React.FC = () => {
                 value={ecode}
                 onChangeText={setEcode}
                 placeholder="Enter e-code (e.g., XXXX-XXXX-XXXX-XXXX)"
-                placeholderTextColor={Colors.text?.secondary}
+                placeholderTextColor={colors.textSecondary}
                 autoCapitalize="characters"
                 autoCorrect={false}
               />
@@ -800,15 +837,21 @@ const GiftcardTradeScreen: React.FC = () => {
             <Text style={styles.label}>Rate</Text>
             <View style={[styles.select, { backgroundColor: '#F9FAFB' }]}>
               <Text style={{ color: '#35297F', fontFamily: Typography.medium || 'System', fontWeight: '700', fontSize: 15, marginRight: 6 }}>₦</Text>
-              <Text
-                style={[
-                  styles.selectText,
-                  !countryRateDisplay && { color: Colors.text?.secondary || '#9CA3AF' },
-                ]}
-              >
-                {countryRateDisplay || 'Select country to see rate'}
-              </Text>
-              {countryRate != null && Number(valueUSD) > 0 ? (
+              {rateLoading ? (
+                <Text style={[styles.selectText, { color: colors.textSecondary }]}>
+                  Fetching rate…
+                </Text>
+              ) : (
+                <Text
+                  style={[
+                    styles.selectText,
+                    !countryRateDisplay && { color: colors.textSecondary },
+                  ]}
+                >
+                  {countryRateDisplay || 'Select country to see rate'}
+                </Text>
+              )}
+              {!rateLoading && countryRate != null && Number(valueUSD) > 0 ? (
                 <Text style={{ color: '#35297F', fontFamily: Typography.medium || 'System', fontWeight: '600', fontSize: 13 }}>
                   {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(countryRate * Number(valueUSD))}
                 </Text>
@@ -873,7 +916,7 @@ const GiftcardTradeScreen: React.FC = () => {
             style={[styles.textArea, { marginHorizontal: 16 }]}
             multiline
             placeholder="Add any details for reviewers..."
-            placeholderTextColor={Colors.text?.secondary}
+            placeholderTextColor={colors.textSecondary}
             value={comments}
             onChangeText={setComments}
           />
@@ -971,7 +1014,7 @@ const SelectField = ({
       <Text
         style={[
           styles.selectText,
-          !value && { color: Colors.text?.secondary || '#9CA3AF' },
+          !value && { color: colors.textSecondary },
         ]}
         numberOfLines={1}
       >
@@ -1002,15 +1045,15 @@ const LabeledInput = ({
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor={Colors.text?.secondary}
+      placeholderTextColor={colors.textSecondary}
       keyboardType={keyboardType}
     />
   </View>
 );
 
 /* ---------------- Styles ---------------- */
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background || '#F7F6FF' },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safe: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 16 },
@@ -1043,21 +1086,26 @@ const styles = StyleSheet.create({
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
-    flex: 1,
     textAlign: 'center',
-    marginHorizontal: 16,
+  },
+  headerSubtitle: {
+    color: '#6B7280',
+    fontFamily: Typography.regular || 'System',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 2,
   },
   headerRight: { width: 40 },
 
   label: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
     marginBottom: 8,
   },
 
   select: {
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 12,
@@ -1069,23 +1117,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   selectText: {
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
     fontSize: 15,
     flex: 1,
     marginRight: 10,
   },
-  chev: { width: 14, height: 14, tintColor: Colors.text?.secondary || '#9CA3AF', resizeMode: 'contain' },
+  chev: { width: 14, height: 14, tintColor: colors.textSecondary, resizeMode: 'contain' },
 
   input: {
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: Platform.select({ ios: 14, android: 12 }),
     height: Platform.select({ ios: 52, android: 48 }),
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
     fontSize: 15,
   },
@@ -1096,7 +1144,7 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderColor: '#E5E7EB',
     borderRadius: 12,
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     padding: 16,
     marginTop: -8,
     marginBottom: 18,
@@ -1110,7 +1158,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   uploadTapHint: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 11,
   },
@@ -1164,7 +1212,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: '#35297F',
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1175,7 +1223,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   uploadHint: {
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 11,
     textAlign: 'center',
@@ -1183,14 +1231,14 @@ const styles = StyleSheet.create({
   },
 
   textArea: {
-    backgroundColor: Colors.surface || '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: '#E5E7EB',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     minHeight: 100,
-    color: Colors.text?.primary || '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     textAlignVertical: 'top',
@@ -1198,7 +1246,7 @@ const styles = StyleSheet.create({
 
   footer: {
     paddingVertical: 20,
-    backgroundColor: Colors.background || '#F7F6FF',
+    backgroundColor: colors.background,
   },
   cta: {
     backgroundColor: '#35297F',

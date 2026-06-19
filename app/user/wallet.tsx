@@ -1,12 +1,13 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState , useMemo} from 'react';
 import {
     ScrollView,
     StyleSheet,
     View
 } from 'react-native';
 import BottomTabNavigator from '../../components/BottomNavigator';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import DashboardHeader from './DashboardHeader';
 import DashboardModals from './DashboardModals'; // Import the modals component
 import WalletPortfolioSection from './WalletPortfolioSection';
@@ -42,6 +43,8 @@ export default function WalletScreen({
   onNotificationPress,
   onTokenPress
 }: WalletScreenProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [activeTab, setActiveTab] = useState('All tokens');
@@ -190,10 +193,10 @@ export default function WalletScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   scrollContainer: {
     flex: 1,

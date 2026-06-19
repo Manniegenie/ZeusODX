@@ -1,12 +1,15 @@
 import { Camera } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Alert, Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import backIcon from '../../../components/icons/backy.png';
-import { Colors } from '../../../constants/Colors';
+import { useTheme } from '../../../hooks/useTheme';
+import type { AppColors } from '../../../hooks/useTheme';
 import { Typography } from '../../../constants/Typography';
 
 export default function VerifyIndex() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
 
   const navigateWithCameraPermission = async (route: string) => {
@@ -25,7 +28,7 @@ export default function VerifyIndex() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerSection}>
           <View style={styles.headerContainer}>
@@ -64,8 +67,8 @@ export default function VerifyIndex() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background || '#F8F9FA' },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 20 },
   headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 },
@@ -97,8 +100,8 @@ const styles = StyleSheet.create({
   },
   headerSpacer: { width: 40 },
   section: { paddingHorizontal: 16, marginBottom: 24 },
-  sub: { color: Colors.text?.secondary || '#6B7280', fontSize: 13, marginBottom: 12 },
+  sub: { color: colors.textSecondary, fontSize: 13, marginBottom: 12 },
   card: { backgroundColor: '#fff', borderColor: '#E5E7EB', borderWidth: 1, borderRadius: 10, padding: 16, marginBottom: 12 },
-  cardTitle: { color: Colors.text?.primary || '#111827', fontSize: 16, fontWeight: '600' },
-  cardSub: { color: Colors.text?.secondary || '#6B7280', marginTop: 4, fontSize: 12 },
+  cardTitle: { color: colors.text, fontSize: 16, fontWeight: '600' },
+  cardSub: { color: colors.textSecondary, marginTop: 4, fontSize: 12 },
 });

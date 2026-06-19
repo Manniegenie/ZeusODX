@@ -1,13 +1,16 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState , useMemo} from 'react';
 import { KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import ErrorDisplay from '../../components/ErrorDisplay';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useSignup } from '../../hooks/useSignup';
 
 export default function SignupScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { isLoading, addUser } = useSignup();
   
@@ -194,7 +197,7 @@ export default function SignupScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Enter First name"
-                  placeholderTextColor={Colors.text.muted}
+                  placeholderTextColor={colors.textMuted}
                   value={firstName}
                   onChangeText={handleInputChange(setFirstName)}
                   autoCapitalize="words"
@@ -208,7 +211,7 @@ export default function SignupScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Enter Middle name"
-                  placeholderTextColor={Colors.text.muted}
+                  placeholderTextColor={colors.textMuted}
                   value={middleName}
                   onChangeText={handleInputChange(setMiddleName)}
                   autoCapitalize="words"
@@ -222,7 +225,7 @@ export default function SignupScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Enter Surname"
-                  placeholderTextColor={Colors.text.muted}
+                  placeholderTextColor={colors.textMuted}
                   value={lastName}
                   onChangeText={handleInputChange(setLastName)}
                   autoCapitalize="words"
@@ -236,7 +239,7 @@ export default function SignupScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Enter your email"
-                  placeholderTextColor={Colors.text.muted}
+                  placeholderTextColor={colors.textMuted}
                   value={email}
                   onChangeText={handleInputChange(setEmail)}
                   keyboardType="email-address"
@@ -257,7 +260,7 @@ export default function SignupScreen() {
                   <TextInput
                     style={styles.phoneInput}
                     placeholder="Enter phone number"
-                    placeholderTextColor={Colors.text.muted}
+                    placeholderTextColor={colors.textMuted}
                     value={phoneNumber}
                     onChangeText={handleInputChange(setPhoneNumber)}
                     keyboardType="phone-pad"
@@ -276,7 +279,7 @@ export default function SignupScreen() {
                     referralCode.length === 8 ? styles.inputValid : null,
                   ]}
                   placeholder="e.g. ZEUS3K7M"
-                  placeholderTextColor={Colors.text.muted}
+                  placeholderTextColor={colors.textMuted}
                   value={referralCode}
                   onChangeText={handleReferralCodeChange}
                   autoCapitalize="characters"
@@ -339,10 +342,10 @@ const getStartedBorder = {
   borderRadius: Layout.borderRadius.lg,
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   keyboardAvoid: {
     flex: 1,
@@ -363,12 +366,12 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold,
     fontSize: 24,
     lineHeight: 28,
-    color: Colors.primaryText,
+    color: colors.text,
     marginBottom: Layout.spacing.xs,
   },
   subtitle: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   form: {
     flex: 1,
@@ -379,16 +382,16 @@ const styles = StyleSheet.create({
   },
   label: {
     ...Typography.styles.bodyMedium,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   input: {
     ...getStartedBorder,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     paddingHorizontal: Layout.spacing.md,
     paddingVertical: Layout.spacing.md,
     fontFamily: Typography.regular,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   phoneContainer: {
     flexDirection: 'row',
@@ -397,7 +400,7 @@ const styles = StyleSheet.create({
   },
   countryCodeDisplay: {
     ...getStartedBorder,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     paddingHorizontal: Layout.spacing.sm,
     paddingVertical: Layout.spacing.md,
     flexDirection: 'row',
@@ -411,17 +414,17 @@ const styles = StyleSheet.create({
   countryCodeText: {
     fontFamily: Typography.regular,
     fontSize: 14,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   phoneInput: {
     ...getStartedBorder,
     flex: 1,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     paddingHorizontal: Layout.spacing.md,
     paddingVertical: Layout.spacing.md,
     fontFamily: Typography.regular,
     fontSize: 16,
-    color: Colors.text.primary,
+    color: colors.text,
   },
   buttonContainer: {
     paddingBottom: Layout.spacing.xl,
@@ -434,8 +437,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   activeButton: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   inactiveButton: {
     backgroundColor: 'transparent',
@@ -445,10 +448,10 @@ const styles = StyleSheet.create({
     ...Typography.styles.bodyMedium,
   },
   activeButtonText: {
-    color: Colors.surface,
+    color: colors.card,
   },
   inactiveButtonText: {
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   loginContainer: {
     alignItems: 'center', // Changed from 'flex-end' to 'center'
@@ -457,7 +460,7 @@ const styles = StyleSheet.create({
   loginText: {
     fontFamily: Typography.medium,
     fontSize: 16,
-    color: Colors.primary,
+    color: colors.primary,
     textDecorationLine: 'underline',
   },
   loginTextDisabled: {
@@ -466,7 +469,7 @@ const styles = StyleSheet.create({
   optionalLabel: {
     fontFamily: Typography.regular,
     fontSize: 13,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
   inputError: {
     borderColor: '#EF4444',

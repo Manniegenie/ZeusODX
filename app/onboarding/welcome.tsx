@@ -1,11 +1,15 @@
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '../../constants/Typography';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { useRouter } from 'expo-router';
 
 export default function WelcomeScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -60,10 +64,10 @@ export default function WelcomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
@@ -89,14 +93,14 @@ const styles = StyleSheet.create({
     fontFamily: Typography.bold,
     fontSize: 24,
     lineHeight: 28,
-    color: Colors.primaryText,
+    color: colors.text,
     textAlign: 'center',
     marginBottom: Layout.spacing.sm,
     marginTop: Layout.spacing.md,
   },
   subtitle: {
     ...Typography.styles.body,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: Layout.spacing.lg,
   },
@@ -112,21 +116,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#E0E0E0',
   },
   activeDot: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
   },
   buttonContainer: {
     gap: Layout.spacing.md,
     // paddingBottom removed from here - now handled dynamically above
   },
   nextButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     paddingVertical: Layout.spacing.md,
     borderRadius: Layout.borderRadius.lg,
     alignItems: 'center',
   },
   nextButtonText: {
     ...Typography.styles.bodyMedium,
-    color: Colors.surface,
+    color: colors.card,
   },
   skipButton: {
     backgroundColor: 'transparent',
@@ -138,6 +142,6 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     ...Typography.styles.bodyMedium,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
 });

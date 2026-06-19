@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef , useMemo} from 'react';
 import { Animated, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Typography } from '../constants/Typography';
 
 interface ErrorAction {
@@ -41,6 +42,8 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   duration = 4000,
   dismissible = true,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const slideAnim = useRef(new Animated.Value(-90)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -125,7 +128,7 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
@@ -161,7 +164,7 @@ const styles = StyleSheet.create({
   message: {
     fontFamily: Typography.regular || 'System',
     fontSize: 12,
-    color: Colors.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     lineHeight: 16,
     marginBottom: 0,
   },

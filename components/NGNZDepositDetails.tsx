@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
     ActivityIndicator,
     Modal,
@@ -10,7 +10,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Typography } from '../constants/Typography';
 
 interface DepositData {
@@ -39,6 +40,8 @@ const NGNZDepositDetails: React.FC<DepositDetailsProps> = ({
   depositData,
   loading = false,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const handleShare = async () => {
     try {
       const message = `Bank: ${depositData.bankDetails?.bankName || 'N/A'}\nAccount Number: ${depositData.bankDetails?.accountNumber || 'N/A'}\nAccount Name: ${depositData.bankDetails?.accountName || 'N/A'}\nAmount: ₦${formatAmount(depositData.amount)}\nReference: ${depositData.reference || 'N/A'}`;
@@ -73,7 +76,7 @@ const NGNZDepositDetails: React.FC<DepositDetailsProps> = ({
 
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={Colors.primary} />
+              <ActivityIndicator size="large" color={colors.primary} />
               <Text style={styles.loadingText}>Fetching bank details...</Text>
             </View>
           ) : (
@@ -153,7 +156,7 @@ const NGNZDepositDetails: React.FC<DepositDetailsProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -161,7 +164,7 @@ const styles = StyleSheet.create({
     margin: 0, // Ensure no margin
   },
   modalContainer: {
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: '90%', // Limit maximum height
@@ -188,27 +191,27 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontFamily: Typography.medium,
-    color: Colors.text.primary,
+    color: colors.text,
     textAlign: 'center',
     marginBottom: 20,
   },
   amountSection: {
     alignItems: 'center',
     marginBottom: 24,
-    backgroundColor: Colors.surface,
+    backgroundColor: colors.card,
     paddingVertical: 16,
     borderRadius: 12,
   },
   amountLabel: {
     fontSize: 14,
     fontFamily: Typography.regular,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     marginBottom: 8,
   },
   amountValue: {
     fontSize: 24,
     fontFamily: Typography.medium,
-    color: Colors.primary,
+    color: colors.primary,
     fontWeight: '600',
   },
   detailsSection: {
@@ -228,13 +231,13 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 14,
     fontFamily: Typography.regular,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
     flex: 1,
   },
   detailValue: {
     fontSize: 14,
     fontFamily: Typography.medium,
-    color: Colors.text.primary,
+    color: colors.text,
     flex: 2,
     textAlign: 'right',
   },
@@ -262,14 +265,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   shareButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: colors.primary,
     borderRadius: 12,
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   shareButtonText: {
-    color: Colors.surface,
+    color: colors.card,
     fontSize: 16,
     fontFamily: Typography.medium,
     fontWeight: '600',
@@ -282,7 +285,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   closeButtonText: {
-    color: Colors.text.primary,
+    color: colors.text,
     fontSize: 16,
     fontFamily: Typography.medium,
     fontWeight: '600',
@@ -297,7 +300,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 14,
     fontFamily: Typography.regular,
-    color: Colors.text.secondary,
+    color: colors.textSecondary,
   },
 });
 
