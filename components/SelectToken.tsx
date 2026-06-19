@@ -151,14 +151,14 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   scrollableList: { 
     flex: 1 
   },
-  walletOptionItem: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    paddingVertical: Layout.spacing.md, 
-    paddingHorizontal: Layout.spacing.sm, 
-    backgroundColor: '#F8F9FA', 
-    marginBottom: Layout.spacing.sm, 
-    borderRadius: Layout.borderRadius.md 
+  walletOptionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Layout.spacing.md,
+    paddingHorizontal: Layout.spacing.sm,
+    backgroundColor: colors.background,
+    marginBottom: Layout.spacing.sm,
+    borderRadius: Layout.borderRadius.md
   },
   walletOptionLeft: { 
     flexDirection: 'row', 
@@ -172,8 +172,8 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: 20, 
     alignItems: 'center', 
     justifyContent: 'center', 
-    borderWidth: 1, 
-    borderColor: '#E5E7EB', 
+    borderWidth: 1,
+    borderColor: colors.border,
     overflow: 'hidden',
     padding: 0
   },

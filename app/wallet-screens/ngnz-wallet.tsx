@@ -103,7 +103,7 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
   const quickActions = [
     { id: 'deposit', title: 'Deposit', iconName: 'download-outline', disabled: true },
-    { id: 'transfer', title: 'Withdraw', iconName: 'send-outline' },
+    { id: 'transfer', title: 'Withdraw', iconName: 'arrow-up-outline' },
     { id: 'buy-sell', title: 'Swap', iconName: 'swap-horizontal-outline' },
   ];
 
@@ -414,7 +414,7 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
                     activeOpacity={isDisabled ? 1 : 0.7}
                   >
                     <View style={[styles.actionIconContainer, isDisabled && styles.actionIconContainerDisabled]}>
-                      <Ionicons name={action.iconName as any} size={24} color="#FFFFFF" />
+                      <Ionicons name={action.iconName as any} size={24} color={colors.iconFg} />
                     </View>
                     <Text style={[styles.actionLabel, isDisabled && styles.actionLabelDisabled]}>
                       {action.title}
@@ -527,6 +527,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: 24,
     height: 24,
     resizeMode: 'contain',
+    tintColor: colors.text,
   },
   headerGroup: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' },
   iconImage: { width: 28, height: 28, resizeMode: 'cover' },
@@ -593,7 +594,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   quickActionsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   actionItem: { alignItems: 'center' },
   actionItemDisabled: { opacity: 0.5 },
-  actionIconContainer: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#35297F', justifyContent: 'center', alignItems: 'center' },
+  actionIconContainer: { width: 44, height: 44, borderRadius: 10, backgroundColor: colors.iconBg, justifyContent: 'center', alignItems: 'center' },
   actionIconContainerDisabled: { backgroundColor: '#9CA3AF' },
   actionLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
   actionLabelDisabled: { color: '#A0A0A0' },

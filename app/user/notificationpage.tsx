@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useNotifications } from '../../hooks/usenotification';
 import { notificationService } from '../../services/notificationApiService';
+import { useTheme } from '../../hooks/useTheme';
 
 // Icons
 import backIcon from '../../components/icons/backy.png';
@@ -32,6 +33,7 @@ interface Notification {
 
 const NotificationScreen = () => {
   const router = useRouter();
+  const { colors } = useTheme();
   const { clearBadge, setupListeners, removeListeners, isEnabled } = useNotifications();
   
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -341,7 +343,7 @@ const NotificationScreen = () => {
             delayPressIn={0}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
-            <Image source={backIcon} style={styles.backIcon} />
+            <Image source={backIcon} style={[styles.backIcon, { tintColor: colors.text }]} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
           <View style={styles.headerSpacer} />

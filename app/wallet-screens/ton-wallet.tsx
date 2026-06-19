@@ -239,7 +239,7 @@ const TONWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
 
   const quickActions = [
     { id: 'deposit', title: 'Deposit', iconName: 'download-outline' },
-    { id: 'transfer', title: 'Withdraw', iconName: 'send-outline' },
+    { id: 'transfer', title: 'Withdraw', iconName: 'arrow-up-outline' },
     { id: 'buy-sell', title: 'Swap', iconName: 'swap-horizontal-outline' },
   ];
 
@@ -366,7 +366,7 @@ const TONWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
                   disabled={action.id === 'deposit'}
                 >
                   <View style={styles.actionIconContainer}>
-                    <Ionicons name={action.iconName as any} size={24} color="#FFFFFF" />
+                    <Ionicons name={action.iconName as any} size={24} color={colors.iconFg} />
                   </View>
                   <Text style={styles.actionLabel}>{action.title}</Text>
                 </TouchableOpacity>
@@ -462,7 +462,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   headerSection: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backIcon: { width: 24, height: 24, resizeMode: 'contain' },
+  backIcon: { width: 24, height: 24, resizeMode: 'contain', tintColor: colors.text },
   headerGroup: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, justifyContent: 'center' },
   iconImage: { width: 28, height: 28, resizeMode: 'cover' },
   headerTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
@@ -482,7 +482,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   quickActionsTitle: { fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 8 },
   quickActionsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   actionItem: { alignItems: 'center' },
-  actionIconContainer: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#35297F', justifyContent: 'center', alignItems: 'center' },
+  actionIconContainer: { width: 44, height: 44, borderRadius: 10, backgroundColor: colors.iconBg, justifyContent: 'center', alignItems: 'center' },
   actionLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
 
   recentHistorySection: { paddingHorizontal: Layout.spacing.lg, paddingBottom: Layout.spacing.xl },

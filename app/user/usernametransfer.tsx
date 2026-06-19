@@ -214,7 +214,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   headerSection: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6 },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backIcon: { width: 24, height: 24, resizeMode: 'contain' },
+  backIcon: { width: 24, height: 24, resizeMode: 'contain', tintColor: colors.text },
   headerTitleWrapper: { flex: 1, alignItems: 'center' },
   headerRight: { width: 40 },
   headerTitle: { color: '#35297F', fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', textAlign: 'center' },

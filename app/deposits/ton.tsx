@@ -300,7 +300,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   headerSection: { paddingHorizontal: horizontalPadding, paddingTop: 12, paddingBottom: 6 },
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
-  backIcon: { width: 24, height: 24, resizeMode: 'contain' },
+  backIcon: { width: 24, height: 24, resizeMode: 'contain', tintColor: colors.text },
   headerGroup: { flex: 1, alignItems: 'center' },
   headerRight: { width: 40 },
   headerTitle: { color: colors.text, fontFamily: Typography.medium, fontSize: 18, textAlign: 'center', fontWeight: '600' },

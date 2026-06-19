@@ -614,6 +614,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: 24,
     height: 24,
     resizeMode: 'contain',
+    tintColor: colors.text,
   },
   headerLogo: { width: 100, height: 44 },
   headerRight: { width: 44 },

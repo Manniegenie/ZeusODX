@@ -22,6 +22,8 @@ export const lightColors = {
   success: '#10B981',
   switchTrackOff: '#E5E7EB',
   switchTrackOn: '#10B981',
+  iconBg: '#EEF2FF',
+  iconFg: '#35297F',
   statusBar: 'dark-content' as 'light-content' | 'dark-content',
 };
 
@@ -43,6 +45,8 @@ export const darkColors: typeof lightColors = {
   success: '#34D399',
   switchTrackOff: '#374151',
   switchTrackOn: '#8B7CF6',
+  iconBg: '#35297F',
+  iconFg: '#FFFFFF',
   statusBar: 'light-content' as 'light-content' | 'dark-content',
 };
 

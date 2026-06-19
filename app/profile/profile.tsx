@@ -478,7 +478,7 @@ const ProfileScreen = () => {
     >
       <View style={styles.optionLeft}>
         {option.icon
-          ? <Image source={option.icon} style={styles.optionIcon} />
+          ? <Image source={option.icon} style={[styles.optionIcon, { tintColor: colors.text }]} />
           : <Ionicons name="moon-outline" size={24} color={colors.text} style={styles.optionIconVector} />
         }
         <Text style={[styles.optionText, { color: colors.text }, option.isDestructive && styles.optionTextDestructive]}>
@@ -518,7 +518,7 @@ const ProfileScreen = () => {
             disabled={isAnyOperationInProgress}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Image source={backIcon} style={styles.backIcon} />
+            <Image source={backIcon} style={[styles.backIcon, { tintColor: colors.text }]} />
           </TouchableOpacity>
         </View>
 

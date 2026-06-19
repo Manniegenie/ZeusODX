@@ -99,9 +99,9 @@ export default function PortfolioSection({
 
   const quickLinks: QuickLink[] = [
     { id: 'deposit',  title: 'Deposit',  iconName: 'download-outline',       route: '/user/come-soon' },
-    { id: 'transfer', title: 'Withdraw', iconName: 'send-outline',            route: '/user/come-soon' },
+    { id: 'transfer', title: 'Withdraw', iconName: 'arrow-up-outline',            route: '/user/come-soon' },
     { id: 'buy-sell', title: 'Swap',     iconName: 'swap-horizontal-outline', route: '/user/Swap' },
-    { id: 'utility',  title: 'Utility',  iconName: 'flash-outline',           route: '/user/utility' },
+    { id: 'utility',  title: 'Utility',  iconName: 'wifi-outline',           route: '/user/utility' },
   ];
 
   // Progress bar animation logic (Existing)
@@ -204,7 +204,7 @@ export default function PortfolioSection({
           {quickLinks.map(item => (
             <TouchableOpacity key={item.id} style={styles.quickLinkItem} onPress={() => onQuickLinkPress(item)} activeOpacity={0.7}>
               <View style={styles.quickLinkIconContainer}>
-                <Ionicons name={item.iconName as any} size={moderateScale(24, 0.1)} color="#FFFFFF" />
+                <Ionicons name={item.iconName as any} size={moderateScale(24, 0.1)} color={colors.iconFg} />
               </View>
               <Text style={styles.quickLinkText}>{item.title}</Text>
             </TouchableOpacity>
@@ -257,7 +257,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: moderateScale(52, 0.1),
     height: moderateScale(52, 0.1),
     borderRadius: moderateScale(10, 0.1),
-    backgroundColor: '#35297F',
+    backgroundColor: colors.iconBg,
     justifyContent: 'center',
     alignItems: 'center',
   },

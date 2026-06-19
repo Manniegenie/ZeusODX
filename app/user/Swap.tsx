@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import ChooseTokenModal from '../../components/ChooseTokenModal';
 import ErrorDisplay from '../../components/ErrorDisplay';
@@ -34,7 +35,6 @@ const usdcIcon = require('../../components/icons/usdc-icon.png');
 const ngnzIcon = require('../../components/icons/NGNZ.png');
 const trxIcon = require('../../components/icons/Tron.png');
 const bnbIcon = require('../../components/icons/bnb-icon.png');
-const swapIcon = require('../../components/icons/swap-icon.png');
 const maticIcon = require('../../components/icons/matic-icon.png');
 const tonIcon = require('../../assets/images/toncoin-ton-logo.png');
 
@@ -713,7 +713,7 @@ export default function SwapScreen({
 
           {/* Swap Icon */}
           <View style={styles.swapIconContainer}>
-            <Image source={swapIcon} style={styles.swapIconImage} />
+            <Ionicons name="swap-vertical-outline" size={32} color={colors.primary} />
           </View>
 
           {/* Buy Token */}
@@ -924,14 +924,15 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     color: colors.primary, 
     fontWeight: '600' 
   },
-  swapIconContainer: { 
-    alignItems: 'center', 
-    marginVertical: Layout.spacing.md 
-  },
-  swapIconImage: { 
-    width: 48, 
-    height: 48, 
-    resizeMode: 'contain' 
+  swapIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.iconBg,
+    alignSelf: 'center',
+    marginVertical: Layout.spacing.md,
   },
   swapContainer: { 
     marginTop: Layout.spacing.lg 

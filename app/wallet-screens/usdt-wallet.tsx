@@ -260,7 +260,7 @@ const USDTWalletScreen: React.FC<USDTWalletScreenProps> = ({ onQuickActionPress,
 
   const quickActions = [
     { id: 'deposit', title: 'Deposit', iconName: 'download-outline' },
-    { id: 'transfer', title: 'Withdraw', iconName: 'send-outline' },
+    { id: 'transfer', title: 'Withdraw', iconName: 'arrow-up-outline' },
     { id: 'buy-sell', title: 'Swap', iconName: 'swap-horizontal-outline' },
   ];
 
@@ -432,7 +432,7 @@ const handleNetworkSelect = (network: { id: string }) => {
               {quickActions.map((action) => (
                 <TouchableOpacity key={action.id} style={styles.actionItem} onPress={() => handleQuickAction(action.id)}>
                   <View style={styles.actionIconContainer}>
-                    <Ionicons name={action.iconName as any} size={24} color="#FFFFFF" />
+                    <Ionicons name={action.iconName as any} size={24} color={colors.iconFg} />
                   </View>
                   <Text style={styles.actionLabel}>{action.title}</Text>
                 </TouchableOpacity>
@@ -540,6 +540,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: 24,
     height: 24,
     resizeMode: 'contain',
+    tintColor: colors.text,
   },
   headerGroup: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, flex: 1 },
   headerRight: { width: 40 },
@@ -607,7 +608,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   quickActionsTitle: { fontSize: 14, fontWeight: '600', color: colors.text, marginBottom: 8 },
   quickActionsContainer: { flexDirection: 'row', justifyContent: 'space-around' },
   actionItem: { alignItems: 'center' },
-  actionIconContainer: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#35297F', justifyContent: 'center', alignItems: 'center' },
+  actionIconContainer: { width: 44, height: 44, borderRadius: 10, backgroundColor: colors.iconBg, justifyContent: 'center', alignItems: 'center' },
   actionLabel: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
   recentHistorySection: { paddingHorizontal: Layout.spacing.lg, paddingBottom: Layout.spacing.xl },
   recentHistoryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Layout.spacing.lg },

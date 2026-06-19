@@ -27,7 +27,7 @@ interface WalletPortfolioSectionProps {
 
 const quickLinks: QuickLink[] = [
   { id: 'deposit',  title: 'Deposit',  iconName: 'download-outline' },
-  { id: 'transfer', title: 'Withdraw', iconName: 'send-outline' },
+  { id: 'transfer', title: 'Withdraw', iconName: 'arrow-up-outline' },
   { id: 'buy-sell', title: 'Swap',     iconName: 'swap-horizontal-outline', route: '/user/Swap' },
 ];
 

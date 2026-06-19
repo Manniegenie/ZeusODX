@@ -667,6 +667,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: 24,
     height: 24,
     resizeMode: 'contain',
+    tintColor: colors.text,
   },
   headerTitle: {
     fontSize: 18,

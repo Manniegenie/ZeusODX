@@ -194,6 +194,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: Layout.icon.md,
     height: Layout.icon.md,
     resizeMode: 'contain',
+    tintColor: colors.text,
   },
   headerTitle: {
     position: 'absolute',

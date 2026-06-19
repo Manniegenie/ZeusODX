@@ -327,7 +327,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center',
     borderRadius: S(20, 0.1),
   },
-  backIcon: { width: S(24, 0.1), height: S(24, 0.1), resizeMode: 'contain' },
+  backIcon: { width: S(24, 0.1), height: S(24, 0.1), resizeMode: 'contain', tintColor: colors.text },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
@@ -386,29 +386,22 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: S(8, 0.1),
+    paddingHorizontal: S(12, 0.1),
+    paddingVertical: S(6, 0.1),
     marginBottom: S(16, 0.1),
+    alignSelf: 'flex-start',
   },
-  sectionAccent: {
-    width: 4,
-    height: S(18, 0.1),
-    backgroundColor: '#35297F',
-    borderRadius: 3,
-    marginRight: S(8, 0.1),
-  },
+  sectionAccent: { display: 'none' as any },
   sectionTitle: {
-    color: '#1A1040',
+    color: '#FFFFFF',
     fontFamily: Typography.medium || 'System',
-    fontSize: S(14, 0.1),
+    fontSize: S(13, 0.1),
     fontWeight: '700',
     letterSpacing: 0.3,
-    marginRight: S(10, 0.1),
   },
-  sectionLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#EDE9FF',
-    borderRadius: 1,
-  },
+  sectionLine: { display: 'none' as any },
 
   /* Grid */
   grid: {
@@ -482,7 +475,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   /* Country label */
   cardCountry: {
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: S(11, 0.1),
     fontWeight: '600',
