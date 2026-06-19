@@ -544,7 +544,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   headerTitle: {
     position: 'absolute',
     left: 0, right: 0,
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 18,
     fontWeight: '600',
@@ -554,7 +554,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   headerSpacer: { width: 40, height: 40 },
 
   titleSection: { paddingHorizontal: 16, paddingBottom: 16 }, // unused but kept for compatibility if needed
-  headerTitleInline: { color: '#35297F', fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', textAlign: 'left' },
+  headerTitleInline: { color: colors.text, fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', textAlign: 'left' },
 
   descriptionSection: { paddingHorizontal: 16, paddingBottom: 32 },
   descriptionText: { color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 14, fontWeight: '400', lineHeight: 20 },
@@ -562,10 +562,10 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   fieldContainer: { marginBottom: 24 },
   fieldLabel: { color: colors.text, fontFamily: Typography.regular, fontSize: 14, fontWeight: '500', marginBottom: 8, textAlign: 'left' },
   textInput: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 16,
     color: colors.text,
@@ -574,10 +574,10 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     fontWeight: '400',
   },
   selectInput: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 16,
     flexDirection: 'row',
@@ -590,7 +590,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   placeholderText: { color: colors.textSecondary },
   selectArrow: { color: colors.textSecondary, fontSize: 12, marginLeft: 8 },
   bottomSection: { paddingHorizontal: 16, paddingBottom: 34, paddingTop: 16 },
-  saveButton: { backgroundColor: '#35297F', borderRadius: 8, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center' },
+  saveButton: { backgroundColor: colors.primary, borderRadius: 8, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center' },
   saveButtonText: { color: '#FFFFFF', fontFamily: Typography.medium, fontSize: 16, fontWeight: '600' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },
   modalContainer: { 
@@ -609,7 +609,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderBottomWidth: 1, 
     borderBottomColor: '#E5E7EB' 
   },
-  modalTitle: { color: '#35297F', fontFamily: Typography.medium, fontSize: 18, fontWeight: '600' },
+  modalTitle: { color: colors.text, fontFamily: Typography.medium, fontSize: 18, fontWeight: '600' },
   modalCloseButton: { width: 30, height: 30, justifyContent: 'center', alignItems: 'center' },
   modalCloseText: { color: colors.textSecondary, fontSize: 24, fontWeight: 'bold' },
   searchContainer: { 
@@ -619,10 +619,10 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderBottomColor: '#E5E7EB' 
   },
   searchInput: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 12,
     color: colors.text,
@@ -656,7 +656,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     marginBottom: 16 
   },
   retryButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 6,
     paddingHorizontal: 16,
     paddingVertical: 8

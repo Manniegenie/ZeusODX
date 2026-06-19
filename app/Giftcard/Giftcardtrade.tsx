@@ -178,6 +178,8 @@ const BottomSheet = ({
   children: React.ReactNode;
   maxHeight?: number;
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const translateY = useRef(new Animated.Value(SHEET_MAX_HEIGHT)).current;
   const insets = useSafeAreaInsets();
 
@@ -243,6 +245,8 @@ const ChoiceSheet = ({
   centerAlign?: boolean;
   showDescription?: boolean;
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const isScrollable = choices.length > 6;
 
   return (
@@ -307,43 +311,49 @@ const ChoicePill = ({
   left?: React.ReactNode;
   centerAlign?: boolean;
   showDescription?: boolean;
-}) => (
-  <TouchableOpacity
-    onPress={onPress}
-    activeOpacity={0.9}
-    style={[
-      styles.pill,
-      selected && styles.pillSelected,
-      centerAlign && { justifyContent: 'center' },
-    ]}
-  >
-    {!centerAlign && left ? <View style={styles.pillLeft}>{left}</View> : null}
-    <View style={[{ flex: 1 }, centerAlign && { alignItems: 'center' }]}>
-      <Text
-        style={[
-          styles.pillLabel,
-          selected && styles.pillLabelSelected,
-          centerAlign && { textAlign: 'center' },
-        ]}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-      {showDescription && description && (
-        <Text style={[
-          styles.pillDescription,
-          selected && styles.pillDescriptionSelected,
-          centerAlign && { textAlign: 'center' },
-        ]}>
-          {description}
+}) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.9}
+      style={[
+        styles.pill,
+        selected && styles.pillSelected,
+        centerAlign && { justifyContent: 'center' },
+      ]}
+    >
+      {!centerAlign && left ? <View style={styles.pillLeft}>{left}</View> : null}
+      <View style={[{ flex: 1 }, centerAlign && { alignItems: 'center' }]}>
+        <Text
+          style={[
+            styles.pillLabel,
+            selected && styles.pillLabelSelected,
+            centerAlign && { textAlign: 'center' },
+          ]}
+          numberOfLines={1}
+        >
+          {label}
         </Text>
-      )}
-    </View>
-  </TouchableOpacity>
-);
+        {showDescription && description && (
+          <Text style={[
+            styles.pillDescription,
+            selected && styles.pillDescriptionSelected,
+            centerAlign && { textAlign: 'center' },
+          ]}>
+            {description}
+          </Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 /* ===================== Screen ===================== */
 const GiftcardTradeScreen: React.FC = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const params = useLocalSearchParams<{ brand?: string; id?: string; countryCode?: string; countryName?: string }>();
   const brand = (params.brand as string) || 'Amazon';
@@ -835,8 +845,8 @@ const GiftcardTradeScreen: React.FC = () => {
           {/* Rate Display */}
           <View style={{ marginBottom: 18, marginHorizontal: 16 }}>
             <Text style={styles.label}>Rate</Text>
-            <View style={[styles.select, { backgroundColor: '#F9FAFB' }]}>
-              <Text style={{ color: '#35297F', fontFamily: Typography.medium || 'System', fontWeight: '700', fontSize: 15, marginRight: 6 }}>₦</Text>
+            <View style={styles.select}>
+              <Text style={{ color: colors.primary, fontFamily: Typography.medium || 'System', fontWeight: '700', fontSize: 15, marginRight: 6 }}>₦</Text>
               {rateLoading ? (
                 <Text style={[styles.selectText, { color: colors.textSecondary }]}>
                   Fetching rate…
@@ -852,7 +862,7 @@ const GiftcardTradeScreen: React.FC = () => {
                 </Text>
               )}
               {!rateLoading && countryRate != null && Number(valueUSD) > 0 ? (
-                <Text style={{ color: '#35297F', fontFamily: Typography.medium || 'System', fontWeight: '600', fontSize: 13 }}>
+                <Text style={{ color: colors.primary, fontFamily: Typography.medium || 'System', fontWeight: '600', fontSize: 13 }}>
                   {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(countryRate * Number(valueUSD))}
                 </Text>
               ) : null}
@@ -1007,23 +1017,27 @@ const SelectField = ({
   value?: string;
   placeholder?: string;
   onPress: () => void;
-}) => (
-  <View style={{ marginBottom: 18, marginHorizontal: 16 }}>
-    <Text style={styles.label}>{label}</Text>
-    <TouchableOpacity style={styles.select} onPress={onPress} activeOpacity={0.8}>
-      <Text
-        style={[
-          styles.selectText,
-          !value && { color: colors.textSecondary },
-        ]}
-        numberOfLines={1}
-      >
-        {value || placeholder || 'Select'}
-      </Text>
-      <Image source={chevronRightIcon} style={styles.chev} />
-    </TouchableOpacity>
-  </View>
-);
+}) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  return (
+    <View style={{ marginBottom: 18, marginHorizontal: 16 }}>
+      <Text style={styles.label}>{label}</Text>
+      <TouchableOpacity style={styles.select} onPress={onPress} activeOpacity={0.8}>
+        <Text
+          style={[
+            styles.selectText,
+            !value && { color: colors.textSecondary },
+          ]}
+          numberOfLines={1}
+        >
+          {value || placeholder || 'Select'}
+        </Text>
+        <Image source={chevronRightIcon} style={styles.chev} />
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const LabeledInput = ({
   label,
@@ -1037,7 +1051,10 @@ const LabeledInput = ({
   onChangeText: (t: string) => void;
   placeholder?: string;
   keyboardType?: 'default' | 'numeric';
-}) => (
+}) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  return (
   <View style={{ marginBottom: 18, marginHorizontal: 16 }}>
     <Text style={styles.label}>{label}</Text>
     <TextInput
@@ -1049,7 +1066,8 @@ const LabeledInput = ({
       keyboardType={keyboardType}
     />
   </View>
-);
+  );
+};
 
 /* ---------------- Styles ---------------- */
 const makeStyles = (colors: AppColors) => StyleSheet.create({
@@ -1083,14 +1101,14 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     tintColor: colors.text,
   },
   headerTitle: {
-    color: '#35297F',
+    color: colors.primary,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
     textAlign: 'center',
   },
   headerSubtitle: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 12,
     textAlign: 'center',
@@ -1108,7 +1126,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   select: {
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: Platform.select({ ios: 14, android: 12 }),
@@ -1129,7 +1147,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   input: {
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: Platform.select({ ios: 14, android: 12 }),
@@ -1143,7 +1161,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   uploadBox: {
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 12,
     backgroundColor: colors.card,
     padding: 16,
@@ -1152,7 +1170,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   uploadTap: { alignItems: 'center', paddingVertical: 18 },
   uploadTapTitle: {
-    color: '#35297F',
+    color: colors.primary,
     fontFamily: Typography.medium || 'System',
     fontWeight: '600',
     fontSize: 13,
@@ -1182,7 +1200,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: 95,
     height: 96,
     borderRadius: 8,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.separator,
   },
   removeButton: {
     position: 'absolute',
@@ -1212,7 +1230,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: 8,
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: '#35297F',
+    borderColor: colors.primary,
     backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1220,7 +1238,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   cloudIcon: {
     width: 32,
     height: 32,
-    tintColor: '#35297F',
+    tintColor: colors.primary,
     resizeMode: 'contain',
   },
   uploadHint: {
@@ -1234,7 +1252,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   textArea: {
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -1250,7 +1268,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.background,
   },
   cta: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     minHeight: 56,
     justifyContent: 'center',
@@ -1276,7 +1294,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheetContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 22,
     borderTopRightRadius: 22,
     paddingTop: 4,
@@ -1284,7 +1302,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   handleBar: {
     width: 42,
     height: 3,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 6,
@@ -1299,14 +1317,14 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     textAlign: 'center',
   },
-  closeTxt: { fontSize: 16, color: '#6B7280', fontWeight: '600' },
+  closeTxt: { fontSize: 16, color: colors.textSecondary, fontWeight: '600' },
 
   // Choice pills
   pill: {
-    backgroundColor: '#F3F0FF',
+    backgroundColor: colors.separator,
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -1317,8 +1335,8 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderColor: 'transparent',
   },
   pillSelected: {
-    borderColor: '#35297F',
-    backgroundColor: '#F6F4FF',
+    borderColor: colors.primary,
+    backgroundColor: colors.iconBg,
   },
   pillLeft: {
     marginRight: 10,
@@ -1328,17 +1346,17 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   pillLabel: {
     fontSize: 15,
-    color: '#1F2937',
+    color: colors.text,
     fontWeight: '500',
   },
-  pillLabelSelected: { color: '#35297F', fontWeight: '700' },
+  pillLabelSelected: { color: colors.iconFg, fontWeight: '700' },
   pillDescription: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textSecondary,
     marginTop: 2,
   },
-  pillDescriptionSelected: { 
-    color: '#5B4B8A',
+  pillDescriptionSelected: {
+    color: colors.iconFg,
   },
 });
 

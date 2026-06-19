@@ -252,8 +252,8 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     marginTop: 8,
   },
   input: {
-    backgroundColor: '#fff',
-    borderColor: '#E5E7EB',
+    backgroundColor: colors.card,
+    borderColor: colors.border,
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 14,
@@ -302,7 +302,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center',
   },
   ctaText: {
-    color: '#fff',
+    color: colors.primaryForeground,
     fontFamily: Typography.medium || 'System',
     fontWeight: '600',
     fontSize: 16,

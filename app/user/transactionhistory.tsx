@@ -1,6 +1,6 @@
 // screens/history/SpecificTransactionHistoryScreen.tsx
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Image,
@@ -18,10 +18,14 @@ import {
 import emptyStateIcon from '../../components/icons/empty-black.png';
 import { Typography } from '../../constants/Typography';
 import { useHistory } from '../../hooks/useHistory';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 
 const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const TransactionHistoryScreen = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { currency, tokenName } = useLocalSearchParams();
 
@@ -166,9 +170,7 @@ const TransactionHistoryScreen = () => {
 
   const getStatusColor = (status: string) =>
     status === 'SUCCESSFUL' ? '#10B981' : status === 'FAILED' ? '#EF4444' : '#F59E0B';
-  const getStatusBackgroundColor = (status: string) =>
-    status === 'SUCCESSFUL' ? '#E8F5E8' : status === 'FAILED' ? '#FFE8E8' : '#FFF3E0';
-
+  
   const formatAmountForDisplay = (value: number, symbol: string) => {
     if (!symbol) return value.toString();
     switch (String(symbol).toUpperCase()) {
@@ -431,7 +433,7 @@ const TransactionHistoryScreen = () => {
               </View>
               <View style={styles.transactionRight}>
                 <Text style={styles.transactionAmount}>{prefix}{formattedAmount} {symbol}</Text>
-                <View style={[styles.statusContainer, { backgroundColor: getStatusBackgroundColor(tx.status) }]}>
+                <View style={styles.statusContainer}>
                   <Text style={[styles.transactionStatus, { color: getStatusColor(tx.status) }]}>{mapServiceStatusToUI(tx.status)}</Text>
                 </View>
               </View>
@@ -512,81 +514,81 @@ const TransactionHistoryScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F0FF' },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#F3F0FF',
+    paddingHorizontal: 16, paddingVertical: 12, backgroundColor: colors.background,
   },
-  backButton: { 
+  backButton: {
     width: 48, height: 48, justifyContent: 'center', alignItems: 'center',
     borderRadius: 24, backgroundColor: 'rgba(0, 0, 0, 0.02)', overflow: 'hidden',
   },
-  backButtonText: { fontSize: 24, color: '#1F2937', fontWeight: '400' },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#1F2937', flex: 1, textAlign: 'center', marginRight: 48 },
+  backButtonText: { fontSize: 24, color: colors.text, fontWeight: '400' },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: colors.primary, flex: 1, textAlign: 'center', marginRight: 48 },
   headerRight: { width: 0 },
   dateSelector: { alignItems: 'center', paddingVertical: 20 },
   monthSelector: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },
-  monthText: { fontSize: 16, fontWeight: '600', color: '#1F2937', marginRight: 8 },
-  dropdownIcon: { fontSize: 12, color: '#6B7280', fontWeight: '500' },
+  monthText: { fontSize: 16, fontWeight: '600', color: colors.text, marginRight: 8 },
+  dropdownIcon: { fontSize: 12, color: colors.textSecondary, fontWeight: '500' },
   filterSection: { flexDirection: 'row', paddingHorizontal: 16, gap: 12, marginBottom: 20 },
   filterButton: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12,
-    borderWidth: 1, borderColor: '#E5E7EB',
+    backgroundColor: colors.card, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 12,
+    borderWidth: 1, borderColor: colors.border,
   },
-  filterText: { fontSize: 14, color: '#6B7280', fontWeight: '400' },
+  filterText: { fontSize: 14, color: colors.textSecondary, fontWeight: '400' },
   transactionsContainer: { paddingHorizontal: 16, paddingBottom: 20 },
   transactionsList: { borderRadius: 12, paddingHorizontal: 16 },
   transactionItem: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
-    paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F3F4F6',
+    paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.separator,
   },
   transactionLeft: { flex: 1 },
-  transactionType: { fontSize: 14, color: '#1F2937', fontWeight: '500', marginBottom: 4 },
-  transactionDate: { fontSize: 12, color: '#6B7280' },
+  transactionType: { fontSize: 14, color: colors.text, fontWeight: '500', marginBottom: 4 },
+  transactionDate: { fontSize: 12, color: colors.textSecondary },
   transactionRight: { alignItems: 'flex-end' },
-  transactionAmount: { fontSize: 14, color: '#1F2937', fontWeight: '500', marginBottom: 4 },
+  transactionAmount: { fontSize: 14, color: colors.text, fontWeight: '500', marginBottom: 4 },
   statusContainer: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
   transactionStatus: { fontSize: 12, fontWeight: '500' },
   loadingContainer: { alignItems: 'center', paddingVertical: 60 },
-  loadingText: { fontSize: 16, color: '#6B7280', marginTop: 12 },
+  loadingText: { fontSize: 16, color: colors.textSecondary, marginTop: 12 },
   errorContainer: { alignItems: 'center', paddingVertical: 60 },
-  errorText: { fontSize: 16, color: '#EF4444', marginBottom: 16, textAlign: 'center' },
-  retryButton: { backgroundColor: '#35297F', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
-  retryButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  errorText: { fontSize: 16, color: colors.destructive, marginBottom: 16, textAlign: 'center' },
+  retryButton: { backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  retryButtonText: { color: colors.primaryForeground, fontSize: 14, fontWeight: '600' },
   emptyStateContainer: { alignItems: 'center', paddingVertical: 60 },
   emptyStateImage: { width: 160, height: 156, marginBottom: 24, resizeMode: 'contain' },
-  emptyStateText: { fontSize: 16, color: '#6B7280', fontWeight: '400', textAlign: 'center' },
+  emptyStateText: { fontSize: 16, color: colors.textSecondary, fontWeight: '400', textAlign: 'center' },
   overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },
   modalContainer: {
-    backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '50%', minHeight: 300,
+    backgroundColor: colors.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '50%', minHeight: 300,
   },
   modalHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, backgroundColor: colors.card,
   },
-  modalTitle: { color: '#111827', fontFamily: Typography?.medium || 'System', fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center' },
+  modalTitle: { color: colors.text, fontFamily: Typography?.medium || 'System', fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center' },
   closeButton: { padding: 4 },
-  closeButtonText: { color: '#6B7280', fontSize: 18, fontWeight: '500' },
+  closeButtonText: { color: colors.textSecondary, fontSize: 18, fontWeight: '500' },
   optionsContainer: { flex: 1, paddingHorizontal: 20 },
   optionsContent: { paddingBottom: 20 },
   optionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'flex-start' },
   monthsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-start' },
   optionCard: {
-    backgroundColor: '#F9FAFB', borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB',
+    backgroundColor: colors.inputBg, borderRadius: 12, borderWidth: 1, borderColor: colors.border,
     paddingVertical: 16, paddingHorizontal: 20, minWidth: '45%', alignItems: 'center', justifyContent: 'center',
   },
   monthCard: {
-    backgroundColor: '#F9FAFB', borderRadius: 10, borderWidth: 1, borderColor: '#E5E7EB',
+    backgroundColor: colors.inputBg, borderRadius: 10, borderWidth: 1, borderColor: colors.border,
     paddingVertical: 12, paddingHorizontal: 16, width: '31%', alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
-  optionCardSelected: { backgroundColor: '#F8F7FF', borderColor: '#35297F', borderWidth: 2 },
-  monthCardSelected: { backgroundColor: '#F8F7FF', borderColor: '#35297F', borderWidth: 2 },
-  optionText: { color: '#6B7280', fontFamily: Typography?.medium || 'System', fontSize: 14, fontWeight: '500', textAlign: 'center' },
-  optionTextSelected: { color: '#35297F', fontWeight: '600' },
+  optionCardSelected: { backgroundColor: colors.iconBg, borderColor: colors.primary, borderWidth: 2 },
+  monthCardSelected: { backgroundColor: colors.iconBg, borderColor: colors.primary, borderWidth: 2 },
+  optionText: { color: colors.textSecondary, fontFamily: Typography?.medium || 'System', fontSize: 14, fontWeight: '500', textAlign: 'center' },
+  optionTextSelected: { color: colors.primary, fontWeight: '600' },
 });
 
 export default TransactionHistoryScreen;

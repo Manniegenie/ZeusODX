@@ -106,8 +106,6 @@ const getTransactionPrefix = (type: string, formattedAmount?: string) => {
 
 const getStatusColor = (status: string) =>
   status === 'SUCCESSFUL' ? '#10B981' : status === 'FAILED' ? '#EF4444' : '#F59E0B';
-const getStatusBackgroundColor = (status: string) =>
-  status === 'SUCCESSFUL' ? '#E8F5E8' : status === 'FAILED' ? '#FFE8E8' : '#FFF3E0';
 
 const formatTransactionType = (type: string) => {
   switch (type) {
@@ -497,7 +495,7 @@ const EthereumWalletScreen: React.FC<EthereumWalletScreenProps> = ({ onQuickActi
                         <Text style={styles.transactionAmount}>
                           {prefix}{formattedAmount} {symbol}
                         </Text>
-                        <View style={[styles.statusContainer, { backgroundColor: getStatusBackgroundColor(tx?.status) }]}>
+                        <View style={styles.statusContainer}>
                           <Text style={[styles.transactionStatus, { color: getStatusColor(tx?.status) }]}>
                             {mapServiceStatusToUI(tx?.status)}
                           </Text>

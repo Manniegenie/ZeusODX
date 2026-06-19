@@ -289,7 +289,7 @@ export default function PassportVerify() {
         {capturedImage && <Image source={{ uri: capturedImage }} style={styles.previewImage} />}
         <Text style={styles.previewText}>Is this photo clear?</Text>
         <View style={styles.previewActions}>
-          <TouchableOpacity style={[styles.cta, { backgroundColor: '#6B7280', flex: 1, marginRight: 8 }]} onPress={() => setStep('camera')}><Text style={styles.ctaText}>Retake</Text></TouchableOpacity>
+          <TouchableOpacity style={[styles.cta, { backgroundColor: colors.textMuted, flex: 1, marginRight: 8 }]} onPress={() => setStep('camera')}><Text style={styles.ctaText}>Retake</Text></TouchableOpacity>
           <TouchableOpacity style={[styles.cta, { flex: 1, marginLeft: 8 }]} onPress={handleBiometricSubmit}><Text style={styles.ctaText}>Submit</Text></TouchableOpacity>
         </View>
       </View>
@@ -325,14 +325,14 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   headerTitle: { color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center', marginHorizontal: 16 },
   headerSpacer: { width: 40 },
   section: { paddingHorizontal: 16, marginBottom: 24 },
-  sub: { color: '#6B7280', fontSize: 14, marginBottom: 16, lineHeight: 20 },
+  sub: { color: colors.textSecondary, fontSize: 14, marginBottom: 16, lineHeight: 20 },
   nameNoticeContainer: { backgroundColor: '#FFF7ED', borderLeftWidth: 4, borderLeftColor: '#F59E0B', padding: 12, marginBottom: 16, borderRadius: 8 },
   nameNoticeText: { fontSize: 13, color: '#B45309', lineHeight: 18, fontWeight: '500' },
   nameFieldsContainer: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   nameFieldWrapper: { flex: 1 },
   inputLabel: { fontSize: 14, fontWeight: '500', color: '#374151', marginBottom: 6 },
   inputContainer: { marginBottom: 16 },
-  input: { backgroundColor: '#fff', borderColor: '#E5E7EB', borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: '#111827' },
+  input: { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.text },
   inputError: { borderColor: '#EF4444' },
   errorText: { color: '#EF4444', fontSize: 12, marginTop: 4, marginLeft: 4 },
   successHint: { color: '#10B981', fontSize: 12, marginTop: 4, marginLeft: 4 },
@@ -340,7 +340,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   infoTitle: { fontSize: 14, fontWeight: '600', color: '#0369A1', marginBottom: 8 },
   infoText: { fontSize: 12, color: '#0369A1', marginBottom: 2 },
   cta: { backgroundColor: '#35297F', borderRadius: 10, padding: 14, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
-  ctaText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  ctaText: { color: colors.primaryForeground, fontWeight: '600', fontSize: 16 },
   cameraContainer: { flex: 1, backgroundColor: '#000' },
   instructionsContainer: { position: 'absolute', left: 0, right: 0, paddingHorizontal: 20, alignItems: 'center' },
   instructionsText: { color: '#fff', fontSize: 18, fontWeight: '600', textAlign: 'center', marginBottom: 8 },
@@ -354,20 +354,20 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   previewContainer: { flex: 1, backgroundColor: '#F8F9FA' },
   previewContent: { flex: 1, paddingHorizontal: 20, alignItems: 'center', justifyContent: 'center' },
   previewImage: { width: 280, height: 280, borderRadius: 140, marginBottom: 24 },
-  previewText: { fontSize: 18, fontWeight: '600', color: '#111827', marginBottom: 24 },
+  previewText: { fontSize: 18, fontWeight: '600', color: colors.text, marginBottom: 24 },
   previewActions: { flexDirection: 'row', width: '100%' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
-  processingText: { fontSize: 18, fontWeight: '600', color: '#111827', marginTop: 16 },
+  processingText: { fontSize: 18, fontWeight: '600', color: colors.text, marginTop: 16 },
 });
 
 const successModalStyles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
-  modalContainer: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24, width: 320, alignSelf: 'center' },
-  closeButton: { position: 'absolute', top: 16, right: 16, width: 30, height: 30, justifyContent: 'center', alignItems: 'center', borderRadius: 15, backgroundColor: '#F3F4F6' },
-  closeButtonText: { color: '#6B7280', fontSize: 16 },
+  modalContainer: { backgroundColor: colors.card, borderRadius: 16, padding: 24, width: 320, alignSelf: 'center' },
+  closeButton: { position: 'absolute', top: 16, right: 16, width: 30, height: 30, justifyContent: 'center', alignItems: 'center', borderRadius: 15, backgroundColor: colors.separator },
+  closeButtonText: { color: colors.textSecondary, fontSize: 16 },
   titleSection: { alignItems: 'center', marginBottom: 24 },
-  title: { color: '#111827', fontSize: 18, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
-  message: { color: '#6B7280', fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  title: { color: colors.text, fontSize: 18, fontWeight: '600', textAlign: 'center', marginBottom: 12 },
+  message: { color: colors.textSecondary, fontSize: 14, textAlign: 'center', lineHeight: 20 },
   submitButton: { backgroundColor: '#35297F', borderRadius: 12, paddingVertical: 14, width: '100%', alignItems: 'center' },
-  submitButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  submitButtonText: { color: colors.primaryForeground, fontSize: 15, fontWeight: '600' },
 });

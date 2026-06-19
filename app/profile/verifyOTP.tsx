@@ -195,7 +195,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
   backButtonText: { fontSize: 20, color: colors.text, fontWeight: '500' },
   headerTitle: {
-    color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600',
+    color: colors.text, fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600',
     flex: 1, textAlign: 'center', marginHorizontal: 16,
   },
   emptySpace: { width: 40 },

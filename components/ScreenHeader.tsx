@@ -46,7 +46,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 6,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   headerContainer: {
     flexDirection: 'row',

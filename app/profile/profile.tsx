@@ -41,7 +41,6 @@ import logoutIcon from '../../components/icons/logout.png';
 import notificationIcon from '../../components/icons/notification.png';
 import personalDetailsIcon from '../../components/icons/personal-details.png';
 import pinIcon from '../../components/icons/pin.png';
-import profileAvatarIcon from '../../components/icons/profile-avatar.png';
 import referEarnIcon from '../../components/icons/refer-earn.png';
 
 const ProfileScreen = () => {
@@ -431,7 +430,7 @@ const ProfileScreen = () => {
     name: displayName || '-',
     email: profile?.email || '-',
     phone: profile?.phoneNumber || '-',
-    avatar: hasAvatar ? { uri: avatarUrl } : profileAvatarIcon,
+    avatar: hasAvatar ? { uri: avatarUrl } : null,
   }), [displayName, profile?.email, profile?.phoneNumber, hasAvatar, avatarUrl]);
 
   // Profile options configuration
@@ -507,7 +506,7 @@ const ProfileScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor="#35297F" barStyle="light-content" />
+        <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
 
         {/* Header */}
         <View style={styles.header}>
@@ -525,11 +524,14 @@ const ProfileScreen = () => {
         {/* User Profile */}
         <View style={styles.profileSection}>
           <View style={styles.avatarWrapper}>
-            <Image source={userData.avatar} style={styles.avatar} />
+            {hasAvatar
+              ? <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+              : <Ionicons name="person-circle" size={80} color={colors.primary} />
+            }
           </View>
-          <Text style={styles.userName}>{userData.name}</Text>
-          <Text style={styles.userEmail}>{userData.email}</Text>
-          <Text style={styles.userPhone}>{userData.phone}</Text>
+          <Text style={[styles.userName, { color: colors.text }]}>{userData.name}</Text>
+          <Text style={[styles.userEmail, { color: colors.textSecondary }]}>{userData.email}</Text>
+          <Text style={[styles.userPhone, { color: colors.textSecondary }]}>{userData.phone}</Text>
         </View>
 
         {/* Options List */}
@@ -597,7 +599,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    backgroundColor: '#35297F',
     paddingHorizontal: 16,
     paddingTop: Platform.OS === 'android' ? 8 : 0,
     paddingBottom: 12,
@@ -614,49 +615,34 @@ const styles = StyleSheet.create({
     tintColor: '#FFFFFF',
   },
   profileSection: {
-    backgroundColor: '#35297F',
     alignItems: 'center',
-    paddingBottom: 24,
+    paddingVertical: 24,
     paddingHorizontal: 16,
   },
   avatarWrapper: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+    overflow: 'hidden',
   },
   avatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   userName: {
-    color: '#FFFFFF',
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 4,
   },
   userEmail: {
-    color: '#E5E7EB',
     fontSize: 14,
     marginBottom: 2,
   },
   userPhone: {
-    color: '#E5E7EB',
     fontSize: 14,
   },
   scrollView: {

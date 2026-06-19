@@ -386,7 +386,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   headerTitle: {
     position: 'absolute',
     left: 0, right: 0,
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 18,
     fontWeight: '600',
@@ -437,12 +437,12 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   emptyStateTextDisabled: { opacity: 0.6 },
 
   accountCard: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   accountCardDisabled: { opacity: 0.7 },
   accountHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -484,9 +484,9 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: 8, paddingVertical: 16, paddingHorizontal: 20,
   },
   addButtonDisabled: { opacity: 0.6, borderColor: '#9CA3AF' },
-  addButtonIcon: { color: '#35297F', fontSize: 18, fontWeight: '600', marginRight: 8 },
+  addButtonIcon: { color: colors.text, fontSize: 18, fontWeight: '600', marginRight: 8 },
   addButtonIconDisabled: { color: '#9CA3AF' },
-  addButtonText: { color: '#35297F', fontFamily: Typography.medium, fontSize: 16, fontWeight: '600' },
+  addButtonText: { color: colors.text, fontFamily: Typography.medium, fontSize: 16, fontWeight: '600' },
   addButtonTextDisabled: { color: '#9CA3AF' },
 
   loadingOverlay: {
@@ -509,7 +509,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingHorizontal: 20,
   },
   deleteModalContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 16,
     width: 320,
     alignSelf: 'center',
@@ -540,12 +540,12 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   deleteModalButtons: { flexDirection: 'row', gap: 12 },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   cancelButtonDisabled: { opacity: 0.6 },
   cancelButtonText: {

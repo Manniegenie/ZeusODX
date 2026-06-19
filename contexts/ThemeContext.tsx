@@ -65,20 +65,30 @@ const ThemeContext = createContext<ThemeContextType>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(Appearance.getColorScheme() === 'dark');
+  const [hasManualOverride, setHasManualOverride] = useState(false);
 
-  // Load saved preference on mount — render immediately with default (light)
-  // and snap to saved value once AsyncStorage responds
+  // Load saved preference — only override system default if user explicitly chose
   useEffect(() => {
     AsyncStorage.getItem(THEME_KEY).then((saved) => {
-      if (saved === 'dark') setIsDark(true);
-      else if (saved === 'light') setIsDark(false);
-      else setIsDark(Appearance.getColorScheme() === 'dark');
+      if (saved === 'dark') { setIsDark(true); setHasManualOverride(true); }
+      else if (saved === 'light') { setIsDark(false); setHasManualOverride(true); }
+      // null/undefined: no manual preference, keep following system
     });
   }, []);
 
+  // Mirror system theme changes when no manual override is set
+  useEffect(() => {
+    if (hasManualOverride) return;
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      setIsDark(colorScheme === 'dark');
+    });
+    return () => subscription.remove();
+  }, [hasManualOverride]);
+
   const toggle = useCallback(async (value: boolean) => {
     setIsDark(value);
+    setHasManualOverride(true);
     await AsyncStorage.setItem(THEME_KEY, value ? 'dark' : 'light');
   }, []);
 

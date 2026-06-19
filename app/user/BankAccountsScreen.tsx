@@ -1018,7 +1018,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: 40,
   },
   headerTitle: {
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 18,
     textAlign: 'center',
@@ -1027,14 +1027,14 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   transferSummarySection: { paddingHorizontal: 16, paddingBottom: 16 },
   summaryCard: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   summaryTitle: {
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 16,
     fontWeight: '600',
@@ -1058,7 +1058,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     fontWeight: '600',
   },
   summaryHighlight: {
-    color: '#35297F',
+    color: colors.text,
   },
 
   descriptionSection: { paddingHorizontal: 16, paddingBottom: 24 },
@@ -1132,16 +1132,16 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   emptyStateTextDisabled: { opacity: 0.6 },
 
   accountCard: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   accountCardDisabled: { opacity: 0.7 },
   accountCardSelectable: {
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderWidth: 1,
     shadowColor: '#000',
     shadowOpacity: 0.05,
@@ -1183,7 +1183,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   selectIndicator: { alignItems: 'flex-end' },
   selectText: {
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 12,
     fontWeight: '600',
@@ -1202,10 +1202,10 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingHorizontal: 20,
   },
   addButtonDisabled: { opacity: 0.6, borderColor: '#9CA3AF' },
-  addButtonIcon: { color: '#35297F', fontSize: 18, fontWeight: '600', marginRight: 8 },
+  addButtonIcon: { color: colors.text, fontSize: 18, fontWeight: '600', marginRight: 8 },
   addButtonIconDisabled: { color: '#9CA3AF' },
   addButtonText: {
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 16,
     fontWeight: '600',
@@ -1232,7 +1232,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingHorizontal: 20,
   },
   deleteModalContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 16,
     width: 320,
     alignSelf: 'center',
@@ -1244,7 +1244,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   deleteModalContent: { paddingHorizontal: 24, paddingVertical: 24 },
   deleteModalTitle: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 18,
     fontWeight: '600',
@@ -1252,7 +1252,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     marginBottom: 12,
   },
   deleteModalMessage: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular,
     fontSize: 13,
     textAlign: 'center',
@@ -1263,12 +1263,12 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   deleteModalButtons: { flexDirection: 'row', gap: 12 },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   cancelButtonDisabled: { opacity: 0.6 },
   cancelButtonText: {
@@ -1312,7 +1312,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   modeSwitchSegmentActive: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
   },
   modeSwitchSegmentActiveLeft: {
     borderTopLeftRadius: 17,
@@ -1341,21 +1341,21 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center',
   },
   manualEntryToggleText: {
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 14,
     fontWeight: '600',
   },
   manualEntryCard: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     marginTop: 4,
   },
   manualEntryTitle: {
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 15,
     fontWeight: '600',
@@ -1372,10 +1372,10 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.inputBg,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingHorizontal: 12,
     paddingVertical: 14,
   },
@@ -1393,10 +1393,10 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     fontSize: 14,
   },
   manualInput: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.inputBg,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingHorizontal: 12,
     paddingVertical: 14,
     color: colors.text,
@@ -1416,7 +1416,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     padding: 0,
   },
   useAccountButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
@@ -1435,7 +1435,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   // Bank picker modal - full screen
   bankModalFullScreen: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
   },
   bankModalHeader: {
     flexDirection: 'row',
@@ -1460,7 +1460,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   bankModalTitle: {
     flex: 1,
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 18,
     fontWeight: '600',
@@ -1475,10 +1475,10 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingTop: 16,
   },
   bankSearchInput: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingHorizontal: 12,
     paddingVertical: 12,
     color: colors.text,

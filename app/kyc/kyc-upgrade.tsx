@@ -286,7 +286,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 8, // Reduced from 12
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     padding: 16, // Reduced from 20
     elevation: 1,
     shadowColor: '#000',
@@ -341,7 +341,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: '#E0E7FF', // Light purple background
   },
   defaultBadge: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.separator,
   },
 
   // Status text styles (reduced by 20%)
@@ -360,7 +360,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     color: '#3730A3', // Dark purple text
   },
   defaultText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
 
   // Arrow styles (reduced)

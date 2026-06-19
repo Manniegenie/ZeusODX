@@ -200,7 +200,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     tintColor: colors.text,
   },
   headerTitle: {
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
@@ -229,7 +229,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     textAlign: 'center',
   },
   retryBtn: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingHorizontal: 28,
     paddingVertical: 12,
@@ -255,7 +255,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   card: {
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -264,7 +264,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   codeCard: {
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 14,
@@ -276,7 +276,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   codeText: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#35297F',
+    color: colors.text,
     letterSpacing: 4,
     fontFamily: Typography.bold || 'System',
   },
@@ -302,7 +302,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -310,7 +310,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   statValue: {
     fontSize: 30,
     fontWeight: '700',
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.bold || 'System',
     marginBottom: 4,
   },

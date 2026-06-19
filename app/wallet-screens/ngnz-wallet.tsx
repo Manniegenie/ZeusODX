@@ -474,7 +474,7 @@ const NGNZWalletScreen = ({ onQuickActionPress, onSeeMorePress }) => {
                         <Text style={styles.transactionAmount}>
                           {prefix}{formattedAmount} {symbol}
                         </Text>
-                        <View style={[styles.statusContainer, { backgroundColor: getStatusBackgroundColor(tx.status) }]}>
+                        <View style={styles.statusContainer}>
                           <Text style={[styles.transactionStatus, { color: getStatusColor(tx.status) }]}>
                             {formatTransactionStatus(tx.status)}
                           </Text>

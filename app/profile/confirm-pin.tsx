@@ -246,7 +246,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',

@@ -336,7 +336,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     padding: 16,
     marginBottom: 12,
     elevation: 1,
@@ -347,8 +347,8 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   disabledCard: {
     opacity: 0.55,
-    backgroundColor: '#F9FAFB',
-    borderColor: '#E5E7EB',
+    backgroundColor: colors.inputBg,
+    borderColor: colors.border,
   },
   verificationContent: {
     flexDirection: 'row',

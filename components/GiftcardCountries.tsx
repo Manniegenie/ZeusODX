@@ -157,6 +157,9 @@ export function AvailableCountrySheet({
   onSelect: (country: CountryItem) => void;
   onClose: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   // keep your original brand -> canonical mapping approach
   const normalizedBrand = useMemo(() => {
     if (!brand) return '';
@@ -348,20 +351,20 @@ export function getAvailableCountriesForBrand(brand: string): CountryItem[] {
 /* ========= Styles ========= */
 const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  sheetContainer: { backgroundColor: '#fff', borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingTop: 4 },
-  handleBar: { width: 42, height: 3, backgroundColor: '#E5E7EB', borderRadius: 2, alignSelf: 'center', marginBottom: 6 },
+  sheetContainer: { backgroundColor: colors.card, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingTop: 4 },
+  handleBar: { width: 42, height: 3, backgroundColor: colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: 6 },
   titleRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 4 },
   sheetTitle: {
     flex: 1,
     fontSize: 15,
     fontWeight: '700',
-    color: '#111827',
+    color: colors.text,
     textAlign: 'center',
     fontFamily: Typography.medium || 'System',
   },
-  closeTxt: { fontSize: 16, color: '#6B7280', fontWeight: '600' },
+  closeTxt: { fontSize: 16, color: colors.textSecondary, fontWeight: '600' },
   pill: {
-    backgroundColor: '#F3F0FF',
+    backgroundColor: colors.separator,
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -371,36 +374,36 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  pillSelected: { borderColor: '#35297F', backgroundColor: '#F6F4FF' },
+  pillSelected: { borderColor: colors.primary, backgroundColor: colors.iconBg },
   pillLeft: { marginRight: 10, justifyContent: 'center', alignItems: 'center', width: 24 },
-  pillContent: { flex: 1, paddingRight: 12 }, // takes available space
-  pillRight: { minWidth: 80, alignItems: 'flex-end', justifyContent: 'center' }, // right-aligned rate
+  pillContent: { flex: 1, paddingRight: 12 },
+  pillRight: { minWidth: 80, alignItems: 'flex-end', justifyContent: 'center' },
   flagSmall: { width: 20, height: 20, borderRadius: 10, resizeMode: 'cover' },
   pillLabel: {
     fontSize: 15,
-    color: '#1F2937',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
   },
-  pillLabelSelected: { color: '#35297F', fontWeight: '700' },
+  pillLabelSelected: { color: colors.iconFg, fontWeight: '700' },
   pillRate: {
     fontSize: 13,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     marginTop: 0,
   },
-  pillRateSelected: { color: '#35297F', fontWeight: '700' },
+  pillRateSelected: { color: colors.iconFg, fontWeight: '700' },
   loadingContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
-  loadingText: { color: '#6B7280', fontSize: 14, fontFamily: Typography.regular || 'System', marginTop: 12 },
+  loadingText: { color: colors.textSecondary, fontSize: 14, fontFamily: Typography.regular || 'System', marginTop: 12 },
   errorContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
   errorText: {
-    color: '#DC2626',
+    color: colors.destructive,
     fontSize: 16,
     fontFamily: Typography.medium || 'System',
     fontWeight: '600',
     textAlign: 'center',
   },
   errorSubtext: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 14,
     fontFamily: Typography.regular || 'System',
     textAlign: 'center',
@@ -408,14 +411,14 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  retryButtonText: { color: '#FFFFFF', fontSize: 14, fontFamily: Typography.medium || 'System', fontWeight: '600' },
+  retryButtonText: { color: colors.primaryForeground, fontSize: 14, fontFamily: Typography.medium || 'System', fontWeight: '600' },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40 },
-  emptyText: { color: '#6B7280', fontSize: 14, fontFamily: Typography.regular || 'System', textAlign: 'center' },
+  emptyText: { color: colors.textSecondary, fontSize: 14, fontFamily: Typography.regular || 'System', textAlign: 'center' },
 });
 
 export default AvailableCountrySheet;

@@ -534,12 +534,12 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   qrPlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderStyle: 'dashed',
   },
   noQrText: {
@@ -568,11 +568,11 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   secretContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.background,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     minHeight: 50,
     marginBottom: 8,
   },
@@ -597,7 +597,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   copyButtonDisabled: {
@@ -651,7 +651,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingBottom: 20,
   },
   continueButton: {
-    backgroundColor: '#35297F', // Purple color
+    backgroundColor: colors.primary, // Purple color
     borderRadius: 12,
     paddingVertical: 16,
     justifyContent: 'center',

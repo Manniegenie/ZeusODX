@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -15,6 +15,7 @@ import {
 import { useNotifications } from '../../hooks/usenotification';
 import { notificationService } from '../../services/notificationApiService';
 import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 
 // Icons
 import backIcon from '../../components/icons/backy.png';

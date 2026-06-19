@@ -102,7 +102,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   headerSpacer: { width: 40 },
   section: { paddingHorizontal: 16, marginBottom: 24 },
   sub: { color: colors.textSecondary, fontSize: 13, marginBottom: 12 },
-  card: { backgroundColor: '#fff', borderColor: '#E5E7EB', borderWidth: 1, borderRadius: 10, padding: 16, marginBottom: 12 },
+  card: { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 10, padding: 16, marginBottom: 12 },
   cardTitle: { color: colors.text, fontSize: 16, fontWeight: '600' },
   cardSub: { color: colors.textSecondary, marginTop: 4, fontSize: 12 },
 });
