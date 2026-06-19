@@ -15,11 +15,13 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import { use2FA } from '../../hooks/use2FA';
 import { useBiometricAuth } from '../../hooks/usebiometric';
 import useLogout from '../../hooks/useLogout';
 import { useNotifications } from '../../hooks/usenotification';
+import { useTheme } from '../../hooks/useTheme';
 import { useUserProfile } from '../../hooks/useProfile';
 import { authService } from '../../services/authService';
 
@@ -44,6 +46,7 @@ import referEarnIcon from '../../components/icons/refer-earn.png';
 
 const ProfileScreen = () => {
   const router = useRouter();
+  const { isDark, colors, toggle: toggleTheme } = useTheme();
 
   // Profile data
   const {
@@ -435,6 +438,7 @@ const ProfileScreen = () => {
   const profileOptions = useMemo(() => [
     { id: 'personal-details', title: 'Personal Details', icon: personalDetailsIcon, onPress: handlePersonalDetails, hasChevron: true },
     { id: 'notification', title: 'Notification', icon: notificationIcon, hasToggle: true, toggleValue: notificationEnabled, onToggle: handleNotificationToggle },
+    { id: 'dark-mode', title: 'Dark Mode', icon: null, hasToggle: true, toggleValue: isDark, onToggle: toggleTheme },
     { id: 'bank-details', title: 'Bank Details', icon: bankDetailsIcon, onPress: handleBankDetails, hasChevron: true },
     { id: '2fa', title: '2FA (Two Factor Authentication)', icon: twoFAIcon, hasToggle: true, toggleValue: twoFAEnabled, onToggle: handle2FAToggle },
     { id: 'reset-pin', title: 'Reset PIN', icon: pinIcon, onPress: handleResetPin, hasChevron: true },
@@ -458,7 +462,9 @@ const ProfileScreen = () => {
     handleReferral,
     loggingOut,
     handleLogout,
-    handleDeleteAccount
+    handleDeleteAccount,
+    isDark,
+    toggleTheme,
   ]);
 
   // Render option row
@@ -471,8 +477,11 @@ const ProfileScreen = () => {
       disabled={isAnyOperationInProgress}
     >
       <View style={styles.optionLeft}>
-        <Image source={option.icon} style={styles.optionIcon} />
-        <Text style={[styles.optionText, option.isDestructive && styles.optionTextDestructive]}>
+        {option.icon
+          ? <Image source={option.icon} style={styles.optionIcon} />
+          : <Ionicons name="moon-outline" size={24} color={colors.text} style={styles.optionIconVector} />
+        }
+        <Text style={[styles.optionText, { color: colors.text }, option.isDestructive && styles.optionTextDestructive]}>
           {option.title}
         </Text>
       </View>
@@ -493,10 +502,10 @@ const ProfileScreen = () => {
         )}
       </View>
     </TouchableOpacity>
-  ), [isAnyOperationInProgress]);
+  ), [isAnyOperationInProgress, colors]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <SafeAreaView style={styles.safeArea}>
         <StatusBar backgroundColor="#35297F" barStyle="light-content" />
 
@@ -529,11 +538,11 @@ const ProfileScreen = () => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.optionsContainer}>
+          <View style={[styles.optionsContainer, { backgroundColor: colors.card }]}>
             {profileOptions.map((option, index) => (
               <View key={option.id}>
                 {renderOption(option)}
-                {index < profileOptions.length - 1 && <View style={styles.separator} />}
+                {index < profileOptions.length - 1 && <View style={[styles.separator, { backgroundColor: colors.border }]} />}
               </View>
             ))}
           </View>
@@ -582,7 +591,7 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F8F9FA', // overridden inline per render
   },
   safeArea: {
     flex: 1,
@@ -693,6 +702,9 @@ const styles = StyleSheet.create({
   optionIcon: {
     width: 24,
     height: 24,
+    marginRight: 12,
+  },
+  optionIconVector: {
     marginRight: 12,
   },
   optionText: {

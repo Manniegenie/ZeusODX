@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState , useMemo} from 'react';
 import {
     Image,
     StatusBar,
@@ -8,7 +8,8 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { authService } from '../../services/authService';
@@ -34,6 +35,8 @@ export default function DashboardHeader({
   showActivityIcon = true,
   showNotificationIcon = true,
 }: DashboardHeaderProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [username, setUsername] = useState<string>('');
 
@@ -62,7 +65,7 @@ export default function DashboardHeader({
 
   return (
     <>
-      <StatusBar backgroundColor={Colors.background} barStyle="dark-content" />
+      <StatusBar backgroundColor={colors.background} barStyle={colors.statusBar} />
       
       {/* Header Section */}
       <View style={styles.header}>
@@ -97,7 +100,7 @@ export default function DashboardHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -105,7 +108,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.spacing.lg,
     paddingVertical: Layout.spacing.md,
     paddingTop: Layout.spacing.lg + Layout.spacing.sm, // Added extra top padding for industry standard spacing
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   greetingContainer: {
     flex: 1,
@@ -114,7 +117,7 @@ const styles = StyleSheet.create({
   greetingText: {
     fontFamily: Typography.medium,
     fontSize: 14,
-    color: Colors.text.primary,
+    color: colors.text,
     opacity: 0.8,
   },
   headerSpacer: {
@@ -135,10 +138,12 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     resizeMode: 'contain',
+    tintColor: colors.text,
   },
   bellIcon: {
     width: 20,
     height: 20,
     resizeMode: 'contain',
+    tintColor: colors.text,
   },
 });

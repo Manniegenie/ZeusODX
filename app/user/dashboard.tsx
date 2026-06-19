@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState , useMemo} from 'react';
 import {
     Image,
     Platform,
@@ -18,7 +18,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomTabNavigator from '../../components/BottomNavigator';
 import SelectTokenModal, { WalletOption } from '../../components/SelectToken';
 import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { useDashboard } from '../../hooks/useDashboard';
 import NotificationService from '../../services/notificationService';
@@ -27,12 +28,14 @@ import DashboardModals from './DashboardModals';
 import PortfolioSection from './PortfolioSection';
 import TokensSection from './TokensSection';
 
+import { Ionicons } from '@expo/vector-icons';
 import { useTawk } from '../../components/TawkSupport';
-import headphonesIcon from '../../components/icons/chat.png';
 
 const NOTIFICATION_PROMPT_KEY = 'notification_prompt_shown';
 
 export default function DashboardScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -252,11 +255,11 @@ export default function DashboardScreen() {
             <RefreshControl
               refreshing={loading}
               onRefresh={onRefresh}
-              colors={[Colors.primary]}
-              tintColor={Colors.primary}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
               title="Pull to refresh"
-              titleColor={Colors.text.secondary}
-              progressBackgroundColor={Colors.surface}
+              titleColor={colors.textSecondary}
+              progressBackgroundColor={colors.card}
             />
           }
         >
@@ -323,7 +326,9 @@ export default function DashboardScreen() {
           { bottom: ICON_BOTTOM_OFFSET },
         ]}
       >
-        <Image source={headphonesIcon} style={styles.supportIcon} />
+        <View style={styles.supportIcon}>
+          <Ionicons name="headset" size={28} color="#FFFFFF" />
+        </View>
       </TouchableOpacity>
 
       {/* Modals */}
@@ -360,8 +365,8 @@ export default function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+const makeStyles = (colors: AppColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
   scrollViewContent: { paddingBottom: Layout.spacing.xl },
@@ -374,10 +379,17 @@ const styles = StyleSheet.create({
   },
 
   supportIcon: {
-    width: 60,
-    height: 60,
+    width: 56,
+    height: 56,
     borderRadius: 28,
-    resizeMode: 'contain',
+    backgroundColor: '#35297F',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
   },
 
   // Notification Prompt Styles
@@ -425,7 +437,7 @@ const styles = StyleSheet.create({
   promptTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: Colors.primary || '#35297F',
+    color: colors.primary,
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -439,14 +451,14 @@ const styles = StyleSheet.create({
   },
 
   enableButton: {
-    backgroundColor: Colors.primary || '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 14,
     paddingVertical: 16,
     paddingHorizontal: 32,
     width: '100%',
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: Colors.primary || '#35297F',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

@@ -15,7 +15,8 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Typography } from '../constants/Typography';
 import { useUserProfile } from '../hooks/useProfile';
 
@@ -73,6 +74,8 @@ type TawkOverlayProps = {
 };
 
 function TawkOverlay({ visible, onClose, directLink, title }: TawkOverlayProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { height: screenH } = useWindowDimensions();
   const SHEET_HEIGHT = Math.round(screenH * 0.75);
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
@@ -243,7 +246,7 @@ function TawkOverlay({ visible, onClose, directLink, title }: TawkOverlayProps) 
           <View style={styles.webContainer}>
             {loading && (
               <View style={styles.loader}>
-                <ActivityIndicator size="large" color={Colors.primary || '#007AFF'} />
+                <ActivityIndicator size="large" color={colors.primary} />
               </View>
             )}
             <WebView
@@ -297,9 +300,9 @@ function TawkOverlay({ visible, onClose, directLink, title }: TawkOverlayProps) 
 
 /* ================= Styles ================= */
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   sheetContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 6,
@@ -318,7 +321,7 @@ const styles = StyleSheet.create({
   handleBar: {
     width: 36,
     height: 4,
-    backgroundColor: '#D1D5DB',
+    backgroundColor: colors.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 8,
@@ -331,28 +334,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
 
   sheetTitle: {
     flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
     textAlign: 'center',
     fontFamily: (Typography?.medium as any) || 'System',
   },
 
   closeTxt: {
     fontSize: 22,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontWeight: '400',
     lineHeight: 22,
   },
 
   webContainer: {
     flex: 1,
-    backgroundColor: Colors.background || '#0b0b10',
+    backgroundColor: colors.background,
     overflow: 'hidden',
   },
 
@@ -360,7 +363,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: colors.card,
     zIndex: 2,
   },
 });

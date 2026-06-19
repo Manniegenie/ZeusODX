@@ -1,38 +1,35 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { 
-  Animated, 
-  Image, 
-  ImageBackground, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View, 
-  FlatList, 
-  Dimensions 
+import { useEffect, useRef, useState , useMemo} from 'react';
+import {
+  Animated,
+  Image,
+  ImageBackground,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  FlatList,
+  Dimensions
 } from 'react-native';
 import { moderateScale } from 'react-native-size-matters';
-import { Colors } from '../../constants/Colors';
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useDashboard } from '../../hooks/useDashboard';
-import { useBanners } from '../../hooks/usebanners'; // Import the new hook
+import { useBanners } from '../../hooks/usebanners';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BANNER_WIDTH = SCREEN_WIDTH - (Layout.spacing.lg * 2);
 
-// Asset imports
-const depositIcon    = require('../../components/icons/deposit-icon.png');
-const transferIcon   = require('../../components/icons/transfer-icon.png');
-const utilitiesIcon  = require('../../components/icons/utility.png'); 
-const swapIcon       = require('../../components/icons/swap-icon.png');
-const portfolioBg    = require('../../assets/images/portfolio-bgg.jpg');
-const eyeIcon        = require('../../components/icons/eye-icon.png');
+const portfolioBg = require('../../assets/images/portfolio-bgg.jpg');
+const eyeIcon     = require('../../components/icons/eye-icon.png');
 
 interface QuickLink {
   id: string;
   title: string;
-  icon: any;
+  iconName: string;
   route: string;
 }
 
@@ -55,6 +52,8 @@ export default function PortfolioSection({
   kycLoading = false,
   kycData,
 }: PortfolioSectionProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { totalPortfolioBalance, completionPercentage } = useDashboard();
   const { banners } = useBanners(); // Fetch dynamic banners
@@ -98,10 +97,10 @@ export default function PortfolioSection({
   }, [activeIndex, slides.length]);
 
   const quickLinks: QuickLink[] = [
-    { id: 'deposit',   title: 'Deposit',   icon: depositIcon,   route: '/user/come-soon' },
-    { id: 'transfer',  title: 'Withdraw',  icon: transferIcon,  route: '/user/come-soon' },
-    { id: 'buy-sell',  title: 'Buy/Sell',  icon: swapIcon,      route: '/user/Swap' },
-    { id: 'utility',   title: 'Utility',   icon: utilitiesIcon, route: '/user/utility' },
+    { id: 'deposit',  title: 'Deposit',  iconName: 'download-outline',       route: '/user/come-soon' },
+    { id: 'transfer', title: 'Withdraw', iconName: 'send-outline',            route: '/user/come-soon' },
+    { id: 'buy-sell', title: 'Swap',     iconName: 'swap-horizontal-outline', route: '/user/Swap' },
+    { id: 'utility',  title: 'Utility',  iconName: 'flash-outline',           route: '/user/utility' },
   ];
 
   // Progress bar animation logic (Existing)
@@ -203,7 +202,9 @@ export default function PortfolioSection({
         <View style={styles.quickLinksList}>
           {quickLinks.map(item => (
             <TouchableOpacity key={item.id} style={styles.quickLinkItem} onPress={() => onQuickLinkPress(item)} activeOpacity={0.7}>
-              <Image source={item.icon} style={styles.quickLinkIconImage} />
+              <View style={styles.quickLinkIconContainer}>
+                <Ionicons name={item.iconName as any} size={moderateScale(24, 0.1)} color="#FFFFFF" />
+              </View>
               <Text style={styles.quickLinkText}>{item.title}</Text>
             </TouchableOpacity>
           ))}
@@ -231,24 +232,31 @@ export default function PortfolioSection({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: { marginBottom: Layout.spacing.lg },
   balanceCard: { marginHorizontal: Layout.spacing.lg, marginBottom: Layout.spacing.lg, borderRadius: Layout.borderRadius.lg, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: '#DDDDDD' },
   balanceBackground: { height: moderateScale(151, 0.1), justifyContent: 'center', backgroundColor: '#4A3FAD' },
   balanceBackgroundImage: { borderRadius: Layout.borderRadius.lg },
   balanceContent: { padding: Layout.spacing.lg, justifyContent: 'center', alignItems: 'center', height: '100%' },
-  balanceLabel: { fontFamily: Typography.regular, fontSize: moderateScale(14, 0.1), color: Colors.surface, marginBottom: Layout.spacing.sm, textAlign: 'center' },
+  balanceLabel: { fontFamily: Typography.regular, fontSize: moderateScale(14, 0.1), color: '#FFFFFF', marginBottom: Layout.spacing.sm, textAlign: 'center' },
   balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  balanceAmount: { fontFamily: Typography.medium, fontSize: moderateScale(32, 0.15), color: Colors.surface, fontWeight: '500', textAlign: 'center' },
-  eyeIcon: { width: 12, height: 12, tintColor: Colors.surface, marginLeft: 6 },
+  balanceAmount: { fontFamily: Typography.medium, fontSize: moderateScale(32, 0.15), color: '#FFFFFF', fontWeight: '500', textAlign: 'center' },
+  eyeIcon: { width: 12, height: 12, tintColor: '#FFFFFF', marginLeft: 6 },
   quickLinksContainer: { paddingHorizontal: Layout.spacing.lg, marginBottom: Layout.spacing.lg },
   quickLinksHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Layout.spacing.md },
-  quickLinksTitle: { fontFamily: Typography.medium, fontSize: moderateScale(16, 0.1), color: Colors.text.primary },
-  seeMore: { fontFamily: Typography.regular, fontSize: moderateScale(12, 0.1), color: Colors.primary },
+  quickLinksTitle: { fontFamily: Typography.medium, fontSize: moderateScale(16, 0.1), color: colors.text },
+  seeMore: { fontFamily: Typography.regular, fontSize: moderateScale(12, 0.1), color: colors.primary },
   quickLinksList: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Layout.spacing.xs },
   quickLinkItem: { flex: 1, alignItems: 'center', gap: Layout.spacing.xs },
-  quickLinkIconImage: { width: moderateScale(44, 0.1), height: moderateScale(44, 0.1), borderRadius: moderateScale(22, 0.1), resizeMode: 'contain' },
-  quickLinkText: { fontFamily: Typography.regular, fontSize: moderateScale(12, 0.1), color: Colors.text.secondary, textAlign: 'center' },
+  quickLinkIconContainer: {
+    width: moderateScale(52, 0.1),
+    height: moderateScale(52, 0.1),
+    borderRadius: moderateScale(10, 0.1),
+    backgroundColor: '#35297F',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickLinkText: { fontFamily: Typography.regular, fontSize: moderateScale(12, 0.1), color: colors.textSecondary, textAlign: 'center' },
   
   // Slider Styles
   sliderWrapper: { height: moderateScale(70, 0.1), marginBottom: Layout.spacing.lg },

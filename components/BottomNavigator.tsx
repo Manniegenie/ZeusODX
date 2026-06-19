@@ -1,9 +1,10 @@
 import { usePathname, useRouter } from 'expo-router';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef , useMemo} from 'react';
 import { Animated, ImageStyle, StyleSheet, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale } from 'react-native-size-matters';
-import { Colors } from '../constants/Colors';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
 
@@ -28,6 +29,8 @@ interface AnimatedTabProps {
 }
 
 const AnimatedTab: React.FC<AnimatedTabProps> = ({ tab, isActive, onPress }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const colorAnim = useRef(new Animated.Value(isActive ? 1 : 0)).current;
   const translateYAnim = useRef(new Animated.Value(0)).current;
@@ -59,12 +62,12 @@ const AnimatedTab: React.FC<AnimatedTabProps> = ({ tab, isActive, onPress }) => 
 
   const iconTintColor = colorAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [Colors.text.secondary, Colors.primary]
+    outputRange: [colors.textSecondary, colors.primary]
   });
   
   const labelColor = colorAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [Colors.text.secondary, Colors.primary]
+    outputRange: [colors.textSecondary, colors.primary]
   });
 
   if (isBuySellTab) {
@@ -124,6 +127,8 @@ interface BottomTabNavigatorProps {
 }
 
 const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({ activeTab }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const pathname = usePathname();
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -132,7 +137,7 @@ const BottomTabNavigator: React.FC<BottomTabNavigatorProps> = ({ activeTab }) =>
   const tabs: Tab[] = [
     { id: 'home',      label: 'Home',     icon: homeIcon,     route: '/user/dashboard' },
     { id: 'giftcard',  label: 'Giftcard', icon: giftcardIcon, route: '/user/Giftcard' },
-    { id: 'swap',      label: 'Buy/Sell', icon: tradeIcon,    route: '/user/Swap' },
+    { id: 'swap',      label: 'Swap',     icon: tradeIcon,    route: '/user/Swap' },
     { id: 'wallet',    label: 'Wallet',   icon: activityIcon, route: '/user/wallet' },
     { id: 'profile',   label: 'Profile',  icon: profileIcon,  route: '/profile/profile' },
   ];
@@ -196,14 +201,14 @@ interface Styles {
   specialTabLabel: TextStyle;
 }
 
-const styles = StyleSheet.create<Styles>({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   safeAreaContainer: {
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   container: {
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopColor: colors.border,
     paddingTop: moderateScale(8, 0.1),
   },
   tabNavContainer: {
@@ -249,7 +254,7 @@ const styles = StyleSheet.create<Styles>({
   specialIconContainer: {
     width: moderateScale(50, 0.1),
     height: moderateScale(50, 0.1),
-    borderRadius: moderateScale(25, 0.1),
+    borderRadius: moderateScale(10, 0.1),
     backgroundColor: '#35297F',
     justifyContent: 'center',
     alignItems: 'center',
