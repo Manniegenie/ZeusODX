@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { ReactElement } from 'react';
+import React, { useMemo } from 'react';
 import {
     Image,
     SafeAreaView,
@@ -9,6 +9,9 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+
+import { useTheme } from '../../hooks/useTheme';
+import type { AppColors } from '../../hooks/useTheme';
 
 // Import your custom icons
 const AirtimeIcon = require('../../components/icons/Airtimeicon.png');
@@ -28,96 +31,60 @@ interface Service {
 
 const UtilitiesScreen: React.FC = () => {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const services: Service[] = [
-    {
-      id: 'airtime',
-      title: 'Buy Airtime',
-      icon: AirtimeIcon,
-      route: '/user/Airtime'
-    },
-    {
-      id: 'data',
-      title: 'Buy Data',
-      icon: DataIcon,
-      route: '/user/Data'
-    },
-    {
-      id: 'electricity',
-      title: 'Electricity',
-      icon: ElectricityIcon,
-      route: '/user/Electricity'
-    },
-    {
-      id: 'betting',
-      title: 'Betting',
-      icon: BettingIcon,
-      route: '/user/Betting'
-    },
-    {
-      id: 'gift_cards',
-      title: 'Gift Cards',
-      icon: GiftCardIcon,
-      route: '/user/Giftcard'
-    },
-    {
-      id: 'cable_tv',
-      title: 'Cable TV',
-      icon: CableTVIcon,
-      route: '/user/CableTV'
-    },
+    { id: 'airtime', title: 'Buy Airtime', icon: AirtimeIcon, route: '/user/Airtime' },
+    { id: 'data', title: 'Buy Data', icon: DataIcon, route: '/user/Data' },
+    { id: 'electricity', title: 'Electricity', icon: ElectricityIcon, route: '/user/Electricity' },
+    { id: 'betting', title: 'Betting', icon: BettingIcon, route: '/user/Betting' },
+    { id: 'gift_cards', title: 'Gift Cards', icon: GiftCardIcon, route: '/user/Giftcard' },
+    { id: 'cable_tv', title: 'Cable TV', icon: CableTVIcon, route: '/user/CableTV' },
   ];
 
   const handleServicePress = (service: Service): void => {
     router.push(service.route as any);
   };
 
-  const renderServiceItem = (service: Service): ReactElement => (
-    <TouchableOpacity 
+  const renderServiceItem = (service: Service) => (
+    <TouchableOpacity
       key={service.id}
       style={styles.serviceItem}
       onPress={() => handleServicePress(service)}
       activeOpacity={0.7}
     >
-      <Image 
-        source={service.icon}
-        style={styles.iconImage}
-        resizeMode="contain"
-      />
+      <View style={styles.iconContainer}>
+        <Image source={service.icon} style={styles.iconImage} resizeMode="contain" />
+      </View>
       <Text style={styles.serviceText}>{service.title}</Text>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#35297F" />
-      
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.background} />
+
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerText}>See more</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.closeButton}
             onPress={() => router.push('/user/dashboard')}
             activeOpacity={0.7}
           >
-            <Image 
-              source={CloseIcon}
-              style={styles.closeIcon}
-              resizeMode="contain"
-            />
+            <Image source={CloseIcon} style={styles.closeIcon} resizeMode="contain" />
           </TouchableOpacity>
         </View>
 
         {/* Services Content */}
         <View style={styles.servicesContent}>
-          {/* First Row - Buy Airtime, Buy Data, Electricity */}
           <View style={styles.serviceRow}>
             {renderServiceItem(services[0])}
             {renderServiceItem(services[1])}
             {renderServiceItem(services[2])}
           </View>
-
-          {/* Second Row - Betting, Gift Cards, Cable TV */}
           <View style={styles.serviceRow}>
             {renderServiceItem(services[3])}
             {renderServiceItem(services[4])}
@@ -129,14 +96,14 @@ const UtilitiesScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#35297F',
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
-    backgroundColor: '#35297F',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -146,12 +113,12 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: colors.border,
     marginHorizontal: 31,
     position: 'relative',
   },
   headerText: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 16,
     fontWeight: '500',
     textAlign: 'center',
@@ -167,7 +134,7 @@ const styles = StyleSheet.create({
   closeIcon: {
     width: 24,
     height: 24,
-    tintColor: '#FFFFFF',
+    tintColor: colors.text,
   },
   servicesContent: {
     flex: 1,
@@ -188,13 +155,21 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     flex: 1,
   },
-  iconImage: {
-    width: 50,
-    height: 50,
+  iconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 10,
+    backgroundColor: colors.iconBg,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 10,
   },
+  iconImage: {
+    width: 28,
+    height: 28,
+  },
   serviceText: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 12,
     fontWeight: '400',
     textAlign: 'center',

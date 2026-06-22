@@ -37,6 +37,20 @@ function ThemedShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ThemedStack() {
+  const { colors } = useTheme();
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+        animation: 'slide_from_right',
+        gestureEnabled: false,
+      }}
+    />
+  );
+}
+
 /**
  * CRITICAL FOR ANDROID:
  * This handler determines how the OS behaves when a notification 
@@ -188,14 +202,7 @@ export default function RootLayout() {
         <ThemedShell>
           <AuthContext.Provider value={auth}>
             <TawkProvider directLink={TAWK_DIRECT_LINK}>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: 'transparent' },
-                  animation: 'slide_from_right',
-                  gestureEnabled: false,
-                }}
-              />
+              <ThemedStack />
             </TawkProvider>
             {isLocked && (
               <Modal

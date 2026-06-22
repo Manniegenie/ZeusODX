@@ -580,7 +580,7 @@ const CableTvScreen: React.FC = () => {
       top: -6,
       right: -6,
       zIndex: 1,
-      backgroundColor: '#FFFFFF',
+      backgroundColor: colors.card,
       borderRadius: 10,
       padding: 1,
     },
@@ -868,7 +868,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   historyLink: { 
     ...baseTextStyle,
-    color: '#35297F', 
+    color: colors.primary, 
     fontWeight: '500' 
   },
   section: { 
@@ -890,7 +890,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.card, 
     borderRadius: 8, 
     borderWidth: 1, 
-    borderColor: '#E5E7EB', 
+    borderColor: colors.border, 
     paddingHorizontal: 16, 
     paddingVertical: 12 
   },
@@ -901,7 +901,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingVertical: 4 
   },
   uneditableInput: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.inputBg,
     color: colors.textSecondary,
   },
   profileIconContainer: { 
@@ -914,7 +914,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     resizeMode: 'contain' 
   },
   verifyButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 6,
     paddingHorizontal: 12,
     paddingVertical: 12,
@@ -942,7 +942,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 16,
     flexDirection: 'row',
@@ -950,8 +950,8 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     marginBottom: 12,
   },
   planTabDisabled: { 
-    backgroundColor: '#F9FAFB', 
-    borderColor: '#E5E7EB' 
+    backgroundColor: colors.inputBg, 
+    borderColor: colors.border 
   },
   planTabText: { 
     ...baseTextStyle,
@@ -966,7 +966,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 16,
     alignItems: 'flex-start',
@@ -983,7 +983,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     fontWeight: '500' 
   },
   summarySection: { 
-    backgroundColor: '#F3F4F6', 
+    backgroundColor: colors.inputBg, 
     borderRadius: 8, 
     padding: 16, 
     marginHorizontal: 16, 
@@ -1009,7 +1009,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   summaryPrice: { 
     ...baseTextStyle,
-    color: '#35297F',
+    color: colors.primary,
     fontSize: 16, 
     fontWeight: '600' 
   },
@@ -1030,7 +1030,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.background 
   },
   continueButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 8,
     paddingVertical: 16,
     justifyContent: 'center',

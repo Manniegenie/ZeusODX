@@ -675,7 +675,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
 
   historyLink: {
-    color: '#35297F',
+    color: colors.primary,
     fontFamily: Typography.medium || 'System',
     fontSize: 14,
     fontWeight: '500',
@@ -720,8 +720,8 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderColor: 'transparent',
   },
   networkCardSelected: {
-    borderColor: '#35297F',
-    backgroundColor: '#F8F7FF',
+    borderColor: colors.primary,
+    backgroundColor: colors.iconBg,
   },
   networkIcon: {
     width: responsiveDims.networkIconWidth,
@@ -733,7 +733,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     top: -6,
     right: -6,
     zIndex: 1,
-    backgroundColor: 'white',
+    backgroundColor: colors.card,
     borderRadius: responsiveDims.checkmarkSize / 2,
     padding: 1,
   },
@@ -754,7 +754,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 12,
     minHeight: 48,
@@ -803,15 +803,15 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: 8,
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 48,
   },
   quickPickCardSelected: {
-    borderColor: '#35297F',
+    borderColor: colors.primary,
     borderWidth: 1,
-    backgroundColor: '#F8F7FF',
+    backgroundColor: colors.iconBg,
   },
   quickPickText: {
     color: colors.text,
@@ -821,7 +821,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     textAlign: 'center',
   },
   quickPickTextSelected: {
-    color: '#35297F',
+    color: colors.primary,
     fontWeight: '600',
   },
 
@@ -830,7 +830,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingHorizontal: 16,
     paddingVertical: 16,
     color: colors.text,
@@ -855,7 +855,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.background,
   },
   continueButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 8,
     paddingVertical: 16,
     justifyContent: 'center',

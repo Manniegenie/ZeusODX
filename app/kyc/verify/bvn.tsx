@@ -83,6 +83,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   message,
   buttonText = 'Continue'
 }) => {
+  const { colors } = useTheme();
+  const successModalStyles = useMemo(() => makeSuccessModalStyles(colors), [colors]);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -367,7 +369,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   processingText: { fontSize: 18, fontWeight: '600', color: colors.text, marginTop: 16 },
 });
 
-const successModalStyles = StyleSheet.create({
+const makeSuccessModalStyles = (colors: AppColors) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
   modalContainer: { backgroundColor: colors.card, borderRadius: 16, padding: 24, width: 320, alignSelf: 'center' },
   closeButton: { position: 'absolute', top: 16, right: 16, width: 30, height: 30, justifyContent: 'center', alignItems: 'center', borderRadius: 15, backgroundColor: colors.separator },

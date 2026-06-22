@@ -336,12 +336,6 @@ export default function SignupScreen() {
   );
 }
 
-const getStartedBorder = {
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: Layout.borderRadius.lg,
-};
-
 const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
@@ -385,7 +379,9 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     color: colors.text,
   },
   input: {
-    ...getStartedBorder,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: Layout.borderRadius.lg,
     backgroundColor: colors.card,
     paddingHorizontal: Layout.spacing.md,
     paddingVertical: Layout.spacing.md,
@@ -399,7 +395,9 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center',
   },
   countryCodeDisplay: {
-    ...getStartedBorder,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: Layout.borderRadius.lg,
     backgroundColor: colors.card,
     paddingHorizontal: Layout.spacing.sm,
     paddingVertical: Layout.spacing.md,
@@ -417,7 +415,9 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     color: colors.text,
   },
   phoneInput: {
-    ...getStartedBorder,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: Layout.borderRadius.lg,
     flex: 1,
     backgroundColor: colors.card,
     paddingHorizontal: Layout.spacing.md,

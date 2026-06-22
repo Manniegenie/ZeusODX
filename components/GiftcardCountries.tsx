@@ -148,12 +148,14 @@ export function AvailableCountrySheet({
   visible,
   brand,
   selectedCountryId,
+  filterCountryId,
   onSelect,
   onClose,
 }: {
   visible: boolean;
   brand: string;
   selectedCountryId?: string;
+  filterCountryId?: string;
   onSelect: (country: CountryItem) => void;
   onClose: () => void;
 }) {
@@ -236,21 +238,30 @@ export function AvailableCountrySheet({
   }, [normalizedBrand]);
 
   const countries = useMemo((): CountryItem[] => {
+    let list: CountryItem[];
     if (!apiCountries || apiCountries.length === 0) {
-      return fallbackCountries;
+      list = fallbackCountries;
+    } else {
+      list = apiCountries.map(country => {
+        const flagKey = normalizeCountryCode(country.code);
+        const flag = FLAGS[flagKey] || FLAGS[country.code] || FLAGS.US;
+        return {
+          id: country.code,
+          name: country.name,
+          flag,
+          rate: country.rate,
+          rateDisplay: country.rateDisplay,
+        };
+      });
     }
-    return apiCountries.map(country => {
-      const flagKey = normalizeCountryCode(country.code);
-      const flag = FLAGS[flagKey] || FLAGS[country.code] || FLAGS.US;
-      return {
-        id: country.code,
-        name: country.name,
-        flag,
-        rate: country.rate,
-        rateDisplay: country.rateDisplay,
-      };
-    });
-  }, [apiCountries, fallbackCountries]);
+    if (filterCountryId) {
+      const filtered = list.filter(
+        c => c.id.toUpperCase() === filterCountryId.toUpperCase()
+      );
+      return filtered.length > 0 ? filtered : list;
+    }
+    return list;
+  }, [apiCountries, fallbackCountries, filterCountryId]);
 
   useEffect(() => {
     if (visible && normalizedBrand && !loading && !hasCountries) {

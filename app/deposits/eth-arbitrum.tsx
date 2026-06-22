@@ -397,12 +397,12 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   qrPlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.inputBg,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderStyle: 'dashed',
   },
   noQrText: {
@@ -431,11 +431,11 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   addressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     minHeight: 50,
   },
   addressText: {
@@ -459,7 +459,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   copyButtonDisabled: {
@@ -480,7 +480,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.separator,
   },
   lastDetailRow: {
     borderBottomWidth: 0,

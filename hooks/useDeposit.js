@@ -104,11 +104,20 @@ export function useDeposit() {
 
     try {
       console.log(`useDeposit: Fetching deposit address for ${tokenSymbol} on ${network}`);
-      
+
       setLoadingAddresses(prev => ({ ...prev, [addressKey]: true }));
       setAddressErrors(prev => ({ ...prev, [addressKey]: null }));
 
-      const response = await depositService.getDepositAddress(tokenSymbol, network);
+      const fetchWithTimeout = Promise.race([
+        depositService.getDepositAddress(tokenSymbol, network),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('Taking too long to load. Pull down to refresh and try again.')),
+            30000
+          )
+        ),
+      ]);
+      const response = await fetchWithTimeout;
       
       if (response.success) {
         console.log(`useDeposit: Got deposit address for ${addressKey}`);

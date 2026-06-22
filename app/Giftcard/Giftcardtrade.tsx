@@ -30,6 +30,7 @@ import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useGiftCard } from '../../hooks/usegiftcard';
 import { useGiftcardCountries } from '../../hooks/usegiftcardCountry';
+import { giftcardCountriesService } from '../../services/giftcardcountryService';
 
 // Icons - Updated to match main screen
 import chevronRightIcon from '../../components/icons/arrow.png';
@@ -64,12 +65,32 @@ const RECEIPT = [
   { id: 'ECODE', label: 'E-code', emoji: '🏷️' }, // UI id stays "ECODE"
 ];
 
-const RANGES = [
-  { id: '25-100', label: '$25 – $100', min: 25, max: 100 },
-  { id: '100-200', label: '$100 – $200', min: 100, max: 200 },
-  { id: '200-500', label: '$200 – $500', min: 200, max: 500 },
-  { id: '500-1000', label: '$500 – $1,000', min: 500, max: 1000 },
+const CATEGORIES = [
+  { id: 'VERTICAL', label: 'Vertical' },
+  { id: 'HORIZONTAL', label: 'Horizontal' },
+  { id: 'ODD', label: 'Odd numbers' },
 ];
+
+const RANGES_BY_CATEGORY: Record<string, { id: string; label: string; min: number; max: number }[]> = {
+  VERTICAL: [
+    { id: '25-100', label: '$25 – $100', min: 25, max: 100 },
+    { id: '100-200', label: '$100 – $200', min: 100, max: 200 },
+    { id: '200-500', label: '$200 – $500', min: 200, max: 500 },
+    { id: '500-1000', label: '$500 – $1,000', min: 500, max: 1000 },
+  ],
+  HORIZONTAL: [
+    { id: '25-100', label: '$25 – $100', min: 25, max: 100 },
+    { id: '100-200', label: '$100 – $200', min: 100, max: 200 },
+    { id: '200-500', label: '$200 – $500', min: 200, max: 500 },
+    { id: '500-1000', label: '$500 – $1,000', min: 500, max: 1000 },
+  ],
+  ODD: [
+    { id: 'odd-1-25', label: '$1 – $25 (Odd)', min: 1, max: 25 },
+    { id: 'odd-25-75', label: '$25 – $75 (Odd)', min: 25, max: 75 },
+    { id: 'odd-75-150', label: '$75 – $150 (Odd)', min: 75, max: 150 },
+    { id: 'odd-150-500', label: '$150 – $500 (Odd)', min: 150, max: 500 },
+  ],
+};
 
 // VANILLA variants
 const VANILLA_VARIANTS = [
@@ -391,12 +412,15 @@ const GiftcardTradeScreen: React.FC = () => {
   const [receipt, setReceipt] = useState('');          // 'PHYSICAL' | 'ECODE'
   const [ecode, setEcode] = useState('');
   const [vanillaVariant, setVanillaVariant] = useState(''); // '4097' | '4118' for VANILLA cards
+  const [category, setCategory] = useState('');        // 'VERTICAL' | 'HORIZONTAL' | 'ODD'
   const [rangeId, setRangeId] = useState('');
   const [valueUSD, setValueUSD] = useState('');
   const [uploads, setUploads] = useState<FileInfo[]>([]);
   const [comments, setComments] = useState('');
 
-  const [openPicker, setOpenPicker] = useState<null | 'receipt' | 'vanilla' | 'range'>(null);
+  const [availableCategories, setAvailableCategories] = useState<string[] | null>(null);
+
+  const [openPicker, setOpenPicker] = useState<null | 'receipt' | 'vanilla' | 'category' | 'range'>(null);
   const [showCountrySheet, setShowCountrySheet] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -404,8 +428,10 @@ const GiftcardTradeScreen: React.FC = () => {
   const [showErrorDisplay, setShowErrorDisplay] = useState(false);
   const [errorDisplayData, setErrorDisplayData] = useState<ErrorDisplayData | null>(null);
 
-  const selectedRange = useMemo(() => RANGES.find(r => r.id === rangeId) || null, [rangeId]);
+  const activeRanges = useMemo(() => RANGES_BY_CATEGORY[category] || [], [category]);
+  const selectedRange = useMemo(() => activeRanges.find(r => r.id === rangeId) || null, [activeRanges, rangeId]);
   const selectedVanillaVariant = useMemo(() => VANILLA_VARIANTS.find(v => v.id === vanillaVariant) || null, [vanillaVariant]);
+  const selectedCategory = useMemo(() => CATEGORIES.find(c => c.id === category) || null, [category]);
 
   // Auto-fetch countries to get rate when country is pre-selected from params
   useEffect(() => {
@@ -436,6 +462,32 @@ const GiftcardTradeScreen: React.FC = () => {
   useEffect(() => {
     if (!isVanillaCard) setVanillaVariant('');
   }, [isVanillaCard]);
+
+  // Reset range when category changes
+  useEffect(() => {
+    setRangeId('');
+  }, [category]);
+
+  // Fetch available categories when country + cardType are known
+  useEffect(() => {
+    if (!countryId || !mappedCardType) return;
+    let cancelled = false;
+    setAvailableCategories(null); // reset while loading
+    setCategory('');              // clear stale category selection
+    giftcardCountriesService.getAvailableCategories(mappedCardType, countryId).then(res => {
+      if (cancelled) return;
+      if (res.success && res.data?.availableCategories?.length) {
+        setAvailableCategories(res.data.availableCategories);
+      } else {
+        // fallback: show all categories if endpoint fails
+        setAvailableCategories(['VERTICAL', 'HORIZONTAL', 'ODD']);
+      }
+    }).catch(() => {
+      if (!cancelled) setAvailableCategories(['VERTICAL', 'HORIZONTAL', 'ODD']);
+    });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [countryId]);
 
   // Clear hook error when it changes
   useEffect(() => {
@@ -561,6 +613,10 @@ const GiftcardTradeScreen: React.FC = () => {
       showError({ type: 'validation', title: 'Variant Required', message: 'Please select the variant (4097 or 4118).', autoHide: true, duration: 3000 });
       return false;
     }
+    if (!category) {
+      showError({ type: 'validation', title: 'Category Required', message: 'Select the card category.', autoHide: true, duration: 3000 });
+      return false;
+    }
     if (!rangeId) {
       showError({ type: 'validation', title: 'Card Range Required', message: 'Select the card range.', autoHide: true, duration: 3000 });
       return false;
@@ -682,39 +738,39 @@ const GiftcardTradeScreen: React.FC = () => {
       receipt &&
       (receipt !== 'ECODE' || ecode.trim()) &&
       (!isVanillaCard || vanillaVariant) &&
+      category &&
       rangeId &&
       valueUSD &&
       Number(valueUSD) > 0 &&
       uploads.length > 0
   );
 
-  const receiptChoices: ChoiceItem[] = RECEIPT.map(r => ({
-    id: r.id,
-    label: r.label,
-  }));
-  const vanillaChoices: ChoiceItem[] = VANILLA_VARIANTS.map(v => ({ 
-    id: v.id, 
-    label: v.label,
-    description: v.description 
-  } as ChoiceItem));
-  const rangeChoices: ChoiceItem[] = RANGES.map(r => ({ id: r.id, label: r.label }));
+  const receiptChoices: ChoiceItem[] = RECEIPT.map(r => ({ id: r.id, label: r.label }));
+  const vanillaChoices: ChoiceItem[] = VANILLA_VARIANTS.map(v => ({ id: v.id, label: v.label, description: v.description } as ChoiceItem));
+  const categoryChoices: ChoiceItem[] = CATEGORIES
+    .filter(c => !availableCategories || availableCategories.includes(c.id))
+    .map(c => ({ id: c.id, label: c.label }));
+  const rangeChoices: ChoiceItem[] = activeRanges.map(r => ({ id: r.id, label: r.label }));
 
-  const activeTitle = 
-    openPicker === 'receipt' ? 'Receipt Availability' : 
+  const activeTitle =
+    openPicker === 'receipt' ? 'Receipt Availability' :
     openPicker === 'vanilla' ? 'Select Variant' :
-    openPicker === 'range' ? 'Select Range' : 
+    openPicker === 'category' ? 'Category' :
+    openPicker === 'range' ? 'Select Range' :
     '';
 
-  const activeChoices = 
-    openPicker === 'receipt' ? receiptChoices : 
+  const activeChoices =
+    openPicker === 'receipt' ? receiptChoices :
     openPicker === 'vanilla' ? vanillaChoices :
-    openPicker === 'range' ? rangeChoices : 
+    openPicker === 'category' ? categoryChoices :
+    openPicker === 'range' ? rangeChoices :
     [];
 
-  const activeSelectedId = 
-    openPicker === 'receipt' ? receipt : 
+  const activeSelectedId =
+    openPicker === 'receipt' ? receipt :
     openPicker === 'vanilla' ? vanillaVariant :
-    openPicker === 'range' ? rangeId : 
+    openPicker === 'category' ? category :
+    openPicker === 'range' ? rangeId :
     undefined;
 
   // Normalize UI receipt -> API format
@@ -825,13 +881,25 @@ const GiftcardTradeScreen: React.FC = () => {
             />
           )}
 
-          {/* Range */}
+          {/* Category */}
           <SelectField
-            label="Card Range"
-            value={selectedRange?.label || ''}
-            placeholder="Select range"
-            onPress={() => setOpenPicker('range')}
+            label="Category"
+            value={selectedCategory?.label || ''}
+            placeholder={availableCategories === null && countryId ? 'Loading categories…' : 'Select category'}
+            onPress={() => {
+              if (availableCategories !== null) setOpenPicker('category');
+            }}
           />
+
+          {/* Range — only shown after a category is picked */}
+          {category ? (
+            <SelectField
+              label="Card Range"
+              value={selectedRange?.label || ''}
+              placeholder="Select range"
+              onPress={() => setOpenPicker('range')}
+            />
+          ) : null}
 
           {/* Amount */}
           <LabeledInput
@@ -959,10 +1027,11 @@ const GiftcardTradeScreen: React.FC = () => {
         onSelect={(id) => {
           if (openPicker === 'receipt') setReceipt(id);
           if (openPicker === 'vanilla') setVanillaVariant(id);
+          if (openPicker === 'category') setCategory(id);
           if (openPicker === 'range') setRangeId(id);
           setOpenPicker(null);
         }}
-        centerAlign={openPicker === 'receipt' || openPicker === 'range'}
+        centerAlign={openPicker === 'receipt' || openPicker === 'category' || openPicker === 'range'}
         showDescription={openPicker === 'vanilla'}
       />
 
@@ -971,6 +1040,7 @@ const GiftcardTradeScreen: React.FC = () => {
         visible={showCountrySheet}
         brand={brand}
         selectedCountryId={countryId ?? undefined}
+        filterCountryId={preselectedCountryCode || undefined}
         onSelect={(c) => {
           setCountry(c.name);
           setCountryId(c.id);

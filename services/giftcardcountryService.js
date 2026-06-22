@@ -218,6 +218,37 @@ export const giftcardCountriesService = {
     }
   },
 
+  async getAvailableCategories(cardType, country) {
+    if (!cardType || !country) {
+      return { success: false, message: 'cardType and country are required', data: null };
+    }
+
+    const normalized = normalizeCardTypeInput(cardType);
+    if (!normalized.cardType) {
+      return { success: false, message: `Unsupported card type: ${cardType}`, data: null };
+    }
+
+    const { cardType: canonicalCardType, vanillaType } = normalized;
+    const params = { country: country.toUpperCase() };
+    if (vanillaType) params.vanillaType = vanillaType;
+
+    try {
+      const apiResponse = await apiClient.get(`${ENDPOINT}/${canonicalCardType}/categories`, { params });
+      const extracted = extractApiResponse(apiResponse);
+      if (!extracted.success) {
+        return { success: false, message: extracted.message || 'Failed to fetch categories', data: null };
+      }
+      return { success: true, data: extracted.data };
+    } catch (err) {
+      const errMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to fetch available categories';
+      console.error('giftcardCountriesService.getAvailableCategories error:', errMsg);
+      return { success: false, message: String(errMsg), data: null };
+    }
+  },
+
   getSupportedCardTypes() {
     return [
       'APPLE', 'STEAM', 'NORDSTROM', 'MACY', 'NIKE', 'GOOGLE_PLAY',

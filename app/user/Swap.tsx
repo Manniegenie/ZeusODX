@@ -654,7 +654,7 @@ export default function SwapScreen({
         >
           <View style={styles.tabHeaderWrapper}>
             <View style={styles.tabContainer}>
-              <Text style={styles.activeTabText}>Buy/Sell</Text>
+              <Text style={styles.activeTabText}>Swap</Text>
             </View>
             <View style={styles.tabHintBulb}>
               <HintBulb
@@ -693,13 +693,14 @@ export default function SwapScreen({
                 </Text>
               </View>
               <View style={styles.inputRight}>
-                <TouchableOpacity style={styles.tokenSelector} onPress={() => handleTokenSelectorPress('from')}>
+                <TouchableOpacity style={styles.tokenSelector} onPress={() => handleTokenSelectorPress('from')} activeOpacity={0.7}>
                   {selectedFromToken && (
                     <>
                       <Image source={getTokenIcon(selectedFromToken.id)} style={styles.tokenIcon} />
                       <Text style={styles.tokenText}>{selectedFromToken.symbol}</Text>
                     </>
                   )}
+                  <Ionicons name="chevron-down" size={13} color={colors.textSecondary} />
                 </TouchableOpacity>
                 <View style={styles.balanceInfo}>
                   <Text style={styles.balanceText} numberOfLines={1}>{getMaxBalance(selectedFromToken)}</Text>
@@ -732,15 +733,16 @@ export default function SwapScreen({
                 <Text style={styles.usdValue}>{formatUsdValue(toAmount, selectedToToken)}</Text>
               </View>
               <View style={styles.inputRight}>
-                <TouchableOpacity style={styles.tokenSelector} onPress={() => handleTokenSelectorPress('to')}>
+                <TouchableOpacity style={styles.tokenSelector} onPress={() => handleTokenSelectorPress('to')} activeOpacity={0.7}>
                   {selectedToToken ? (
                     <>
                       <Image source={getTokenIcon(selectedToToken.id)} style={styles.tokenIcon} />
                       <Text style={styles.tokenText}>{selectedToToken.symbol}</Text>
                     </>
                   ) : (
-                    <Text style={styles.tokenText}>Select token</Text>
+                    <Text style={styles.tokenText}>Select</Text>
                   )}
+                  <Ionicons name="chevron-down" size={13} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -890,23 +892,20 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   tokenSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.border,
-    borderRadius: Layout.borderRadius.md,
-    paddingHorizontal: Layout.spacing.sm,
-    paddingVertical: Layout.spacing.xs,
-    marginBottom: Layout.spacing.sm
+    gap: 4,
+    marginBottom: Layout.spacing.sm,
+    paddingVertical: 4,
   },
-  tokenIcon: { 
-    width: 18, 
-    height: 18, 
-    resizeMode: 'cover', 
-    marginRight: Layout.spacing.sm 
+  tokenIcon: {
+    width: 20,
+    height: 20,
+    resizeMode: 'cover',
   },
-  tokenText: { 
-    fontFamily: Typography.medium, 
-    fontSize: 12, 
-    color: colors.text, 
-    fontWeight: '600' 
+  tokenText: {
+    fontFamily: Typography.medium,
+    fontSize: 15,
+    color: colors.text,
+    fontWeight: '700',
   },
   balanceInfo: { 
     flexDirection: 'row', 

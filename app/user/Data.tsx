@@ -707,7 +707,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   
   historyLink: { 
-    color: '#35297F', 
+    color: colors.primary, 
     fontFamily: Typography.medium, 
     fontSize: 14, 
     fontWeight: '500' 
@@ -753,8 +753,8 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderColor: 'transparent',
   },
   networkCardSelected: {
-    borderColor: '#35297F',
-    backgroundColor: '#F8F7FF',
+    borderColor: colors.primary,
+    backgroundColor: colors.iconBg,
   },
   networkIcon: { 
     width: responsiveDims.networkIconWidth, 
@@ -766,7 +766,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     top: -6, 
     right: -6, 
     zIndex: 1,
-    backgroundColor: 'white',
+    backgroundColor: colors.card,
     borderRadius: responsiveDims.checkmarkSize / 2,
     padding: 1,
   },
@@ -787,7 +787,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.card, 
     borderRadius: 8, 
     borderWidth: 1, 
-    borderColor: '#E5E7EB', 
+    borderColor: colors.border, 
     paddingHorizontal: 16, 
     paddingVertical: 12,
     minHeight: 48,
@@ -826,7 +826,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.card, 
     borderRadius: 8, 
     borderWidth: 1, 
-    borderColor: '#E5E7EB', 
+    borderColor: colors.border, 
     paddingHorizontal: 16, 
     paddingVertical: 16, 
     flexDirection: 'row', 
@@ -835,8 +835,8 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     minHeight: 56,
   },
   dataPlanSelectorDisabled: { 
-    backgroundColor: '#F9FAFB', 
-    borderColor: '#E5E7EB' 
+    backgroundColor: colors.inputBg, 
+    borderColor: colors.border 
   },
   dataPlanSelectorText: { 
     color: colors.text, 
@@ -858,7 +858,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   
   // Summary section
   summarySection: { 
-    backgroundColor: '#F3F4F6', 
+    backgroundColor: colors.inputBg, 
     borderRadius: 8, 
     padding: 16, 
     marginHorizontal: responsiveDims.horizontalPadding, 
@@ -886,7 +886,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     flex: 1,
   },
   summaryPrice: { 
-    color: '#35297F', 
+    color: colors.primary, 
     fontFamily: Typography.medium, 
     fontSize: 16, 
     fontWeight: '600',
@@ -906,7 +906,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     backgroundColor: colors.background 
   },
   continueButton: { 
-    backgroundColor: '#35297F', 
+    backgroundColor: colors.primary, 
     borderRadius: 8, 
     paddingVertical: 16, 
     justifyContent: 'center', 

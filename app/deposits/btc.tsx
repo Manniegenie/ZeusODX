@@ -94,7 +94,7 @@ export default function BtcDepositScreen() {
     fetchBTCAddress();
   }, [getCachedAddress]);
 
-  const handleGetBitcoinAddress = async () => {
+  const handleGetBitcoinAddress = async (forceRefresh = false): Promise<void> => {
     try {
       const result = await getBitcoinAddress(forceRefresh);
       if (result.success) {
@@ -418,10 +418,10 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     borderStyle: 'dashed',
     padding: 16,
   },
@@ -453,11 +453,11 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   addressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     minHeight: 50,
   },
   addressText: { flex: 1, color: colors.text, fontFamily: 'monospace', fontSize: 14, lineHeight: 20, marginRight: 12 },
@@ -474,7 +474,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   copyButtonDisabled: { opacity: 0.5 },
@@ -482,7 +482,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   // Details section
   detailsSection: { paddingHorizontal: horizontalPadding, paddingVertical: 8 },
-  detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.separator },
   lastDetailRow: { borderBottomWidth: 0 },
   detailLabel: { color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 14 },
   detailValue: { color: colors.text, fontFamily: Typography.medium, fontSize: 14 },

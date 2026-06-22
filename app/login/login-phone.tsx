@@ -150,12 +150,6 @@ export default function LoginScreen() {
   );
 }
 
-const getStartedBorder = {
-  borderWidth: 1,
-  borderColor: colors.border,
-  borderRadius: Layout.borderRadius.lg,
-};
-
 const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
@@ -209,7 +203,9 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     zIndex: 1000,
   },
   countryCodeButton: {
-    ...getStartedBorder,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: Layout.borderRadius.lg,
     backgroundColor: colors.card,
     paddingHorizontal: Layout.spacing.sm,
     paddingVertical: Layout.spacing.md,
@@ -231,7 +227,9 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     color: colors.textSecondary,
   },
   phoneInput: {
-    ...getStartedBorder,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: Layout.borderRadius.lg,
     flex: 1,
     backgroundColor: colors.card,
     paddingHorizontal: Layout.spacing.md,

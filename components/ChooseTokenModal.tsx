@@ -353,7 +353,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     marginVertical: Layout.spacing.xs,
   },
   selectedTokenItem: {
-    backgroundColor: '#F0F7FF',
+    backgroundColor: 'transparent',
   },
   tokenLeft: {
     flexDirection: 'row',
