@@ -5,7 +5,7 @@ export default {
   expo: {
     name: IS_STAGING ? "ZeusODX Staging" : "ZeusODX",
     slug: "zeusodx",
-    version: "2.1.0",
+    version: "2.2.0",
     orientation: "default",
     icon: "./assets/images/app-icon.png",
     scheme: IS_STAGING ? "zeusodx-staging" : "zeusodx",
@@ -16,7 +16,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: IS_STAGING ? "com.manniegenie.zeusodx.staging" : "com.manniegenie.zeusodx",
-      buildNumber: "3",
+      buildNumber: "5",
       icon: "./assets/images/app-icon.png",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
@@ -50,7 +50,7 @@ export default {
         "android.permission.POST_NOTIFICATIONS",
         "com.google.android.gms.permission.AD_ID"
       ],
-      versionCode: 162
+      versionCode: 164
     },
     web: {
       bundler: "metro",
@@ -119,9 +119,7 @@ export default {
       appleAppId: process.env.EXPO_PUBLIC_APPLE_APP_ID || ""
     },
     owner: "manniegenie",
-    runtimeVersion: {
-      policy: "appVersion"
-    },
+    runtimeVersion: "2.2.0",
     updates: {
       url: "https://u.expo.dev/a075e816-5194-4302-a228-e6f53ad53f92"
     },
