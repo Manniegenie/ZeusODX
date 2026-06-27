@@ -5,7 +5,7 @@ export default {
   expo: {
     name: IS_STAGING ? "ZeusODX Staging" : "ZeusODX",
     slug: "zeusodx",
-    version: "2.2.0",
+    version: "2.3.0",
     orientation: "default",
     icon: "./assets/images/app-icon.png",
     scheme: IS_STAGING ? "zeusodx-staging" : "zeusodx",
@@ -119,7 +119,7 @@ export default {
       appleAppId: process.env.EXPO_PUBLIC_APPLE_APP_ID || ""
     },
     owner: "manniegenie",
-    runtimeVersion: "2.2.0",
+    runtimeVersion: "2.3.0",
     updates: {
       url: "https://u.expo.dev/a075e816-5194-4302-a228-e6f53ad53f92"
     },
