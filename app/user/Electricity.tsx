@@ -26,6 +26,7 @@ import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useCustomer } from '../../hooks/useCustomer';
 import { useElectricity } from '../../hooks/useElectricity';
+import AppsFlyerService from '../../services/appsFlyerService';
 
 // ---- Types ----
 interface ErrorAction {
@@ -365,6 +366,13 @@ const ElectricityScreen: React.FC = () => {
         setShowConfirmationModal(false);
         setPasswordPin('');
         setTwoFactorCode('');
+
+        AppsFlyerService.logEvent('af_purchase', {
+          af_revenue: getCurrentAmount(),
+          af_currency: 'NGN',
+          af_content_type: 'electricity',
+          af_order_id: String(result.data?.transactionId || result.data?.id || Date.now()),
+        }).catch(() => {});
         // Navigate to UtilityReceipt instead of showing modal
         const utilityTransaction = {
           id: result.data?.transactionId || result.data?.id || Date.now().toString(),

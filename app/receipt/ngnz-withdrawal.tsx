@@ -89,7 +89,7 @@ export default function NGNZWithdrawalReceiptScreen() {
   // Extract withdrawal data from params
   const withdrawalData = useMemo(() => {
     try {
-      const data = {
+      return {
         withdrawalId: params.withdrawalId as string,
         reference: params.reference as string,
         amount: params.amount as string,
@@ -105,12 +105,6 @@ export default function NGNZWithdrawalReceiptScreen() {
         provider: params.provider as string,
         obiexStatus: params.obiexStatus as string,
       } as WithdrawalDetails;
-      
-      // DEBUG: Log the received account number to verify it's full
-      console.log('🔍 Received Account Number in Receipt:', data.accountNumber);
-      console.log('🔍 All Params:', params);
-      
-      return data;
     } catch (error) {
       console.error('Error parsing withdrawal data:', error);
       return null;
@@ -129,9 +123,6 @@ export default function NGNZWithdrawalReceiptScreen() {
   // ---------- PDF Generation ----------
   const generateWithdrawalReceiptHTML = (withdrawal: WithdrawalDetails) => {
     const currentDate = new Date().toLocaleString();
-    const logoBase64 = "";
-
-    // Build detail rows
     const detailRows: string[] = [];
     detailRows.push(`<tr><td>Type</td><td>Withdrawal</td></tr>`);
     detailRows.push(`<tr><td>Date</td><td>${formatDate(withdrawal.createdAt)}</td></tr>`);
@@ -143,16 +134,11 @@ export default function NGNZWithdrawalReceiptScreen() {
     detailRows.push(`<tr><td>Currency</td><td>${asText(withdrawal.currency || 'NGN')}</td></tr>`);
     detailRows.push(`<tr><td>Status</td><td>${asText(withdrawal.obiexStatus || withdrawal.status)}</td></tr>`);
 
-    // Calculate layout scale based on number of rows
     const layoutScale = getPdfLayoutScale(detailRows.length, { extraSections: 6, baseRows: 10 });
     const fontScale = layoutScale.fontScale.toFixed(3);
     const spacingScale = layoutScale.spacingScale.toFixed(3);
     const contentScale = layoutScale.contentScale.toFixed(3);
-
-    // Format amount
     const amount = formatAmtSym(withdrawal.amount, 'NGN');
-
-    // Get status styles
     const statusStyle = statusStyles(withdrawal.status || '');
 
     return `
@@ -163,155 +149,44 @@ export default function NGNZWithdrawalReceiptScreen() {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Withdrawal Receipt</title>
           <style>
-              :root {
-                  --font-scale: ${fontScale};
-                  --spacing-scale: ${spacingScale};
-                  --content-scale: ${contentScale};
-              }
+              :root { --font-scale: ${fontScale}; --spacing-scale: ${spacingScale}; --content-scale: ${contentScale}; }
               * { margin: 0; padding: 0; box-sizing: border-box; }
               @page { size: A4; margin: 0; }
               html, body { height: 100%; }
-              body {
-                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                  background: #F3F0FF;
-                  color: #111827;
-                  line-height: calc(1.45 * var(--font-scale));
-                  -webkit-font-smoothing: antialiased;
-                  font-size: calc(21px * var(--font-scale));
-                  width: 100%;
-                  margin: 0;
-                  padding: 0;
-                  min-height: 100vh;
-                  overflow: hidden;
-              }
-              .container {
-                  width: 100%;
-                  margin: 0;
-                  background: #F3F0FF;
-                  min-height: 100vh;
-                  max-height: 100vh;
-                  display: flex;
-                  flex-direction: column;
-                  justify-content: space-between;
-                  page-break-inside: avoid;
-              }
-              .header {
-                  background: #F3F0FF;
-                  padding: calc(24px * var(--spacing-scale)) calc(36px * var(--spacing-scale));
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-              }
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #F3F0FF; color: #111827; line-height: calc(1.45 * var(--font-scale)); -webkit-font-smoothing: antialiased; font-size: calc(21px * var(--font-scale)); width: 100%; margin: 0; padding: 0; min-height: 100vh; overflow: hidden; }
+              .container { width: 100%; margin: 0; background: #F3F0FF; min-height: 100vh; max-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; page-break-inside: avoid; }
+              .header { background: #F3F0FF; padding: calc(24px * var(--spacing-scale)) calc(36px * var(--spacing-scale)); display: flex; align-items: center; justify-content: center; }
               .header-logo { width: 150px; height: 66px; object-fit: contain; }
-              .scaled-block {
-                  width: calc(100% / var(--content-scale));
-                  transform: scale(var(--content-scale));
-                  transform-origin: top center;
-              }
-              .content {
-                  padding: 0 calc(36px * var(--spacing-scale)) calc(48px * var(--spacing-scale)) calc(36px * var(--spacing-scale));
-                  display: flex;
-                  flex-direction: column;
-                  gap: calc(18px * var(--spacing-scale));
-                  max-width: 720px;
-                  margin-left: auto;
-                  margin-right: auto;
-              }
+              .scaled-block { width: calc(100% / var(--content-scale)); transform: scale(var(--content-scale)); transform-origin: top center; }
+              .content { padding: 0 calc(36px * var(--spacing-scale)) calc(48px * var(--spacing-scale)) calc(36px * var(--spacing-scale)); display: flex; flex-direction: column; gap: calc(18px * var(--spacing-scale)); max-width: 720px; margin-left: auto; margin-right: auto; }
               .amount-section { text-align: center; margin: calc(30px * var(--spacing-scale)) 0 calc(9px * var(--spacing-scale)) 0; }
               .amount-text { font-size: calc(48px * var(--font-scale)); font-weight: bold; color: #111827; }
               .status-container { text-align: center; margin-bottom: calc(24px * var(--spacing-scale)); }
-              .status-pill {
-                  display: inline-block;
-                  padding: calc(9px * var(--spacing-scale)) calc(15px * var(--spacing-scale));
-                  border-radius: 999px;
-                  border: 1px solid ${statusStyle.border};
-                  background-color: ${statusStyle.bg};
-                  color: ${statusStyle.text};
-                  font-size: calc(20px * var(--font-scale));
-                  font-weight: 600;
-              }
-              .details-card {
-                  width: 100%;
-                  background: #F8F9FA;
-                  border-radius: 12px;
-                  padding: 20px 16px;
-                  border: 1px solid #E5E7EB;
-                  margin-bottom: calc(30px * var(--spacing-scale));
-                  page-break-inside: avoid;
-              }
+              .status-pill { display: inline-block; padding: calc(9px * var(--spacing-scale)) calc(15px * var(--spacing-scale)); border-radius: 999px; border: 1px solid ${statusStyle.border}; background-color: ${statusStyle.bg}; color: ${statusStyle.text}; font-size: calc(20px * var(--font-scale)); font-weight: 600; }
+              .details-card { width: 100%; background: #F8F9FA; border-radius: 12px; padding: 20px 16px; border: 1px solid #E5E7EB; margin-bottom: calc(30px * var(--spacing-scale)); page-break-inside: avoid; }
               .details-table { width: 100%; border-collapse: collapse; }
               .details-table tr { border-bottom: 1px solid #E5E7EB; }
               .details-table td { padding: 12px 0; vertical-align: middle; }
-              .details-table td:first-child {
-                  width: 130px;
-                  flex-shrink: 0;
-                  color: #6B7280;
-                  font-size: 16px;
-                  font-weight: 400;
-              }
-              .details-table td:last-child {
-                  color: #111827;
-                  font-size: 16px;
-                  font-weight: 500;
-                  text-align: right;
-                  word-break: break-word;
-              }
-              .footer-message {
-                  margin-bottom: calc(30px * var(--spacing-scale));
-                  padding: 0 calc(36px * var(--spacing-scale));
-                  max-width: 720px;
-                  margin-left: auto;
-                  margin-right: auto;
-              }
-              .footer-text {
-                  font-size: calc(19px * var(--font-scale));
-                  color: #6B7280;
-                  line-height: calc(1.4 * var(--font-scale));
-                  margin: 0;
-                  text-align: left;
-              }
-              .generation-footer {
-                  text-align: center;
-                  padding: calc(30px * var(--spacing-scale)) calc(36px * var(--spacing-scale));
-                  color: #9CA3AF;
-                  font-size: calc(18px * var(--font-scale));
-                  border-top: 1px solid #E5E7EB;
-                  margin-top: calc(30px * var(--spacing-scale));
-                  max-width: 720px;
-                  margin-left: auto;
-                  margin-right: auto;
-              }
-              @media print {
-                  body { background: #F3F0FF; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                  .container { box-shadow: none; background: #F3F0FF; }
-                  @page { margin: 0; }
-              }
+              .details-table td:first-child { width: 130px; flex-shrink: 0; color: #6B7280; font-size: 16px; font-weight: 400; }
+              .details-table td:last-child { color: #111827; font-size: 16px; font-weight: 500; text-align: right; word-break: break-word; }
+              .footer-message { margin-bottom: calc(30px * var(--spacing-scale)); padding: 0 calc(36px * var(--spacing-scale)); max-width: 720px; margin-left: auto; margin-right: auto; }
+              .footer-text { font-size: calc(19px * var(--font-scale)); color: #6B7280; line-height: calc(1.4 * var(--font-scale)); margin: 0; text-align: left; }
+              .generation-footer { text-align: center; padding: calc(30px * var(--spacing-scale)) calc(36px * var(--spacing-scale)); color: #9CA3AF; font-size: calc(18px * var(--font-scale)); border-top: 1px solid #E5E7EB; margin-top: calc(30px * var(--spacing-scale)); max-width: 720px; margin-left: auto; margin-right: auto; }
+              @media print { body { background: #F3F0FF; -webkit-print-color-adjust: exact; print-color-adjust: exact; } .container { box-shadow: none; background: #F3F0FF; } @page { margin: 0; } }
           </style>
       </head>
       <body>
           <div class="container">
-              <div class="header">
-                  <img src="${logoBase64}" alt="Logo" class="header-logo">
-              </div>
+              <div class="header"><img src="" alt="Logo" class="header-logo"></div>
               <div class="content scaled-block">
-                  <div class="amount-section">
-                      <div class="amount-text">${amount}</div>
-                  </div>
-                  <div class="status-container">
-                      <span class="status-pill">${withdrawal.status || 'Processing'}</span>
-                  </div>
+                  <div class="amount-section"><div class="amount-text">${amount}</div></div>
+                  <div class="status-container"><span class="status-pill">${withdrawal.status || 'Processing'}</span></div>
                   <div class="details-card">
-                      <table class="details-table">
-                          ${detailRows.join('')}
-                      </table>
+                      <table class="details-table">${detailRows.join('')}</table>
                   </div>
               </div>
-              <div class="footer-message scaled-block">
-                  <p class="footer-text">Thank you for choosing ZeusODX.</p>
-              </div>
-              <div class="generation-footer scaled-block">
-                  Generated on: ${currentDate}
-              </div>
+              <div class="footer-message scaled-block"><p class="footer-text">Thank you for choosing ZeusODX.</p></div>
+              <div class="generation-footer scaled-block">Generated on: ${currentDate}</div>
           </div>
       </body>
       </html>
@@ -324,33 +199,15 @@ export default function NGNZWithdrawalReceiptScreen() {
         Alert.alert('Error', 'No withdrawal data to share');
         return;
       }
-
       const htmlContent = generateWithdrawalReceiptHTML(withdrawalData);
-
-      const { uri } = await Print.printToFileAsync({
-        html: htmlContent,
-        width: 612,
-        height: 792,
-        base64: false,
-      });
-
+      const { uri } = await Print.printToFileAsync({ html: htmlContent, width: 612, height: 792, base64: false });
       if (!uri) throw new Error('Failed to generate PDF');
-
       const sharingAvailable = await Sharing.isAvailableAsync();
       if (sharingAvailable) {
-        await Sharing.shareAsync(uri, {
-          mimeType: 'application/pdf',
-          dialogTitle: 'Share Withdrawal Receipt',
-          UTI: 'com.adobe.pdf',
-        });
+        await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Share Withdrawal Receipt', UTI: 'com.adobe.pdf' });
         return;
       }
-
-      await Share.share({
-        title: 'Withdrawal Receipt',
-        message: 'Withdrawal receipt attached.',
-        url: Platform.OS === 'ios' ? uri : `file://${uri}`,
-      });
+      await Share.share({ title: 'Withdrawal Receipt', message: 'Withdrawal receipt attached.', url: Platform.OS === 'ios' ? uri : `file://${uri}` });
     } catch (error) {
       console.error('PDF generation error:', error);
       Alert.alert('Share failed', 'Could not generate PDF receipt. Please try again.');
@@ -371,13 +228,7 @@ export default function NGNZWithdrawalReceiptScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-            delayPressIn={0}
-            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
             <Image source={backIcon} style={styles.backIcon} />
           </TouchableOpacity>
           <Image source={successImage} style={styles.headerLogo} resizeMode="contain" />
@@ -386,11 +237,7 @@ export default function NGNZWithdrawalReceiptScreen() {
         <View style={[styles.centerContent, { padding: 24 }]}>
           <Text style={styles.emptyTitle}>No withdrawal data found</Text>
           <View style={styles.ctaRow}>
-            <TouchableOpacity
-              style={styles.primaryButton}
-              onPress={() => router.back()}
-              activeOpacity={0.95}
-            >
+            <TouchableOpacity style={styles.primaryButton} onPress={() => router.replace('/user/wallet' as any)} activeOpacity={0.95}>
               <Text style={styles.primaryButtonText}>Done</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.secondaryButton} onPress={onShare} activeOpacity={0.85}>
@@ -407,24 +254,14 @@ export default function NGNZWithdrawalReceiptScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-          delayPressIn={0}
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7} delayPressIn={0} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
           <Image source={backIcon} style={styles.backIcon} />
         </TouchableOpacity>
         <Image source={successImage} style={styles.headerLogo} resizeMode="contain" />
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.amountRow}>
           <Text style={styles.amountText} numberOfLines={1}>
             {formatAmtSym(withdrawalData.amount, 'NGN')}
@@ -440,28 +277,27 @@ export default function NGNZWithdrawalReceiptScreen() {
         </View>
 
         <View style={styles.detailsCard}>
-          <Row label="Type" value="Withdrawal" />
-          <Row label="Date" value={formatDate(withdrawalData.createdAt)} />
+          <Row styles={styles} label="Type" value="Withdrawal" />
+          <Row styles={styles} label="Date" value={formatDate(withdrawalData.createdAt)} />
           <Row
+            styles={styles}
             label="Reference"
             value={asText(withdrawalData.reference || withdrawalData.withdrawalId)}
             copyableValue={withdrawalData.reference || withdrawalData.withdrawalId as string}
             onCopy={(v) => handleCopy('Reference', v)}
           />
-          <Row label="Bank Name" value={asText(withdrawalData.bankName)} />
-          <Row label="Account Name" value={asText(withdrawalData.accountName)} />
+          <Row styles={styles} label="Bank Name" value={asText(withdrawalData.bankName)} />
+          <Row styles={styles} label="Account Name" value={asText(withdrawalData.accountName)} />
           <Row
+            styles={styles}
             label="Account Number"
             value={asText(withdrawalData.accountNumber)}
             copyableValue={withdrawalData.accountNumber as string}
             onCopy={(v) => handleCopy('Account Number', v)}
           />
-          <Row 
-            label="Withdrawal Fee" 
-            value="₦100" 
-          />
-          <Row label="Currency" value={asText(withdrawalData.currency || 'NGN')} />
-          <Row label="Status" value={asText(withdrawalData.obiexStatus || withdrawalData.status)} />
+          <Row styles={styles} label="Withdrawal Fee" value="₦100" />
+          <Row styles={styles} label="Currency" value={asText(withdrawalData.currency || 'NGN')} />
+          <Row styles={styles} label="Status" value={asText(withdrawalData.obiexStatus || withdrawalData.status)} />
         </View>
 
         <View style={styles.footerMessage}>
@@ -469,11 +305,7 @@ export default function NGNZWithdrawalReceiptScreen() {
         </View>
 
         <View style={styles.ctaRow}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => router.back()}
-            activeOpacity={0.95}
-          >
+          <TouchableOpacity style={styles.primaryButton} onPress={() => router.replace('/user/wallet' as any)} activeOpacity={0.95}>
             <Text style={styles.primaryButtonText}>Done</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.secondaryButton} onPress={onShare} activeOpacity={0.85}>
@@ -492,6 +324,7 @@ function Row({
   onCopy,
   isHashLink = false,
   onHashPress,
+  styles,
 }: {
   label: string;
   value: string;
@@ -499,35 +332,22 @@ function Row({
   onCopy?: (val: string) => void;
   isHashLink?: boolean;
   onHashPress?: () => void;
+  styles: ReturnType<typeof makeStyles>;
 }) {
   return (
     <View style={styles.row}>
-      <Text style={styles.rowLabel} numberOfLines={1}>
-        {label}
-      </Text>
+      <Text style={styles.rowLabel} numberOfLines={1}>{label}</Text>
       <View style={styles.rowValueWrap}>
         {isHashLink && onHashPress ? (
           <TouchableOpacity onPress={onHashPress} activeOpacity={0.7}>
-            <Text style={[styles.rowValue, styles.linkText]} numberOfLines={1}>
-              {value}
-            </Text>
+            <Text style={[styles.rowValue, styles.linkText]} numberOfLines={1}>{value}</Text>
           </TouchableOpacity>
         ) : (
-          <Text style={styles.rowValue} numberOfLines={1}>
-            {value}
-          </Text>
+          <Text style={styles.rowValue} numberOfLines={1}>{value}</Text>
         )}
         {copyableValue ? (
-          <TouchableOpacity
-            style={styles.copyButton}
-            onPress={() => onCopy && onCopy(copyableValue)}
-            activeOpacity={0.8}
-          >
-            <Image
-              source={require('../../components/icons/copy-icon.png')}
-              style={styles.copyIcon}
-              resizeMode="contain"
-            />
+          <TouchableOpacity style={styles.copyButton} onPress={() => onCopy && onCopy(copyableValue)} activeOpacity={0.8}>
+            <Image source={require('../../components/icons/copy-icon.png')} style={styles.copyIcon} resizeMode="contain" />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -546,90 +366,42 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Layout?.spacing?.xl || 24,
     paddingVertical: 12,
-    backgroundColor: '#F3F0FF',
+    backgroundColor: colors.background,
   },
-  backButton: { 
-    width: 40, 
-    height: 40, 
-    justifyContent: 'center', 
-    alignItems: 'center',
-    borderRadius: 20,
-  },
-  backIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-    tintColor: colors.text,
-  },
+  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
+  backIcon: { width: 24, height: 24, resizeMode: 'contain', tintColor: colors.text },
   headerLogo: { width: 100, height: 44 },
   headerRight: { width: 44 },
 
   centerContent: { alignItems: 'center', justifyContent: 'center', flex: 1 },
-  emptyTitle: {
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: 12,
-  },
+  emptyTitle: { fontSize: 16, color: colors.text, marginBottom: 12 },
 
-  amountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  amountText: {
-    fontFamily: Typography.bold || 'System',
-    fontSize: 28,
-    color: colors.text,
-  },
+  amountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 6 },
+  amountText: { fontFamily: Typography.bold || 'System', fontSize: 28, color: colors.text },
 
-  centeredStatus: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Layout?.spacing?.xs || 8,
-  },
+  centeredStatus: { alignItems: 'center', justifyContent: 'center', marginBottom: Layout?.spacing?.xs || 8 },
   statusPill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1 },
   statusPillText: { fontFamily: Typography.medium || 'System', fontSize: 12, top: 1 },
 
   detailsCard: {
     width: '100%',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     marginBottom: Layout?.spacing?.lg || 16,
   },
 
-  footerMessage: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  footerText: {
-    fontSize: 13,
-    color: '#6B7280',
-    fontFamily: Typography.regular || 'System',
-    lineHeight: 20,
-    textAlign: 'left',
-  },
+  footerMessage: { width: '100%', marginBottom: 20 },
+  footerText: { fontSize: 13, color: colors.textSecondary, fontFamily: Typography.regular || 'System', lineHeight: 20, textAlign: 'left' },
 
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 8 },
-  rowLabel: {
-    flexShrink: 0,
-    width: 130,
-    color: '#6B7280',
-    fontFamily: Typography.regular || 'System',
-    fontSize: 14,
-  },
+  rowLabel: { flexShrink: 0, width: 130, color: colors.textSecondary, fontFamily: Typography.regular || 'System', fontSize: 14 },
   rowValueWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'flex-end' },
-  rowValue: { color: '#111827', fontFamily: Typography.medium || 'System', fontSize: 14, textAlign: 'right', flexShrink: 1 },
-  
-  linkText: {
-    color: '#35297F',
-    textDecorationLine: 'underline',
-  },
+  rowValue: { color: colors.text, fontFamily: Typography.medium || 'System', fontSize: 14, textAlign: 'right', flexShrink: 1 },
+  linkText: { color: colors.primary, textDecorationLine: 'underline' },
 
   ctaRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 8 },
   primaryButton: {
@@ -639,12 +411,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: Layout?.borderRadius?.lg || 10,
     alignItems: 'center',
   },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.card,
-    fontFamily: Typography.medium || 'System',
-  },
+  primaryButtonText: { fontSize: 16, fontWeight: '600', color: '#FFFFFF', fontFamily: Typography.medium || 'System' },
   secondaryButton: {
     flex: 1,
     backgroundColor: colors.card,
@@ -652,19 +419,10 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: Layout?.borderRadius?.lg || 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
-  secondaryButtonText: { fontSize: 16, fontWeight: '600', color: '#111827', fontFamily: Typography.medium || 'System' },
+  secondaryButtonText: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: Typography.medium || 'System' },
 
-  copyButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
+  copyButton: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
   copyIcon: { width: 16, height: 16 },
 });

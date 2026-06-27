@@ -25,6 +25,7 @@ import { useTheme } from '../../hooks/useTheme';
 import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useData } from '../../hooks/useData';
+import AppsFlyerService from '../../services/appsFlyerService';
 
 // Icons
 // @ts-ignore
@@ -388,11 +389,18 @@ const BuyDataScreen: React.FC = () => {
       const result = await purchaseData(payload);
       
       if ((result as any).success) {
-        setShowTwoFactorModal(false); 
-        setShowPinModal(false); 
+        setShowTwoFactorModal(false);
+        setShowPinModal(false);
         setShowConfirmationModal(false);
-        setPasswordPin(''); 
+        setPasswordPin('');
         setTwoFactorCode('');
+
+        AppsFlyerService.logEvent('af_purchase', {
+          af_revenue: selectedPlan ? (selectedPlan as any).price : 0,
+          af_currency: 'NGN',
+          af_content_type: 'data',
+          af_order_id: String((result as any).data?.transactionId || (result as any).data?.id || Date.now()),
+        }).catch(() => {});
         
         // Navigate to UtilityReceipt instead of showing modal
         const resultData = result as any;

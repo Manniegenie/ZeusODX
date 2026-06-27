@@ -329,7 +329,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
   backIcon: { width: 24, height: 24, resizeMode: 'contain', tintColor: colors.text },
-  headerTitle: { color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center', marginHorizontal: 16 },
+  headerTitle: { color: colors.text, fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center', marginHorizontal: 16 },
   headerSpacer: { width: 40 },
   section: { paddingHorizontal: 16, marginBottom: 24 },
   sub: { color: colors.textSecondary, fontSize: 14, marginBottom: 16, lineHeight: 20 },

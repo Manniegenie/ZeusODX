@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
     Animated,
     Dimensions,
@@ -14,6 +14,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ms, s } from 'react-native-size-matters';
 import { Typography } from '../constants/Typography';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 
 // Network icons
 import nineMobileIcon from '../components/icons/9mobile.png';
@@ -67,6 +69,8 @@ const DataConfirmationModal: React.FC<DataConfirmationModalProps> = ({
   transactionData = {},
   loading = false
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
   const insets = useSafeAreaInsets();
 
@@ -282,7 +286,7 @@ const DataConfirmationModal: React.FC<DataConfirmationModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -295,7 +299,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '100%',
     height: MODAL_HEIGHT,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderTopLeftRadius: s(24),
     borderTopRightRadius: s(24),
     paddingHorizontal: ms(24),
@@ -303,13 +307,13 @@ const styles = StyleSheet.create({
   },
   safeAreaExtension: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     alignSelf: 'center',
   },
   handleBar: {
     width: s(40),
     height: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     borderRadius: s(2),
     alignSelf: 'center',
     marginBottom: 24,
@@ -319,7 +323,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   amountTitle: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 24,
     fontWeight: '600',
@@ -334,17 +338,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.border,
   },
   detailLabel: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     fontWeight: '400',
     flex: 1,
   },
   detailValue: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 14,
     fontWeight: '500',
@@ -373,7 +377,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   payButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 16,
     justifyContent: 'center',

@@ -216,12 +216,12 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   detailsCard: {
     width: '100%',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     marginBottom: Layout?.spacing?.md || 16,
   },
   row: {
@@ -260,7 +260,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   copyIcon: { width: 16, height: 16 },
 

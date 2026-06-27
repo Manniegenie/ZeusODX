@@ -527,7 +527,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: 24, backgroundColor: 'rgba(0, 0, 0, 0.02)', overflow: 'hidden',
   },
   backButtonText: { fontSize: 24, color: colors.text, fontWeight: '400' },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: colors.primary, flex: 1, textAlign: 'center', marginRight: 48 },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: colors.text, flex: 1, textAlign: 'center', marginRight: 48 },
   headerRight: { width: 0 },
   dateSelector: { alignItems: 'center', paddingVertical: 20 },
   monthSelector: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8 },

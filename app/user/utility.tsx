@@ -200,7 +200,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: Typography.sizes.lg,
     fontWeight: '600',
@@ -212,7 +212,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   headerUnderline: {
     height: 0.5,
-    backgroundColor: '#6358A6',
+    backgroundColor: colors.border,
     marginTop: 16,
     marginHorizontal: -16,
   },

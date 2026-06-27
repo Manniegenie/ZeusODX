@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -14,6 +14,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ms, s } from 'react-native-size-matters';
 import { Typography } from '../constants/Typography';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { useDataPlans } from '../hooks/useDataPlans';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -51,6 +53,8 @@ const DataPlansModal: React.FC<DataPlansModalProps> = ({
   networkName = '',
   loading: externalLoading = false
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [activeTab, setActiveTab] = useState('daily');
   const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
   const insets = useSafeAreaInsets();
@@ -506,7 +510,7 @@ const DataPlansModal: React.FC<DataPlansModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -519,26 +523,26 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '100%',
     height: MODAL_HEIGHT,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderTopLeftRadius: s(24),
     borderTopRightRadius: s(24),
     overflow: 'hidden',
   },
   safeAreaExtension: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     alignSelf: 'center',
   },
   handleBar: {
     width: s(40),
     height: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     borderRadius: s(2),
     alignSelf: 'center',
     marginTop: 12,
     marginBottom: 16,
   },
-  
+
   // Header styles
   header: {
     flexDirection: 'row',
@@ -549,7 +553,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   title: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
@@ -559,7 +563,7 @@ const styles = StyleSheet.create({
     padding: ms(4),
   },
   closeButtonText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 18,
     fontWeight: '500',
   },
@@ -577,16 +581,16 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#35297F',
+    borderBottomColor: colors.primary,
   },
   tabText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     fontWeight: '400',
   },
   activeTabText: {
-    color: '#35297F',
+    color: colors.primary,
     fontWeight: '500',
   },
   tabTextDisabled: {
@@ -610,10 +614,10 @@ const styles = StyleSheet.create({
   },
   planCard: {
     width: '31%',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
     borderRadius: s(6),
     borderWidth: 0.5,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     paddingVertical: 12,
     paddingHorizontal: ms(8),
     alignItems: 'center',
@@ -621,10 +625,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   planCardSelected: {
-    backgroundColor: '#F8F7FF',
+    backgroundColor: colors.card,
+    borderColor: colors.primary,
+    borderWidth: 1,
   },
   planData: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 12,
     fontWeight: '600',
@@ -632,7 +638,7 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   planDuration: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 10,
     fontWeight: '400',
@@ -640,7 +646,7 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   planPrice: {
-    color: '#35297F',
+    color: colors.primary,
     fontFamily: Typography.medium || 'System',
     fontSize: 11,
     fontWeight: '600',
@@ -656,7 +662,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   loadingText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     fontStyle: 'italic',
@@ -666,7 +672,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   emptyText: {
-    color: '#9CA3AF',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     fontStyle: 'italic',
@@ -678,20 +684,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   errorText: {
-    color: '#DC2626',
+    color: '#EF4444',
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     paddingHorizontal: ms(20),
     paddingVertical: ms(10),
     borderRadius: s(8),
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    color: '#0A1A0F',
     fontFamily: Typography.medium || 'System',
     fontSize: 14,
     fontWeight: '600',

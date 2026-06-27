@@ -176,7 +176,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   handleBar: {
     width: 40,
     height: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 16,
@@ -215,7 +215,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     fontWeight: '600',
   },
   detailsSection: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
@@ -226,7 +226,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
   },
   detailLabel: {
     fontSize: 14,
@@ -278,7 +278,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     fontWeight: '600',
   },
   closeButton: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     height: 48,
     alignItems: 'center',

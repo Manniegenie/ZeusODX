@@ -5,6 +5,7 @@ import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState , useMemo} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { passwordPinService } from '../../services/passwordpinService';
 import ErrorDisplay from '../../components/ErrorDisplay';
 import AppsFlyerService from '../../services/appsFlyerService';
@@ -92,7 +93,16 @@ export default function ConfirmPinScreen() {
 
       if (result.success) {
         console.log('✅ Pin created successfully');
-        AppsFlyerService.logEvent('sign_up', { registration_method: 'phone' }).catch(() => {});
+        AsyncStorage.getItem('pending_user_data').then(async (raw) => {
+          const pending = raw ? JSON.parse(raw) : {};
+          await Promise.all([
+            AppsFlyerService.setHashedPhone(pending.phonenumber).catch(() => {}),
+            AppsFlyerService.setHashedEmail(pending.email).catch(() => {}),
+          ]);
+          AppsFlyerService.logEvent('sign_up', { registration_method: 'phone', sign_up_method: 'phone', success: true }).catch(() => {});
+        }).catch(() => {
+          AppsFlyerService.logEvent('sign_up', { registration_method: 'phone', sign_up_method: 'phone', success: true }).catch(() => {});
+        });
         showSuccess('Your PIN has been created successfully and your account is ready!', 'PIN Created!');
       } else {
         const errorMessage = 'error' in result ? result.error : 'Failed to create account';

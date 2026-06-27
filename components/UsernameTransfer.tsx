@@ -26,6 +26,7 @@ import PinEntryModal from '../components/PinEntry';
 import TwoFactorAuthModal from '../components/2FA';
 import ErrorDisplay from '../components/ErrorDisplay';
 import TransferSuccessModal from '../components/TransferSuccess';
+import AppsFlyerService from '../services/appsFlyerService';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BOTTOM_SHEET_MAX_HEIGHT = SCREEN_HEIGHT * 0.9;
@@ -281,7 +282,13 @@ const TransferBottomSheet: React.FC<TransferBottomSheetProps> = ({
   useEffect(() => {
     if (transferResult) {
       setShowTwoFactorModal(false);
-      // Small delay to ensure proper modal transition on Android
+      AppsFlyerService.logEvent('internal_transfer', {
+        af_revenue: transferResult.amount || 0,
+        af_currency: transferResult.currency || 'NGNZ',
+        af_order_id: String(transferResult.reference || transferResult.transactionRef || Date.now()),
+        af_content_type: 'username_transfer',
+        success: true,
+      }).catch(() => {});
       setTimeout(() => {
         setShowSuccess(true);
       }, 100);
@@ -759,27 +766,27 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     zIndex: 1002,
     elevation: 1002,
   },
-  dragHandle: { width: 40, height: 4, backgroundColor: '#D1D5DB', borderRadius: 2, alignSelf: 'center', marginBottom: 8 },
+  dragHandle: { width: 40, height: 4, backgroundColor: colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: 8 },
   scrollView: { flex: 1 },
   headerSection: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Layout.spacing.md, paddingTop: Layout.spacing.sm, paddingBottom: Layout.spacing.lg },
   closeButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: Layout.borderRadius.lg },
   closeButtonText: { fontSize: 16, color: colors.text, fontWeight: '500' },
-  headerTitle: { color: '#35297F', fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center' },
+  headerTitle: { color: colors.text, fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center' },
   headerSpacer: { width: 40 },
   inputSection: { paddingHorizontal: Layout.spacing.xl, marginTop: Layout.spacing.md },
-  inputCard: { backgroundColor: '#F8F9FA', borderRadius: Layout.borderRadius.lg, padding: Layout.spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB', minHeight: 80 },
+  inputCard: { backgroundColor: colors.card, borderRadius: Layout.borderRadius.lg, padding: Layout.spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: colors.border, minHeight: 80 },
   inputLeft: { flex: 1, justifyContent: 'center', minWidth: 0 },
   amountInput: { fontFamily: Typography.medium, fontSize: 24, color: colors.text, fontWeight: '600', padding: 0, margin: 0, flexShrink: 1 },
   usdValue: { fontFamily: Typography.regular, fontSize: 13, color: colors.textSecondary, marginTop: 3 },
   tokenSelector: { alignItems: 'flex-end', justifyContent: 'center', maxWidth: '50%' },
-  tokenContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E5E7EB', borderRadius: Layout.borderRadius.md, paddingHorizontal: Layout.spacing.sm, paddingVertical: Layout.spacing.xs },
+  tokenContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.separator, borderRadius: Layout.borderRadius.md, paddingHorizontal: Layout.spacing.sm, paddingVertical: Layout.spacing.xs },
   tokenIcon: { width: 18, height: 18, resizeMode: 'cover', marginRight: Layout.spacing.sm },
   tokenText: { fontFamily: Typography.medium, fontSize: 12, color: colors.text, fontWeight: '600' },
   balanceInfo: { flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 },
   balanceText: { fontFamily: Typography.regular, fontSize: 10, color: colors.textSecondary },
   maxText: { fontFamily: Typography.medium, fontSize: 10, color: colors.primary, fontWeight: '600' },
   percentageSection: { flexDirection: 'row', paddingHorizontal: Layout.spacing.xl, marginTop: Layout.spacing.xl, gap: Layout.spacing.sm },
-  percentageButton: { flex: 1, backgroundColor: colors.card, borderRadius: Layout.borderRadius.md, paddingVertical: Layout.spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB' },
+  percentageButton: { flex: 1, backgroundColor: colors.card, borderRadius: Layout.borderRadius.md, paddingVertical: Layout.spacing.sm, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   percentageText: { fontFamily: Typography.medium, fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
   userSection: { paddingHorizontal: Layout.spacing.xl, marginTop: Layout.spacing.xxl, alignItems: 'center', justifyContent: 'center', width: '100%' },
   userItem: { flexDirection: 'row', alignItems: 'center', padding: Layout.spacing.sm, justifyContent: 'center', alignSelf: 'center', gap: Layout.spacing.sm },

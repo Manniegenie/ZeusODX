@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     StyleSheet,
     Text,
@@ -7,6 +7,8 @@ import {
     View
 } from 'react-native';
 import { Typography } from '../constants/Typography';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import BaseModal from './ui/BaseModal';
 
 interface PinEntryModalProps {
@@ -26,6 +28,9 @@ const PinEntryModal: React.FC<PinEntryModalProps> = ({
   title = 'Enter Password PIN',
   subtitle = 'Please enter your 6-digit password PIN to continue'
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const pinInputRef = useRef<TextInput>(null);
@@ -34,13 +39,11 @@ const PinEntryModal: React.FC<PinEntryModalProps> = ({
     if (visible) {
       setPin('');
       setError('');
-      // Focus input after modal animation
       setTimeout(() => pinInputRef.current?.focus(), 300);
     }
   }, [visible]);
 
   const handlePinChange = (value: string) => {
-    // Only allow numbers and max 6 digits
     const numericValue = value.replace(/[^0-9]/g, '').slice(0, 6);
     setPin(numericValue);
     setError('');
@@ -56,22 +59,15 @@ const PinEntryModal: React.FC<PinEntryModalProps> = ({
 
   const isValid = pin.length === 6;
 
-  // Create individual input boxes for PIN (masked display)
   const renderPinBoxes = () => {
     const boxes = [];
     for (let i = 0; i < 6; i++) {
       boxes.push(
         <View
           key={i}
-          style={[
-            styles.pinBox,
-            i < pin.length && styles.pinBoxFilled
-          ]}
+          style={[styles.pinBox, i < pin.length && styles.pinBoxFilled]}
         >
-          <Text style={[
-            styles.pinText,
-            i < pin.length && styles.pinTextFilled
-          ]}>
+          <Text style={[styles.pinText, i < pin.length && styles.pinTextFilled]}>
             {i < pin.length ? '●' : ''}
           </Text>
         </View>
@@ -81,14 +77,8 @@ const PinEntryModal: React.FC<PinEntryModalProps> = ({
   };
 
   return (
-    <BaseModal
-      visible={visible}
-      onClose={onClose}
-      type="center"
-      disableBackdropPress={loading}
-    >
+    <BaseModal visible={visible} onClose={onClose} type="center" disableBackdropPress={loading}>
       <View style={styles.content}>
-        {/* Close Button */}
         <TouchableOpacity
           style={styles.closeButton}
           onPress={onClose}
@@ -98,15 +88,12 @@ const PinEntryModal: React.FC<PinEntryModalProps> = ({
           <Text style={styles.closeButtonText}>✕</Text>
         </TouchableOpacity>
 
-        {/* Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
 
-        {/* PIN Input Section */}
         <View style={styles.inputSection}>
-          {/* Hidden TextInput for keyboard input */}
           <TextInput
             ref={pinInputRef}
             style={styles.hiddenInput}
@@ -118,45 +105,31 @@ const PinEntryModal: React.FC<PinEntryModalProps> = ({
             autoFocus={false}
             caretHidden
           />
-          
-          {/* PIN Boxes Display */}
-          <View style={styles.pinContainer}>
-            {renderPinBoxes()}
-          </View>
 
-          {error ? (
-            <Text style={styles.errorText}>{error}</Text>
-          ) : null}
-          
-          {/* Helper text */}
-          <Text style={styles.helperText}>
-            Enter your secure 6-digit PIN
-          </Text>
+          <View style={styles.pinContainer}>{renderPinBoxes()}</View>
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          <Text style={styles.helperText}>Enter your secure 6-digit PIN</Text>
         </View>
 
-        {/* Submit Button */}
         <TouchableOpacity
-          style={[
-            styles.submitButton,
-            (!isValid || loading) && styles.submitButtonDisabled
-          ]}
+          style={[styles.submitButton, (!isValid || loading) && styles.submitButtonDisabled]}
           onPress={handleSubmit}
           disabled={!isValid || loading}
           activeOpacity={0.8}
         >
-          <Text style={styles.submitButtonText}>
-            {loading ? 'Verifying...' : 'Continue'}
-          </Text>
+          <Text style={styles.submitButtonText}>{loading ? 'Verifying...' : 'Continue'}</Text>
         </TouchableOpacity>
       </View>
     </BaseModal>
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   content: {
     paddingHorizontal: 24,
     paddingVertical: 24,
+    backgroundColor: colors.card,
   },
   closeButton: {
     position: 'absolute',
@@ -167,11 +140,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 15,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.border,
     zIndex: 1,
   },
   closeButtonText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '500',
   },
@@ -181,7 +154,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   title: {
-    color: '#111827',
+    color: '#FFFFFF',
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
@@ -189,7 +162,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
     fontWeight: '400',
@@ -218,24 +191,24 @@ const styles = StyleSheet.create({
     width: 38,
     height: 45,
     borderRadius: 8,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.inputBg,
     borderWidth: 2,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
   },
   pinBoxFilled: {
-    borderColor: '#35297F',
-    backgroundColor: '#F8F7FF',
+    borderColor: colors.primary,
+    backgroundColor: colors.card,
   },
   pinText: {
     fontSize: 16,
     fontFamily: Typography.medium || 'System',
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: colors.textSecondary,
   },
   pinTextFilled: {
-    color: '#35297F',
+    color: colors.primary,
   },
   errorText: {
     color: '#EF4444',
@@ -246,7 +219,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   helperText: {
-    color: '#9CA3AF',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 11,
     textAlign: 'center',
@@ -255,7 +228,7 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   submitButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     justifyContent: 'center',
@@ -263,7 +236,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   submitButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: colors.textSecondary,
   },
   submitButtonText: {
     color: '#FFFFFF',

@@ -1,8 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { authService } from '../services/authService';
 import NotificationService from '../services/notificationService';
 import AppsFlyerService from '../services/appsFlyerService';
+import { apiClient } from '../services/apiClient';
 
 const AuthContext = createContext();
 
@@ -47,14 +49,24 @@ export function useAuthProvider() {
           const uidResult = await AppsFlyerService.getAppsFlyerUID();
           if (uidResult.success && uidResult.uid) {
             await AppsFlyerService.setUserId(response.data.user._id || response.data.user.id);
+            AppsFlyerService.setHashedPhone(response.data.user.phonenumber || credentials.phonenumber).catch(() => {});
+            AppsFlyerService.setHashedEmail(response.data.user.email).catch(() => {});
+            apiClient.post('/profile/appsflyer-id', {
+              appsflyer_id: uidResult.uid,
+              platform: Platform.OS,
+            }).catch(() => {});
           }
-          await AppsFlyerService.logEvent('af_login', { login_method: 'pin' });
+          await AppsFlyerService.logEvent('af_login', {
+            login_method: 'pin',
+            sign_up_method: 'phone',
+            success: true,
+          });
         } catch (error) {
           if (__DEV__) {
             console.warn('⚠️ useAuth: Failed to log AppsFlyer event:', error);
           }
         }
-        
+
         return { success: true, data: response.data };
       } else {
         console.log('❌ useAuth: Login failed');
@@ -91,8 +103,18 @@ export function useAuthProvider() {
           const uidResult = await AppsFlyerService.getAppsFlyerUID();
           if (uidResult.success && uidResult.uid) {
             await AppsFlyerService.setUserId(response.data.user?._id || response.data.user?.id);
+            AppsFlyerService.setHashedPhone(response.data.user?.phonenumber || userData.phonenumber).catch(() => {});
+            AppsFlyerService.setHashedEmail(response.data.user?.email || userData.email).catch(() => {});
+            apiClient.post('/profile/appsflyer-id', {
+              appsflyer_id: uidResult.uid,
+              platform: Platform.OS,
+            }).catch(() => {});
           }
-          await AppsFlyerService.logEvent('af_complete_registration', { registration_method: 'phone' });
+          await AppsFlyerService.logEvent('af_complete_registration', {
+            registration_method: 'phone',
+            sign_up_method: 'phone',
+            success: true,
+          });
         } catch (error) {
           if (__DEV__) {
             console.warn('⚠️ useAuth: Failed to log AppsFlyer event:', error);

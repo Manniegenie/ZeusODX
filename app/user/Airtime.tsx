@@ -28,6 +28,7 @@ import { useTheme } from '../../hooks/useTheme';
 import type { AppColors } from '../../hooks/useTheme';
 import { Typography } from '../../constants/Typography';
 import { useAirtime } from '../../hooks/useAirtime';
+import AppsFlyerService from '../../services/appsFlyerService';
 
 // Network provider icons
 // @ts-ignore
@@ -359,7 +360,14 @@ const BuyAirtimeScreen: React.FC = () => {
         setShowConfirmationModal(false);
         setPasswordPin('');
         setTwoFactorCode('');
-        
+
+        AppsFlyerService.logEvent('af_purchase', {
+          af_revenue: parseFloat(customAmount) || 0,
+          af_currency: 'NGN',
+          af_content_type: 'airtime',
+          af_order_id: String(result.data?.transactionId || result.data?.id || Date.now()),
+        }).catch(() => {});
+
         // Navigate to UtilityReceipt instead of showing modal
         const utilityTransaction = {
           id: result.data?.transactionId || result.data?.id || Date.now().toString(),

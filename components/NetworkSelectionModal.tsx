@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import {
     ActivityIndicator,
     FlatList,
+    Image,
     Modal,
     StyleSheet,
     Text,
@@ -13,6 +14,20 @@ import { useTheme } from '../hooks/useTheme';
 import type { AppColors } from '../hooks/useTheme';
 import { Layout } from '../constants/Layout';
 import { Typography } from '../constants/Typography';
+
+const TOKEN_ICONS: Record<string, any> = {
+  BTC:  require('./icons/btc-icon.png'),
+  ETH:  require('./icons/eth-icon.png'),
+  SOL:  require('./icons/sol-icon.png'),
+  USDT: require('./icons/usdt-icon.png'),
+  USDC: require('./icons/usdc-icon.png'),
+  TRX:  require('./icons/Tron.png'),
+  BNB:  require('./icons/bnb-icon.png'),
+  MATIC:require('./icons/matic-icon.png'),
+  TON:  require('./icons/ton-icon.png'),
+  NGNZ: require('./icons/NGNZ.png'),
+  AVAX: require('./icons/avax-icon.png'),
+};
 
 interface NetworkOption {
   id: string;
@@ -52,19 +67,26 @@ const NetworkSelectionModal: React.FC<NetworkSelectionModalProps> = ({
 
   const renderNetworkOption = ({ item }: { item: NetworkOption }) => {
     const isSelected = selectedNetwork?.id === item.id || selectedNetwork?.code === item.code;
-    
+    const tokenIcon = tokenSymbol ? TOKEN_ICONS[tokenSymbol.toUpperCase()] : null;
+
     return (
-      <TouchableOpacity 
-        style={styles.networkItem}
+      <TouchableOpacity
+        style={[styles.networkItem, isSelected && styles.networkItemSelected]}
         onPress={() => handleNetworkPress(item)}
         activeOpacity={0.7}
       >
+        {tokenIcon && (
+          <View style={styles.networkTokenIconWrap}>
+            <Image source={tokenIcon} style={styles.networkTokenIcon} />
+          </View>
+        )}
         <View style={styles.networkInfo}>
           <Text style={styles.networkName}>{item.name}</Text>
           {item.feeUsd && (
             <Text style={styles.networkFee}>Fee: ~${item.feeUsd.toFixed(2)}</Text>
           )}
         </View>
+        {isSelected && <Text style={styles.checkMark}>✓</Text>}
       </TouchableOpacity>
     );
   };
@@ -124,9 +146,14 @@ const NetworkSelectionModal: React.FC<NetworkSelectionModalProps> = ({
           <TouchableWithoutFeedback onPress={() => {}}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>
-                  Select Network{tokenSymbol ? ` for ${tokenSymbol}` : ''}
-                </Text>
+                <View style={styles.modalTitleRow}>
+                  {tokenSymbol && TOKEN_ICONS[tokenSymbol.toUpperCase()] && (
+                    <Image source={TOKEN_ICONS[tokenSymbol.toUpperCase()]} style={styles.modalTokenIcon} />
+                  )}
+                  <Text style={styles.modalTitle}>
+                    {tokenSymbol ? `${tokenSymbol} Networks` : 'Select Network'}
+                  </Text>
+                </View>
                 <TouchableOpacity onPress={onClose} style={styles.closeButtonContainer}>
                   <Text style={styles.closeButton}>✕</Text>
                 </TouchableOpacity>
@@ -163,7 +190,18 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     marginBottom: Layout.spacing.md,
     paddingBottom: Layout.spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: colors.border,
+  },
+  modalTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalTokenIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    resizeMode: 'cover',
   },
   modalTitle: {
     fontFamily: Typography.bold,
@@ -184,16 +222,35 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   networkItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: Layout.spacing.lg,
-    paddingHorizontal: Layout.spacing.lg,
+    paddingVertical: Layout.spacing.md,
+    paddingHorizontal: Layout.spacing.md,
     backgroundColor: colors.card,
     marginBottom: Layout.spacing.sm,
     borderRadius: Layout.borderRadius.md,
+    gap: 10,
+  },
+  networkItemSelected: {
+    backgroundColor: colors.separator,
+  },
+  networkTokenIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  networkTokenIcon: {
+    width: 32,
+    height: 32,
+    resizeMode: 'cover',
   },
   networkInfo: {
     flex: 1,
+  },
+  checkMark: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '700',
   },
   networkName: {
     fontFamily: Typography.medium,

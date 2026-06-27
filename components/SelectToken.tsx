@@ -57,7 +57,7 @@ export default function DepositTokenModal({
     { id: 'usdt', name: 'Tether', symbol: 'USDT', icon: usdtIcon },
     { id: 'trx', name: 'Tron', symbol: 'TRX', icon: trxIcon },
     { id: 'bnb', name: 'Binance Coin', symbol: 'BNB', icon: bnbIcon },
-    { id: 'matic', name: 'Polygon', symbol: 'MATIC', icon: maticIcon },
+    { id: 'matic', name: 'Polygon', symbol: 'POL', icon: maticIcon },
     { id: 'ngnz', name: 'NGNZ', symbol: 'NGNZ', icon: ngnzIcon },
   ];
 

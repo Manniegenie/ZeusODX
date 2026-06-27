@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Animated,
   Dimensions,
@@ -12,9 +12,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ms, s } from 'react-native-size-matters';
 import { Typography } from '../constants/Typography';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { withdrawalService } from '../services/externalwithdrawalService';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MODAL_HEIGHT = 420;
 
 interface ExternalWithdrawalConfirmProps {
@@ -41,6 +42,8 @@ const ExternalWithdrawalConfirm: React.FC<ExternalWithdrawalConfirmProps> = ({
   onConfirm,
   transactionData,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
   const insets = useSafeAreaInsets();
 
@@ -53,12 +56,10 @@ const ExternalWithdrawalConfirm: React.FC<ExternalWithdrawalConfirmProps> = ({
     networkName = '',
   } = transactionData;
 
-  // Format amount for display
   const formatAmount = (amount: number) => {
     return withdrawalService.formatWithdrawalAmount(amount, currency);
   };
 
-  // Truncate address for display
   const truncateAddress = (address: string) => {
     if (!address || address.length <= 20) return address;
     return `${address.substring(0, 10)}...${address.substring(address.length - 10)}`;
@@ -68,7 +69,6 @@ const ExternalWithdrawalConfirm: React.FC<ExternalWithdrawalConfirmProps> = ({
     ? receiverAmount
     : parseFloat((amount - fee).toFixed(8));
 
-  // Slide animation
   useEffect(() => {
     if (visible) {
       Animated.spring(slideAnim, {
@@ -86,10 +86,6 @@ const ExternalWithdrawalConfirm: React.FC<ExternalWithdrawalConfirmProps> = ({
     }
   }, [visible, slideAnim]);
 
-  const handleBackdropPress = () => {
-    onClose();
-  };
-
   return (
     <Modal
       visible={visible}
@@ -98,68 +94,46 @@ const ExternalWithdrawalConfirm: React.FC<ExternalWithdrawalConfirmProps> = ({
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <TouchableWithoutFeedback onPress={handleBackdropPress}>
+      <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
             <View style={styles.modalWrapper}>
               <Animated.View
-                style={[
-                  styles.modalContainer,
-                  {
-                    transform: [{ translateY: slideAnim }],
-                  },
-                ]}
+                style={[styles.modalContainer, { transform: [{ translateY: slideAnim }] }]}
               >
-                {/* Handle Bar */}
                 <View style={styles.handleBar} />
 
-                {/* Amount Title */}
                 <View style={styles.amountSection}>
                   <Text style={styles.amountTitle}>
                     {formatAmount(amount)} {currency}
                   </Text>
                 </View>
 
-                {/* Transaction Details */}
                 <View style={styles.detailsSection}>
-                  {/* Transaction Type */}
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Transaction</Text>
                     <Text style={styles.detailValue}>External Withdrawal</Text>
                   </View>
-
-                  {/* Wallet Address */}
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Wallet address</Text>
                     <Text style={[styles.detailValue, styles.addressValue]}>
                       {truncateAddress(destination?.address)}
                     </Text>
                   </View>
-
-                  {/* Network */}
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Network</Text>
                     <Text style={styles.detailValue}>{networkName}</Text>
                   </View>
-
-                  {/* Fee */}
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Fee</Text>
-                    <Text style={styles.detailValue}>
-                      {formatAmount(fee)} {currency}
-                    </Text>
+                    <Text style={styles.detailValue}>{formatAmount(fee)} {currency}</Text>
                   </View>
-
-                  {/* Receiver Will Get */}
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Receiver will get</Text>
-                    <Text style={styles.detailValue}>
-                      {formatAmount(receiverWillGet)} {currency}
-                    </Text>
+                    <Text style={styles.detailValue}>{formatAmount(receiverWillGet)} {currency}</Text>
                   </View>
                 </View>
 
-                {/* Pay Button */}
                 <View style={styles.buttonSection}>
                   <TouchableOpacity
                     style={styles.payButton}
@@ -171,7 +145,6 @@ const ExternalWithdrawalConfirm: React.FC<ExternalWithdrawalConfirmProps> = ({
                 </View>
               </Animated.View>
 
-              {/* Safe Area Extension - White background that extends into bottom safe area */}
               <View style={[styles.safeAreaExtension, { height: insets.bottom }]} />
             </View>
           </TouchableWithoutFeedback>
@@ -181,10 +154,10 @@ const ExternalWithdrawalConfirm: React.FC<ExternalWithdrawalConfirmProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalWrapper: {
@@ -195,7 +168,7 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     height: MODAL_HEIGHT,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderTopLeftRadius: s(24),
     borderTopRightRadius: s(24),
     paddingHorizontal: ms(24),
@@ -203,13 +176,13 @@ const styles = StyleSheet.create({
   },
   safeAreaExtension: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     alignSelf: 'center',
   },
   handleBar: {
     width: s(40),
     height: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     borderRadius: s(2),
     alignSelf: 'center',
     marginBottom: 24,
@@ -219,7 +192,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   amountTitle: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 24,
     fontWeight: '600',
@@ -234,16 +207,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.border,
   },
   detailLabel: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     fontWeight: '400',
   },
   detailValue: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 14,
     fontWeight: '500',
@@ -258,7 +231,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   payButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: s(12),
     paddingVertical: 16,
     justifyContent: 'center',

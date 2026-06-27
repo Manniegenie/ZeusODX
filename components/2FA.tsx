@@ -15,8 +15,6 @@ import { useTheme } from '../hooks/useTheme';
 import type { AppColors } from '../hooks/useTheme';
 import BaseModal from './ui/BaseModal';
 
-// @ts-ignore
-import copyIcon from './icons/copy-icon.png';
 
 interface TwoFactorAuthModalProps {
   visible: boolean;
@@ -128,10 +126,9 @@ const TwoFactorAuthModal: React.FC<TwoFactorAuthModalProps> = ({
             style={styles.pasteButton}
             onPress={handlePasteFromClipboard}
             disabled={loading}
-            activeOpacity={0.8}
+            activeOpacity={0.7}
           >
-            <Image source={copyIcon} style={styles.copyIcon} resizeMode="contain" />
-            <Text style={styles.pasteButtonText}>Paste</Text>
+            <Text style={styles.pasteButtonText}>Paste from clipboard</Text>
           </TouchableOpacity>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -155,6 +152,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   content: {
     paddingHorizontal: 24,
     paddingVertical: 24,
+    backgroundColor: colors.card,
   },
   closeButton: {
     position: 'absolute',
@@ -215,7 +213,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: 38,
     height: 45,
     borderRadius: 8,
-    backgroundColor: colors.background,
+    backgroundColor: colors.inputBg,
     borderWidth: 2,
     borderColor: colors.border,
     justifyContent: 'center',
@@ -235,27 +233,15 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     color: colors.primary,
   },
   pasteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
     marginBottom: 12,
-  },
-  copyIcon: {
-    width: 14,
-    height: 14,
-    marginRight: 6,
-    tintColor: colors.primary,
+    paddingVertical: 4,
   },
   pasteButtonText: {
     color: colors.primary,
     fontFamily: Typography.medium || 'System',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
+    textDecorationLine: 'underline',
   },
   errorText: {
     color: '#EF4444',

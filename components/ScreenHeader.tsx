@@ -58,7 +58,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium,
     fontSize: 18,
     textAlign: 'center',

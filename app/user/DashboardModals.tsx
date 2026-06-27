@@ -83,7 +83,7 @@ export default function DashboardModals({
     { id: 'usdt', name: 'Tether', symbol: 'USDT', icon: usdtIcon },
     { id: 'trx', name: 'Tron', symbol: 'TRX', icon: trxIcon },
     { id: 'bnb', name: 'Binance Coin', symbol: 'BNB', icon: bnbIcon },
-    { id: 'matic', name: 'Polygon', symbol: 'MATIC', icon: maticIcon },
+    { id: 'matic', name: 'Polygon', symbol: 'POL', icon: maticIcon },
   ];
 
   // Navigate to selected token wallet screen

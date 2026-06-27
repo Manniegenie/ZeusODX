@@ -117,7 +117,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Layout.spacing.lg },
   title: { fontFamily: Typography.medium, fontSize: 18, color: colors.text },
   closeText: { fontSize: 20, color: colors.textSecondary },
-  assetBox: { backgroundColor: '#F5F5F5', borderRadius: Layout.borderRadius.md, padding: Layout.spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: Layout.spacing.sm },
+  assetBox: { backgroundColor: colors.inputBg, borderRadius: Layout.borderRadius.md, padding: Layout.spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: Layout.spacing.sm, borderWidth: 1, borderColor: colors.border },
   assetAmount: { fontFamily: Typography.medium, fontSize: 18, color: colors.text },
   assetIcon: { width: 28, height: 28, resizeMode: 'contain' },
   arrow: { textAlign: 'center', fontSize: 22, color: colors.textSecondary, marginVertical: Layout.spacing.sm },

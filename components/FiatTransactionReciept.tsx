@@ -405,10 +405,10 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Layout?.spacing?.xl || 24,
     paddingVertical: 12,
-    backgroundColor: '#F3F0FF',
+    backgroundColor: colors.card,
   },
   backButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  backButtonText: { fontSize: 24, color: '#1F2937', fontWeight: '400' },
+  backButtonText: { fontSize: 24, color: colors.text, fontWeight: '400' },
   headerLogo: { width: 100, height: 44 },
   headerRight: { width: 44 },
 
@@ -441,7 +441,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   statusPillText: { fontFamily: Typography.medium || 'System', fontSize: 12, top: 1 },
 
   metaLine: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 12,
     marginBottom: Layout?.spacing?.md || 12,
@@ -450,12 +450,12 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   detailsCard: {
     width: '100%',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.inputBg,
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     marginBottom: Layout?.spacing?.lg || 16,
   },
 
@@ -463,12 +463,12 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   rowLabel: {
     flexShrink: 0,
     width: 130,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
   },
   rowValueWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'flex-end' },
-  rowValue: { color: '#111827', fontFamily: Typography.medium || 'System', fontSize: 13, textAlign: 'right', flexShrink: 1 },
+  rowValue: { color: colors.text, fontFamily: Typography.medium || 'System', fontSize: 13, textAlign: 'right', flexShrink: 1 },
 
   ctaRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 8 },
   primaryButton: {
@@ -491,9 +491,9 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: Layout?.borderRadius?.lg || 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
-  secondaryButtonText: { fontSize: 16, fontWeight: '600', color: '#111827', fontFamily: Typography.medium || 'System' },
+  secondaryButtonText: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: Typography.medium || 'System' },
 
   copyButton: {
     width: 28,
@@ -503,7 +503,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   copyIcon: { width: 16, height: 16 },
 });

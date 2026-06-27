@@ -28,6 +28,7 @@ import { useTheme } from '../../hooks/useTheme';
 import type { AppColors } from '../../hooks/useTheme';
 import { useCableTV } from '../../hooks/useCabletv';
 import { useCustomer } from '../../hooks/useCustomer';
+import AppsFlyerService from '../../services/appsFlyerService';
 
 // Provider icons
 const DstvIcon = require('../../components/icons/Dstv.png');
@@ -476,6 +477,13 @@ const CableTvScreen: React.FC = () => {
         setShowPinModal(false);
         setPasswordPin('');
         setTwoFactorCode('');
+
+        AppsFlyerService.logEvent('af_purchase', {
+          af_revenue: selectedPackage?.price || 0,
+          af_currency: 'NGN',
+          af_content_type: 'cable_tv',
+          af_order_id: String(result.data?.transactionId || result.data?.id || Date.now()),
+        }).catch(() => {});
         
         // Navigate to UtilityReceipt instead of showing modal
         const utilityTransaction = {

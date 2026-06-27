@@ -338,9 +338,10 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     paddingBottom: Layout.spacing.sm,
   },
   separator: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
+    height: 0.5,
+    backgroundColor: colors.border,
     marginVertical: Layout.spacing.xs,
+    opacity: 0.4,
   },
   tokenItem: {
     flexDirection: 'row',

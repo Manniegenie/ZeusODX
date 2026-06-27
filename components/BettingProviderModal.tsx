@@ -244,7 +244,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center', 
     paddingVertical: Layout.spacing.md, 
     paddingHorizontal: Layout.spacing.sm, 
-    backgroundColor: '#F8F9FA', 
+    backgroundColor: colors.background,
     marginBottom: Layout.spacing.sm, 
     borderRadius: Layout.borderRadius.md 
   },
@@ -261,7 +261,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center', 
     justifyContent: 'center', 
     borderWidth: 1, 
-    borderColor: '#E5E7EB', 
+    borderColor: colors.border,
     overflow: 'hidden',
     padding: 0
   },
@@ -287,7 +287,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 12,

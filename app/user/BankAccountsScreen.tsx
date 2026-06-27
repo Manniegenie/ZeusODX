@@ -414,7 +414,7 @@ const BankAccountsScreen = () => {
     }
 
     const payload = {
-      amount: amountNumber, // Send full amount - backend handles fee deduction
+      amount: amountNumber,
       narration: 'NGNZ withdrawal to bank',
       destination: {
         bankName: selectedBankForTransfer.bankName,
@@ -426,97 +426,89 @@ const BankAccountsScreen = () => {
       passwordpin: passwordPin.trim(),
     };
 
-    const res = await submit(payload);
+    try {
+      const res = await submit(payload);
 
-    setTransferLoading(false);
+      setTransferLoading(false);
 
-    if (res.success) {
-      setShowTwoFactorModal(false);
-      setPasswordPin('');
-      setTwoFactorCode('');
+      if (res.success) {
+        setShowTwoFactorModal(false);
+        setPasswordPin('');
+        setTwoFactorCode('');
 
-      AppsFlyerService.logEvent('Withdrawal', {
-        amount: String(transferAmount || netAmount || 0),
-        currency: 'NGN',
-        withdrawal_method: 'bank',
-      }).catch(() => {});
+        const wd = (res as any).data || (res as any).withdrawal || (res as any).result || (res as any).payload || {};
+        const status = wd.status || wd.providerStatus || 'Pending';
 
-      // Try to normalize upstream payloads (res.data | res.withdrawal | res.result | res.payload)
-      const wd = (res as any).data || (res as any).withdrawal || (res as any).result || (res as any).payload || {};
-      const status = wd.status || wd.providerStatus || 'Pending';
+        const ngnAmount =
+          wd.ngnAmount ?? wd.amountNGN ?? wd.amountNgn ?? wd.amount ?? Number(transferAmount || netAmount || 0);
 
-      // Prefer NGN figures from the API, else fall back to the entered amount
-      const ngnAmount =
-        wd.ngnAmount ?? wd.amountNGN ?? wd.amountNgn ?? wd.amount ?? Number(transferAmount || netAmount || 0);
-      const formattedNaira = `-₦${Math.round(Number(ngnAmount || 0)).toLocaleString('en-NG')}`;
+        AppsFlyerService.logEvent('Withdrawal', {
+          af_revenue: ngnAmount || 0,
+          af_currency: 'NGN',
+          af_content_type: 'bank_withdrawal',
+          af_order_id: String(wd.reference ?? wd.id ?? Date.now()),
+        }).catch(() => {});
 
-      const now = new Date();
+        const now = new Date();
 
-      // Navigate to full-screen withdrawal receipt instead of modal
-      // DEBUG: Log the full account number to verify it's not masked
-      console.log('🔍 Full Account Number:', selectedBankForTransfer?.accountNumber);
-      console.log('🔍 Backend Response Account Number:', wd.destination?.accountNumber);
-      
-      router.push({
-        pathname: '/receipt/ngnz-withdrawal',
-        params: {
-          withdrawalId: String(wd.id ?? wd.reference ?? Date.now()),
-          reference: wd.reference ?? wd.id,
-          amount: String(ngnAmount || 0),
-          currency: 'NGN',
-          bankName: selectedBankForTransfer?.bankName,
-          accountName: selectedBankForTransfer?.accountName,
-          accountNumber: selectedBankForTransfer?.accountNumber, // Using FULL account number from selected bank
-          bankCode: selectedBankForTransfer?.bankCode,
-          fee: String(wd.fee ?? wd.feeNGN ?? wd.charge ?? 0),
-          narration: 'NGNZ withdrawal to bank',
-          status: String(status),
-          createdAt: wd.createdAt ?? now.toISOString(),
-          provider: wd.provider ?? wd.psp ?? 'ZeusODX',
-          obiexStatus: wd.status ?? wd.providerStatus,
-        },
-      });
+        router.push({
+          pathname: '/receipt/ngnz-withdrawal',
+          params: {
+            withdrawalId: String(wd.id ?? wd.reference ?? Date.now()),
+            reference: wd.reference ?? wd.id,
+            amount: String(ngnAmount || 0),
+            currency: 'NGN',
+            bankName: selectedBankForTransfer?.bankName,
+            accountName: selectedBankForTransfer?.accountName,
+            accountNumber: selectedBankForTransfer?.accountNumber,
+            bankCode: selectedBankForTransfer?.bankCode,
+            fee: String(wd.fee ?? wd.feeNGN ?? wd.charge ?? 0),
+            narration: 'NGNZ withdrawal to bank',
+            status: String(status),
+            createdAt: wd.createdAt ?? now.toISOString(),
+            provider: wd.provider ?? wd.psp ?? 'ZeusODX',
+            obiexStatus: wd.status ?? wd.providerStatus,
+          },
+        });
 
-      // clear selection after we captured it for the receipt
-      setSelectedBankForTransfer(null);
-      return;
-    } else {
-      const errorCode = (res as any)?.error || 'GENERAL_ERROR';
-      const errorMessage =
-        (res as any)?.message ||
-        (res as any)?.details?.message ||
-        'Withdrawal failed. Please try again.';
-      const details = (res as any)?.details || {};
-
-      if (errorCode === 'LIMIT_EXCEEDED') {
-        const rec = details?.upgradeRecommendation;
-        // Show the API error message first, append recommendation if available
-        const displayMessage = rec ? `${errorMessage}\n\n${rec}` : errorMessage;
-        showError(
-          mapErrorType(errorCode),
-          'Daily limit exceeded',
-          displayMessage
-        );
-      } else if (errorCode === 'INVALID_PASSWORDPIN') {
-        showError(mapErrorType(errorCode), 'Invalid PIN', 'The password PIN you entered is incorrect.');
-      } else if (errorCode === 'INVALID_2FA_CODE' || errorCode === 'INVALID_OTP') {
-        showError(mapErrorType(errorCode), 'Invalid 2FA', 'The two-factor code you entered is incorrect.');
+        setSelectedBankForTransfer(null);
+        return;
       } else {
-        showError(mapErrorType(errorCode), 'Withdrawal failed', errorMessage);
-      }
-    }
+        const errorCode = (res as any)?.error || 'GENERAL_ERROR';
+        const errorMessage =
+          (res as any)?.message ||
+          (res as any)?.details?.message ||
+          'Withdrawal failed. Please try again.';
+        const details = (res as any)?.details || {};
 
-    // Re-open relevant modal for quick retry
-    if (res.error === 'INVALID_PASSWORDPIN') {
-      setPasswordPin('');
-      setShowPinModal(true);
-    } else if (res.error === 'INVALID_2FA_CODE') {
-      setTwoFactorCode('');
-      setShowTwoFactorModal(true);
-    } else {
-      // Re-open relevant modal for quick retry
+        if (errorCode === 'LIMIT_EXCEEDED') {
+          const rec = details?.upgradeRecommendation;
+          const displayMessage = rec ? `${errorMessage}\n\n${rec}` : errorMessage;
+          showError(mapErrorType(errorCode), 'Daily limit exceeded', displayMessage);
+        } else if (errorCode === 'INVALID_PASSWORDPIN') {
+          showError(mapErrorType(errorCode), 'Invalid PIN', 'The password PIN you entered is incorrect.');
+        } else if (errorCode === 'INVALID_2FA_CODE' || errorCode === 'INVALID_OTP') {
+          showError(mapErrorType(errorCode), 'Invalid 2FA', 'The two-factor code you entered is incorrect.');
+        } else {
+          showError(mapErrorType(errorCode), 'Withdrawal failed', errorMessage);
+        }
+
+        if (res.error === 'INVALID_PASSWORDPIN') {
+          setPasswordPin('');
+          setShowPinModal(true);
+        } else if (res.error === 'INVALID_2FA_CODE') {
+          setTwoFactorCode('');
+          setShowTwoFactorModal(true);
+        } else {
+          setShowTwoFactorModal(false);
+          setShowPinModal(false);
+        }
+      }
+    } catch {
+      setTransferLoading(false);
       setShowTwoFactorModal(false);
       setShowPinModal(false);
+      showError('server', 'Unexpected Error', 'An unexpected error occurred. Please try again.');
     }
   };
 
@@ -1218,7 +1210,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,

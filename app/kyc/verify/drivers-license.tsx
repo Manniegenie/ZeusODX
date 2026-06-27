@@ -26,7 +26,6 @@ import { useTheme } from '../../../hooks/useTheme';
 import type { AppColors } from '../../../hooks/useTheme';
 import { Typography } from '../../../constants/Typography';
 import { useBiometricVerification } from '../../../hooks/useKYC';
-import AppsFlyerService from '../../../services/appsFlyerService';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -207,7 +206,6 @@ export default function DriversLicenseVerify() {
       const res = await submitBiometricVerification({ idType: 'drivers_license', idNumber: licenseNumber, selfieImage: capturedImage! });
       if (res?.success) {
         setShowSuccess(true);
-        AppsFlyerService.logEvent('KYC_2', { document_type: 'drivers_license' }).catch(() => {});
       } else { openError(res?.message || 'Verification failed'); setStep('preview'); }
     } catch (e) { setStep('input'); openError('Verification failed'); }
   };
@@ -338,7 +336,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   headerContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', borderRadius: 20 },
   backIcon: { width: 24, height: 24, resizeMode: 'contain', tintColor: colors.text },
-  headerTitle: { color: '#35297F', fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center', marginHorizontal: 16 },
+  headerTitle: { color: colors.text, fontFamily: Typography.medium || 'System', fontSize: 18, fontWeight: '600', flex: 1, textAlign: 'center', marginHorizontal: 16 },
   headerSpacer: { width: 40 },
   section: { paddingHorizontal: 16, marginBottom: 24 },
   sub: { color: colors.textSecondary, fontSize: 14, marginBottom: 16, lineHeight: 20 },

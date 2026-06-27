@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -17,6 +17,8 @@ import {
 } from 'react-native';
 import { ms, s } from 'react-native-size-matters';
 import { Typography } from '../constants/Typography';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 import { useCableTvPackages } from '../hooks/useCabletvpackages';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -76,6 +78,8 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
   selectedPackage,
   provider
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
@@ -422,7 +426,7 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
 
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#6366F1" />
+      <ActivityIndicator size="large" color={colors.primary} />
       <Text style={styles.loadingText}>Loading {provider?.name} packages...</Text>
     </View>
   );
@@ -495,7 +499,7 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
                   <TextInput
                     style={styles.searchInput}
                     placeholder="Search packages..."
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={colors.textSecondary}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     editable={!isProviderLoading}
@@ -586,17 +590,17 @@ const CablePackageModal: React.FC<CablePackageModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   modalContainer: {
     width: MODAL_WIDTH,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderTopLeftRadius: s(16),
     borderTopRightRadius: s(16),
     position: 'absolute',
@@ -610,7 +614,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  
+
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -619,109 +623,109 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 16,
   },
-  
+
   titleContainer: {
     flex: 1,
   },
-  
+
   title: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
   },
-  
+
   providerSubtitle: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     marginTop: 2,
   },
-  
+
   closeButton: {
     padding: ms(4),
   },
-  
+
   closeButtonText: {
     fontSize: 18,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
-  
+
   searchContainer: {
     paddingHorizontal: ms(20),
     paddingBottom: 16,
   },
-  
+
   searchInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
     borderRadius: s(8),
     paddingHorizontal: ms(12),
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
-  
+
   searchIcon: {
     width: s(16),
     height: 16,
     marginRight: ms(8),
-    tintColor: '#9CA3AF',
+    tintColor: colors.textSecondary,
   },
-  
+
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.regular || 'System',
   },
-  
+
   categoryContainer: {
     paddingBottom: 16,
   },
-  
+
   categoryScrollContent: {
     paddingHorizontal: ms(20),
   },
-  
+
   categoryChip: {
     paddingHorizontal: ms(12),
     paddingVertical: 6,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.border,
     borderRadius: s(16),
     marginRight: ms(8),
   },
-  
+
   categoryChipSelected: {
-    backgroundColor: '#6366F1',
+    backgroundColor: colors.primary,
   },
-  
+
   categoryChipText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
-  
+
   categoryChipTextSelected: {
-    color: '#FFFFFF',
+    color: '#0A1A0F',
   },
-  
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 40,
   },
-  
+
   loadingText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     marginTop: 12,
   },
-  
+
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -729,173 +733,173 @@ const styles = StyleSheet.create({
     paddingHorizontal: ms(40),
     paddingVertical: 40,
   },
-  
+
   errorTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     marginBottom: 8,
     textAlign: 'center',
   },
-  
+
   errorMessage: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 20,
   },
-  
+
   retryButton: {
     paddingHorizontal: ms(20),
     paddingVertical: ms(10),
-    backgroundColor: '#6366F1',
+    backgroundColor: colors.primary,
     borderRadius: s(8),
   },
-  
+
   retryButtonText: {
     fontSize: 14,
-    color: '#FFFFFF',
+    color: '#0A1A0F',
     fontWeight: '500',
     fontFamily: Typography.medium || 'System',
   },
-  
+
   packagesContainer: {
     flex: 1,
     paddingHorizontal: ms(20),
   },
-  
+
   packagesContent: {
     paddingBottom: 20,
   },
-  
+
   packageOption: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.border,
   },
-  
+
   packageOptionSelected: {
-    backgroundColor: '#F8F7FF',
+    backgroundColor: colors.card,
     borderRadius: 8,
     marginHorizontal: -10,
     paddingHorizontal: 10,
     borderBottomColor: 'transparent',
   },
-  
+
   packageIconContainer: {
     width: s(32),
     height: 32,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: ms(12),
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
     borderRadius: s(6),
   },
-  
+
   packageProviderIcon: {
     width: s(20),
     height: 20,
   },
-  
+
   packageDetails: {
     flex: 1,
   },
-  
+
   packageName: {
     fontSize: 14,
-    color: '#111827',
+    color: colors.text,
     fontWeight: '500',
     fontFamily: 'Bricolage Grotesque',
     lineHeight: 18,
     marginBottom: 2,
   },
-  
+
   packageChannels: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     marginBottom: 4,
   },
-  
+
   featuresContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
   },
-  
+
   featureChip: {
     paddingHorizontal: 6,
     paddingVertical: 2,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: 'rgba(2,217,106,0.10)',
     borderRadius: 4,
     marginRight: 4,
     marginBottom: 2,
   },
-  
+
   featureText: {
     fontSize: 10,
-    color: '#6366F1',
+    color: colors.primary,
     fontWeight: '500',
   },
-  
+
   moreFeatures: {
     fontSize: 10,
-    color: '#9CA3AF',
+    color: colors.textSecondary,
     fontStyle: 'italic',
   },
-  
+
   packagePriceContainer: {
     alignItems: 'flex-end',
   },
-  
+
   packagePrice: {
     fontSize: 14,
-    color: '#111827',
+    color: colors.text,
     fontWeight: '600',
     fontFamily: 'Bricolage Grotesque',
     lineHeight: 18,
   },
-  
+
   packageSubscription: {
     fontSize: 11,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     marginTop: 1,
   },
-  
+
   noResultsContainer: {
     paddingVertical: 40,
     alignItems: 'center',
   },
-  
+
   noResultsText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     textAlign: 'center',
     marginBottom: 12,
   },
-  
+
   clearSearchButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.border,
     borderRadius: 6,
   },
-  
+
   clearSearchText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
-  
+
   bottomSafeArea: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
   },
 });
 

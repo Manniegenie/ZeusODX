@@ -23,6 +23,7 @@ import type { AppColors } from '../../hooks/useTheme';
 import { Layout } from '../../constants/Layout';
 import { Typography } from '../../constants/Typography';
 import { useDashboard } from '../../hooks/useDashboard';
+import AppsFlyerService from '../../services/appsFlyerService';
 import { useNGNZ } from '../../hooks/useNGNZ';
 import { useSwap } from '../../hooks/useSwap';
 
@@ -558,8 +559,15 @@ export default function SwapScreen({
       if (result.success) {
         setShowPreviewModal(false);
         setShowSuccessScreen(true);
-        refreshDashboard(); // Remove await - let it happen in background
+        refreshDashboard();
         onSwap?.();
+        AppsFlyerService.logEvent('Swap_', {
+          af_revenue: fromAmountRaw ?? parseFloat(unformat(fromAmount)) ?? 0,
+          af_currency: selectedFromToken?.symbol || 'NGNZ',
+          af_order_id: String((result as any).transactionId || (result as any).id || Date.now()),
+          af_content_type: `${selectedFromToken?.symbol}_to_${selectedToToken?.symbol}`,
+          success: true,
+        }).catch(() => {});
         
         // Show success message
         const displayFrom = formatDisplayAmount(((fromAmountRaw ?? parseFloat(unformat(fromAmount))) || 0), selectedFromToken?.symbol);

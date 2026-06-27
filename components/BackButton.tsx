@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
 
 // Import back icon
 import backIcon from './icons/backy.png';
@@ -13,6 +14,7 @@ interface BackButtonProps {
 
 export default function BackButton({ onPress, disabled = false, style }: BackButtonProps) {
   const router = useRouter();
+  const { colors } = useTheme();
 
   const handlePress = () => {
     if (onPress) {
@@ -31,7 +33,7 @@ export default function BackButton({ onPress, disabled = false, style }: BackBut
       delayPressIn={0}
       hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
     >
-      <Image source={backIcon} style={styles.backIcon} />
+      <Image source={backIcon} style={[styles.backIcon, { tintColor: colors.text }]} />
     </TouchableOpacity>
   );
 }

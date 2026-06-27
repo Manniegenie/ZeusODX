@@ -1,5 +1,5 @@
 // components/FiatTransferConfirmationModal.tsx
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
     Animated,
     Dimensions,
@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '../constants/Typography';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MODAL_HEIGHT = Math.min(520, Math.round(SCREEN_HEIGHT * 0.7));
@@ -24,11 +26,11 @@ interface BankDetails {
 }
 
 interface FiatTransferData {
-  amount: string;      // Transfer amount in NGNZ
-  fee: string;         // Transaction fee (NGNZ)
-  netAmount: string;   // Amount after fee (NGN)
-  bank: BankDetails;   // Selected bank account
-  currency?: string;   // e.g. 'NGN'
+  amount: string;
+  fee: string;
+  netAmount: string;
+  bank: BankDetails;
+  currency?: string;
 }
 
 interface FiatTransferConfirmationModalProps {
@@ -46,6 +48,8 @@ const FiatTransferConfirmationModal: React.FC<FiatTransferConfirmationModalProps
   transferData,
   loading = false,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
   const insets = useSafeAreaInsets();
 
@@ -102,52 +106,37 @@ const FiatTransferConfirmationModal: React.FC<FiatTransferConfirmationModalProps
                   { transform: [{ translateY: slideAnim }] },
                 ]}
               >
-                {/* Handle Bar */}
                 <View style={styles.handleBar} />
 
-                {/* Amount Section */}
                 <View style={styles.amountSection}>
                   <Text style={styles.amountTitle}>Transfer to Bank</Text>
                   <Text style={styles.amountValue}>{formatNGNZ(amount)}</Text>
                 </View>
 
-                {/* Transfer Details */}
                 <View style={styles.detailsSection}>
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Bank</Text>
                     <Text style={styles.detailValue}>{bank?.bankName || ''}</Text>
                   </View>
-
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Account Number</Text>
                     <Text style={styles.detailValue}>{bank?.accountNumber || ''}</Text>
                   </View>
-
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Account Name</Text>
                     <Text style={styles.detailValue}>{bank?.accountName || ''}</Text>
                   </View>
-
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Transaction Fee</Text>
                     <Text style={styles.detailValue}>{formatNGNZ(fee)}</Text>
                   </View>
-
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>You will receive</Text>
-                    <Text style={styles.detailValue}>
-                      {formatNGN(netAmount)} {currency ? '' : ''}
-                    </Text>
+                    <Text style={styles.detailValue}>{formatNGN(netAmount)}</Text>
                   </View>
                 </View>
 
-                {/* Confirm Button (padded by bottom safe-area) */}
-                <View
-                  style={[
-                    styles.buttonSection,
-                    { paddingBottom: Math.max(24, insets.bottom + 8) },
-                  ]}
-                >
+                <View style={[styles.buttonSection, { paddingBottom: Math.max(24, insets.bottom + 8) }]}>
                   <TouchableOpacity
                     style={[styles.confirmButton, loading && styles.confirmButtonDisabled]}
                     onPress={onConfirm}
@@ -161,7 +150,6 @@ const FiatTransferConfirmationModal: React.FC<FiatTransferConfirmationModalProps
                 </View>
               </Animated.View>
 
-              {/* Bottom safe-area background extension */}
               <View style={[styles.safeAreaExtension, { height: insets.bottom }]} />
             </View>
           </TouchableWithoutFeedback>
@@ -171,7 +159,7 @@ const FiatTransferConfirmationModal: React.FC<FiatTransferConfirmationModalProps
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -184,7 +172,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '100%',
     height: MODAL_HEIGHT,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 24,
@@ -192,13 +180,13 @@ const styles = StyleSheet.create({
   },
   safeAreaExtension: {
     width: '100%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     alignSelf: 'center',
   },
   handleBar: {
     width: 40,
     height: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 24,
@@ -208,7 +196,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   amountTitle: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     fontWeight: '400',
@@ -216,7 +204,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   amountValue: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 24,
     fontWeight: '600',
@@ -231,17 +219,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.border,
   },
   detailLabel: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     fontWeight: '400',
     flex: 1,
   },
   detailValue: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 14,
     fontWeight: '500',
@@ -252,14 +240,14 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
   },
   confirmButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   confirmButtonDisabled: {
-    backgroundColor: '#9CA3AF',
+    backgroundColor: colors.textSecondary,
   },
   confirmButtonText: {
     color: '#FFFFFF',

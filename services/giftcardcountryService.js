@@ -229,11 +229,13 @@ export const giftcardCountriesService = {
     }
 
     const { cardType: canonicalCardType, vanillaType } = normalized;
-    const params = { country: country.toUpperCase() };
-    if (vanillaType) params.vanillaType = vanillaType;
+    const countryUpper = country.toUpperCase();
+    const qs = vanillaType
+      ? `?country=${countryUpper}&vanillaType=${vanillaType}`
+      : `?country=${countryUpper}`;
 
     try {
-      const apiResponse = await apiClient.get(`${ENDPOINT}/${canonicalCardType}/categories`, { params });
+      const apiResponse = await apiClient.get(`${ENDPOINT}/${canonicalCardType}/categories${qs}`);
       const extracted = extractApiResponse(apiResponse);
       if (!extracted.success) {
         return { success: false, message: extracted.message || 'Failed to fetch categories', data: null };

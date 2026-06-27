@@ -331,7 +331,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: S(18, 0.1),
     fontWeight: '700',

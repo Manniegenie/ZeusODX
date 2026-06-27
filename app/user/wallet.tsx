@@ -9,7 +9,9 @@ import BottomTabNavigator from '../../components/BottomNavigator';
 import { useTheme } from '../../hooks/useTheme';
 import type { AppColors } from '../../hooks/useTheme';
 import DashboardHeader from './DashboardHeader';
-import DashboardModals from './DashboardModals'; // Import the modals component
+import DashboardModals from './DashboardModals';
+import SelectTokenModal, { WalletOption } from '../../components/SelectToken';
+import TransferMethodModal, { TransferMethod } from '../../components/TransferMethodModal';
 import WalletPortfolioSection from './WalletPortfolioSection';
 import WalletTokensSection from './WalletTokensSection';
 
@@ -20,19 +22,6 @@ interface QuickLink {
   route: string;
 }
 
-interface TransferMethod {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-}
-
-interface WalletOption {
-  id: string;
-  name: string;
-  symbol: string;
-  icon: string;
-}
 
 interface WalletScreenProps {
   onNotificationPress: () => void;
@@ -49,9 +38,11 @@ export default function WalletScreen({
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [activeTab, setActiveTab] = useState('All tokens');
   
-  // Add modal state management like in DashboardScreen
-  const [showTransferModal, setShowTransferModal] = useState(false);
+  // Modal state
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showSelectTokenModal, setShowSelectTokenModal] = useState(false);
+  const [showTransferMethodModal, setShowTransferMethodModal] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<WalletOption | null>(null);
 
   const toggleBalanceVisibility = () => {
     setBalanceVisible(!balanceVisible);
@@ -69,10 +60,9 @@ export default function WalletScreen({
     setActiveTab(tab);
   };
 
-  // Add the same quick link press handler as DashboardScreen
   const handleQuickLinkPress = (link: QuickLink) => {
     if (link.id === 'transfer') {
-      setShowTransferModal(true);
+      setShowSelectTokenModal(true);
     } else if (link.id === 'deposit') {
       setShowWalletModal(true);
     } else {
@@ -80,10 +70,37 @@ export default function WalletScreen({
     }
   };
 
-  // Add the same modal handlers as DashboardScreen
-  const handleTransferMethodPress = (method: TransferMethod) => {
-    setShowTransferModal(false);
-    router.push('/user/come-soon');
+  const handleSelectTokenForTransfer = (token: WalletOption) => {
+    setSelectedToken(token);
+    setShowTransferMethodModal(true);
+  };
+
+  const handleTransferMethodSelect = (method: TransferMethod) => {
+    if (!selectedToken) return;
+    if (method.id === 'zeus') {
+      router.push({
+        pathname: '/user/usernametransfer',
+        params: { tokenId: selectedToken.id, tokenName: selectedToken.name, tokenSymbol: selectedToken.symbol, transferMethod: 'zeus' }
+      });
+    } else if (method.id === 'external') {
+      if (selectedToken.id === 'ngnz' || selectedToken.symbol === 'NGNZ') {
+        router.push({
+          pathname: '/user/FiatTransfer',
+          params: { tokenId: selectedToken.id, tokenName: selectedToken.name, tokenSymbol: selectedToken.symbol, transferMethod: 'external' }
+        });
+      } else {
+        router.push({
+          pathname: '/user/externaltransfer',
+          params: { tokenId: selectedToken.id, tokenName: selectedToken.name, tokenSymbol: selectedToken.symbol, transferMethod: 'external' }
+        });
+      }
+    }
+    setSelectedToken(null);
+  };
+
+  const handleCloseTransferMethodModal = () => {
+    setShowTransferMethodModal(false);
+    setSelectedToken(null);
   };
 
   const handleWalletOptionPress = (wallet: WalletOption) => {
@@ -175,16 +192,28 @@ export default function WalletScreen({
         />
       </ScrollView>
 
-      {/* Add DashboardModals component like in DashboardScreen */}
+      {/* Deposit wallet selection modal */}
       <DashboardModals
-        showTransferModal={showTransferModal}
+        showTransferModal={false}
         showWalletModal={showWalletModal}
-        onCloseTransferModal={() => setShowTransferModal(false)}
+        onCloseTransferModal={() => {}}
         onCloseWalletModal={() => setShowWalletModal(false)}
-        onTransferMethodPress={handleTransferMethodPress}
-        onWalletOptionPress={handleWalletOptionPress}
-        onActionButtonPress={handleActionButtonPress}
-        onWalletTabPress={handleWalletTabPress}
+      />
+
+      {/* Step 1: pick which token to withdraw */}
+      <SelectTokenModal
+        visible={showSelectTokenModal}
+        onClose={() => setShowSelectTokenModal(false)}
+        onSelectToken={handleSelectTokenForTransfer}
+        title="Select Token to Withdraw"
+      />
+
+      {/* Step 2: pick transfer method (username or external) */}
+      <TransferMethodModal
+        visible={showTransferMethodModal}
+        onClose={handleCloseTransferMethodModal}
+        onSelectMethod={handleTransferMethodSelect}
+        title={`Send ${selectedToken?.name || 'Token'}`}
       />
 
       {/* Add BottomTabNavigator */}

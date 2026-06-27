@@ -217,15 +217,15 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   backIcon: { width: 24, height: 24, resizeMode: 'contain', tintColor: colors.text },
   headerTitleWrapper: { flex: 1, alignItems: 'center' },
   headerRight: { width: 40 },
-  headerTitle: { color: '#35297F', fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', textAlign: 'center' },
+  headerTitle: { color: colors.text, fontFamily: Typography.medium, fontSize: 18, fontWeight: '600', textAlign: 'center' },
 
   subtitleSection: { paddingHorizontal: 16, paddingVertical: 8 },
   subtitleText: { color: colors.textSecondary, fontFamily: Typography.regular, fontSize: 14 },
 
   searchSection: { paddingHorizontal: 16, paddingVertical: 8 },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F9FA', borderRadius: 8, borderWidth: 1, borderColor: '#E5E7EB', paddingHorizontal: 14, paddingVertical: 8 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.card, borderRadius: 8, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 14, paddingVertical: 8 },
   searchInput: { flex: 1, color: colors.text, fontFamily: Typography.regular, fontSize: 16, marginRight: 12, paddingVertical: 4, minHeight: 36 },
-  searchButton: { padding: 8, borderRadius: 6, backgroundColor: '#35297F', justifyContent: 'center', alignItems: 'center' },
+  searchButton: { padding: 8, borderRadius: 6, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
   searchButtonIcon: { width: 16, height: 16, resizeMode: 'contain', tintColor: '#FFFFFF' },
 
   errorContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFE6E6', borderColor: '#FF6B6B', borderWidth: 1, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, marginHorizontal: 16, marginBottom: 12 },
@@ -247,7 +247,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   userItem: { flexDirection: 'row', alignItems: 'center', padding: 10, justifyContent: 'flex-start', alignSelf: 'flex-start', gap: 10 },
   avatarContainer: { alignItems: 'center', justifyContent: 'center' },
-  userAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#35297F', alignItems: 'center', justifyContent: 'center' },
+  userAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   avatarImage: { width: 40, height: 40, borderRadius: 20 },
   userInitials: { color: '#FFFFFF', fontFamily: 'Bricolage Grotesque', fontSize: 16, fontWeight: '600' },
 

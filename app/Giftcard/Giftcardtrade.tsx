@@ -699,6 +699,7 @@ const GiftcardTradeScreen: React.FC = () => {
       cardValue: valueUSD,
       currency: 'USD',
       country: countryId,
+      category: category || undefined,
       description: comments.trim() || undefined,
       eCode: receipt === 'ECODE' ? ecode : undefined,
       images: uploads.map(upload => ({
@@ -1171,7 +1172,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     tintColor: colors.text,
   },
   headerTitle: {
-    color: colors.primary,
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
