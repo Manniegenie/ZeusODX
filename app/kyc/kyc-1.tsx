@@ -20,8 +20,8 @@ import type { AppColors } from '../../hooks/useTheme';
 import checkmarkIcon from '../../components/icons/green-checkmark.png';
 
 const KYCLevel1Screen: React.FC = () => {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const router = useRouter();
 
   // Navigation handler
@@ -125,7 +125,7 @@ const KYCLevel1Screen: React.FC = () => {
   );
 };
 
-const makeStyles = (colors: AppColors) => StyleSheet.create({
+const makeStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: colors.background 
@@ -162,7 +162,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     tintColor: colors.text,
   },
   headerTitle: {
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
@@ -205,18 +205,18 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   // Progress section styles
   progressCard: {
-    backgroundColor: '#F0FDF4', // Light green background
+    backgroundColor: isDark ? 'rgba(16,185,129,0.12)' : '#F0FDF4',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#D1FAE5', // Light green border
-    padding: 12, // More minimal padding
+    borderColor: isDark ? 'rgba(16,185,129,0.25)' : '#D1FAE5',
+    padding: 12,
   },
   progressTitle: {
-    color: '#065F46', // Dark green text
+    color: isDark ? '#6EE7B7' : '#065F46',
     fontFamily: Typography.medium || 'System',
-    fontSize: 12, // Smaller, more subtle
-    fontWeight: '500', // Less bold
-    marginBottom: 8, // Reduced margin
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 8,
     textAlign: 'center',
   },
   progressBarContainer: {
@@ -224,23 +224,23 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   progressBar: {
     width: '100%',
-    height: 6, // Thinner progress bar
-    backgroundColor: '#D1FAE5', // Light green background
+    height: 6,
+    backgroundColor: isDark ? 'rgba(16,185,129,0.2)' : '#D1FAE5',
     borderRadius: 3,
-    marginBottom: 6, // Reduced margin
+    marginBottom: 6,
     overflow: 'hidden',
   },
   progressFill: {
-    width: '100%', // 100% complete
+    width: '100%',
     height: '100%',
-    backgroundColor: '#10B981', // Green fill
+    backgroundColor: '#10B981',
     borderRadius: 3,
   },
   progressText: {
-    color: '#065F46', // Dark green text
+    color: isDark ? '#6EE7B7' : '#065F46',
     fontFamily: Typography.medium || 'System',
-    fontSize: 10, // Smaller, more subtle
-    fontWeight: '500', // Less bold
+    fontSize: 10,
+    fontWeight: '500',
   },
 
   // Verification card styles

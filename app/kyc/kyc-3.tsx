@@ -36,8 +36,8 @@ interface KYCLevel {
 }
 
 const KYCLevel3Screen: React.FC = () => {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const router = useRouter();
 
   // Fetch once on mount; no polling, no refetch on focus/reconnect
@@ -164,7 +164,7 @@ const KYCLevel3Screen: React.FC = () => {
               activeOpacity={addressClickable ? 0.8 : 1}
               style={[
                 styles.verificationCard,
-                { borderColor: '#C7D2FE' },
+                { borderColor: colors.border },
                 !addressClickable && styles.disabledCard,
               ]}
               onPress={addressClickable ? handleAddressPress : undefined}
@@ -190,7 +190,7 @@ const KYCLevel3Screen: React.FC = () => {
                   {addressVerified ? (
                     <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
                   ) : (
-                    <Text style={{ fontSize: 18, color: '#35297F' }}>›</Text>
+                    <Text style={{ fontSize: 18, color: colors.primary }}>›</Text>
                   )}
                 </View>
               </View>
@@ -204,7 +204,7 @@ const KYCLevel3Screen: React.FC = () => {
   );
 };
 
-const makeStyles = (colors: AppColors) => StyleSheet.create({
+const makeStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: colors.background 
@@ -239,7 +239,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     fontWeight: '500',
   },
   headerTitle: {
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
@@ -291,14 +291,14 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
 
   progressCard: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: isDark ? 'rgba(16,185,129,0.12)' : '#F0FDF4',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#D1FAE5',
+    borderColor: isDark ? 'rgba(16,185,129,0.25)' : '#D1FAE5',
     padding: 12,
   },
   progressTitle: {
-    color: '#065F46',
+    color: isDark ? '#6EE7B7' : '#065F46',
     fontFamily: Typography.medium || 'System',
     fontSize: 12,
     fontWeight: '500',
@@ -309,7 +309,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   progressBar: {
     width: '100%',
     height: 6,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: isDark ? 'rgba(16,185,129,0.2)' : '#D1FAE5',
     borderRadius: 3,
     marginBottom: 6,
     overflow: 'hidden',
@@ -320,14 +320,14 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: 3,
   },
   progressText: {
-    color: '#065F46',
+    color: isDark ? '#6EE7B7' : '#065F46',
     fontFamily: Typography.medium || 'System',
     fontSize: 10,
     fontWeight: '500',
   },
   progressErrorText: {
     marginTop: 4,
-    color: '#B45309',
+    color: isDark ? '#FCD34D' : '#B45309',
     fontFamily: Typography.regular || 'System',
     fontSize: 10,
   },

@@ -16,7 +16,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: IS_STAGING ? "com.manniegenie.zeusodx.staging" : "com.manniegenie.zeusodx",
-      buildNumber: "6",
+      buildNumber: "7",
       icon: "./assets/images/app-icon.png",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
@@ -50,7 +50,7 @@ export default {
         "android.permission.POST_NOTIFICATIONS",
         "com.google.android.gms.permission.AD_ID"
       ],
-      versionCode: 164
+      versionCode: 166
     },
     web: {
       bundler: "metro",

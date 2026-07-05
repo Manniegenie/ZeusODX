@@ -31,6 +31,7 @@ import { Typography } from '../../constants/Typography';
 import { useGiftCard } from '../../hooks/usegiftcard';
 import { useGiftcardCountries } from '../../hooks/usegiftcardCountry';
 import { giftcardCountriesService } from '../../services/giftcardcountryService';
+import { giftcardRateService } from '../../services/giftcardRateService';
 
 // Icons - Updated to match main screen
 import chevronRightIcon from '../../components/icons/arrow.png';
@@ -116,6 +117,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 }) => {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const successStyles = useMemo(() => makeSuccessModalStyles(colors), [colors]);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -149,33 +151,33 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={handleBackdropPress}>
-        <View style={successModalStyles.overlay}>
+        <View style={successStyles.overlay}>
           <TouchableWithoutFeedback>
             <Animated.View
               style={[
-                successModalStyles.modalContainer,
+                successStyles.modalContainer,
                 { opacity: opacityAnim, transform: [{ scale: scaleAnim }] },
               ]}
             >
               <TouchableOpacity
-                style={successModalStyles.closeButton}
+                style={successStyles.closeButton}
                 onPress={onClose}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={successModalStyles.closeButtonText}>✕</Text>
+                <Text style={successStyles.closeButtonText}>✕</Text>
               </TouchableOpacity>
 
-              <View style={successModalStyles.titleSection}>
-                <Text style={successModalStyles.title}>{title}</Text>
-                <Text style={successModalStyles.message}>{message}</Text>
+              <View style={successStyles.titleSection}>
+                <Text style={successStyles.title}>{title}</Text>
+                <Text style={successStyles.message}>{message}</Text>
               </View>
 
               <TouchableOpacity
-                style={successModalStyles.submitButton}
+                style={successStyles.submitButton}
                 onPress={onClose}
                 activeOpacity={0.8}
               >
-                <Text style={successModalStyles.submitButtonText}>{buttonText}</Text>
+                <Text style={successStyles.submitButtonText}>{buttonText}</Text>
               </TouchableOpacity>
             </Animated.View>
           </TouchableWithoutFeedback>
@@ -433,6 +435,10 @@ const GiftcardTradeScreen: React.FC = () => {
   const selectedVanillaVariant = useMemo(() => VANILLA_VARIANTS.find(v => v.id === vanillaVariant) || null, [vanillaVariant]);
   const selectedCategory = useMemo(() => CATEGORIES.find(c => c.id === category) || null, [category]);
 
+  const [calcLoading, setCalcLoading] = useState(false);
+  const [calculatedRateDisplay, setCalculatedRateDisplay] = useState<string>('');
+  const [payoutDisplay, setPayoutDisplay] = useState<string>('');
+
   // Auto-fetch countries to get rate when country is pre-selected from params
   useEffect(() => {
     if (preselectedCountryCode && mappedCardType) {
@@ -488,6 +494,46 @@ const GiftcardTradeScreen: React.FC = () => {
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryId]);
+
+  // Recalculate rate when country + receipt + amount are all set.
+  // cardFormat must be included — the API returns a different (higher) base rate without it,
+  // which causes the trade screen and confirmation modal to show different values.
+  useEffect(() => {
+    const amount = Number(valueUSD);
+    const fmt = receipt === 'ECODE' ? 'E_CODE' : receipt === 'PHYSICAL' ? 'PHYSICAL' : undefined;
+    if (!countryId || !fmt || !amount || amount < 25) {
+      setCalculatedRateDisplay('');
+      setPayoutDisplay('');
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      setCalcLoading(true);
+      giftcardRateService.calculateRate({
+        amount,
+        giftcard: mappedCardType,
+        country: countryId,
+        cardFormat: fmt,
+      }).then(resp => {
+        if (cancelled) return;
+        if (resp?.success && resp.data) {
+          setCalculatedRateDisplay(resp.data.rate || '');
+          setPayoutDisplay(resp.data.amountToReceive
+            ? new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(resp.data.amountToReceive)
+            : '');
+        } else {
+          setCalculatedRateDisplay('');
+          setPayoutDisplay('');
+        }
+      }).catch(() => {
+        if (!cancelled) { setCalculatedRateDisplay(''); setPayoutDisplay(''); }
+      }).finally(() => {
+        if (!cancelled) setCalcLoading(false);
+      });
+    }, 500);
+    return () => { cancelled = true; clearTimeout(timer); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valueUSD, countryId, receipt]);
 
   // Clear hook error when it changes
   useEffect(() => {
@@ -786,7 +832,7 @@ const GiftcardTradeScreen: React.FC = () => {
     country: country && countryId ? { id: countryId, name: country, code: countryId } : null,
     amount: valueUSD || '0',
     transactionValue: valueUSD || '0',
-    rate: selectedRange?.label || '',
+    rate: calculatedRateDisplay || '—',
     timeOfUpload: '',
     averageConfirmationTime: '10-15mins',
     cardType: isVanillaCard && selectedVanillaVariant ? selectedVanillaVariant.label : '',
@@ -916,23 +962,24 @@ const GiftcardTradeScreen: React.FC = () => {
             <Text style={styles.label}>Rate</Text>
             <View style={styles.select}>
               <Text style={{ color: colors.primary, fontFamily: Typography.medium || 'System', fontWeight: '700', fontSize: 15, marginRight: 6 }}>₦</Text>
-              {rateLoading ? (
-                <Text style={[styles.selectText, { color: colors.textSecondary }]}>
-                  Fetching rate…
-                </Text>
+              {calcLoading ? (
+                <Text style={[styles.selectText, { color: colors.textSecondary }]}>Calculating…</Text>
+              ) : calculatedRateDisplay ? (
+                <Text style={styles.selectText}>{calculatedRateDisplay}</Text>
               ) : (
-                <Text
-                  style={[
-                    styles.selectText,
-                    !countryRateDisplay && { color: colors.textSecondary },
-                  ]}
-                >
-                  {countryRateDisplay || 'Select country to see rate'}
+                <Text style={[styles.selectText, { color: colors.textSecondary }]}>
+                  {!countryId
+                    ? 'Select country to see rate'
+                    : !receipt
+                    ? 'Select receipt type to see rate'
+                    : !valueUSD || Number(valueUSD) < 25
+                    ? 'Enter amount ($25+) to see rate'
+                    : '—'}
                 </Text>
               )}
-              {!rateLoading && countryRate != null && Number(valueUSD) > 0 ? (
+              {!calcLoading && payoutDisplay ? (
                 <Text style={{ color: colors.primary, fontFamily: Typography.medium || 'System', fontWeight: '600', fontSize: 13 }}>
-                  {new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(countryRate * Number(valueUSD))}
+                  {payoutDisplay}
                 </Text>
               ) : null}
             </View>
@@ -1432,7 +1479,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 });
 
 // Success Modal Styles
-const successModalStyles = StyleSheet.create({
+const makeSuccessModalStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -1441,7 +1488,7 @@ const successModalStyles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   modalContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 16,
     paddingHorizontal: 24,
     paddingVertical: 24,
@@ -1462,11 +1509,11 @@ const successModalStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 15,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.separator,
     zIndex: 1,
   },
   closeButtonText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '500',
   },
@@ -1476,7 +1523,7 @@ const successModalStyles = StyleSheet.create({
     paddingTop: 8,
   },
   title: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
@@ -1484,7 +1531,7 @@ const successModalStyles = StyleSheet.create({
     marginBottom: 12,
   },
   message: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     textAlign: 'center',
@@ -1492,7 +1539,7 @@ const successModalStyles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   submitButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     justifyContent: 'center',

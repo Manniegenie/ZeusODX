@@ -15,6 +15,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ms, s } from 'react-native-size-matters';
 import { Typography } from '../constants/Typography';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 // ✅ Correct path to root hooks folder
 import { useGiftcardRate } from '../hooks/useGiftcardRate';
 
@@ -159,6 +161,8 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
   transactionData = {},
   loading = false,
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
   const insets = useSafeAreaInsets();
 
@@ -220,7 +224,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
   // Trigger calculate when modal opens or inputs change
   useEffect(() => {
     if (!visible) return;
-    if (amountNum <= 0) return;
+    if (amountNum < 25) return;
 
     const gcForCalc = normalizedGiftcard || 'AMAZON';
     const countryForCalc = normalizedCountry || 'US';
@@ -392,30 +396,30 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalWrapper: { alignSelf: 'center', width: '100%' },
   modalContainer: {
     width: '100%',
     height: MODAL_HEIGHT,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderTopLeftRadius: s(24),
     borderTopRightRadius: s(24),
     paddingHorizontal: ms(24),
     paddingTop: 12,
   },
-  safeAreaExtension: { backgroundColor: '#FFFFFF', alignSelf: 'center', width: '100%' },
+  safeAreaExtension: { backgroundColor: colors.card, alignSelf: 'center', width: '100%' },
   handleBar: {
     width: s(40),
     height: 4,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 24,
   },
   amountSection: { alignItems: 'center', marginBottom: 24 },
   amountTitle: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 24,
     fontWeight: '600',
@@ -428,10 +432,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.separator,
   },
   detailLabel: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     fontWeight: '400',
@@ -439,7 +443,7 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   detailValue: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 14,
     fontWeight: '500',
@@ -449,7 +453,7 @@ const styles = StyleSheet.create({
   brandIcon: { width: s(20), height: 20, resizeMode: 'contain', borderRadius: s(4) },
   countryFlag: { width: s(24), height: 16, resizeMode: 'cover', borderRadius: s(2), marginRight: ms(8) },
   confirmationTimeSection: {
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.separator,
     borderRadius: s(8),
     paddingVertical: 12,
     paddingHorizontal: ms(16),
@@ -457,7 +461,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   confirmationTimeText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.medium || 'System',
     fontSize: 13,
     fontWeight: '500',
@@ -465,7 +469,7 @@ const styles = StyleSheet.create({
   },
   buttonSection: { marginTop: 'auto', paddingBottom: 24 },
   payButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: s(12),
     paddingVertical: 16,
     justifyContent: 'center',

@@ -2,7 +2,18 @@
   "permissions": {
     "allow": [
       "Bash(node -e *)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(find /Users/mac/Projects/Chatbramp-app/../ -maxdepth 2 -type d | grep -i \"admin\\\\|bramp-admin\" | head -10)",
+      "Read(//Users/mac/Projects//**)"
+    ],
+    "additionalDirectories": [
+      "/Users/mac/Projects/bramp_admin/src/components",
+      "/Users/mac/Projects/bramp_admin/src/features/funding/components",
+      "/Users/mac/Projects/bramp_admin/src/features/users/types",
+      "/Users/mac/Projects/bramp_admin/src/features/users/services",
+      "/Users/mac/Projects/bramp_admin/src/features/funding/services",
+      "/Users/mac/Projects/bramp_admin/src/features/funding/store",
+      "/Users/mac/Projects/bramp_admin/src/features/funding/pages"
     ]
   }
 }

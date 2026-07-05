@@ -34,8 +34,8 @@ import { useTawk } from '../../components/TawkSupport';
 const NOTIFICATION_PROMPT_KEY = 'notification_prompt_shown';
 
 export default function DashboardScreen() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -365,7 +365,7 @@ export default function DashboardScreen() {
   );
 }
 
-const makeStyles = (colors: AppColors) => StyleSheet.create({
+const makeStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
@@ -407,14 +407,14 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
 
   promptCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 20,
     padding: 28,
     width: '100%',
     maxWidth: 400,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
+    shadowOpacity: isDark ? 0.5 : 0.25,
     shadowRadius: 16,
     elevation: 12,
     alignItems: 'center',
@@ -424,7 +424,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#F4F2FF',
+    backgroundColor: isDark ? 'rgba(53,41,127,0.25)' : '#F4F2FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -444,7 +444,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   promptMessage: {
     fontSize: 16,
-    color: '#666',
+    color: colors.textSecondary,
     marginBottom: 28,
     lineHeight: 24,
     textAlign: 'center',
@@ -478,7 +478,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
 
   dismissButtonText: {
-    color: '#999',
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: '500',
   },

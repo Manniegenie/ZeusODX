@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Typography } from '../constants/Typography';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 
 interface SuccessModalProps {
   visible: boolean;
@@ -25,6 +27,8 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   message,
   buttonText = 'Done'
 }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -51,13 +55,9 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
     }
   }, [visible, scaleAnim, opacityAnim]);
 
-  const handleBackdropPress = () => {
-    onClose();
-  };
-
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={handleBackdropPress}>
+      <TouchableWithoutFeedback onPress={onClose}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback>
             <Animated.View
@@ -94,7 +94,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   modalContainer: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 16,
     paddingHorizontal: 24,
     paddingVertical: 24,
@@ -124,11 +124,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 15,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.separator,
     zIndex: 1,
   },
   closeButtonText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '500',
   },
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   title: {
-    color: '#111827',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   message: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
     textAlign: 'center',
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   submitButton: {
-    backgroundColor: '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     justifyContent: 'center',

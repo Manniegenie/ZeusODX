@@ -23,8 +23,8 @@ import { useVerificationStatus } from '../../hooks/useVerification';
 import checkmarkIcon from '../../components/icons/green-checkmark.png';
 
 const KYCLevel2Screen: React.FC = () => {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const router = useRouter();
 
   // Fetch once on mount: disable polling + refetch-on-focus/reconnect
@@ -179,7 +179,7 @@ const KYCLevel2Screen: React.FC = () => {
                   {emailVerified ? (
                     <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
                   ) : (
-                    <Text style={{ fontSize: 18, color: '#35297F' }}>›</Text>
+                    <Text style={{ fontSize: 18, color: colors.primary }}>›</Text>
                   )}
                 </View>
               </View>
@@ -190,7 +190,7 @@ const KYCLevel2Screen: React.FC = () => {
               activeOpacity={identityClickable ? 0.8 : 1}
               style={[
                 styles.verificationCard,
-                { borderColor: '#C7D2FE' },
+                { borderColor: colors.border },
                 !identityClickable && styles.disabledCard,
               ]}
               onPress={handleIdentityPress}
@@ -219,7 +219,7 @@ const KYCLevel2Screen: React.FC = () => {
                   {identityVerified ? (
                     <Image source={checkmarkIcon} style={styles.checkmarkIcon} />
                   ) : (
-                    <Text style={{ fontSize: 18, color: canStartIdentity ? '#35297F' : '#9CA3AF' }}>›</Text>
+                    <Text style={{ fontSize: 18, color: canStartIdentity ? colors.primary : colors.textMuted }}>›</Text>
                   )}
                 </View>
               </View>
@@ -233,7 +233,7 @@ const KYCLevel2Screen: React.FC = () => {
   );
 };
 
-const makeStyles = (colors: AppColors) => StyleSheet.create({
+const makeStyles = (colors: AppColors, isDark: boolean) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   safeArea: { flex: 1 },
   scrollView: { flex: 1 },
@@ -262,7 +262,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     tintColor: colors.text,
   },
   headerTitle: {
-    color: '#35297F',
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
@@ -300,14 +300,14 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
 
   progressCard: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: isDark ? 'rgba(16,185,129,0.12)' : '#F0FDF4',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#D1FAE5',
+    borderColor: isDark ? 'rgba(16,185,129,0.25)' : '#D1FAE5',
     padding: 12,
   },
   progressTitle: {
-    color: '#065F46',
+    color: isDark ? '#6EE7B7' : '#065F46',
     fontFamily: Typography.medium || 'System',
     fontSize: 12,
     fontWeight: '500',
@@ -318,7 +318,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   progressBar: {
     width: '100%',
     height: 6,
-    backgroundColor: '#D1FAE5',
+    backgroundColor: isDark ? 'rgba(16,185,129,0.2)' : '#D1FAE5',
     borderRadius: 3,
     marginBottom: 6,
     overflow: 'hidden',
@@ -329,14 +329,14 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: 3,
   },
   progressText: {
-    color: '#065F46',
+    color: isDark ? '#6EE7B7' : '#065F46',
     fontFamily: Typography.medium || 'System',
     fontSize: 10,
     fontWeight: '500',
   },
   progressErrorText: {
     marginTop: 4,
-    color: '#B45309',
+    color: isDark ? '#FCD34D' : '#B45309',
     fontFamily: Typography.regular || 'System',
     fontSize: 10,
   },
@@ -355,8 +355,8 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     shadowRadius: 2,
   },
   incompleteCard: {
-    borderColor: '#FEF3C7',
-    backgroundColor: '#FFFBEB',
+    borderColor: isDark ? 'rgba(245,158,11,0.3)' : '#FEF3C7',
+    backgroundColor: isDark ? 'rgba(245,158,11,0.1)' : '#FFFBEB',
   },
   disabledCard: {
     opacity: 0.55,
@@ -387,7 +387,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     lineHeight: 16,
   },
   disabledText: { color: '#9CA3AF' },
-  incompleteText: { color: '#92400E' },
+  incompleteText: { color: isDark ? '#FCD34D' : '#92400E' },
   checkmarkContainer: { justifyContent: 'center', alignItems: 'center' },
   checkmarkIcon: { width: 20, height: 20, resizeMode: 'contain' },
   pendingIcon: {

@@ -1,5 +1,5 @@
 // components/DeleteAccountModal.tsx
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import {
 import { Typography } from '../constants/Typography';
 import { useRouter } from 'expo-router';
 import { useAccountDeletion } from '../hooks/usedeleteAccount';
+import { useTheme } from '../hooks/useTheme';
+import type { AppColors } from '../hooks/useTheme';
 
 type Props = {
   visible: boolean;
@@ -21,6 +23,8 @@ type Props = {
 };
 
 const DeleteAccountModal: React.FC<Props> = ({ visible, onClose }) => {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const router = useRouter();
@@ -77,7 +81,7 @@ const DeleteAccountModal: React.FC<Props> = ({ visible, onClose }) => {
 
   // Short, user-friendly copy (as requested)
   const subtitle =
-    'You can’t delete if you have a balance. Move funds out first. Deletion happens after 30 days. You can login before 30 days to reverse this process';
+    "You can't delete if you have a balance. Move funds out first. Deletion happens after 30 days. You can login before 30 days to reverse this process";
 
   const scheduledISO = scheduledDeletionDate
     ? new Date(scheduledDeletionDate).toLocaleString()
@@ -188,24 +192,18 @@ const DeleteAccountModal: React.FC<Props> = ({ visible, onClose }) => {
   );
 };
 
-const PRIMARY = '#35297F';
-const TEXT_DARK = '#111827';
-const TEXT_MUTED = '#6B7280';
-const SURFACE = '#FFFFFF';
-const BORDER = '#E5E7EB';
-const OVERLAY = 'rgba(0,0,0,0.5)';
 const DANGER = '#EF4444';
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: AppColors) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: OVERLAY,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
   },
   modalContainer: {
-    backgroundColor: SURFACE,
+    backgroundColor: colors.card,
     borderRadius: 16,
     paddingHorizontal: 24,
     paddingVertical: 24,
@@ -226,11 +224,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 15,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: colors.separator,
     zIndex: 1,
   },
   closeButtonText: {
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '500',
   },
@@ -240,7 +238,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   title: {
-    color: TEXT_DARK,
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
@@ -248,7 +246,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    color: TEXT_MUTED,
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
     textAlign: 'center',
@@ -264,16 +262,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   secondaryBtn: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.separator,
     borderWidth: 1,
-    borderColor: PRIMARY,
+    borderColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   secondaryBtnText: {
-    color: PRIMARY,
+    color: colors.primary,
     fontFamily: Typography.medium || 'System',
     fontSize: 15,
     fontWeight: '600',
@@ -301,16 +299,16 @@ const styles = StyleSheet.create({
   },
   fundsCard: {
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: colors.border,
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.separator,
   },
   fundsTitle: {
     fontFamily: Typography.medium || 'System',
     fontSize: 13,
-    color: TEXT_DARK,
+    color: colors.text,
     marginBottom: 8,
     fontWeight: '600',
   },
@@ -322,22 +320,36 @@ const styles = StyleSheet.create({
   fundKey: {
     fontFamily: Typography.regular || 'System',
     fontSize: 12,
-    color: TEXT_MUTED,
+    color: colors.textSecondary,
   },
   fundVal: {
     fontFamily: Typography.medium || 'System',
     fontSize: 12,
-    color: TEXT_DARK,
+    color: colors.text,
   },
   fundsHint: {
     marginTop: 8,
     fontFamily: Typography.regular || 'System',
     fontSize: 11,
-    color: TEXT_MUTED,
+    color: colors.textSecondary,
     fontStyle: 'italic',
   },
+  primaryBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  primaryBtnText: {
+    color: '#FFFFFF',
+    fontFamily: Typography.medium || 'System',
+    fontSize: 15,
+    fontWeight: '600',
+  },
   successTitle: {
-    color: TEXT_DARK,
+    color: colors.text,
     fontFamily: Typography.medium || 'System',
     fontSize: 18,
     fontWeight: '600',
@@ -345,14 +357,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   successText: {
-    color: TEXT_MUTED,
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 6,
   },
   successWhen: {
-    color: PRIMARY,
+    color: colors.primary,
     fontFamily: Typography.medium || 'System',
     fontSize: 13,
     textAlign: 'center',

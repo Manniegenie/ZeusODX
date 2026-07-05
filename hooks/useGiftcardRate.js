@@ -111,9 +111,10 @@ export function useGiftcardRate(params = {}) {
       // store last request for debugging / retry usage
       lastReqRef.current = req;
 
-      // Small guard: don't call service with null/undefined amount
-      if (req.amount === null || req.amount === undefined || Number.isNaN(Number(req.amount))) {
-        const msg = 'Invalid amount';
+      // Small guard: don't call service with null/undefined/below-minimum amount
+      const numericAmount = Number(req.amount);
+      if (req.amount === null || req.amount === undefined || Number.isNaN(numericAmount) || numericAmount < 25) {
+        const msg = numericAmount > 0 && numericAmount < 25 ? 'Amount must be at least $25' : 'Invalid amount';
         setResult({ success: false, data: null, message: msg });
         setError(msg);
         setLoading(false);
