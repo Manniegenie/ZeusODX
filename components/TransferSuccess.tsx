@@ -186,7 +186,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   // ——— Smaller container (like 2FA): fixed width prevents overflow on small screens
   modalContainer: {
-    backgroundColor: Colors?.background ?? '#FFFFFF',
+    backgroundColor: colors.background,
     borderRadius: Layout?.borderRadius?.xl ?? 16,
     paddingHorizontal: Layout?.spacing?.xl ?? 24,
     paddingVertical: Layout?.spacing?.xl ?? 24,
@@ -230,7 +230,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     fontFamily: Typography?.bold || 'System',
     fontSize: 20,  // align with swap’s 22 but a bit tighter due to smaller card
     lineHeight: 24,
-    color: Colors?.primaryText || Colors?.text?.primary || '#111827',
+    color: colors.text,
     textAlign: 'center',
     marginBottom: Layout?.spacing?.sm ?? 12,
     fontWeight: '700',
@@ -239,7 +239,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   subtitle: {
     fontSize: 14,
     lineHeight: 20,
-    color: Colors?.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: Layout?.spacing?.lg ?? 18,
     fontFamily: Typography?.regular || 'System',
@@ -256,12 +256,12 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   metaText: {
     fontFamily: Typography?.regular || 'System',
     fontSize: 12,
-    color: Colors?.text?.secondary || '#6B7280',
+    color: colors.textSecondary,
     marginBottom: 2,
     textAlign: 'center',
   },
   continueButton: {
-    backgroundColor: Colors?.primary || '#35297F',
+    backgroundColor: colors.primary,
     borderRadius: Layout?.borderRadius?.lg ?? 12,
     paddingVertical: Layout?.spacing?.md ?? 14,
     paddingHorizontal: Layout?.spacing?.xl ?? 24,
@@ -276,7 +276,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   continueButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors?.surface || '#FFFFFF',
+    color: colors.card,
     fontFamily: Typography?.medium || 'System',
   },
 });

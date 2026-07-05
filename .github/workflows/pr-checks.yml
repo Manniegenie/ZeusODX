@@ -1,0 +1,107 @@
+name: PR Checks — Security & QA
+
+on:
+  pull_request:
+    branches: [main, staging]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint --if-present
+      # Typecheck is non-blocking for now — this repo has pre-existing TS errors
+      # unrelated to app logic (JSDoc annotations in .js files under checkJs).
+      # Flip continue-on-error to false once those are cleaned up.
+      - name: Typecheck (non-blocking)
+        run: npx tsc --noEmit
+        continue-on-error: true
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan diff for committed secrets/keys
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Flag newly introduced vulnerable/malicious dependencies
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Semgrep security scan
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+            p/typescript
+            p/react
+
+  red-flag-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan added lines for high-risk patterns
+        run: |
+          git diff "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" -- '*.ts' '*.tsx' '*.js' '*.jsx' > /tmp/pr.diff || true
+          ADDED=$(grep -E '^\+' /tmp/pr.diff | grep -v '^\+\+\+' || true)
+
+          FLAGGED=0
+          check() {
+            local pattern="$1" label="$2"
+            local hits
+            hits=$(echo "$ADDED" | grep -nE "$pattern" || true)
+            if [ -n "$hits" ]; then
+              echo "::error::Potential red flag — $label"
+              echo "$hits"
+              FLAGGED=1
+            fi
+          }
+
+          check '\beval\(' "use of eval()"
+          check '(disable|skip|bypass)[A-Za-z_]*(2fa|pin|auth|kyc)' "possible auth/KYC bypass flag"
+          check '(sk_live_|BEGIN (RSA|EC|PGP) PRIVATE KEY)' "possible hardcoded live credential/private key"
+          check 'AsyncStorage\.setItem\([^,]*(token|pin|password)' "sensitive value (token/PIN/password) written to unencrypted AsyncStorage"
+
+          # grep -E has no negative lookahead, so unfamiliar-domain detection is
+          # done as extract-then-exclude instead of a single pattern. Non-blocking:
+          # new legitimate domains (CDNs, SDKs) are common, so this only warns.
+          URLS=$(echo "$ADDED" | grep -noE 'https?://[a-z0-9.-]+\.[a-z]{2,}' || true)
+          UNKNOWN=$(echo "$URLS" | grep -viE 'zeusodx|obiex|expo|appsflyer|google|apple|sentry|github|npmjs' || true)
+          if [ -n "$UNKNOWN" ]; then
+            echo "::warning::Outbound call(s) to unfamiliar domain(s) added — verify these are expected"
+            echo "$UNKNOWN"
+          fi
+
+          if [ "$FLAGGED" -eq 1 ]; then
+            echo ""
+            echo "One or more high-risk patterns were added in this PR. Manual security review required before merge."
+            exit 1
+          fi
+          echo "No red-flag patterns detected in added lines."
