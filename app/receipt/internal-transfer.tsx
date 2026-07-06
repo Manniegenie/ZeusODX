@@ -471,9 +471,10 @@ export default function InternalTransferReceiptScreen() {
         </View>
 
         <View style={styles.detailsCard}>
-          <Row label="Type" value="Internal Transfer" />
-          <Row label="Date" value={formatDate(transferData.createdAt)} />
+          <Row styles={styles} label="Type" value="Internal Transfer" />
+          <Row styles={styles} label="Date" value={formatDate(transferData.createdAt)} />
           <Row
+            styles={styles}
             label="Reference"
             value={asText(transferData.transferReference || transferData.reference)}
             copyableValue={(transferData.transferReference || transferData.reference) as string}
@@ -484,11 +485,13 @@ export default function InternalTransferReceiptScreen() {
           {isSent && transferData.recipientUsername && (
             <>
               <Row
+                styles={styles}
                 label="Recipient"
                 value={`@${asText(transferData.recipientUsername)}`}
               />
               {transferData.recipientFullName && (
                 <Row
+                  styles={styles}
                   label="Recipient Name"
                   value={asText(transferData.recipientFullName)}
                 />
@@ -499,11 +502,13 @@ export default function InternalTransferReceiptScreen() {
           {isReceived && transferData.senderUsername && (
             <>
               <Row
+                styles={styles}
                 label="From"
                 value={`@${asText(transferData.senderUsername)}`}
               />
               {transferData.senderFullName && (
                 <Row
+                  styles={styles}
                   label="Sender Name"
                   value={asText(transferData.senderFullName)}
                 />
@@ -511,24 +516,25 @@ export default function InternalTransferReceiptScreen() {
             </>
           )}
 
-          <Row label="Currency" value={asText(transferData.currency || 'NGNZ')} />
+          <Row styles={styles} label="Currency" value={asText(transferData.currency || 'NGNZ')} />
 
           {transferData.fee && (
             <Row
+              styles={styles}
               label="Transfer Fee"
               value={formatAmtSym(transferData.fee, transferData.currency)}
             />
           )}
 
           {transferData.memo && (
-            <Row label="Memo" value={asText(transferData.memo)} />
+            <Row styles={styles} label="Memo" value={asText(transferData.memo)} />
           )}
 
           {transferData.narration && (
-            <Row label="Narration" value={asText(transferData.narration)} />
+            <Row styles={styles} label="Narration" value={asText(transferData.narration)} />
           )}
 
-          <Row label="Status" value={asText(transferData.status)} />
+          <Row styles={styles} label="Status" value={asText(transferData.status)} />
         </View>
 
         <View style={styles.footerMessage}>
@@ -553,11 +559,13 @@ export default function InternalTransferReceiptScreen() {
 }
 
 function Row({
+  styles,
   label,
   value,
   copyableValue,
   onCopy,
 }: {
+  styles: any;
   label: string;
   value: string;
   copyableValue?: string;
