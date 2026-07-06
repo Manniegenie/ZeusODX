@@ -609,7 +609,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Layout?.spacing?.xl || 24,
     paddingVertical: 12,
-    backgroundColor: '#F3F0FF',
+    backgroundColor: colors.background,
   },
   backButton: {
     width: 40,
@@ -655,7 +655,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   transferDirectionText: {
     fontFamily: Typography.regular || 'System',
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
 
   centeredStatus: {
@@ -668,12 +668,12 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   detailsCard: {
     width: '100%',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     marginBottom: Layout?.spacing?.lg || 16,
   },
 
@@ -683,7 +683,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   footerText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     lineHeight: 20,
     textAlign: 'left',
