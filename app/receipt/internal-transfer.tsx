@@ -698,7 +698,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     fontSize: 14,
   },
   rowValueWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'flex-end' },
-  rowValue: { color: '#111827', fontFamily: Typography.medium || 'System', fontSize: 14, textAlign: 'right', flexShrink: 1 },
+  rowValue: { color: colors.text, fontFamily: Typography.medium || 'System', fontSize: 14, textAlign: 'right', flexShrink: 1 },
 
   ctaRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 8 },
   primaryButton: {
@@ -711,7 +711,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   primaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.card,
+    color: '#FFFFFF',
     fontFamily: Typography.medium || 'System',
   },
   secondaryButton: {
@@ -721,9 +721,9 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: Layout?.borderRadius?.lg || 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
-  secondaryButtonText: { fontSize: 16, fontWeight: '600', color: '#111827', fontFamily: Typography.medium || 'System' },
+  secondaryButtonText: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: Typography.medium || 'System' },
 
   copyButton: {
     width: 28,
@@ -733,7 +733,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   copyIcon: { width: 16, height: 16 },
 });
