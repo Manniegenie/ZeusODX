@@ -30,7 +30,7 @@ Use ONLY these theme colors. Do not hardcode hex values like `#F8F9FA`, `#6B7280
 | **Container background** | `colors.background` | Main screen/container background |
 | **Card background** | `colors.card` | Details card, button backgrounds |
 | **Text (primary)** | `colors.text` | Headers, amounts, main text |
-| **Text (secondary)** | `colors.textSecondary` | Labels, helper text, descriptors |
+| **Text (secondary/labels)** | `#FFFFFF` | Row labels, subtexts in receipts |
 | **Borders** | `colors.border` | Card borders, dividers |
 | **Input background** | `colors.inputBg` | Copy button, input fields |
 | **Primary action** | `colors.primary` | Primary buttons, links |
@@ -86,7 +86,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 8 },
   rowLabel: {
-    color: colors.textSecondary,         // ← NOT hardcoded #6B7280
+    color: '#FFFFFF',                    // ← White for subtexts
     fontSize: 14,
   },
   rowValue: {

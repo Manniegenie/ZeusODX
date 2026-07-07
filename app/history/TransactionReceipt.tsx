@@ -1287,7 +1287,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   rowLabel: {
     flexShrink: 0,
     width: 130,
-    color: colors.textSecondary,
+    color: '#FFFFFF',
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
   },
