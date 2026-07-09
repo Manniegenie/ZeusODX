@@ -47,6 +47,16 @@ export const giftCardService = {
       }
       formData.append('cardRange', String(cardRange));
 
+      // Category (VERTICAL / HORIZONTAL / ODD) — the card layout classification the user
+      // selects on the trade screen. NOTE: this is distinct from `cardFormat`, which is the
+      // PHYSICAL/E_CODE receipt type and must stay unchanged. The categories endpoint
+      // (giftcardcountry/.../categories) uses these same values, so we forward the selection
+      // under `category` instead of overloading `cardFormat`. Previously this was collected
+      // on the screen but never sent, silently dropping the Horizontal/Vertical/Odd choice.
+      if (giftCardData.category) {
+        formData.append('category', String(giftCardData.category).toUpperCase());
+      }
+
       // Optional fields
       if (giftCardData.description) {
         formData.append('description', String(giftCardData.description));
