@@ -229,9 +229,12 @@ function normalizeResponseData(data) {
 }
 
 /* ───────── validation ───────── */
+// Optional layout/category values the calculate-rate endpoint accepts.
+export const GIFT_CARD_CATEGORIES = ['VERTICAL', 'HORIZONTAL', 'ODD'];
+
 export function validateRateInput(body) {
   const errors = [];
-  const { amount, giftcard, country, cardFormat } = body || {};
+  const { amount, giftcard, country, cardFormat, category } = body || {};
 
   const amt = toNumber(amount);
   if (!Number.isFinite(amt)) {
@@ -274,6 +277,18 @@ export function validateRateInput(body) {
     }
   }
 
+  // category validation (optional) — VERTICAL / HORIZONTAL / ODD.
+  // Used by the backend to price Apple layouts differently. Uppercase-normalized.
+  let normalizedCategory = null;
+  if (category) {
+    const cat = normalizeStr(category);
+    if (!GIFT_CARD_CATEGORIES.includes(cat)) {
+      errors.push('Category must be VERTICAL, HORIZONTAL, or ODD');
+    } else {
+      normalizedCategory = cat;
+    }
+  }
+
   if (errors.length) {
     return { success: false, message: errors.join('; '), errors };
   }
@@ -287,6 +302,7 @@ export function validateRateInput(body) {
       variant: normalizeGiftcard(giftcard).variant || null,
       country: normalizeCountry(country),
       cardFormat: normalizedCardFormat,
+      category: normalizedCategory,
     },
   };
 }
@@ -305,6 +321,10 @@ export const giftcardRateService = {
       };
       if (validation.validated.cardFormat) {
         payload.cardFormat = validation.validated.cardFormat;
+      }
+      if (validation.validated.category) {
+        // Apple layout/category (VERTICAL/HORIZONTAL/ODD) — backend prices these differently.
+        payload.category = validation.validated.category;
       }
       if (validation.validated.variant) {
         // include variant (e.g., '4097' or '4118' or 'VANILLA_4097') if available

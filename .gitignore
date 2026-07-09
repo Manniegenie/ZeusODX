@@ -45,3 +45,6 @@ zeusodx-*-firebase-adminsdk-*.json
 app-example
 /android
 /ios
+
+# local-only docs, never commit
+*.md

@@ -58,6 +58,27 @@ type ErrorDisplayData = {
 type FileInfo = { name: string; size: number; mimeType: string; uri: string };
 type ChoiceItem = { id: string; label: string; left?: React.ReactNode };
 
+// Authoritative rate quote — the trade screen is the single source of truth.
+// The confirmation modal receives this object and must not recalculate.
+type RateQuote = {
+  loading: boolean;
+  success: boolean;
+  rateDisplay: string;      // e.g. "1,430/USD"
+  payoutDisplay: string;    // e.g. "₦143,000"
+  amountToReceive: number;
+  rawResponse: any;
+  errorMessage: string;
+};
+const EMPTY_QUOTE: RateQuote = {
+  loading: false,
+  success: false,
+  rateDisplay: '',
+  payoutDisplay: '',
+  amountToReceive: 0,
+  rawResponse: null,
+  errorMessage: '',
+};
+
 /* --------------- Consts --------------- */
 const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/jpg', 'image/heic', 'image/heif'];
 
@@ -72,25 +93,34 @@ const CATEGORIES = [
   { id: 'ODD', label: 'Odd numbers' },
 ];
 
-const RANGES_BY_CATEGORY: Record<string, { id: string; label: string; min: number; max: number }[]> = {
-  VERTICAL: [
-    { id: '25-100', label: '$25 – $100', min: 25, max: 100 },
-    { id: '100-200', label: '$100 – $200', min: 100, max: 200 },
-    { id: '200-500', label: '$200 – $500', min: 200, max: 500 },
-    { id: '500-1000', label: '$500 – $1,000', min: 500, max: 1000 },
-  ],
-  HORIZONTAL: [
-    { id: '25-100', label: '$25 – $100', min: 25, max: 100 },
-    { id: '100-200', label: '$100 – $200', min: 100, max: 200 },
-    { id: '200-500', label: '$200 – $500', min: 200, max: 500 },
-    { id: '500-1000', label: '$500 – $1,000', min: 500, max: 1000 },
-  ],
-  ODD: [
-    { id: 'odd-1-25', label: '$1 – $25 (Odd)', min: 1, max: 25 },
-    { id: 'odd-25-75', label: '$25 – $75 (Odd)', min: 25, max: 75 },
-    { id: 'odd-75-150', label: '$75 – $150 (Odd)', min: 75, max: 150 },
-    { id: 'odd-150-500', label: '$150 – $500 (Odd)', min: 150, max: 500 },
-  ],
+// Category ids (VERTICAL/HORIZONTAL/ODD) are the backend contract and never change.
+// Only the user-facing wording differs for Apple vs non-Apple cards.
+// "Odd Number / Custom Amount" is a market term — it does NOT mean mathematically odd.
+const CATEGORY_LABELS: Record<string, { apple: string; generic: string }> = {
+  VERTICAL:   { apple: 'Vertical Card',   generic: 'Vertical' },
+  HORIZONTAL: { apple: 'Horizontal Card', generic: 'Horizontal' },
+  ODD:        { apple: 'Odd Number / Custom Amount', generic: 'Odd numbers' },
+};
+
+// Apple "common/normal" denominations are clean increments of 50 starting at 50
+// (50, 100, 150, …). Anything else (51, 72, 97, 102, 152, 170, 199, 251, …) is an
+// Odd Number / Custom Amount. Phase 1: frontend guidance only — do not auto-classify.
+const isAppleCommonAmount = (amount: number): boolean =>
+  Number.isFinite(amount) && amount >= 50 && amount % 50 === 0;
+
+// Card range is auto-derived from the entered card value (Phase 2) — no manual picker.
+// `submit` keeps the legacy "min-max" strings the backend already accepts
+// (25-100 / 100-200 / 200-500 / 500-1000); `label` shows a clearer NON-overlapping
+// bucket to the user (backend treats upper bounds as exclusive except the last).
+type DerivedRange = { submit: string; label: string; min: number; max: number };
+
+const deriveCardRange = (amount: number): DerivedRange | null => {
+  if (!Number.isFinite(amount)) return null;
+  if (amount >= 25 && amount < 100)    return { submit: '25-100',   label: '$25–$99',     min: 25,  max: 99 };
+  if (amount >= 100 && amount < 200)   return { submit: '100-200',  label: '$100–$199',   min: 100, max: 199 };
+  if (amount >= 200 && amount < 500)   return { submit: '200-500',  label: '$200–$499',   min: 200, max: 499 };
+  if (amount >= 500 && amount <= 1000) return { submit: '500-1000', label: '$500–$1,000', min: 500, max: 1000 };
+  return null;
 };
 
 // VANILLA variants
@@ -397,6 +427,13 @@ const GiftcardTradeScreen: React.FC = () => {
   };
   const mappedCardType = CARD_TYPE_MAP[brand] || brand.toUpperCase().replace(/\s+/g, '_');
 
+  // Reliable Apple detection used to drive Apple-only category wording/guidance.
+  const isAppleCard = mappedCardType === 'APPLE';
+
+  // User-facing label for a category id — Apple wording vs generic wording.
+  const categoryLabelFor = (id: string): string =>
+    CATEGORY_LABELS[id] ? (isAppleCard ? CATEGORY_LABELS[id].apple : CATEGORY_LABELS[id].generic) : id;
+
   // Gift card hook
   const { loading: submitLoading, error: submitError, submitGiftCard, clearError } = useGiftCard();
 
@@ -415,14 +452,13 @@ const GiftcardTradeScreen: React.FC = () => {
   const [ecode, setEcode] = useState('');
   const [vanillaVariant, setVanillaVariant] = useState(''); // '4097' | '4118' for VANILLA cards
   const [category, setCategory] = useState('');        // 'VERTICAL' | 'HORIZONTAL' | 'ODD'
-  const [rangeId, setRangeId] = useState('');
   const [valueUSD, setValueUSD] = useState('');
   const [uploads, setUploads] = useState<FileInfo[]>([]);
   const [comments, setComments] = useState('');
 
   const [availableCategories, setAvailableCategories] = useState<string[] | null>(null);
 
-  const [openPicker, setOpenPicker] = useState<null | 'receipt' | 'vanilla' | 'category' | 'range'>(null);
+  const [openPicker, setOpenPicker] = useState<null | 'receipt' | 'vanilla' | 'category'>(null);
   const [showCountrySheet, setShowCountrySheet] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -430,14 +466,19 @@ const GiftcardTradeScreen: React.FC = () => {
   const [showErrorDisplay, setShowErrorDisplay] = useState(false);
   const [errorDisplayData, setErrorDisplayData] = useState<ErrorDisplayData | null>(null);
 
-  const activeRanges = useMemo(() => RANGES_BY_CATEGORY[category] || [], [category]);
-  const selectedRange = useMemo(() => activeRanges.find(r => r.id === rangeId) || null, [activeRanges, rangeId]);
   const selectedVanillaVariant = useMemo(() => VANILLA_VARIANTS.find(v => v.id === vanillaVariant) || null, [vanillaVariant]);
-  const selectedCategory = useMemo(() => CATEGORIES.find(c => c.id === category) || null, [category]);
 
-  const [calcLoading, setCalcLoading] = useState(false);
-  const [calculatedRateDisplay, setCalculatedRateDisplay] = useState<string>('');
-  const [payoutDisplay, setPayoutDisplay] = useState<string>('');
+  // Card range is auto-derived from the entered value (Phase 2). It satisfies
+  // submitGiftCard's required `cardRange` without a manual picker. null => amount is
+  // outside the supported $25–$1000 window (Confirm stays disabled).
+  const derivedRange = useMemo(() => deriveCardRange(Number(valueUSD)), [valueUSD]);
+
+  // Category is Apple's layout signal and now affects the rate quote, so it is required
+  // for Apple only. Non-Apple cards don't use category (submit accepts it as optional).
+  const categoryRequired = isAppleCard;
+
+  // Single authoritative rate quote (see RateQuote type).
+  const [rateQuote, setRateQuote] = useState<RateQuote>(EMPTY_QUOTE);
 
   // Auto-fetch countries to get rate when country is pre-selected from params
   useEffect(() => {
@@ -469,11 +510,6 @@ const GiftcardTradeScreen: React.FC = () => {
     if (!isVanillaCard) setVanillaVariant('');
   }, [isVanillaCard]);
 
-  // Reset range when category changes
-  useEffect(() => {
-    setRangeId('');
-  }, [category]);
-
   // Fetch available categories when country + cardType are known
   useEffect(() => {
     if (!countryId || !mappedCardType) return;
@@ -485,7 +521,11 @@ const GiftcardTradeScreen: React.FC = () => {
       if (res.success && res.data?.availableCategories?.length) {
         setAvailableCategories(res.data.availableCategories);
       } else {
-        // fallback: show all categories if endpoint fails
+        // Fallback when the categories endpoint fails/returns nothing. We MUST still
+        // offer categories so the user can pick a range — submitGiftCard requires
+        // cardRange (derived from category → range) for ALL cards. Non-Apple cards get
+        // neutral, non-Apple wording via categoryLabelFor(), so no Apple-specific
+        // labels/helper text leak onto them even though the same category ids are used.
         setAvailableCategories(['VERTICAL', 'HORIZONTAL', 'ODD']);
       }
     }).catch(() => {
@@ -495,45 +535,68 @@ const GiftcardTradeScreen: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countryId]);
 
-  // Recalculate rate when country + receipt + amount are all set.
+  // Single source of truth for the displayed rate. Fetches from the backend quote API
+  // (giftcardRateService.calculateRate) — no local rate math. Debounced 500ms.
+  // Any change to amount / country / receipt / category invalidates the previous
+  // quote immediately, so a stale rate can never linger while a new one is fetched.
   // cardFormat must be included — the API returns a different (higher) base rate without it,
-  // which causes the trade screen and confirmation modal to show different values.
+  // which previously caused the trade screen and confirmation modal to disagree.
   useEffect(() => {
     const amount = Number(valueUSD);
     const fmt = receipt === 'ECODE' ? 'E_CODE' : receipt === 'PHYSICAL' ? 'PHYSICAL' : undefined;
-    if (!countryId || !fmt || !amount || amount < 25) {
-      setCalculatedRateDisplay('');
-      setPayoutDisplay('');
+    const dr = deriveCardRange(amount); // null when outside $25–$1000
+
+    // Clear any prior quote up front — inputs changed / amount out of range.
+    if (!countryId || !fmt || !dr) {
+      setRateQuote(EMPTY_QUOTE);
       return;
     }
+
     let cancelled = false;
+    setRateQuote({ ...EMPTY_QUOTE, loading: true });
     const timer = setTimeout(() => {
-      setCalcLoading(true);
       giftcardRateService.calculateRate({
         amount,
         giftcard: mappedCardType,
         country: countryId,
         cardFormat: fmt,
+        // Forward the selected Apple layout/category so the backend can price it.
+        // Empty for non-Apple / not-yet-selected → omitted from the payload.
+        category: category || undefined,
       }).then(resp => {
         if (cancelled) return;
         if (resp?.success && resp.data) {
-          setCalculatedRateDisplay(resp.data.rate || '');
-          setPayoutDisplay(resp.data.amountToReceive
-            ? new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(resp.data.amountToReceive)
-            : '');
+          setRateQuote({
+            loading: false,
+            success: true,
+            rateDisplay: resp.data.rate || '',
+            payoutDisplay: resp.data.amountToReceive
+              ? new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(resp.data.amountToReceive)
+              : '',
+            amountToReceive: resp.data.amountToReceive || 0,
+            rawResponse: resp.data,
+            errorMessage: '',
+          });
         } else {
-          setCalculatedRateDisplay('');
-          setPayoutDisplay('');
+          setRateQuote({
+            ...EMPTY_QUOTE,
+            success: false,
+            errorMessage: resp?.message || 'No rate is currently available for this amount.',
+          });
         }
       }).catch(() => {
-        if (!cancelled) { setCalculatedRateDisplay(''); setPayoutDisplay(''); }
-      }).finally(() => {
-        if (!cancelled) setCalcLoading(false);
+        if (!cancelled) {
+          setRateQuote({
+            ...EMPTY_QUOTE,
+            success: false,
+            errorMessage: 'No rate is currently available for this amount.',
+          });
+        }
       });
     }, 500);
     return () => { cancelled = true; clearTimeout(timer); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [valueUSD, countryId, receipt]);
+  }, [valueUSD, countryId, receipt, category]);
 
   // Clear hook error when it changes
   useEffect(() => {
@@ -659,12 +722,10 @@ const GiftcardTradeScreen: React.FC = () => {
       showError({ type: 'validation', title: 'Variant Required', message: 'Please select the variant (4097 or 4118).', autoHide: true, duration: 3000 });
       return false;
     }
-    if (!category) {
-      showError({ type: 'validation', title: 'Category Required', message: 'Select the card category.', autoHide: true, duration: 3000 });
-      return false;
-    }
-    if (!rangeId) {
-      showError({ type: 'validation', title: 'Card Range Required', message: 'Select the card range.', autoHide: true, duration: 3000 });
+    // Category is required for Apple only (it drives the Apple rate). Non-Apple cards
+    // don't use category. Card range is auto-derived — never manually selected.
+    if (categoryRequired && !category) {
+      showError({ type: 'validation', title: 'Category Required', message: 'Select the Apple card type.', autoHide: true, duration: 3000 });
       return false;
     }
     const amount = Number(valueUSD);
@@ -672,11 +733,11 @@ const GiftcardTradeScreen: React.FC = () => {
       showError({ type: 'validation', title: 'Card Value Required', message: 'Enter a valid USD amount.', autoHide: true, duration: 3000 });
       return false;
     }
-    if (selectedRange && (amount < selectedRange.min || amount > selectedRange.max)) {
+    if (!deriveCardRange(amount)) {
       showError({
         type: 'validation',
         title: 'Value Out of Range',
-        message: `Enter a value between ${selectedRange.min} and ${selectedRange.max}.`,
+        message: 'Enter a value between $25 and $1000.',
         autoHide: true,
         duration: 3500,
       });
@@ -687,6 +748,19 @@ const GiftcardTradeScreen: React.FC = () => {
         type: 'validation',
         title: 'Upload Required',
         message: 'Please upload at least one card image.',
+        autoHide: true,
+        duration: 3500,
+      });
+      return false;
+    }
+    // A valid, finished rate quote must exist before we allow submission.
+    if (!rateQuote.success || rateQuote.loading) {
+      showError({
+        type: 'validation',
+        title: 'Rate Unavailable',
+        message: rateQuote.loading
+          ? 'Please wait for the rate to finish calculating.'
+          : 'No rate is currently available for this amount.',
         autoHide: true,
         duration: 3500,
       });
@@ -705,7 +779,7 @@ const GiftcardTradeScreen: React.FC = () => {
     // Normalize UI receipt -> API format
     const normalizedCardFormat = receipt === 'ECODE' ? 'E_CODE' : receipt === 'PHYSICAL' ? 'PHYSICAL' : null;
 
-    if (!normalizedCardFormat || !countryId) {
+    if (!normalizedCardFormat || !countryId || !derivedRange) {
       showError({
         type: 'validation',
         title: 'Invalid Data',
@@ -716,32 +790,15 @@ const GiftcardTradeScreen: React.FC = () => {
       return;
     }
 
-    // Map brand name to backend card type format
-    const cardTypeMapping: Record<string, string> = {
-      'Amazon': 'AMAZON',
-      'Apple': 'APPLE', 
-      'Steam': 'STEAM',
-      'Nordstrom': 'NORDSTROM',
-      'Macy': 'MACY',
-      'Nike': 'NIKE',
-      'Google Play': 'GOOGLE_PLAY',
-      'Visa': 'VISA',
-      'Vanilla': 'VANILLA',
-      'Razer Gold': 'RAZOR_GOLD',
-      'American Express': 'AMERICAN_EXPRESS',
-      'Sephora': 'SEPHORA',
-      'Foot Locker': 'FOOTLOCKER',
-      'Xbox': 'XBOX',
-      'eBay': 'EBAY',
-    };
-
-    const mappedCardType = cardTypeMapping[brand] || brand.toUpperCase().replace(/\s+/g, '_');
+    // Use the SAME canonical card type as the rate flow (top-level mappedCardType).
+    // This fixes Apple/iTunes previously submitting as "APPLE/ITUNES" instead of "APPLE".
 
     // Prepare gift card data matching backend validation
     const giftCardData: any = {
       cardType: mappedCardType,
       cardFormat: normalizedCardFormat,
-      cardRange: selectedRange ? `${selectedRange.min}-${selectedRange.max}` : rangeId,
+      // Auto-derived range string (backend-compatible "min-max"), never manually chosen.
+      cardRange: derivedRange.submit,
       cardValue: valueUSD,
       currency: 'USD',
       country: countryId,
@@ -773,7 +830,6 @@ const GiftcardTradeScreen: React.FC = () => {
       setReceipt('');
       setEcode('');
       setVanillaVariant('');
-      setRangeId('');
       setValueUSD('');
       setUploads([]);
       setComments('');
@@ -785,39 +841,39 @@ const GiftcardTradeScreen: React.FC = () => {
       receipt &&
       (receipt !== 'ECODE' || ecode.trim()) &&
       (!isVanillaCard || vanillaVariant) &&
-      category &&
-      rangeId &&
+      // Category required for Apple only; card range must be auto-derivable (25–1000).
+      (!categoryRequired || category) &&
       valueUSD &&
       Number(valueUSD) > 0 &&
-      uploads.length > 0
+      derivedRange &&
+      uploads.length > 0 &&
+      // Confirm Trade stays disabled until a successful rate quote exists.
+      rateQuote.success &&
+      !rateQuote.loading
   );
 
   const receiptChoices: ChoiceItem[] = RECEIPT.map(r => ({ id: r.id, label: r.label }));
   const vanillaChoices: ChoiceItem[] = VANILLA_VARIANTS.map(v => ({ id: v.id, label: v.label, description: v.description } as ChoiceItem));
   const categoryChoices: ChoiceItem[] = CATEGORIES
     .filter(c => !availableCategories || availableCategories.includes(c.id))
-    .map(c => ({ id: c.id, label: c.label }));
-  const rangeChoices: ChoiceItem[] = activeRanges.map(r => ({ id: r.id, label: r.label }));
+    .map(c => ({ id: c.id, label: categoryLabelFor(c.id) }));
 
   const activeTitle =
     openPicker === 'receipt' ? 'Receipt Availability' :
     openPicker === 'vanilla' ? 'Select Variant' :
-    openPicker === 'category' ? 'Category' :
-    openPicker === 'range' ? 'Select Range' :
+    openPicker === 'category' ? (isAppleCard ? 'Apple Card Type' : 'Category') :
     '';
 
   const activeChoices =
     openPicker === 'receipt' ? receiptChoices :
     openPicker === 'vanilla' ? vanillaChoices :
     openPicker === 'category' ? categoryChoices :
-    openPicker === 'range' ? rangeChoices :
     [];
 
   const activeSelectedId =
     openPicker === 'receipt' ? receipt :
     openPicker === 'vanilla' ? vanillaVariant :
     openPicker === 'category' ? category :
-    openPicker === 'range' ? rangeId :
     undefined;
 
   // Normalize UI receipt -> API format
@@ -832,12 +888,26 @@ const GiftcardTradeScreen: React.FC = () => {
     country: country && countryId ? { id: countryId, name: country, code: countryId } : null,
     amount: valueUSD || '0',
     transactionValue: valueUSD || '0',
-    rate: calculatedRateDisplay || '—',
+    rate: rateQuote.rateDisplay || '—',
     timeOfUpload: '',
     averageConfirmationTime: '10-15mins',
     cardType: isVanillaCard && selectedVanillaVariant ? selectedVanillaVariant.label : '',
     cardFormat: normalizedCardFormat,
   };
+
+  // Apple-only amount/category guidance (Phase 1 — guidance, not enforcement).
+  const amountForGuidance = Number(valueUSD);
+  const hasAmountForGuidance = !!valueUSD && Number.isFinite(amountForGuidance) && amountForGuidance > 0;
+  // Amount looks custom but user hasn't picked Odd Number / Custom Amount.
+  const showSelectOddNote =
+    isAppleCard && hasAmountForGuidance && !isAppleCommonAmount(amountForGuidance) && category !== 'ODD';
+  // User picked Odd Number / Custom Amount but the amount is a clean increment of 50.
+  const showConfirmCommonNote =
+    isAppleCard && category === 'ODD' && hasAmountForGuidance && isAppleCommonAmount(amountForGuidance);
+
+  // Category selector is an Apple-only concept (layout/odd). Non-Apple cards no longer
+  // show it — card range is auto-derived, so category isn't needed to submit.
+  const showCategorySelector = isAppleCard && (availableCategories === null || availableCategories.length > 0);
 
   return (
     <View style={styles.container}>
@@ -928,25 +998,34 @@ const GiftcardTradeScreen: React.FC = () => {
             />
           )}
 
-          {/* Category */}
-          <SelectField
-            label="Category"
-            value={selectedCategory?.label || ''}
-            placeholder={availableCategories === null && countryId ? 'Loading categories…' : 'Select category'}
-            onPress={() => {
-              if (availableCategories !== null) setOpenPicker('category');
-            }}
-          />
-
-          {/* Range — only shown after a category is picked */}
-          {category ? (
-            <SelectField
-              label="Card Range"
-              value={selectedRange?.label || ''}
-              placeholder="Select range"
-              onPress={() => setOpenPicker('range')}
-            />
-          ) : null}
+          {/* Category — "Apple Card Type" for Apple, "Category" otherwise.
+              Hidden for non-Apple cards when the backend offers no categories. */}
+          {showCategorySelector && (
+            <View>
+              <SelectField
+                label={isAppleCard ? 'Apple Card Type' : 'Category'}
+                value={category ? categoryLabelFor(category) : ''}
+                placeholder={availableCategories === null && countryId ? 'Loading categories…' : 'Select category'}
+                onPress={() => {
+                  if (availableCategories !== null && availableCategories.length > 0) setOpenPicker('category');
+                }}
+              />
+              {isAppleCard && (
+                <View style={{ marginTop: -8, marginBottom: 18, marginHorizontal: 16 }}>
+                  <Text style={styles.helperText}>
+                    Choose Horizontal or Vertical based on the card layout. Use Odd Number / Custom Amount for values that are not standard increments of 50.
+                  </Text>
+                  {category === 'ODD' ? (
+                    <Text style={styles.helperText}>Examples: $72, $97, $102, $152, $170.</Text>
+                  ) : (category === 'VERTICAL' || category === 'HORIZONTAL') ? (
+                    <Text style={styles.helperText}>
+                      Common values are usually $50, $100, $150, $200, $250, $300, and other increments of 50.
+                    </Text>
+                  ) : null}
+                </View>
+              )}
+            </View>
+          )}
 
           {/* Amount */}
           <LabeledInput
@@ -957,15 +1036,42 @@ const GiftcardTradeScreen: React.FC = () => {
             keyboardType="numeric"
           />
 
+          {/* Auto-derived card range (read-only) — replaces the manual Card Range picker */}
+          {valueUSD ? (
+            <View style={{ marginTop: -8, marginBottom: 14, marginHorizontal: 16 }}>
+              {derivedRange ? (
+                <Text style={styles.helperText}>Detected range: {derivedRange.label}</Text>
+              ) : (
+                <Text style={styles.noteText}>Enter a value between $25 and $1000.</Text>
+              )}
+            </View>
+          ) : null}
+
+          {/* Apple amount/category guidance (guidance only — never auto-changes selection) */}
+          {showSelectOddNote && (
+            <View style={{ marginTop: -8, marginBottom: 14, marginHorizontal: 16 }}>
+              <Text style={styles.noteText}>
+                This looks like an Odd Number / Custom Amount. Please select Odd Number / Custom Amount so the correct rate can apply.
+              </Text>
+            </View>
+          )}
+          {showConfirmCommonNote && (
+            <View style={{ marginTop: -8, marginBottom: 14, marginHorizontal: 16 }}>
+              <Text style={styles.noteText}>
+                This looks like a common Apple amount. Please confirm this should be submitted as Odd Number / Custom Amount.
+              </Text>
+            </View>
+          )}
+
           {/* Rate Display */}
           <View style={{ marginBottom: 18, marginHorizontal: 16 }}>
             <Text style={styles.label}>Rate</Text>
             <View style={styles.select}>
               <Text style={{ color: colors.primary, fontFamily: Typography.medium || 'System', fontWeight: '700', fontSize: 15, marginRight: 6 }}>₦</Text>
-              {calcLoading ? (
-                <Text style={[styles.selectText, { color: colors.textSecondary }]}>Calculating…</Text>
-              ) : calculatedRateDisplay ? (
-                <Text style={styles.selectText}>{calculatedRateDisplay}</Text>
+              {rateQuote.loading ? (
+                <Text style={[styles.selectText, { color: colors.textSecondary }]}>Calculating rate…</Text>
+              ) : rateQuote.success && rateQuote.rateDisplay ? (
+                <Text style={styles.selectText}>{rateQuote.rateDisplay}</Text>
               ) : (
                 <Text style={[styles.selectText, { color: colors.textSecondary }]}>
                   {!countryId
@@ -973,13 +1079,13 @@ const GiftcardTradeScreen: React.FC = () => {
                     : !receipt
                     ? 'Select receipt type to see rate'
                     : !valueUSD || Number(valueUSD) < 25
-                    ? 'Enter amount ($25+) to see rate'
-                    : '—'}
+                    ? 'Enter a valid amount to see your rate.'
+                    : rateQuote.errorMessage || 'No rate is currently available for this amount.'}
                 </Text>
               )}
-              {!calcLoading && payoutDisplay ? (
+              {!rateQuote.loading && rateQuote.success && rateQuote.payoutDisplay ? (
                 <Text style={{ color: colors.primary, fontFamily: Typography.medium || 'System', fontWeight: '600', fontSize: 13 }}>
-                  {payoutDisplay}
+                  {rateQuote.payoutDisplay}
                 </Text>
               ) : null}
             </View>
@@ -1076,10 +1182,9 @@ const GiftcardTradeScreen: React.FC = () => {
           if (openPicker === 'receipt') setReceipt(id);
           if (openPicker === 'vanilla') setVanillaVariant(id);
           if (openPicker === 'category') setCategory(id);
-          if (openPicker === 'range') setRangeId(id);
           setOpenPicker(null);
         }}
-        centerAlign={openPicker === 'receipt' || openPicker === 'category' || openPicker === 'range'}
+        centerAlign={openPicker === 'receipt' || openPicker === 'category'}
         showDescription={openPicker === 'vanilla'}
       />
 
@@ -1106,6 +1211,15 @@ const GiftcardTradeScreen: React.FC = () => {
         onConfirm={handleConfirmContinue}
         loading={submitLoading}
         transactionData={giftcardTransactionData}
+        // Authoritative quote from this screen — the modal must display this and NOT recalculate.
+        quote={{
+          loading: rateQuote.loading,
+          success: rateQuote.success,
+          rateDisplay: rateQuote.rateDisplay,
+          payoutDisplay: rateQuote.payoutDisplay,
+          amountToReceive: rateQuote.amountToReceive,
+          errorMessage: rateQuote.errorMessage,
+        }}
       />
 
       {/* Success Modal */}
@@ -1239,6 +1353,21 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     fontFamily: Typography.regular || 'System',
     fontSize: 13,
     marginBottom: 8,
+  },
+
+  helperText: {
+    color: colors.textSecondary,
+    fontFamily: Typography.regular || 'System',
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 4,
+  },
+  noteText: {
+    color: colors.primary,
+    fontFamily: Typography.regular || 'System',
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 4,
   },
 
   select: {

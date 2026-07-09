@@ -471,9 +471,10 @@ export default function InternalTransferReceiptScreen() {
         </View>
 
         <View style={styles.detailsCard}>
-          <Row label="Type" value="Internal Transfer" />
-          <Row label="Date" value={formatDate(transferData.createdAt)} />
+          <Row styles={styles} label="Type" value="Internal Transfer" />
+          <Row styles={styles} label="Date" value={formatDate(transferData.createdAt)} />
           <Row
+            styles={styles}
             label="Reference"
             value={asText(transferData.transferReference || transferData.reference)}
             copyableValue={(transferData.transferReference || transferData.reference) as string}
@@ -484,11 +485,13 @@ export default function InternalTransferReceiptScreen() {
           {isSent && transferData.recipientUsername && (
             <>
               <Row
+                styles={styles}
                 label="Recipient"
                 value={`@${asText(transferData.recipientUsername)}`}
               />
               {transferData.recipientFullName && (
                 <Row
+                  styles={styles}
                   label="Recipient Name"
                   value={asText(transferData.recipientFullName)}
                 />
@@ -499,11 +502,13 @@ export default function InternalTransferReceiptScreen() {
           {isReceived && transferData.senderUsername && (
             <>
               <Row
+                styles={styles}
                 label="From"
                 value={`@${asText(transferData.senderUsername)}`}
               />
               {transferData.senderFullName && (
                 <Row
+                  styles={styles}
                   label="Sender Name"
                   value={asText(transferData.senderFullName)}
                 />
@@ -511,24 +516,25 @@ export default function InternalTransferReceiptScreen() {
             </>
           )}
 
-          <Row label="Currency" value={asText(transferData.currency || 'NGNZ')} />
+          <Row styles={styles} label="Currency" value={asText(transferData.currency || 'NGNZ')} />
 
           {transferData.fee && (
             <Row
+              styles={styles}
               label="Transfer Fee"
               value={formatAmtSym(transferData.fee, transferData.currency)}
             />
           )}
 
           {transferData.memo && (
-            <Row label="Memo" value={asText(transferData.memo)} />
+            <Row styles={styles} label="Memo" value={asText(transferData.memo)} />
           )}
 
           {transferData.narration && (
-            <Row label="Narration" value={asText(transferData.narration)} />
+            <Row styles={styles} label="Narration" value={asText(transferData.narration)} />
           )}
 
-          <Row label="Status" value={asText(transferData.status)} />
+          <Row styles={styles} label="Status" value={asText(transferData.status)} />
         </View>
 
         <View style={styles.footerMessage}>
@@ -553,11 +559,13 @@ export default function InternalTransferReceiptScreen() {
 }
 
 function Row({
+  styles,
   label,
   value,
   copyableValue,
   onCopy,
 }: {
+  styles: any;
   label: string;
   value: string;
   copyableValue?: string;
@@ -601,7 +609,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Layout?.spacing?.xl || 24,
     paddingVertical: 12,
-    backgroundColor: '#F3F0FF',
+    backgroundColor: colors.background,
   },
   backButton: {
     width: 40,
@@ -647,7 +655,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   transferDirectionText: {
     fontFamily: Typography.regular || 'System',
     fontSize: 16,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
 
   centeredStatus: {
@@ -660,12 +668,12 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
 
   detailsCard: {
     width: '100%',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
     marginBottom: Layout?.spacing?.lg || 16,
   },
 
@@ -675,7 +683,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   },
   footerText: {
     fontSize: 13,
-    color: '#6B7280',
+    color: colors.textSecondary,
     fontFamily: Typography.regular || 'System',
     lineHeight: 20,
     textAlign: 'left',
@@ -685,12 +693,12 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   rowLabel: {
     flexShrink: 0,
     width: 130,
-    color: '#6B7280',
+    color: '#FFFFFF',
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
   },
   rowValueWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'flex-end' },
-  rowValue: { color: '#111827', fontFamily: Typography.medium || 'System', fontSize: 14, textAlign: 'right', flexShrink: 1 },
+  rowValue: { color: colors.text, fontFamily: Typography.medium || 'System', fontSize: 14, textAlign: 'right', flexShrink: 1 },
 
   ctaRow: { flexDirection: 'row', gap: 12, width: '100%', marginTop: 8 },
   primaryButton: {
@@ -703,7 +711,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   primaryButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.card,
+    color: '#FFFFFF',
     fontFamily: Typography.medium || 'System',
   },
   secondaryButton: {
@@ -713,9 +721,9 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     borderRadius: Layout?.borderRadius?.lg || 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
-  secondaryButtonText: { fontSize: 16, fontWeight: '600', color: '#111827', fontFamily: Typography.medium || 'System' },
+  secondaryButtonText: { fontSize: 16, fontWeight: '600', color: colors.text, fontFamily: Typography.medium || 'System' },
 
   copyButton: {
     width: 28,
@@ -725,7 +733,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: colors.border,
   },
   copyIcon: { width: 16, height: 16 },
 });

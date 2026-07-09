@@ -577,18 +577,20 @@ export default function WithdrawalReceiptScreen() {
         </View>
 
         <View style={styles.detailsCard}>
-          <Row label="Type" value={asText(transaction.type)} />
-          <Row label="Date" value={asText(transaction.date)} />
+          <Row styles={styles} label="Type" value={asText(transaction.type)} />
+          <Row styles={styles} label="Date" value={asText(transaction.date)} />
           <Row
+            styles={styles}
             label="Transaction ID"
             value={asText(merged.transactionId)}
             copyableValue={merged.transactionId as string}
             onCopy={(v) => handleCopy('Transaction ID', v)}
           />
-          <Row label="Currency" value={asText(merged.currency)} />
-          <Row label="Network" value={asText(merged.network)} />
+          <Row styles={styles} label="Currency" value={asText(merged.currency)} />
+          <Row styles={styles} label="Network" value={asText(merged.network)} />
           {!!merged.address && (
             <Row
+              styles={styles}
               label="Destination"
               value={maskMiddle(asText(merged.address))}
               copyableValue={typeof merged.address === 'string' ? merged.address : undefined}
@@ -597,6 +599,7 @@ export default function WithdrawalReceiptScreen() {
           )}
           {!!merged.hash && (
             <Row
+              styles={styles}
               label="Hash"
               value={maskMiddle(asText(merged.hash))}
               copyableValue={typeof merged.hash === 'string' ? merged.hash : undefined}
@@ -606,9 +609,9 @@ export default function WithdrawalReceiptScreen() {
             />
           )}
           {merged.fee !== undefined && merged.fee !== null && (
-            <Row label="Network Fee" value={asText(merged.fee)} />
+            <Row styles={styles} label="Network Fee" value={asText(merged.fee)} />
           )}
-          {!!merged.narration && <Row label="Note" value={asText(merged.narration)} />}
+          {!!merged.narration && <Row styles={styles} label="Note" value={asText(merged.narration)} />}
         </View>
 
         <View style={styles.footerMessage}>
@@ -642,6 +645,7 @@ export default function WithdrawalReceiptScreen() {
 }
 
 function Row({
+  styles,
   label,
   value,
   copyableValue,
@@ -649,6 +653,7 @@ function Row({
   isHashLink = false,
   onHashPress,
 }: {
+  styles: any;
   label: string;
   value: string;
   copyableValue?: string;
@@ -775,7 +780,7 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   rowLabel: {
     flexShrink: 0,
     width: 130,
-    color: colors.textSecondary,
+    color: '#FFFFFF',
     fontFamily: Typography.regular || 'System',
     fontSize: 14,
   },

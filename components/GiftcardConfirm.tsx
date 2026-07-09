@@ -75,12 +75,26 @@ interface GiftCardTransactionData {
   cardType?: string;
   cardFormat?: 'PHYSICAL' | 'E_CODE' | string | null;
 }
+/**
+ * Authoritative rate quote passed down from the trade screen. When present, the
+ * modal displays THIS quote and does not run its own rate calculation — so the
+ * rate shown before opening the modal always matches the rate inside it.
+ */
+interface QuoteResult {
+  loading: boolean;
+  success: boolean;
+  rateDisplay: string;
+  payoutDisplay: string;
+  amountToReceive: number;
+  errorMessage?: string;
+}
 interface GiftCardConfirmationModalProps {
   visible: boolean;
   onClose: () => void;
   onConfirm: () => void;
   transactionData?: GiftCardTransactionData;
   loading?: boolean;
+  quote?: QuoteResult | null;
 }
 
 /* ── Icons map (keys are lowercased & normalized to allow flexible matching) */
@@ -160,6 +174,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
   onConfirm,
   transactionData = {},
   loading = false,
+  quote = null,
 }) => {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -221,8 +236,11 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
     setCardFormat(cardFormat ?? null);
   }, [normalizedGiftcard, normalizedCountry, amountNum, cardFormat, setGiftcard, setCountry, setInputAmount, setCardFormat]);
 
-  // Trigger calculate when modal opens or inputs change
+  // Trigger calculate when modal opens or inputs change.
+  // Skipped entirely when the parent passed an authoritative quote — in that case
+  // this modal must NOT recalculate (and must not fall back to AMAZON/US defaults).
   useEffect(() => {
+    if (quote) return;
     if (!visible) return;
     if (amountNum < 25) return;
 
@@ -239,7 +257,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
       /* errors handled inside calculate */
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, normalizedGiftcard, normalizedCountry, amountNum, cardFormat]);
+  }, [quote, visible, normalizedGiftcard, normalizedCountry, amountNum, cardFormat]);
 
   const getBrandIcon = (brandId?: string, fallbackName?: string): ImageSourcePropType => {
     if (brand?.iconSrc) return brand.iconSrc;
@@ -270,17 +288,30 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
     }
   }, [visible, slideAnim]);
 
-  // Displays
-  const rateDisplay = calcLoading
+  // Displays — prefer the parent-supplied authoritative quote when present,
+  // otherwise fall back to this modal's own calculation (used if rendered elsewhere).
+  const rateDisplay = quote
+    ? (quote.loading ? 'Calculating…' : (quote.rateDisplay || fallbackRate || '—'))
+    : calcLoading
     ? 'Calculating…'
     : (exchangeRate != null && exchangeRateDisplay) ? exchangeRateDisplay : (fallbackRate || '—');
 
-  const receiveDisplay = calcLoading
+  const receiveDisplay = quote
+    ? (quote.loading ? 'Calculating…' : (quote.payoutDisplay || '—'))
+    : calcLoading
     ? 'Calculating…'
     : (result?.success && payoutDisplay) ? payoutDisplay : '—';
 
-  // disable pay button if backend not ready or calc error
-  const disablePayButton = loading || calcLoading || !!rateError || !result?.success;
+  // Error/note text to surface (quote error when driven by parent).
+  const noteMessage = quote ? (!quote.success && !quote.loading ? (quote.errorMessage || '') : '') : (rateError || '');
+
+  // Whether the rate is still being computed (parent quote or local hook).
+  const rateBusy = quote ? quote.loading : calcLoading;
+
+  // disable pay button if the rate isn't a confirmed success (or still loading / submitting)
+  const disablePayButton = quote
+    ? (loading || quote.loading || !quote.success)
+    : (loading || calcLoading || !!rateError || !result?.success);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
@@ -340,12 +371,12 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
                     <Text style={styles.detailValue}>{receiveDisplay}</Text>
                   </View>
 
-                  {/* Any rate error from validation/API */}
-                  {!!rateError && (
+                  {/* Any rate error from validation/API (or the parent quote) */}
+                  {!!noteMessage && (
                     <View style={[styles.detailRow, { borderBottomWidth: 0, paddingVertical: 8 }]}>
                       <Text style={[styles.detailLabel, { color: '#DC2626' }]}>Note</Text>
                       <Text style={[styles.detailValue, { color: '#DC2626', textAlign: 'right' }]}>
-                        {rateError}
+                        {noteMessage}
                       </Text>
                     </View>
                   )}
@@ -375,7 +406,7 @@ const GiftCardConfirmationModal: React.FC<GiftCardConfirmationModalProps> = ({
                     activeOpacity={0.8}
                   >
                     <Text style={styles.payButtonText}>
-                      {loading ? 'Processing...' : calcLoading ? 'Calculating…' : 'Confirm'}
+                      {loading ? 'Processing...' : rateBusy ? 'Calculating…' : 'Confirm'}
                     </Text>
                   </TouchableOpacity>
                 </View>
