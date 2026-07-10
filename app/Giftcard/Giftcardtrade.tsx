@@ -94,18 +94,18 @@ const CATEGORIES = [
 ];
 
 // Category ids (VERTICAL/HORIZONTAL/ODD) are the backend contract and never change.
-// Only the user-facing wording differs for Apple vs non-Apple cards.
+// The same category flow applies to ALL card types, not just Apple.
 // "Odd Number / Custom Amount" is a market term — it does NOT mean mathematically odd.
-const CATEGORY_LABELS: Record<string, { apple: string; generic: string }> = {
-  VERTICAL:   { apple: 'Vertical Card',   generic: 'Vertical' },
-  HORIZONTAL: { apple: 'Horizontal Card', generic: 'Horizontal' },
-  ODD:        { apple: 'Odd Number / Custom Amount', generic: 'Odd numbers' },
+const CATEGORY_LABELS: Record<string, string> = {
+  VERTICAL:   'Vertical Card',
+  HORIZONTAL: 'Horizontal Card',
+  ODD:        'Odd Number / Custom Amount',
 };
 
-// Apple "common/normal" denominations are clean increments of 50 starting at 50
+// "Common/normal" denominations are clean increments of 50 starting at 50
 // (50, 100, 150, …). Anything else (51, 72, 97, 102, 152, 170, 199, 251, …) is an
-// Odd Number / Custom Amount. Phase 1: frontend guidance only — do not auto-classify.
-const isAppleCommonAmount = (amount: number): boolean =>
+// Odd Number / Custom Amount. Guidance only — never auto-classifies.
+const isCommonAmount = (amount: number): boolean =>
   Number.isFinite(amount) && amount >= 50 && amount % 50 === 0;
 
 // Card range is auto-derived from the entered card value (Phase 2) — no manual picker.
@@ -427,12 +427,8 @@ const GiftcardTradeScreen: React.FC = () => {
   };
   const mappedCardType = CARD_TYPE_MAP[brand] || brand.toUpperCase().replace(/\s+/g, '_');
 
-  // Reliable Apple detection used to drive Apple-only category wording/guidance.
-  const isAppleCard = mappedCardType === 'APPLE';
-
-  // User-facing label for a category id — Apple wording vs generic wording.
-  const categoryLabelFor = (id: string): string =>
-    CATEGORY_LABELS[id] ? (isAppleCard ? CATEGORY_LABELS[id].apple : CATEGORY_LABELS[id].generic) : id;
+  // User-facing label for a category id — same wording for every card type.
+  const categoryLabelFor = (id: string): string => CATEGORY_LABELS[id] || id;
 
   // Gift card hook
   const { loading: submitLoading, error: submitError, submitGiftCard, clearError } = useGiftCard();
@@ -473,9 +469,9 @@ const GiftcardTradeScreen: React.FC = () => {
   // outside the supported $25–$1000 window (Confirm stays disabled).
   const derivedRange = useMemo(() => deriveCardRange(Number(valueUSD)), [valueUSD]);
 
-  // Category is Apple's layout signal and now affects the rate quote, so it is required
-  // for Apple only. Non-Apple cards don't use category (submit accepts it as optional).
-  const categoryRequired = isAppleCard;
+  // Category (card layout / odd-amount signal) affects the rate quote for every
+  // card type, so it is required across the board.
+  const categoryRequired = true;
 
   // Single authoritative rate quote (see RateQuote type).
   const [rateQuote, setRateQuote] = useState<RateQuote>(EMPTY_QUOTE);
@@ -521,11 +517,8 @@ const GiftcardTradeScreen: React.FC = () => {
       if (res.success && res.data?.availableCategories?.length) {
         setAvailableCategories(res.data.availableCategories);
       } else {
-        // Fallback when the categories endpoint fails/returns nothing. We MUST still
-        // offer categories so the user can pick a range — submitGiftCard requires
-        // cardRange (derived from category → range) for ALL cards. Non-Apple cards get
-        // neutral, non-Apple wording via categoryLabelFor(), so no Apple-specific
-        // labels/helper text leak onto them even though the same category ids are used.
+        // Fallback when the categories endpoint fails/returns nothing — always offer
+        // the full set so the user can still pick a category (required for all cards).
         setAvailableCategories(['VERTICAL', 'HORIZONTAL', 'ODD']);
       }
     }).catch(() => {
@@ -722,10 +715,10 @@ const GiftcardTradeScreen: React.FC = () => {
       showError({ type: 'validation', title: 'Variant Required', message: 'Please select the variant (4097 or 4118).', autoHide: true, duration: 3000 });
       return false;
     }
-    // Category is required for Apple only (it drives the Apple rate). Non-Apple cards
-    // don't use category. Card range is auto-derived — never manually selected.
+    // Category drives the rate bucket for every card type, so it's always required.
+    // Card range is auto-derived — never manually selected.
     if (categoryRequired && !category) {
-      showError({ type: 'validation', title: 'Category Required', message: 'Select the Apple card type.', autoHide: true, duration: 3000 });
+      showError({ type: 'validation', title: 'Category Required', message: 'Select the card category.', autoHide: true, duration: 3000 });
       return false;
     }
     const amount = Number(valueUSD);
@@ -861,7 +854,7 @@ const GiftcardTradeScreen: React.FC = () => {
   const activeTitle =
     openPicker === 'receipt' ? 'Receipt Availability' :
     openPicker === 'vanilla' ? 'Select Variant' :
-    openPicker === 'category' ? (isAppleCard ? 'Apple Card Type' : 'Category') :
+    openPicker === 'category' ? 'Card Category' :
     '';
 
   const activeChoices =
@@ -895,19 +888,18 @@ const GiftcardTradeScreen: React.FC = () => {
     cardFormat: normalizedCardFormat,
   };
 
-  // Apple-only amount/category guidance (Phase 1 — guidance, not enforcement).
+  // Amount/category guidance for every card type (guidance, not enforcement).
   const amountForGuidance = Number(valueUSD);
   const hasAmountForGuidance = !!valueUSD && Number.isFinite(amountForGuidance) && amountForGuidance > 0;
   // Amount looks custom but user hasn't picked Odd Number / Custom Amount.
   const showSelectOddNote =
-    isAppleCard && hasAmountForGuidance && !isAppleCommonAmount(amountForGuidance) && category !== 'ODD';
+    hasAmountForGuidance && !isCommonAmount(amountForGuidance) && category !== 'ODD';
   // User picked Odd Number / Custom Amount but the amount is a clean increment of 50.
   const showConfirmCommonNote =
-    isAppleCard && category === 'ODD' && hasAmountForGuidance && isAppleCommonAmount(amountForGuidance);
+    category === 'ODD' && hasAmountForGuidance && isCommonAmount(amountForGuidance);
 
-  // Category selector is an Apple-only concept (layout/odd). Non-Apple cards no longer
-  // show it — card range is auto-derived, so category isn't needed to submit.
-  const showCategorySelector = isAppleCard && (availableCategories === null || availableCategories.length > 0);
+  // Category selector applies to every card type — it drives the rate bucket.
+  const showCategorySelector = availableCategories === null || availableCategories.length > 0;
 
   return (
     <View style={styles.container}>
@@ -998,32 +990,29 @@ const GiftcardTradeScreen: React.FC = () => {
             />
           )}
 
-          {/* Category — "Apple Card Type" for Apple, "Category" otherwise.
-              Hidden for non-Apple cards when the backend offers no categories. */}
+          {/* Card Category — same flow for every card type. */}
           {showCategorySelector && (
             <View>
               <SelectField
-                label={isAppleCard ? 'Apple Card Type' : 'Category'}
+                label="Card Category"
                 value={category ? categoryLabelFor(category) : ''}
                 placeholder={availableCategories === null && countryId ? 'Loading categories…' : 'Select category'}
                 onPress={() => {
                   if (availableCategories !== null && availableCategories.length > 0) setOpenPicker('category');
                 }}
               />
-              {isAppleCard && (
-                <View style={{ marginTop: -8, marginBottom: 18, marginHorizontal: 16 }}>
+              <View style={{ marginTop: -8, marginBottom: 18, marginHorizontal: 16 }}>
+                <Text style={styles.helperText}>
+                  Choose Horizontal or Vertical based on the card layout. Use Odd Number / Custom Amount for values that are not standard increments of 50.
+                </Text>
+                {category === 'ODD' ? (
+                  <Text style={styles.helperText}>Examples: $72, $97, $102, $152, $170.</Text>
+                ) : (category === 'VERTICAL' || category === 'HORIZONTAL') ? (
                   <Text style={styles.helperText}>
-                    Choose Horizontal or Vertical based on the card layout. Use Odd Number / Custom Amount for values that are not standard increments of 50.
+                    Common values are usually $50, $100, $150, $200, $250, $300, and other increments of 50.
                   </Text>
-                  {category === 'ODD' ? (
-                    <Text style={styles.helperText}>Examples: $72, $97, $102, $152, $170.</Text>
-                  ) : (category === 'VERTICAL' || category === 'HORIZONTAL') ? (
-                    <Text style={styles.helperText}>
-                      Common values are usually $50, $100, $150, $200, $250, $300, and other increments of 50.
-                    </Text>
-                  ) : null}
-                </View>
-              )}
+                ) : null}
+              </View>
             </View>
           )}
 
@@ -1047,7 +1036,7 @@ const GiftcardTradeScreen: React.FC = () => {
             </View>
           ) : null}
 
-          {/* Apple amount/category guidance (guidance only — never auto-changes selection) */}
+          {/* Amount/category guidance (guidance only — never auto-changes selection) */}
           {showSelectOddNote && (
             <View style={{ marginTop: -8, marginBottom: 14, marginHorizontal: 16 }}>
               <Text style={styles.noteText}>
@@ -1058,7 +1047,7 @@ const GiftcardTradeScreen: React.FC = () => {
           {showConfirmCommonNote && (
             <View style={{ marginTop: -8, marginBottom: 14, marginHorizontal: 16 }}>
               <Text style={styles.noteText}>
-                This looks like a common Apple amount. Please confirm this should be submitted as Odd Number / Custom Amount.
+                This looks like a common card amount. Please confirm this should be submitted as Odd Number / Custom Amount.
               </Text>
             </View>
           )}
