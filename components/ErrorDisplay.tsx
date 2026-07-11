@@ -164,7 +164,9 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   message: {
     fontFamily: Typography.regular || 'System',
     fontSize: 12,
-    color: colors.textSecondary,
+    // Fixed dark gray, NOT a theme color: the banner background is always a light
+    // pastel chip regardless of theme, so themed text goes light-on-light in dark mode.
+    color: '#374151',
     lineHeight: 16,
     marginBottom: 0,
   },

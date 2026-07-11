@@ -1,7 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-    Alert,
     Image,
     SafeAreaView,
     ScrollView,
@@ -12,6 +11,7 @@ import {
     View
 } from 'react-native';
 import backIcon from '../../components/icons/backy.png';
+import ErrorDisplay from '../../components/ErrorDisplay';
 import Loading from '../../components/Loading';
 import { useTheme } from '../../hooks/useTheme';
 import type { AppColors } from '../../hooks/useTheme';
@@ -33,6 +33,7 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
   const router = useRouter();
   const [amount, setAmount] = useState('0');
   const [isLoading, setIsLoading] = useState(false);
+  const [errorData, setErrorData] = useState<{ type: 'validation' | 'balance' | 'limit'; title: string; message: string } | null>(null);
 
   // === Hooks for NGNZ balance & USD rate ===
   const { getNGNZBalance, getNGNZRate, refetchBalance } = useNGNZ();
@@ -89,16 +90,16 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
     const rawAmount = safeParseAmount(amount);
 
     if (rawAmount < minimumAmount) {
-      Alert.alert('Minimum Amount', `Minimum transfer amount is ${minimumAmount.toLocaleString()} NGNZ`);
+      setErrorData({ type: 'limit', title: 'Minimum Amount', message: `Minimum transfer amount is ${minimumAmount.toLocaleString()} NGNZ` });
       return;
     }
     if (rawAmount <= 0) {
-      Alert.alert('Invalid Amount', 'Please enter a valid amount');
+      setErrorData({ type: 'validation', title: 'Invalid Amount', message: 'Please enter a valid amount' });
       return;
     }
     // Use epsilon comparison here too just in case
     if (rawAmount > (spendable + 0.001)) {
-      Alert.alert('Insufficient Balance', `You don't have enough NGNZ. Available: ${getMaxBalanceLabel()}`);
+      setErrorData({ type: 'balance', title: 'Insufficient Balance', message: `You don't have enough NGNZ. Available: ${getMaxBalanceLabel()}` });
       return;
     }
 
@@ -145,6 +146,16 @@ export default function TransferScreen({ onBack, onTransfer }: TransferScreenPro
 
   return (
     <View style={styles.container}>
+      {errorData && (
+        <ErrorDisplay
+          type={errorData.type}
+          title={errorData.title}
+          message={errorData.message}
+          autoHide
+          duration={3500}
+          onDismiss={() => setErrorData(null)}
+        />
+      )}
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.headerContainer}>
