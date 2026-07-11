@@ -5,7 +5,7 @@ export default {
   expo: {
     name: IS_STAGING ? "ZeusODX Staging" : "ZeusODX",
     slug: "zeusodx",
-    version: "2.3.0",
+    version: "2.4.0",
     orientation: "default",
     icon: "./assets/images/app-icon.png",
     scheme: IS_STAGING ? "zeusodx-staging" : "zeusodx",
@@ -16,7 +16,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: IS_STAGING ? "com.manniegenie.zeusodx.staging" : "com.manniegenie.zeusodx",
-      buildNumber: "9",
+      buildNumber: "1",
       icon: "./assets/images/app-icon.png",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
