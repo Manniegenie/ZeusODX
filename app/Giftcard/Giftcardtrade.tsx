@@ -540,7 +540,9 @@ const GiftcardTradeScreen: React.FC = () => {
     const dr = deriveCardRange(amount); // null when outside $25–$1000
 
     // Clear any prior quote up front — inputs changed / amount out of range.
-    if (!countryId || !fmt || !dr) {
+    // Rates only exist per format per category, so BOTH must be selected
+    // before a quote is requested — no fallback/base rate to show earlier.
+    if (!countryId || !fmt || !dr || !category) {
       setRateQuote(EMPTY_QUOTE);
       return;
     }
@@ -553,9 +555,7 @@ const GiftcardTradeScreen: React.FC = () => {
         giftcard: mappedCardType,
         country: countryId,
         cardFormat: fmt,
-        // Forward the selected Apple layout/category so the backend can price it.
-        // Empty for non-Apple / not-yet-selected → omitted from the payload.
-        category: category || undefined,
+        category,
       }).then(resp => {
         if (cancelled) return;
         if (resp?.success && resp.data) {
@@ -1067,6 +1067,8 @@ const GiftcardTradeScreen: React.FC = () => {
                     ? 'Select country to see rate'
                     : !receipt
                     ? 'Select receipt type to see rate'
+                    : !category
+                    ? 'Select card category to see rate'
                     : !valueUSD || Number(valueUSD) < 25
                     ? 'Enter a valid amount to see your rate.'
                     : rateQuote.errorMessage || 'No rate is currently available for this amount.'}
