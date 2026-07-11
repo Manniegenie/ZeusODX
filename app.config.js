@@ -16,7 +16,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: IS_STAGING ? "com.manniegenie.zeusodx.staging" : "com.manniegenie.zeusodx",
-      buildNumber: "7",
+      buildNumber: "9",
       icon: "./assets/images/app-icon.png",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
