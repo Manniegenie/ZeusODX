@@ -94,7 +94,7 @@ const CATEGORIES = [
 ];
 
 // Category ids (VERTICAL/HORIZONTAL/ODD) are the backend contract and never change.
-// The same category flow applies to ALL card types, not just Apple.
+// Categories are an Apple-only concept — other card types never show them.
 // "Odd Number / Custom Amount" is a market term — it does NOT mean mathematically odd.
 const CATEGORY_LABELS: Record<string, string> = {
   VERTICAL:   'Vertical Card',
@@ -430,6 +430,9 @@ const GiftcardTradeScreen: React.FC = () => {
   // User-facing label for a category id — same wording for every card type.
   const categoryLabelFor = (id: string): string => CATEGORY_LABELS[id] || id;
 
+  // Categories (card layout / odd amount) are an Apple-only concept.
+  const isAppleCard = mappedCardType === 'APPLE';
+
   // Gift card hook
   const { loading: submitLoading, error: submitError, submitGiftCard, clearError } = useGiftCard();
 
@@ -469,9 +472,9 @@ const GiftcardTradeScreen: React.FC = () => {
   // outside the supported $25–$1000 window (Confirm stays disabled).
   const derivedRange = useMemo(() => deriveCardRange(Number(valueUSD)), [valueUSD]);
 
-  // Category (card layout / odd-amount signal) affects the rate quote for every
-  // card type, so it is required across the board.
-  const categoryRequired = true;
+  // Category is required for Apple only — it selects the Apple rate bucket.
+  // Non-Apple cards have no categories and price from a single rate table.
+  const categoryRequired = isAppleCard;
 
   // Single authoritative rate quote (see RateQuote type).
   const [rateQuote, setRateQuote] = useState<RateQuote>(EMPTY_QUOTE);
@@ -540,9 +543,9 @@ const GiftcardTradeScreen: React.FC = () => {
     const dr = deriveCardRange(amount); // null when outside $25–$1000
 
     // Clear any prior quote up front — inputs changed / amount out of range.
-    // Rates only exist per format per category, so BOTH must be selected
-    // before a quote is requested — no fallback/base rate to show earlier.
-    if (!countryId || !fmt || !dr || !category) {
+    // Apple rates exist per format per category, so Apple additionally needs a
+    // category before a quote is requested. Other cards quote from format alone.
+    if (!countryId || !fmt || !dr || (isAppleCard && !category)) {
       setRateQuote(EMPTY_QUOTE);
       return;
     }
@@ -555,7 +558,8 @@ const GiftcardTradeScreen: React.FC = () => {
         giftcard: mappedCardType,
         country: countryId,
         cardFormat: fmt,
-        category,
+        // Apple-only: selects the Apple rate bucket. Never sent for other cards.
+        category: isAppleCard ? category : undefined,
       }).then(resp => {
         if (cancelled) return;
         if (resp?.success && resp.data) {
@@ -718,7 +722,7 @@ const GiftcardTradeScreen: React.FC = () => {
     // Category drives the rate bucket for every card type, so it's always required.
     // Card range is auto-derived — never manually selected.
     if (categoryRequired && !category) {
-      showError({ type: 'validation', title: 'Category Required', message: 'Select the card category.', autoHide: true, duration: 3000 });
+      showError({ type: 'validation', title: 'Category Required', message: 'Select the Apple card type.', autoHide: true, duration: 3000 });
       return false;
     }
     const amount = Number(valueUSD);
@@ -854,7 +858,7 @@ const GiftcardTradeScreen: React.FC = () => {
   const activeTitle =
     openPicker === 'receipt' ? 'Receipt Availability' :
     openPicker === 'vanilla' ? 'Select Variant' :
-    openPicker === 'category' ? 'Card Category' :
+    openPicker === 'category' ? 'Apple Card Type' :
     '';
 
   const activeChoices =
@@ -888,18 +892,18 @@ const GiftcardTradeScreen: React.FC = () => {
     cardFormat: normalizedCardFormat,
   };
 
-  // Amount/category guidance for every card type (guidance, not enforcement).
+  // Apple-only amount/category guidance (guidance, not enforcement).
   const amountForGuidance = Number(valueUSD);
   const hasAmountForGuidance = !!valueUSD && Number.isFinite(amountForGuidance) && amountForGuidance > 0;
   // Amount looks custom but user hasn't picked Odd Number / Custom Amount.
   const showSelectOddNote =
-    hasAmountForGuidance && !isCommonAmount(amountForGuidance) && category !== 'ODD';
+    isAppleCard && hasAmountForGuidance && !isCommonAmount(amountForGuidance) && category !== 'ODD';
   // User picked Odd Number / Custom Amount but the amount is a clean increment of 50.
   const showConfirmCommonNote =
-    category === 'ODD' && hasAmountForGuidance && isCommonAmount(amountForGuidance);
+    isAppleCard && category === 'ODD' && hasAmountForGuidance && isCommonAmount(amountForGuidance);
 
-  // Category selector applies to every card type — it drives the rate bucket.
-  const showCategorySelector = availableCategories === null || availableCategories.length > 0;
+  // Category selector is Apple-only — other cards have no categories.
+  const showCategorySelector = isAppleCard && (availableCategories === null || availableCategories.length > 0);
 
   return (
     <View style={styles.container}>
@@ -990,11 +994,11 @@ const GiftcardTradeScreen: React.FC = () => {
             />
           )}
 
-          {/* Card Category — same flow for every card type. */}
+          {/* Card Category — Apple-only (selects the Apple rate bucket). */}
           {showCategorySelector && (
             <View>
               <SelectField
-                label="Card Category"
+                label="Apple Card Type"
                 value={category ? categoryLabelFor(category) : ''}
                 placeholder={availableCategories === null && countryId ? 'Loading categories…' : 'Select category'}
                 onPress={() => {
@@ -1067,8 +1071,8 @@ const GiftcardTradeScreen: React.FC = () => {
                     ? 'Select country to see rate'
                     : !receipt
                     ? 'Select receipt type to see rate'
-                    : !category
-                    ? 'Select card category to see rate'
+                    : isAppleCard && !category
+                    ? 'Select the Apple card type to see rate'
                     : !valueUSD || Number(valueUSD) < 25
                     ? 'Enter a valid amount to see your rate.'
                     : rateQuote.errorMessage || 'No rate is currently available for this amount.'}
