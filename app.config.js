@@ -119,7 +119,7 @@ export default {
       appleAppId: process.env.EXPO_PUBLIC_APPLE_APP_ID || ""
     },
     owner: "manniegenie",
-    runtimeVersion: "2.3.0",
+    runtimeVersion: "2.4.0",
     updates: {
       url: "https://u.expo.dev/a075e816-5194-4302-a228-e6f53ad53f92"
     },
