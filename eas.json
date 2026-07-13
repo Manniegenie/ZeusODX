@@ -1,7 +1,7 @@
 {
   "cli": {
     "version": ">=16.18.0",
-    "appVersionSource": "local"
+    "appVersionSource": "remote"
   },
   "build": {
     "base": {
@@ -46,7 +46,7 @@
     },
     "production": {
       "extends": "base",
-      "autoIncrement": false,
+      "autoIncrement": true,
       "env": {
         "NODE_ENV": "production",
         "EXPO_PUBLIC_APPSFLYER_DEV_KEY": "Av6nnqAQzF26yExKyQ6g4U",

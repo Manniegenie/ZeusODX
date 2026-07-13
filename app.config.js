@@ -16,7 +16,7 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: IS_STAGING ? "com.manniegenie.zeusodx.staging" : "com.manniegenie.zeusodx",
-      buildNumber: "5",
+      // buildNumber is managed remotely by EAS (cli.appVersionSource: "remote" + autoIncrement)
       icon: "./assets/images/app-icon.png",
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
@@ -49,8 +49,8 @@ export default {
         "com.google.android.c2dm.permission.RECEIVE",
         "android.permission.POST_NOTIFICATIONS",
         "com.google.android.gms.permission.AD_ID"
-      ],
-      versionCode: 166
+      ]
+      // versionCode is managed remotely by EAS (cli.appVersionSource: "remote" + autoIncrement)
     },
     web: {
       bundler: "metro",
