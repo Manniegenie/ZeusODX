@@ -1206,7 +1206,12 @@ const GiftcardTradeScreen: React.FC = () => {
               />
               <View style={{ marginTop: -8, marginBottom: 18, marginHorizontal: 16 }}>
                 <Text style={styles.helperText}>
-                  Choose Horizontal or Vertical based on the card layout. Use Odd Number / Custom Amount for values that are not standard increments of 50.{' '}
+                  Choose Horizontal or Vertical based on the card layout. Use Odd Number / Custom Amount for values that are not standard increments of 50.
+                  {category === 'ODD'
+                    ? ' Examples: $72, $97, $102, $152, $170.'
+                    : (category === 'VERTICAL' || category === 'HORIZONTAL')
+                    ? ' Common values are usually $50, $100, $150, $200, $250, $300, and other increments of 50.'
+                    : ''}{' '}
                   <Text
                     style={[styles.helperText, { color: colors.primary, textDecorationLine: 'underline' }]}
                     onPress={() => setShowCardExamples(true)}
@@ -1214,13 +1219,6 @@ const GiftcardTradeScreen: React.FC = () => {
                     See examples
                   </Text>
                 </Text>
-                {category === 'ODD' ? (
-                  <Text style={styles.helperText}>Examples: $72, $97, $102, $152, $170.</Text>
-                ) : (category === 'VERTICAL' || category === 'HORIZONTAL') ? (
-                  <Text style={styles.helperText}>
-                    Common values are usually $50, $100, $150, $200, $250, $300, and other increments of 50.
-                  </Text>
-                ) : null}
               </View>
             </View>
           )}
