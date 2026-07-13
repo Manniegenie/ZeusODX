@@ -223,13 +223,20 @@ function TawkOverlay({ visible, onClose, directLink, title }: TawkOverlayProps) 
         </TouchableWithoutFeedback>
       </Animated.View>
 
-      {/* Sheet — always in the tree; translateY moves it off-screen when closed */}
+      {/* Sheet — always in the tree; translateY moves it off-screen when closed.
+          When the keyboard opens, the sheet must SHRINK (not just slide up):
+          lifting a fixed 75%-height sheet by the keyboard height pushes its
+          header off the top of the screen. Clamp the height to the space left
+          between the keyboard and the status bar so the top stays visible. */}
       <Animated.View
         style={[
           styles.sheetContainer,
           {
             transform: [{ translateY }],
-            height: SHEET_HEIGHT,
+            height:
+              keyboardHeight > 0
+                ? Math.min(SHEET_HEIGHT, Math.max(280, screenH - keyboardHeight - insets.top - 12))
+                : SHEET_HEIGHT,
             marginBottom: Platform.OS === 'ios' ? keyboardHeight : 0,
           },
         ]}
