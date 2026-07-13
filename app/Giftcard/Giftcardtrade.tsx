@@ -218,19 +218,14 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
 };
 
 /* ---------------- Apple Card Layout Examples ---------------- */
-// Visual examples of Vertical vs Horizontal Apple cards, drawn in code so they
-// adapt to the theme. Opened from the "See examples" link under the selector.
+// Sample photos of Vertical vs Horizontal Apple cards, opened from the
+// "See examples" link under the selector.
+const verticalSampleImage = require('../../assets/images/Vertical.jpg');
+const horizontalSampleImage = require('../../assets/images/Horizontal.jpg');
+
 const CardLayoutExamplesModal: React.FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
   const { colors } = useTheme();
   const ex = useMemo(() => makeExamplesStyles(colors), [colors]);
-
-  const CardIllustration = ({ landscape }: { landscape: boolean }) => (
-    <View style={[ex.cardShape, landscape ? ex.cardLandscape : ex.cardPortrait]}>
-      <Text style={ex.cardBrand}>Apple</Text>
-      <Text style={ex.cardSub}>Gift Card</Text>
-      <View style={ex.codeStrip} />
-    </View>
-  );
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -247,12 +242,12 @@ const CardLayoutExamplesModal: React.FC<{ visible: boolean; onClose: () => void 
 
               <View style={ex.examplesRow}>
                 <View style={ex.exampleCol}>
-                  <CardIllustration landscape={false} />
+                  <Image source={verticalSampleImage} style={ex.samplePhoto} resizeMode="cover" />
                   <Text style={ex.exampleLabel}>Vertical Card</Text>
                   <Text style={ex.exampleCaption}>Card art is upright{'\n'}(portrait)</Text>
                 </View>
                 <View style={ex.exampleCol}>
-                  <CardIllustration landscape />
+                  <Image source={horizontalSampleImage} style={ex.samplePhoto} resizeMode="cover" />
                   <Text style={ex.exampleLabel}>Horizontal Card</Text>
                   <Text style={ex.exampleCaption}>Card art is sideways{'\n'}(landscape)</Text>
                 </View>
@@ -338,37 +333,12 @@ const makeExamplesStyles = (colors: AppColors) => StyleSheet.create({
     justifyContent: 'flex-start',
     width: 132,
   },
-  cardShape: {
+  samplePhoto: {
+    width: 122,
+    height: 165,
     borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 10,
-  },
-  cardPortrait: { width: 84, height: 122 },
-  cardLandscape: { width: 122, height: 84 },
-  cardBrand: {
-    color: colors.text,
-    fontFamily: Typography.medium || 'System',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  cardSub: {
-    color: colors.textSecondary,
-    fontFamily: Typography.regular || 'System',
-    fontSize: 10,
-    marginTop: 2,
-  },
-  codeStrip: {
-    position: 'absolute',
-    bottom: 8,
-    left: 10,
-    right: 10,
-    height: 8,
-    borderRadius: 3,
-    backgroundColor: colors.separator || colors.border,
+    backgroundColor: '#fff', // sample photos have white backgrounds; avoids flash while loading
   },
   exampleLabel: {
     color: colors.text,
