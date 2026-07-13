@@ -41,23 +41,6 @@ import arrowDownIcon from '../../components/icons/arrow-down.png';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-// Detects likely network codes from a crypto address format
-function detectNetworkCodesFromAddress(address: string): string[] {
-  if (!address || address.length < 10) return [];
-  const a = address.trim();
-  // EVM: 0x + 40 hex chars (ETH, BSC, Polygon, Arbitrum, Base)
-  if (/^0x[0-9a-fA-F]{40}$/.test(a)) return ['ETH', 'ERC20', 'BSC', 'BEP20', 'POLYGON', 'MATIC', 'ARB', 'BASE'];
-  // Bitcoin: bech32 (bc1), P2PKH (1...), P2SH (3...)
-  if (/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/.test(a)) return ['BTC'];
-  // Tron: T + 33 base58 chars
-  if (/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(a)) return ['TRX', 'TRON', 'TRC20'];
-  // TON: EQ or UQ + 46 base64url chars
-  if (/^(EQ|UQ)[A-Za-z0-9_-]{46}$/.test(a)) return ['TON'];
-  // Solana: base58, 32–44 chars (no 0x / T / bc1 prefix)
-  if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a)) return ['SOL'];
-  return [];
-}
-
 // Strip crypto URI schemes: "bitcoin:addr", "ethereum:0xaddr?amount=..." → just the address
 function parseAddressFromQR(raw: string): string {
   if (!raw) return '';
@@ -312,21 +295,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
     };
   }, [selectedNetwork, amount, selectedToken?.symbol]);
 
-  // Auto-detect network from wallet address
-  useEffect(() => {
-    if (!walletAddress || availableNetworks.length === 0) return;
-    const possibleCodes = detectNetworkCodesFromAddress(walletAddress);
-    if (possibleCodes.length === 0) return;
-    const match = availableNetworks.find(n =>
-      possibleCodes.some(code =>
-        n.code?.toUpperCase() === code || n.code?.toUpperCase().includes(code) || code.includes(n.code?.toUpperCase())
-      )
-    );
-    if (match && match.id !== selectedNetwork?.id) {
-      setSelectedNetwork(match);
-    }
-  }, [walletAddress, availableNetworks]);
-
   const handleOpenScanner = async () => {
     if (!cameraPermission?.granted) {
       const result = await requestCameraPermission();
@@ -579,15 +547,6 @@ const ExternalWalletTransferScreen: React.FC = () => {
                   </TouchableOpacity>
                 </View>
               </View>
-              {walletAddress.length > 0 && detectNetworkCodesFromAddress(walletAddress).length > 0 && (
-                <View style={styles.detectedBadge}>
-                  <Text style={styles.detectedBadgeText}>
-                    {selectedNetwork
-                      ? `✓ ${selectedNetwork.name} auto-selected`
-                      : `Detected: ${detectNetworkCodesFromAddress(walletAddress).slice(0,3).join(' / ')}`}
-                  </Text>
-                </View>
-              )}
             </View>
           </View>
 
@@ -770,8 +729,6 @@ const makeStyles = (colors: AppColors) => StyleSheet.create({
   pasteButton: { backgroundColor: colors.separator, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 },
   pasteButtonText: { fontSize: 11, color: colors.primary, fontWeight: '600', fontFamily: Typography.medium || 'System' },
   scanButton: { backgroundColor: colors.primary, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, justifyContent: 'center', alignItems: 'center' },
-  detectedBadge: { marginTop: 8, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: colors.iconBg, borderRadius: 6, alignSelf: 'flex-start' },
-  detectedBadgeText: { fontSize: 11, color: colors.primary, fontFamily: Typography.medium || 'System', fontWeight: '600' },
   // Scanner modal
   scannerContainer: { flex: 1, backgroundColor: '#000' },
   scannerOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center' },
