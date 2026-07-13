@@ -20,7 +20,6 @@ import type { AppColors } from '../hooks/useTheme';
 import { Typography } from '../constants/Typography';
 import { useUserProfile } from '../hooks/useProfile';
 
-const EXTRA_BOTTOM_PADDING = 12;
 
 /* ================= Tawk Context ================= */
 
@@ -77,9 +76,7 @@ function TawkOverlay({ visible, onClose, directLink, title }: TawkOverlayProps) 
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { height: screenH } = useWindowDimensions();
-  const SHEET_HEIGHT = Math.round(screenH * 0.75);
-  const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
-  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(screenH)).current;
   const insets = useSafeAreaInsets();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   // Only interactive once open animation starts; stops after close animation finishes
@@ -114,17 +111,13 @@ function TawkOverlay({ visible, onClose, directLink, title }: TawkOverlayProps) 
   useEffect(() => {
     if (visible) {
       setIsInteractable(true);
-      Animated.parallel([
-        Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8, tension: 100 }),
-        Animated.timing(overlayOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      ]).start();
+      Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 9, tension: 90 }).start();
     } else {
-      Animated.parallel([
-        Animated.timing(translateY, { toValue: SHEET_HEIGHT, duration: 220, useNativeDriver: true }),
-        Animated.timing(overlayOpacity, { toValue: 0, duration: 220, useNativeDriver: true }),
-      ]).start(() => setIsInteractable(false));
+      Animated.timing(translateY, { toValue: screenH, duration: 220, useNativeDriver: true }).start(() =>
+        setIsInteractable(false)
+      );
     }
-  }, [visible, SHEET_HEIGHT]);
+  }, [visible, screenH]);
 
   // Push visitor identity each time the sheet opens (Tawk is already loaded; session persists)
   useEffect(() => {
@@ -206,132 +199,84 @@ function TawkOverlay({ visible, onClose, directLink, title }: TawkOverlayProps) 
     [userName, userEmail]
   );
 
-  const bottomPadding = insets.bottom + EXTRA_BOTTOM_PADDING;
-
   return (
-    <View
-      pointerEvents={isInteractable ? 'box-none' : 'none'}
-      style={[StyleSheet.absoluteFill, { zIndex: 999 }]}
+    <Animated.View
+      pointerEvents={isInteractable ? 'auto' : 'none'}
+      style={[
+        StyleSheet.absoluteFill,
+        styles.chatContainer,
+        { zIndex: 999, transform: [{ translateY }] },
+      ]}
     >
-      {/* Animated backdrop */}
-      <Animated.View
-        pointerEvents={isInteractable ? 'auto' : 'none'}
-        style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', opacity: overlayOpacity }]}
-      >
-        <TouchableWithoutFeedback onPress={onClose}>
-          <View style={StyleSheet.absoluteFill} />
-        </TouchableWithoutFeedback>
-      </Animated.View>
+      {/* Full-screen chat, anchored from the TOP: the header can never be pushed
+          off-screen by the keyboard. The WebView below shrinks above the keyboard. */}
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+        <View style={styles.titleRow}>
+          <Text style={styles.sheetTitle}>{title}</Text>
+          <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Text style={styles.closeTxt}>✕</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Sheet — always in the tree; translateY moves it off-screen when closed.
-          When the keyboard opens, the sheet must SHRINK (not just slide up):
-          lifting a fixed 75%-height sheet by the keyboard height pushes its
-          header off the top of the screen. Clamp the height to the space left
-          between the keyboard and the status bar so the top stays visible. */}
-      <Animated.View
-        style={[
-          styles.sheetContainer,
-          {
-            transform: [{ translateY }],
-            height:
-              keyboardHeight > 0
-                ? Math.min(SHEET_HEIGHT, Math.max(280, screenH - keyboardHeight - insets.top - 12))
-                : SHEET_HEIGHT,
-            marginBottom: Platform.OS === 'ios' ? keyboardHeight : 0,
-          },
-        ]}
-      >
-        <View style={styles.handleBar} />
-        <SafeAreaView style={{ flex: 1, paddingBottom: bottomPadding }} edges={['bottom']}>
-          <View style={styles.titleRow}>
-            <Text style={styles.sheetTitle}>{title}</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={styles.closeTxt}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.webContainer}>
-            {loading && (
-              <View style={styles.loader}>
-                <ActivityIndicator size="large" color={colors.primary} />
-              </View>
-            )}
-            <WebView
-              ref={webRef}
-              source={{ uri: directLink }}
-              startInLoadingState
-              onLoadEnd={() => setLoading(false)}
-              javaScriptEnabled
-              domStorageEnabled
-              allowsInlineMediaPlayback
-              setSupportMultipleWindows={false}
-              allowsBackForwardNavigationGestures
-              originWhitelist={['*']}
-              injectedJavaScriptBeforeContentLoaded={injectedBefore}
-              onShouldStartLoadWithRequest={(req) => {
-                if (allowInApp(req.url)) return true;
-                Linking.openURL(req.url).catch(() => {});
-                return false;
-              }}
-              androidHardwareAccelerationDisabled={false}
-              nestedScrollEnabled
-              androidLayerType="hardware"
-              mixedContentMode="compatibility"
-              thirdPartyCookiesEnabled
-              sharedCookiesEnabled
-              allowFileAccessFromFileURLs
-              allowUniversalAccessFromFileURLs
-              overScrollMode="never"
-              showsVerticalScrollIndicator={false}
-              keyboardDisplayRequiresUserAction={false}
-              onTouchStart={() => {}}
-              bounces={false}
-              hideKeyboardAccessoryView={false}
-              automaticallyAdjustContentInsets={false}
-              contentInsetAdjustmentBehavior="never"
-              scrollEnabled
-              userAgent={
-                Platform.select({
-                  android: 'Mozilla/5.0 (Linux; Android 12; rv:109.0) Gecko/109.0 Firefox/109.0',
-                  ios: undefined,
-                  default: undefined,
-                }) as string | undefined
-              }
-            />
-          </View>
-        </SafeAreaView>
-      </Animated.View>
-    </View>
+        <View style={[styles.webContainer, { marginBottom: keyboardHeight > 0 ? keyboardHeight - insets.bottom : 0 }]}>
+          {loading && (
+            <View style={styles.loader}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          )}
+          <WebView
+            ref={webRef}
+            source={{ uri: directLink }}
+            startInLoadingState
+            onLoadEnd={() => setLoading(false)}
+            javaScriptEnabled
+            domStorageEnabled
+            allowsInlineMediaPlayback
+            setSupportMultipleWindows={false}
+            allowsBackForwardNavigationGestures
+            originWhitelist={['*']}
+            injectedJavaScriptBeforeContentLoaded={injectedBefore}
+            onShouldStartLoadWithRequest={(req) => {
+              if (allowInApp(req.url)) return true;
+              Linking.openURL(req.url).catch(() => {});
+              return false;
+            }}
+            androidHardwareAccelerationDisabled={false}
+            nestedScrollEnabled
+            androidLayerType="hardware"
+            mixedContentMode="compatibility"
+            thirdPartyCookiesEnabled
+            sharedCookiesEnabled
+            allowFileAccessFromFileURLs
+            allowUniversalAccessFromFileURLs
+            overScrollMode="never"
+            showsVerticalScrollIndicator={false}
+            keyboardDisplayRequiresUserAction={false}
+            onTouchStart={() => {}}
+            bounces={false}
+            hideKeyboardAccessoryView={false}
+            automaticallyAdjustContentInsets={false}
+            contentInsetAdjustmentBehavior="never"
+            scrollEnabled
+            userAgent={
+              Platform.select({
+                android: 'Mozilla/5.0 (Linux; Android 12; rv:109.0) Gecko/109.0 Firefox/109.0',
+                ios: undefined,
+                default: undefined,
+              }) as string | undefined
+            }
+          />
+        </View>
+      </SafeAreaView>
+    </Animated.View>
   );
 }
 
 /* ================= Styles ================= */
 
 const makeStyles = (colors: AppColors) => StyleSheet.create({
-  sheetContainer: {
+  chatContainer: {
     backgroundColor: colors.card,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 6,
-    overflow: 'hidden',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    elevation: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-  },
-
-  handleBar: {
-    width: 36,
-    height: 4,
-    backgroundColor: colors.border,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 8,
   },
 
   titleRow: {
