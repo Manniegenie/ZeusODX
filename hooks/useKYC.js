@@ -127,15 +127,6 @@ export const useBiometricVerification = () => {
         };
       }
 
-      const imageSizeValidation = kycService.validateImageSize(selfieImage);
-      if (!imageSizeValidation.valid) {
-        return {
-          success: false,
-          error: 'IMAGE_TOO_LARGE',
-          message: imageSizeValidation.message
-        };
-      }
-
       if (livenessImages) {
         if (!Array.isArray(livenessImages) || livenessImages.length !== 8) {
           return {
@@ -151,15 +142,6 @@ export const useBiometricVerification = () => {
               success: false,
               error: 'INVALID_LIVENESS_IMAGE_FORMAT',
               message: `Liveness image ${i + 1} has invalid format`
-            };
-          }
-
-          const livenessImageSizeValidation = kycService.validateImageSize(livenessImages[i]);
-          if (!livenessImageSizeValidation.valid) {
-            return {
-              success: false,
-              error: 'LIVENESS_IMAGE_TOO_LARGE',
-              message: `Liveness image ${i + 1}: ${livenessImageSizeValidation.message}`
             };
           }
         }

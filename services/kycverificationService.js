@@ -66,21 +66,12 @@ export const kycService = {
         };
       }
 
-      // Validate selfie image format and size
+      // Validate selfie image format
       if (!this.validateImageFormat(selfieImage)) {
         return {
           success: false,
           error: 'INVALID_IMAGE_FORMAT',
           message: 'Selfie must be a valid base64 image'
-        };
-      }
-
-      const sizeValidation = this.validateImageSize(selfieImage);
-      if (!sizeValidation.valid) {
-        return {
-          success: false,
-          error: 'INVALID_IMAGE_SIZE',
-          message: sizeValidation.message
         };
       }
 
@@ -99,14 +90,6 @@ export const kycService = {
               success: false,
               error: 'INVALID_LIVENESS_IMAGE_FORMAT',
               message: 'All liveness images must be valid base64 images'
-            };
-          }
-          const imgSizeValidation = this.validateImageSize(img);
-          if (!imgSizeValidation.valid) {
-            return {
-              success: false,
-              error: 'INVALID_LIVENESS_IMAGE_SIZE',
-              message: imgSizeValidation.message
             };
           }
         }
@@ -396,33 +379,6 @@ export const kycService = {
 
     const base64Regex = /^data:image\/(jpeg|jpg|png|gif|bmp|webp);base64,/;
     return base64Regex.test(image);
-  },
-
-  /**
-   * Convert base64 to file size estimate
-   */
-  getBase64FileSize(base64String) {
-    if (!base64String || typeof base64String !== 'string') return 0;
-
-    const base64Data = base64String.split(',')[1] || base64String;
-    return Math.round((base64Data.length * 3) / 4);
-  },
-
-  /**
-   * Validate image file size (max 5MB)
-   */
-  validateImageSize(base64Image, maxSizeMB = 5) {
-    const fileSizeBytes = this.getBase64FileSize(base64Image);
-    const maxSizeBytes = maxSizeMB * 1024 * 1024;
-
-    if (fileSizeBytes > maxSizeBytes) {
-      return {
-        valid: false,
-        message: `Image size (${(fileSizeBytes / 1024 / 1024).toFixed(2)}MB) exceeds maximum allowed size of ${maxSizeMB}MB`
-      };
-    }
-
-    return { valid: true };
   },
 
   /**
