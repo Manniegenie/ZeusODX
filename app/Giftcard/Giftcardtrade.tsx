@@ -217,6 +217,204 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   );
 };
 
+/* ---------------- Apple Card Layout Examples ---------------- */
+// Visual examples of Vertical vs Horizontal Apple cards, drawn in code so they
+// adapt to the theme. Opened from the "See examples" link under the selector.
+const CardLayoutExamplesModal: React.FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
+  const { colors } = useTheme();
+  const ex = useMemo(() => makeExamplesStyles(colors), [colors]);
+
+  const CardIllustration = ({ landscape }: { landscape: boolean }) => (
+    <View style={[ex.cardShape, landscape ? ex.cardLandscape : ex.cardPortrait]}>
+      <Text style={ex.cardBrand}>Apple</Text>
+      <Text style={ex.cardSub}>Gift Card</Text>
+      <View style={ex.codeStrip} />
+    </View>
+  );
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={ex.overlay}>
+          <TouchableWithoutFeedback>
+            <View style={ex.container}>
+              <TouchableOpacity style={ex.closeButton} onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Text style={ex.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+
+              <Text style={ex.title}>Apple Card Types</Text>
+              <Text style={ex.subtitle}>Pick the type that matches how your card looks.</Text>
+
+              <View style={ex.examplesRow}>
+                <View style={ex.exampleCol}>
+                  <CardIllustration landscape={false} />
+                  <Text style={ex.exampleLabel}>Vertical Card</Text>
+                  <Text style={ex.exampleCaption}>Card art is upright{'\n'}(portrait)</Text>
+                </View>
+                <View style={ex.exampleCol}>
+                  <CardIllustration landscape />
+                  <Text style={ex.exampleLabel}>Horizontal Card</Text>
+                  <Text style={ex.exampleCaption}>Card art is sideways{'\n'}(landscape)</Text>
+                </View>
+              </View>
+
+              <View style={ex.oddNote}>
+                <Text style={ex.oddNoteText}>
+                  Odd Number / Custom Amount: either layout, but the value is not a standard increment of 50 — e.g. $72, $97, $102, $152.
+                </Text>
+              </View>
+
+              <TouchableOpacity style={ex.doneButton} onPress={onClose} activeOpacity={0.85}>
+                <Text style={ex.doneButtonText}>Got it</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
+};
+
+const makeExamplesStyles = (colors: AppColors) => StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  container: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    width: 330,
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
+    zIndex: 1,
+  },
+  closeButtonText: {
+    color: colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  title: {
+    color: colors.text,
+    fontFamily: Typography.medium || 'System',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  subtitle: {
+    color: colors.textSecondary,
+    fontFamily: Typography.regular || 'System',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  examplesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  exampleCol: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    width: 132,
+  },
+  cardShape: {
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  cardPortrait: { width: 84, height: 122 },
+  cardLandscape: { width: 122, height: 84 },
+  cardBrand: {
+    color: colors.text,
+    fontFamily: Typography.medium || 'System',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  cardSub: {
+    color: colors.textSecondary,
+    fontFamily: Typography.regular || 'System',
+    fontSize: 10,
+    marginTop: 2,
+  },
+  codeStrip: {
+    position: 'absolute',
+    bottom: 8,
+    left: 10,
+    right: 10,
+    height: 8,
+    borderRadius: 3,
+    backgroundColor: colors.separator || colors.border,
+  },
+  exampleLabel: {
+    color: colors.text,
+    fontFamily: Typography.medium || 'System',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  exampleCaption: {
+    color: colors.textSecondary,
+    fontFamily: Typography.regular || 'System',
+    fontSize: 11,
+    textAlign: 'center',
+    lineHeight: 15,
+  },
+  oddNote: {
+    backgroundColor: colors.background,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  oddNoteText: {
+    color: colors.textSecondary,
+    fontFamily: Typography.regular || 'System',
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  doneButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  doneButtonText: {
+    color: '#FFFFFF',
+    fontFamily: Typography.medium || 'System',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+});
+
 /* ---------------- Base Bottom Sheet ---------------- */
 const SHEET_MAX_HEIGHT = 520;
 
@@ -460,6 +658,7 @@ const GiftcardTradeScreen: React.FC = () => {
   const [openPicker, setOpenPicker] = useState<null | 'receipt' | 'vanilla' | 'category'>(null);
   const [showCountrySheet, setShowCountrySheet] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [showCardExamples, setShowCardExamples] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const [showErrorDisplay, setShowErrorDisplay] = useState(false);
@@ -1007,7 +1206,13 @@ const GiftcardTradeScreen: React.FC = () => {
               />
               <View style={{ marginTop: -8, marginBottom: 18, marginHorizontal: 16 }}>
                 <Text style={styles.helperText}>
-                  Choose Horizontal or Vertical based on the card layout. Use Odd Number / Custom Amount for values that are not standard increments of 50.
+                  Choose Horizontal or Vertical based on the card layout. Use Odd Number / Custom Amount for values that are not standard increments of 50.{' '}
+                  <Text
+                    style={[styles.helperText, { color: colors.primary, textDecorationLine: 'underline' }]}
+                    onPress={() => setShowCardExamples(true)}
+                  >
+                    See examples
+                  </Text>
                 </Text>
                 {category === 'ODD' ? (
                   <Text style={styles.helperText}>Examples: $72, $97, $102, $152, $170.</Text>
@@ -1216,6 +1421,9 @@ const GiftcardTradeScreen: React.FC = () => {
           errorMessage: rateQuote.errorMessage,
         }}
       />
+
+      {/* Apple card layout examples */}
+      <CardLayoutExamplesModal visible={showCardExamples} onClose={() => setShowCardExamples(false)} />
 
       {/* Success Modal */}
       <SuccessModal
