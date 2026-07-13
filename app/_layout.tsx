@@ -25,6 +25,7 @@ import NotificationService from '../services/notificationService';
 import AppsFlyerService from '../services/appsFlyerService';
 import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 import { configureModernEdgeToEdge } from '../utils/edgeToEdgeConfig';
+import { prefetchBanners } from '../hooks/usebanners';
 
 const TAWK_DIRECT_LINK = process.env.EXPO_PUBLIC_TAWK_DIRECT_LINK || 'https://tawk.to/chat/68b186eb517e5918ffb583a8/1j3qne2kl';
 
@@ -83,6 +84,9 @@ export default function RootLayout() {
     disableFontScaling();
     if (TextInput.defaultProps) TextInput.defaultProps.allowFontScaling = false;
     configureModernEdgeToEdge();
+    // Warm the dashboard banner cache in the background during startup so the
+    // banner slot renders instantly (no spinner) once the dashboard mounts.
+    prefetchBanners();
   }, []);
 
   // 2. Set Overall App Ready State

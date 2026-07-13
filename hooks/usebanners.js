@@ -2,48 +2,68 @@
 import { useCallback, useState, useEffect } from 'react';
 import { bannerService } from '../services/bannerService';
 
+// Module-level cache so banners are fetched once in the background at app
+// startup (see prefetchBanners in app/_layout.tsx) and every screen mount
+// afterwards renders instantly from cache — no spinner in the banner slot
+// while the dashboard is busy with its own load (KYC check, balances, etc).
+let cachedBanners = null;       // null = never fetched; [] = fetched, none live
+let inFlight = null;            // de-dupes concurrent fetches
+
+async function fetchBannersOnce() {
+  if (inFlight) return inFlight;
+  inFlight = (async () => {
+    try {
+      const response = await bannerService.getBanners();
+      let list = [];
+      if (response.success && Array.isArray(response.data)) {
+        list = response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        list = response.data.data;
+      }
+      cachedBanners = list;
+      return { banners: list, error: null };
+    } catch (err) {
+      // Keep any previous cache on failure
+      return { banners: cachedBanners || [], error: 'An unexpected error occurred' };
+    } finally {
+      inFlight = null;
+    }
+  })();
+  return inFlight;
+}
+
+// Fire-and-forget warm-up. Call as early as possible (root layout) so the
+// banner data is already sitting in cache before the dashboard mounts.
+export function prefetchBanners() {
+  fetchBannersOnce().catch(() => {});
+}
+
 export const useBanners = () => {
-  // 1. Keep the initial state as an empty array
-  const [banners, setBanners] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [banners, setBanners] = useState(cachedBanners || []);
+  // Only show a loading state when there is no cache at all
+  const [loading, setLoading] = useState(cachedBanners === null);
   const [error, setError] = useState(null);
 
   const fetchBanners = useCallback(async () => {
-    setLoading(true);
+    if (cachedBanners === null) setLoading(true);
     setError(null);
-
-    try {
-      const response = await bannerService.getBanners();
-      
-      // 2. Check if response.data is the actual array
-      // If your backend returns { success: true, data: [...] }
-      // then response.data is the array we want.
-      if (response.success && Array.isArray(response.data)) {
-        setBanners(response.data);
-      } else if (response.data && Array.isArray(response.data.data)) {
-        // Fallback in case your apiClient wraps the data twice
-        setBanners(response.data.data);
-      } else {
-        setBanners([]); // Fallback to empty array to prevent crashes
-        setError(response.error || 'Invalid data format');
-      }
-    } catch (err) {
-      setBanners([]); // Ensure it stays an array on error
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
+    const result = await fetchBannersOnce();
+    setBanners(result.banners);
+    setError(result.error);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
+    // Serve cache instantly (state already initialized from it), then refresh
+    // silently in the background so promo changes still show up.
     fetchBanners();
   }, [fetchBanners]);
 
   return {
-    banners: Array.isArray(banners) ? banners : [], // Safety return
+    banners: Array.isArray(banners) ? banners : [],
     loading,
     error,
-    refreshBanners: fetchBanners 
+    refreshBanners: fetchBanners
   };
 };
 
