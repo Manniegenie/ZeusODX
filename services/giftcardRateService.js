@@ -8,8 +8,8 @@ export const GIFT_CARD_TYPES = [
   'AMAZON','VISA','VANILLA','VANILLA_4097','VANILLA_4118','RAZOR_GOLD',
   'AMERICAN_EXPRESS','SEPHORA','FOOTLOCKER','XBOX','EBAY'
 ];
-// canonical country keys we use internally
-export const GIFT_CARD_COUNTRIES = ['US','CANADA','AUSTRALIA','SWITZERLAND','EUROPE'];
+// canonical country keys we use internally (must match backend allowedCountries)
+export const GIFT_CARD_COUNTRIES = ['US','GB','CANADA','AUSTRALIA','SWITZERLAND','EUROPE'];
 
 // Your server route per logs
 const ENDPOINT = '/giftcardrates/calculate-rate';
@@ -115,6 +115,7 @@ function normalizeCountry(input) {
   if (!raw) return '';
   const map = {
     'US': 'US', 'USA': 'US', 'UNITED STATES': 'US', 'UNITEDSTATES': 'US',
+    'GB': 'GB', 'UK': 'GB', 'GBR': 'GB', 'UNITED KINGDOM': 'GB', 'UNITEDKINGDOM': 'GB', 'GREAT BRITAIN': 'GB', 'ENGLAND': 'GB',
     'CA': 'CANADA', 'CAN': 'CANADA', 'CANADA': 'CANADA',
     'AU': 'AUSTRALIA', 'AUS': 'AUSTRALIA', 'AUSTRALIA': 'AUSTRALIA',
     'CH': 'SWITZERLAND', 'SWITZERLAND': 'SWITZERLAND', 'CHE': 'SWITZERLAND',

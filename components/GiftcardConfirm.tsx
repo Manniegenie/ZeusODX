@@ -156,6 +156,7 @@ function normalizeCountryToAllowed(input?: string | null) {
   if (!raw) return '';
   const up = raw.toUpperCase();
   if (['US', 'USA', 'UNITED STATES', 'UNITED STATES OF AMERICA'].includes(up)) return 'US';
+  if (['GB', 'UK', 'GBR', 'UNITED KINGDOM', 'GREAT BRITAIN', 'ENGLAND'].includes(up)) return 'GB';
   if (['CANADA', 'CA'].includes(up)) return 'CANADA';
   if (['AUSTRALIA', 'AU'].includes(up)) return 'AUSTRALIA';
   if (['SWITZERLAND', 'CH'].includes(up)) return 'SWITZERLAND';

@@ -75,6 +75,11 @@ const normalizeCountryCode = (code = ''): string => {
     'UNITED_STATES': 'US',
     UNITEDSTATES: 'US',
     US: 'US',
+    'UNITED KINGDOM': 'GB',
+    'UNITED_KINGDOM': 'GB',
+    UNITEDKINGDOM: 'GB',
+    UK: 'GB',
+    GB: 'GB',
   };
   if (mapping[normalized]) return mapping[normalized];
   if (normalized.length === 2) return normalized;
