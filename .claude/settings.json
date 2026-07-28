@@ -4,7 +4,14 @@
       "Bash(node -e *)",
       "Bash(grep -v \"^$\")",
       "Bash(find /Users/mac/Projects/Chatbramp-app/../ -maxdepth 2 -type d | grep -i \"admin\\\\|bramp-admin\" | head -10)",
-      "Read(//Users/mac/Projects//**)"
+      "Read(//Users/mac/Projects//**)",
+      "Bash(node --check adminRoutes/pushnotification.js)",
+      "Bash(echo \"=== exit: $?\")",
+      "Bash(node -e \"const j=require\\('./eas.json'\\); console.log\\(JSON.stringify\\(j.submit.production.ios,null,2\\)\\)\")",
+      "Bash(node -e \"import\\('./app.config.js'\\).then\\(m=>{const e=m.default.expo; console.log\\('ios bundleId:', e.ios.bundleIdentifier, '| android pkg:', e.android.package\\)}\\)\")",
+      "Bash(node -e \"import\\('./app.config.js'\\).then\\(m=>{const e=m.default.expo;console.log\\('ios:',e.ios.bundleIdentifier,'| android:',e.android.package\\)}\\)\")",
+      "Bash(node -e \"require\\('./google-services.json'\\); console.log\\('valid ✓'\\)\")",
+      "Bash(node -e 'const j=require\\('\\\\''__TRACKED_VAR__'\\\\''\\); console.log\\('\\\\''top-level keys:'\\\\'', Object.keys\\(j\\).join\\('\\\\'', '\\\\''\\)\\)')"
     ],
     "additionalDirectories": [
       "/Users/mac/Projects/bramp_admin/src/components",
@@ -13,7 +20,8 @@
       "/Users/mac/Projects/bramp_admin/src/features/users/services",
       "/Users/mac/Projects/bramp_admin/src/features/funding/services",
       "/Users/mac/Projects/bramp_admin/src/features/funding/store",
-      "/Users/mac/Projects/bramp_admin/src/features/funding/pages"
+      "/Users/mac/Projects/bramp_admin/src/features/funding/pages",
+      "/Users/mac/Projects/Chatbot/public"
     ]
   }
 }

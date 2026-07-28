@@ -48,3 +48,6 @@ app-example
 
 # local-only docs, never commit
 *.md
+
+# Local server/infra notes — never commit
+Cred.txt
