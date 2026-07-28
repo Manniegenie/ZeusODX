@@ -377,7 +377,28 @@ const BillReceiptScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [showCopied, setShowCopied] = useState(false);
-  
+
+  // Row lives inside the component so it can use the theme-aware `styles`.
+  // (It was module-level and referenced an out-of-scope `styles`, which threw
+  // "ReferenceError: styles is not defined" and crashed the receipt.)
+  const Row = ({
+    label,
+    value,
+    rightAdornment,
+  }: {
+    label: string;
+    value: string;
+    rightAdornment?: React.ReactNode;
+  }) => (
+    <View style={styles.row}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <View style={styles.rowValueContainer}>
+        <Text style={styles.rowValue}>{value}</Text>
+        {rightAdornment}
+      </View>
+    </View>
+  );
+
   const transaction = useMemo(() => {
     try {
       return JSON.parse(decodeURIComponent(params.tx as string));
@@ -622,25 +643,6 @@ const BillReceiptScreen = () => {
     </View>
   );
 };
-
-// Row component for consistent detail display
-const Row = ({ 
-  label, 
-  value, 
-  rightAdornment 
-}: { 
-  label: string; 
-  value: string; 
-  rightAdornment?: React.ReactNode;
-}) => (
-  <View style={styles.row}>
-    <Text style={styles.rowLabel}>{label}</Text>
-    <View style={styles.rowValueContainer}>
-      <Text style={styles.rowValue}>{value}</Text>
-      {rightAdornment}
-    </View>
-  </View>
-);
 
 const makeStyles = (colors: AppColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },

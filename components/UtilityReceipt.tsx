@@ -360,6 +360,47 @@ export default function UtilityReceipt() {
   const transaction = safeParseParam(params.tx) as UtilityTransaction | undefined;
   const [showCopied, setShowCopied] = useState(false);
 
+  // Row must live inside the component: it uses the theme-aware `styles`.
+  // (It was previously module-level and referenced an out-of-scope `styles`,
+  // which threw "ReferenceError: styles is not defined" and crashed the receipt.)
+  function Row({
+    label,
+    value,
+    copyableValue,
+    onCopy,
+  }: {
+    label: string;
+    value: string;
+    copyableValue?: string;
+    onCopy?: (val: string) => void;
+  }) {
+    return (
+      <View style={styles.row}>
+        <Text style={styles.rowLabel} numberOfLines={1}>
+          {label}
+        </Text>
+        <View style={styles.rowValueWrap}>
+          <Text style={styles.rowValue} numberOfLines={1}>
+            {value}
+          </Text>
+          {copyableValue ? (
+            <TouchableOpacity
+              style={styles.copyButton}
+              onPress={() => onCopy && onCopy(copyableValue)}
+              activeOpacity={0.8}
+            >
+              <Image
+                source={require('./icons/copy-icon.png')}
+                style={styles.copyIcon}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
+    );
+  }
+
   useEffect(() => {
     if (transaction) {
       console.log('📄 UtilityReceipt received:', {
@@ -619,44 +660,6 @@ export default function UtilityReceipt() {
         />
       )}
     </SafeAreaView>
-  );
-}
-
-function Row({
-  label,
-  value,
-  copyableValue,
-  onCopy,
-}: {
-  label: string;
-  value: string;
-  copyableValue?: string;
-  onCopy?: (val: string) => void;
-}) {
-  return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel} numberOfLines={1}>
-        {label}
-      </Text>
-      <View style={styles.rowValueWrap}>
-        <Text style={styles.rowValue} numberOfLines={1}>
-          {value}
-        </Text>
-        {copyableValue ? (
-          <TouchableOpacity
-            style={styles.copyButton}
-            onPress={() => onCopy && onCopy(copyableValue)}
-            activeOpacity={0.8}
-          >
-            <Image
-              source={require('./icons/copy-icon.png')}
-              style={styles.copyIcon}
-              resizeMode="cover"
-            />
-          </TouchableOpacity>
-        ) : null}
-      </View>
-    </View>
   );
 }
 
